@@ -6,3 +6,9 @@ entries:
     story: US-06
     description: "Investigated codebase, all 47 criteria unmet. Queued US-06 NPC data + rendering + collision."
     result: pass
+  - task: 2
+    type: implement
+    story: US-06
+    description: "Created NPC data module (src/data/npcs.ts), NPC rendering at depth 5, NPC collision in movement system. Test NPC 'Old Man' placed at row 12 col 13."
+    result: pass
+    tokens: ~15000
