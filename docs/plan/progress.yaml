@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 1
-  next_task: null
+  next_task: "[US-06] Create NPC data definitions in src/data/npcs.ts, render NPC rectangles on the tile map at depth 5, and add NPC collision to prevent player walk-through"
   last_result: null
   consecutive_fails: 0
 
