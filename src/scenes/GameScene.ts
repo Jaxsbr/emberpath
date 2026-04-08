@@ -4,6 +4,7 @@ import { worldMap } from '../maps/worldMap';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
 import { npcs, NPC_SIZE } from '../data/npcs';
+import { NpcInteractionSystem } from '../systems/npcInteraction';
 
 const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
 const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
@@ -12,6 +13,7 @@ const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
 
 export class GameScene extends Phaser.Scene {
   private inputSystem!: InputSystem;
+  private npcInteraction!: NpcInteractionSystem;
   private player!: Phaser.GameObjects.Rectangle;
 
   constructor() {
@@ -24,6 +26,10 @@ export class GameScene extends Phaser.Scene {
     this.createPlayer();
     this.setupCamera();
     this.inputSystem = new InputSystem(this);
+    this.npcInteraction = new NpcInteractionSystem(this);
+    this.npcInteraction.setInteractionCallback((npc) => {
+      console.log(`Interact with ${npc.name} (${npc.id})`);
+    });
   }
 
   update(_time: number, delta: number): void {
@@ -41,6 +47,10 @@ export class GameScene extends Phaser.Scene {
       delta,
     );
     this.player.setPosition(newPos.x + offset, newPos.y + offset);
+
+    const playerCenterX = this.player.x + PLAYER_SIZE / 2;
+    const playerCenterY = this.player.y + PLAYER_SIZE / 2;
+    this.npcInteraction.update(playerCenterX, playerCenterY);
   }
 
   private renderTileMap(): void {
