@@ -10,12 +10,12 @@ Foundation phase — establish the Phaser 3 + TypeScript + Vite project scaffold
 - US-05 — Title screen
 
 ### Done-when (observable)
-- [ ] `package.json` lists `phaser` (^3.x), `typescript`, and `vite` as dependencies [US-01]
-- [ ] `npm run dev` starts a Vite dev server that renders a Phaser game canvas in the browser [US-01]
-- [ ] `npm run build` produces a `dist/` directory containing `index.html` and bundled JS [US-01]
-- [ ] `tsconfig.json` has `"strict": true` [US-01]
-- [ ] HTML page contains an explicit `<div id="game-container">` element; Phaser game config sets `parent: 'game-container'` [US-01] (Learning #62 — Phaser Scale Manager measures container offsetWidth, body padding is ignored)
-- [ ] Phaser game config sets `scale.mode` to `Phaser.Scale.FIT` and `scale.autoCenter` to `Phaser.Scale.CENTER_BOTH` [US-01]
+- [x] `package.json` lists `phaser` (^3.x), `typescript`, and `vite` as dependencies [US-01]
+- [x] `npm run dev` starts a Vite dev server that renders a Phaser game canvas in the browser [US-01]
+- [x] `npm run build` produces a `dist/` directory containing `index.html` and bundled JS [US-01]
+- [x] `tsconfig.json` has `"strict": true` [US-01]
+- [x] HTML page contains an explicit `<div id="game-container">` element; Phaser game config sets `parent: 'game-container'` [US-01] (Learning #62 — Phaser Scale Manager measures container offsetWidth, body padding is ignored)
+- [x] Phaser game config sets `scale.mode` to `Phaser.Scale.FIT` and `scale.autoCenter` to `Phaser.Scale.CENTER_BOTH` [US-01]
 - [ ] A tile map data module exports a 2D array of tile types (minimum: floor = 0, wall = 1) [US-02]
 - [ ] `TILE_SIZE`, `MAP_COLS`, and `MAP_ROWS` are defined as named constants (not magic numbers) [US-02]
 - [ ] GameScene renders the tile map with visually distinct floor and wall tiles — floor reads as "walkable space" (lighter color), wall reads as "solid barrier" (darker/contrasting color) [US-02]

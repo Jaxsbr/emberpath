@@ -8,3 +8,11 @@ entries:
     result: pass
     timestamp: 2026-04-08T19:15:12Z
     tokens: ~1000
+  - task: 1
+    type: implement
+    story: US-01
+    description: "Scaffolded Phaser 3 + TypeScript + Vite project — package.json, tsconfig (strict), index.html with game-container div, FIT scaling, TitleScene, GameScene. Verify passes."
+    result: pass
+    timestamp: 2026-04-08T19:18:00Z
+    tokens: ~5000
+    notes: "✓ US-01 complete — all 6 done-when criteria met"
