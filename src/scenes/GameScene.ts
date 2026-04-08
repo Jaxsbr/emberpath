@@ -4,7 +4,9 @@ import { worldMap } from '../maps/worldMap';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
 import { npcs, NPC_SIZE } from '../data/npcs';
+import { dialogues } from '../data/dialogues';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
+import { DialogueSystem } from '../systems/dialogue';
 
 const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
 const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
@@ -14,6 +16,7 @@ const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
 export class GameScene extends Phaser.Scene {
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
+  private dialogueSystem!: DialogueSystem;
   private player!: Phaser.GameObjects.Rectangle;
 
   constructor() {
@@ -26,13 +29,23 @@ export class GameScene extends Phaser.Scene {
     this.createPlayer();
     this.setupCamera();
     this.inputSystem = new InputSystem(this);
+    this.dialogueSystem = new DialogueSystem(this);
     this.npcInteraction = new NpcInteractionSystem(this);
     this.npcInteraction.setInteractionCallback((npc) => {
-      console.log(`Interact with ${npc.name} (${npc.id})`);
+      const script = dialogues[`${npc.id}-intro`];
+      if (script) {
+        this.dialogueSystem.start(script);
+      }
     });
   }
 
   update(_time: number, delta: number): void {
+    // Zone-level mutual exclusion: dialogue suppresses movement, NPC interaction, triggers
+    if (this.dialogueSystem.isActive) {
+      this.dialogueSystem.update();
+      return;
+    }
+
     this.inputSystem.update();
     const velocity = this.inputSystem.getVelocity();
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
