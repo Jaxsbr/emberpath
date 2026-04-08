@@ -16,3 +16,10 @@ entries:
     timestamp: 2026-04-08T19:18:00Z
     tokens: ~5000
     notes: "✓ US-01 complete — all 6 done-when criteria met"
+  - task: 2
+    type: investigate
+    story: US-02
+    description: "US-01 complete. Next: US-02 tile map — need map data module, constants, floor/wall rendering, collision."
+    result: pass
+    timestamp: 2026-04-08T19:17:52Z
+    tokens: ~500

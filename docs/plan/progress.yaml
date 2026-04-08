@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 2
-  next_task: null
+  next_task: "[US-02] Create tile map data module with constants, render tile map in GameScene, add wall collision"
   last_result: pass
   consecutive_fails: 0
 
