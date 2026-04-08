@@ -28,3 +28,9 @@ entries:
     story: US-07
     description: "US-06 6/7 criteria met (last needs dialogue). Moving to US-07 — queued dialogue data types and test script."
     result: pass
+  - task: 6
+    type: implement
+    story: US-07
+    description: "Created dialogue data types (DialogueNode, DialogueChoice, DialogueScript) and test dialogue 'old-man-intro' with 2 choice points, 4 leaf paths."
+    result: pass
+    tokens: ~8000

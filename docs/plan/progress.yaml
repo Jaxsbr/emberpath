@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-07] Create dialogue data types and test dialogue script in src/data/dialogues.ts — typed node graph with speaker, text, choices, nextId fields; test branching dialogue with 2 choice points and 3 leaf paths"
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
