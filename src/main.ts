@@ -11,6 +11,9 @@ const config: Phaser.Types.Core.GameConfig = {
     width: 800,
     height: 600,
   },
+  input: {
+    touch: true,
+  },
   backgroundColor: '#1a1a2e',
   scene: [TitleScene, GameScene],
 };

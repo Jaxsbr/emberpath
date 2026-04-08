@@ -25,6 +25,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.inputSystem.update();
     const velocity = this.inputSystem.getVelocity();
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
     const newPos = moveWithCollision(

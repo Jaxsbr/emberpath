@@ -18,7 +18,7 @@ export class InputSystem {
   private joystickHandle: Phaser.GameObjects.Arc | null = null;
   private joystickOrigin: { x: number; y: number } | null = null;
   private joystickVector: InputVector = { x: 0, y: 0 };
-  private activePointerId: number | null = null;
+  private joystickActive = false;
 
   constructor(private scene: Phaser.Scene) {
     this.setupKeyboard();
@@ -37,8 +37,8 @@ export class InputSystem {
 
   private setupJoystick(): void {
     this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.activePointerId !== null) return;
-      this.activePointerId = pointer.id;
+      if (this.joystickActive) return;
+      this.joystickActive = true;
       this.joystickOrigin = { x: pointer.x, y: pointer.y };
 
       this.joystickBase = this.scene.add.circle(pointer.x, pointer.y, JOYSTICK_RADIUS, JOYSTICK_BASE_COLOR, JOYSTICK_ALPHA)
@@ -49,41 +49,49 @@ export class InputSystem {
         .setDepth(100);
     });
 
-    this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.id !== this.activePointerId || !this.joystickOrigin) return;
-      const dx = pointer.x - this.joystickOrigin.x;
-      const dy = pointer.y - this.joystickOrigin.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < JOYSTICK_DEAD_ZONE) {
-        this.joystickVector = { x: 0, y: 0 };
-        if (this.joystickHandle) {
-          this.joystickHandle.setPosition(this.joystickOrigin.x, this.joystickOrigin.y);
-        }
-        return;
-      }
-
-      const clampedDist = Math.min(dist, JOYSTICK_RADIUS);
-      const nx = dx / dist;
-      const ny = dy / dist;
-      this.joystickVector = { x: nx * (clampedDist / JOYSTICK_RADIUS), y: ny * (clampedDist / JOYSTICK_RADIUS) };
-
-      if (this.joystickHandle) {
-        this.joystickHandle.setPosition(
-          this.joystickOrigin.x + nx * clampedDist,
-          this.joystickOrigin.y + ny * clampedDist,
-        );
-      }
-    });
-
-    this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.id !== this.activePointerId) return;
+    this.scene.input.on('pointerup', () => {
+      if (!this.joystickActive) return;
       this.resetJoystick();
     });
   }
 
+  /** Call from scene update() to poll active pointer position for joystick tracking. */
+  update(): void {
+    if (!this.joystickActive || !this.joystickOrigin) return;
+
+    const pointer = this.scene.input.activePointer;
+    if (!pointer.isDown) {
+      this.resetJoystick();
+      return;
+    }
+
+    const dx = pointer.x - this.joystickOrigin.x;
+    const dy = pointer.y - this.joystickOrigin.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < JOYSTICK_DEAD_ZONE) {
+      this.joystickVector = { x: 0, y: 0 };
+      if (this.joystickHandle) {
+        this.joystickHandle.setPosition(this.joystickOrigin.x, this.joystickOrigin.y);
+      }
+      return;
+    }
+
+    const clampedDist = Math.min(dist, JOYSTICK_RADIUS);
+    const nx = dx / dist;
+    const ny = dy / dist;
+    this.joystickVector = { x: nx * (clampedDist / JOYSTICK_RADIUS), y: ny * (clampedDist / JOYSTICK_RADIUS) };
+
+    if (this.joystickHandle) {
+      this.joystickHandle.setPosition(
+        this.joystickOrigin.x + nx * clampedDist,
+        this.joystickOrigin.y + ny * clampedDist,
+      );
+    }
+  }
+
   private resetJoystick(): void {
-    this.activePointerId = null;
+    this.joystickActive = false;
     this.joystickOrigin = null;
     this.joystickVector = { x: 0, y: 0 };
     this.joystickBase?.destroy();
