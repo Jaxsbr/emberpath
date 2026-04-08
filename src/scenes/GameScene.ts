@@ -20,6 +20,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.renderTileMap();
     this.createPlayer();
+    this.setupCamera();
     this.inputSystem = new InputSystem(this);
   }
 
@@ -53,6 +54,13 @@ export class GameScene extends Phaser.Scene {
         graphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
       }
     }
+  }
+
+  private setupCamera(): void {
+    const mapWidth = MAP_COLS * TILE_SIZE;
+    const mapHeight = MAP_ROWS * TILE_SIZE;
+    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+    this.cameras.main.startFollow(this.player);
   }
 
   private createPlayer(): void {
