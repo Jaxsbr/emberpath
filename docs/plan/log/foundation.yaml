@@ -2,63 +2,47 @@ phase: foundation
 started: 2026-04-08T19:12:22Z
 entries:
   - task: 1
-    type: investigate
-    story: US-01
-    description: "Investigated project state — no src/ or package.json. All criteria unmet. Queued US-01 scaffolding."
-    result: pass
-    timestamp: 2026-04-08T19:15:12Z
-    tokens: ~1000
-  - task: 1
     type: implement
     story: US-01
     description: "Scaffolded Phaser 3 + TypeScript + Vite project."
     result: pass
-    timestamp: 2026-04-08T19:18:00Z
-    tokens: ~5000
     notes: "✓ US-01 complete"
   - task: 2
     type: implement
     story: US-02
     description: "Created tile map data module, constants, collision system, GameScene tile rendering."
     result: pass
-    timestamp: 2026-04-08T19:20:00Z
-    tokens: ~4000
     notes: "✓ US-02 complete"
   - task: 3
     type: implement
     story: US-03
     description: "Added player entity, InputSystem (WASD + virtual joystick), movement system with wall collision."
     result: pass
-    timestamp: 2026-04-08T19:22:00Z
-    tokens: ~5000
     notes: "✓ US-03 complete"
   - task: 4
     type: implement
     story: US-04
     description: "Camera follow + setBounds on tile map dimensions."
     result: pass
-    timestamp: 2026-04-08T19:24:00Z
-    tokens: ~2000
     notes: "✓ US-04 complete"
   - task: 5
     type: implement
     story: phase
-    description: "Updated AGENTS.md (depth map, directory layout, file ownership, behavior rules) and README.md (run instructions, controls)."
+    description: "Updated AGENTS.md and README.md for phase-level criteria."
     result: pass
-    timestamp: 2026-04-08T19:26:00Z
-    tokens: ~3000
-    notes: "✓ US-05 already complete from task 1. All phase-level criteria met."
+    notes: "✓ US-05 already complete. All phase criteria met."
   - task: 6
     type: gate
     story: phase
-    description: "Phase Completion Gate — verified all 28 done-when criteria, AGENTS.md consistency (depth map matches code, scene flow matches code), error-path spot check (no endpoints, collision handles OOB). All pass."
+    description: "Phase Completion Gate — all 28 criteria verified, AGENTS.md consistent."
     result: pass
-    timestamp: 2026-04-08T19:28:00Z
-    tokens: ~3000
-    evidence:
-      US-01: "package.json deps, tsconfig strict, game-container div, FIT+CENTER_BOTH in main.ts, dist/ output"
-      US-02: "worldMap.ts exports 2D array, constants.ts has TILE_SIZE/MAP_COLS/MAP_ROWS, GameScene renders tiles, collision.ts checks wall tiles"
-      US-03: "Player gold rect at depth 5, WASD in input.ts, joystick on pointerdown, delta-based movement in movement.ts, collidesWithWall blocks walls, PLAYER_SPEED constant"
-      US-04: "startFollow + setBounds in GameScene.setupCamera, FIT scaling for viewport independence"
-      US-05: "TitleScene first in scene array, Emberpath text setOrigin(0.5), Start setInteractive + pointerdown, scene.start('GameScene')"
-      phase: "src/systems/ + scenes/ + maps/ modules, depth map in AGENTS.md matches code (0/5/100), README has npm run dev + WASD/joystick, verify command in progress.yaml"
+  - task: 7
+    type: review
+    story: phase
+    description: "review-pr: 1 critical (gitignore regression, fixed), 1 concern (InputSystem cleanup, informational)."
+    result: pass
+  - task: 8
+    type: review
+    story: phase
+    description: "handle-pr-review: 1 thread resolved (informational concern, safe in current flow). Summary posted."
+    result: pass
