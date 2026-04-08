@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 1
-  next_task: null
+  next_task: "[US-01] Scaffold Phaser 3 + TypeScript + Vite project with mobile-first responsive scaling"
   last_result: null
   consecutive_fails: 0
 
