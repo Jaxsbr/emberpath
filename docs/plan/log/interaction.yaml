@@ -17,3 +17,9 @@ entries:
     story: US-06
     description: "US-06 needs proximity prompt and interaction trigger. Queued implementation."
     result: pass
+  - task: 4
+    type: implement
+    story: US-06
+    description: "Added NpcInteractionSystem — proximity detection, prompt display, Space/tap interaction trigger. US-06 criteria 4-6 met. Criterion 7 (dialogue launch) deferred to US-07."
+    result: pass
+    tokens: ~12000
