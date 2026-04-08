@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 4
-  next_task: null
+  next_task: "[US-04] Add camera follow on player with map-bounded scrolling"
   last_result: pass
   consecutive_fails: 0
 
