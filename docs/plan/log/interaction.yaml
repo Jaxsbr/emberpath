@@ -23,3 +23,8 @@ entries:
     description: "Added NpcInteractionSystem — proximity detection, prompt display, Space/tap interaction trigger. US-06 criteria 4-6 met. Criterion 7 (dialogue launch) deferred to US-07."
     result: pass
     tokens: ~12000
+  - task: 5
+    type: investigate
+    story: US-07
+    description: "US-06 6/7 criteria met (last needs dialogue). Moving to US-07 — queued dialogue data types and test script."
+    result: pass
