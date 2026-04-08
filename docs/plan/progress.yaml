@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 3
-  next_task: null
+  next_task: "[US-03] Add player entity with WASD + virtual joystick movement, collision, and speed constant"
   last_result: pass
   consecutive_fails: 0
 
