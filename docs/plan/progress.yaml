@@ -23,12 +23,12 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: foundation
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[phase] Update AGENTS.md with depth map, directory layout, file ownership, behavior rules; update README.md with run/controls docs"
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

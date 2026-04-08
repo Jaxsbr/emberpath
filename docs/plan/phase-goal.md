@@ -33,11 +33,11 @@ Foundation phase — establish the Phaser 3 + TypeScript + Vite project scaffold
 - [x] TitleScene displays "Emberpath" text centered horizontally on screen [US-05]
 - [x] TitleScene contains a "Start" interactive element that responds to `pointerdown` event [US-05]
 - [x] Clicking/tapping Start transitions to GameScene — scene switch occurs and GameScene renders the tile map [US-05]
-- [ ] `src/` directory has separate modules for input handling, movement/collision, and scene management — establishing the systems-based entity architecture from the master PRD [phase]
-- [ ] AGENTS.md includes an explicit depth map defining rendering order for visual layers (e.g., tiles: 0, entities: 5, UI: 100) [phase]
-- [ ] AGENTS.md reflects new modules, directories, file ownership, and behavior rules introduced in this phase [phase]
-- [ ] README.md documents how to run the project locally (`npm install`, `npm run dev`) and lists controls (WASD on desktop, virtual joystick on mobile) [phase]
-- [ ] Verify command configured in progress.yaml: `npx tsc --noEmit && npm run build` [phase] (Learning #15 — Vite uses esbuild for transpilation, not tsc; explicit tsc --noEmit is required to enforce TypeScript strict mode)
+- [x] `src/` directory has separate modules for input handling, movement/collision, and scene management — establishing the systems-based entity architecture from the master PRD [phase]
+- [x] AGENTS.md includes an explicit depth map defining rendering order for visual layers (e.g., tiles: 0, entities: 5, UI: 100) [phase]
+- [x] AGENTS.md reflects new modules, directories, file ownership, and behavior rules introduced in this phase [phase]
+- [x] README.md documents how to run the project locally (`npm install`, `npm run dev`) and lists controls (WASD on desktop, virtual joystick on mobile) [phase]
+- [x] Verify command configured in progress.yaml: `npx tsc --noEmit && npm run build` [phase] (Learning #15 — Vite uses esbuild for transpilation, not tsc; explicit tsc --noEmit is required to enforce TypeScript strict mode)
 
 ### Golden principles (phase-relevant)
 - `no-silent-pass` — tests must have unconditional assertions
