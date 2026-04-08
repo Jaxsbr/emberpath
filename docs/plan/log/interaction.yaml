@@ -12,3 +12,8 @@ entries:
     description: "Created NPC data module (src/data/npcs.ts), NPC rendering at depth 5, NPC collision in movement system. Test NPC 'Old Man' placed at row 12 col 13."
     result: pass
     tokens: ~15000
+  - task: 3
+    type: investigate
+    story: US-06
+    description: "US-06 needs proximity prompt and interaction trigger. Queued implementation."
+    result: pass

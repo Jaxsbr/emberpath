@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: null
+  task_number: 3
+  next_task: "[US-06] Add NPC proximity detection with interaction prompt (Space to talk / Tap to talk), Space key and tap interaction trigger, and prompt removal on distance"
   last_result: pass
   consecutive_fails: 0
 
