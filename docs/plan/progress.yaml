@@ -13,18 +13,18 @@
 # See MANUAL.md § State ownership for the full ownership table.
 
 config:
-  verify: "echo 'no verify command configured'"
+  verify: "npx tsc --noEmit && npm run build"
   max_tasks_per_phase: 200
   quality_check_suppressions: []
   build_loop_version:
     init_version: 12
-    builds: []
+    builds: [12]
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: null
+  phase: foundation
   phase_complete: false
-  status: idle
+  status: running
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 1

@@ -4,4 +4,4 @@ Mobile-first top-down exploration game with story scenes, inspired by Pilgrim's 
 
 <!-- build-loop -->
 ---
-*Built with [build-loop](docs/plan/) — init v12*
+*Built with [build-loop](docs/plan/) — init v12 | builds v12*
