@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: null
+  task_number: 7
+  next_task: "[US-07] Build dialogue engine system (src/systems/dialogue.ts) — text box at bottom of screen at depth 200 with scrollFactor(0), typewriter effect, speaker name, Space/tap to advance, choice rendering with tap/click and arrow keys + Enter selection, node graph traversal, end-node cleanup"
   last_result: pass
   consecutive_fails: 0
 
