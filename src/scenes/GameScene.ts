@@ -1,0 +1,79 @@
+import Phaser from 'phaser';
+import { TILE_SIZE, MAP_COLS, MAP_ROWS, TileType } from '../maps/constants';
+import { worldMap } from '../maps/worldMap';
+import { InputSystem } from '../systems/input';
+import { moveWithCollision } from '../systems/movement';
+
+const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
+const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
+const PLAYER_COLOR = 0xd4a24e; // warm gold — the character you control
+const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
+
+export class GameScene extends Phaser.Scene {
+  private inputSystem!: InputSystem;
+  private player!: Phaser.GameObjects.Rectangle;
+
+  constructor() {
+    super({ key: 'GameScene' });
+  }
+
+  create(): void {
+    this.renderTileMap();
+    this.createPlayer();
+    this.setupCamera();
+    this.inputSystem = new InputSystem(this);
+  }
+
+  update(_time: number, delta: number): void {
+    this.inputSystem.update();
+    const velocity = this.inputSystem.getVelocity();
+    const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
+    const newPos = moveWithCollision(
+      {
+        x: this.player.x - offset,
+        y: this.player.y - offset,
+        width: PLAYER_SIZE,
+        height: PLAYER_SIZE,
+      },
+      velocity,
+      delta,
+    );
+    this.player.setPosition(newPos.x + offset, newPos.y + offset);
+  }
+
+  private renderTileMap(): void {
+    const graphics = this.add.graphics();
+    graphics.setDepth(0); // tiles at depth 0
+
+    for (let row = 0; row < MAP_ROWS; row++) {
+      for (let col = 0; col < MAP_COLS; col++) {
+        const tile = worldMap[row][col];
+        const x = col * TILE_SIZE;
+        const y = row * TILE_SIZE;
+        const color = tile === TileType.WALL ? WALL_COLOR : FLOOR_COLOR;
+        graphics.fillStyle(color);
+        graphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+      }
+    }
+  }
+
+  private setupCamera(): void {
+    const mapWidth = MAP_COLS * TILE_SIZE;
+    const mapHeight = MAP_ROWS * TILE_SIZE;
+    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+    this.cameras.main.startFollow(this.player);
+  }
+
+  private createPlayer(): void {
+    // Start in an open floor area (row 2, col 2 — inside the walled perimeter)
+    const startCol = 2;
+    const startRow = 2;
+    const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
+    const x = startCol * TILE_SIZE + offset;
+    const y = startRow * TILE_SIZE + offset;
+
+    this.player = this.add.rectangle(x, y, PLAYER_SIZE, PLAYER_SIZE, PLAYER_COLOR);
+    this.player.setOrigin(0, 0);
+    this.player.setDepth(5); // entities at depth 5
+  }
+}
