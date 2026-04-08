@@ -31,3 +31,11 @@ entries:
     timestamp: 2026-04-08T19:20:00Z
     tokens: ~4000
     notes: "✓ US-02 complete — all 4 done-when criteria met"
+  - task: 3
+    type: implement
+    story: US-03
+    description: "Added player entity (gold rect), InputSystem (WASD + virtual joystick), movement system with axis-independent wall collision, PLAYER_SPEED constant."
+    result: pass
+    timestamp: 2026-04-08T19:22:00Z
+    tokens: ~5000
+    notes: "✓ US-03 complete — all 6 done-when criteria met"
