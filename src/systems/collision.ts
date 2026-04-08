@@ -1,5 +1,6 @@
 import { TILE_SIZE, TileType } from '../maps/constants';
 import { worldMap } from '../maps/worldMap';
+import { npcs, getNpcBounds } from '../data/npcs';
 
 /**
  * Check if a rectangle at (x, y) with given width/height would overlap a wall tile.
@@ -19,6 +20,21 @@ export function collidesWithWall(x: number, y: number, width: number, height: nu
       if (worldMap[row][col] === TileType.WALL) {
         return true;
       }
+    }
+  }
+  return false;
+}
+
+export function collidesWithNpc(x: number, y: number, width: number, height: number): boolean {
+  for (const npc of npcs) {
+    const bounds = getNpcBounds(npc);
+    if (
+      x < bounds.x + bounds.width &&
+      x + width > bounds.x &&
+      y < bounds.y + bounds.height &&
+      y + height > bounds.y
+    ) {
+      return true;
     }
   }
   return false;

@@ -3,6 +3,7 @@ import { TILE_SIZE, MAP_COLS, MAP_ROWS, TileType } from '../maps/constants';
 import { worldMap } from '../maps/worldMap';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
+import { npcs, NPC_SIZE } from '../data/npcs';
 
 const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
 const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
@@ -19,6 +20,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.renderTileMap();
+    this.renderNpcs();
     this.createPlayer();
     this.setupCamera();
     this.inputSystem = new InputSystem(this);
@@ -54,6 +56,17 @@ export class GameScene extends Phaser.Scene {
         graphics.fillStyle(color);
         graphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
       }
+    }
+  }
+
+  private renderNpcs(): void {
+    const offset = (TILE_SIZE - NPC_SIZE) / 2;
+    for (const npc of npcs) {
+      const x = npc.col * TILE_SIZE + offset;
+      const y = npc.row * TILE_SIZE + offset;
+      const rect = this.add.rectangle(x, y, NPC_SIZE, NPC_SIZE, npc.color);
+      rect.setOrigin(0, 0);
+      rect.setDepth(5); // entities depth layer
     }
   }
 
