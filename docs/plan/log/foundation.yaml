@@ -11,31 +11,32 @@ entries:
   - task: 1
     type: implement
     story: US-01
-    description: "Scaffolded Phaser 3 + TypeScript + Vite project — package.json, tsconfig (strict), index.html with game-container div, FIT scaling, TitleScene, GameScene. Verify passes."
+    description: "Scaffolded Phaser 3 + TypeScript + Vite project."
     result: pass
     timestamp: 2026-04-08T19:18:00Z
     tokens: ~5000
-    notes: "✓ US-01 complete — all 6 done-when criteria met"
-  - task: 2
-    type: investigate
-    story: US-02
-    description: "US-01 complete. Next: US-02 tile map — need map data module, constants, floor/wall rendering, collision."
-    result: pass
-    timestamp: 2026-04-08T19:17:52Z
-    tokens: ~500
+    notes: "✓ US-01 complete"
   - task: 2
     type: implement
     story: US-02
-    description: "Created tile map data module (worldMap.ts), constants (TILE_SIZE/MAP_COLS/MAP_ROWS), collision system (bounding box vs wall tiles), GameScene renders floor (green) and wall (dark slate) tiles."
+    description: "Created tile map data module, constants, collision system, GameScene tile rendering."
     result: pass
     timestamp: 2026-04-08T19:20:00Z
     tokens: ~4000
-    notes: "✓ US-02 complete — all 4 done-when criteria met"
+    notes: "✓ US-02 complete"
   - task: 3
     type: implement
     story: US-03
-    description: "Added player entity (gold rect), InputSystem (WASD + virtual joystick), movement system with axis-independent wall collision, PLAYER_SPEED constant."
+    description: "Added player entity, InputSystem (WASD + virtual joystick), movement system with wall collision."
     result: pass
     timestamp: 2026-04-08T19:22:00Z
     tokens: ~5000
-    notes: "✓ US-03 complete — all 6 done-when criteria met"
+    notes: "✓ US-03 complete"
+  - task: 4
+    type: implement
+    story: US-04
+    description: "Camera follow + setBounds on tile map dimensions. Viewport-independent via Phaser FIT scaling."
+    result: pass
+    timestamp: 2026-04-08T19:24:00Z
+    tokens: ~2000
+    notes: "✓ US-04 complete"
