@@ -30,7 +30,7 @@ src/
     collision.ts       # collidesWithWall — bounding box vs tile map
   maps/
     constants.ts       # TILE_SIZE, MAP_COLS, MAP_ROWS, PLAYER_SPEED, TileType
-    worldMap.ts        # 2D tile array (25x19)
+    worldMap.ts        # 2D tile array (50x38)
 ```
 
 ## File ownership
