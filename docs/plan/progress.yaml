@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 12
-  next_task: "[US-18] Create src/systems/debugOverlay.ts — keyboard-toggled world-space overlay showing trigger zones (color-coded), exit zones with destination labels, NPC radii circles, and text labels. Integrate into GameScene."
+  task_number: 13
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

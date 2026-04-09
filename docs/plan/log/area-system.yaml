@@ -45,6 +45,12 @@ entries:
     story: US-18
     description: "US-17 complete. US-18 needs debugOverlay.ts in src/systems/ — keyboard toggle (off by default), semi-transparent color-coded rectangles per trigger type, text labels (ID+type+condition), exit labels (destination+entry), NPC radii circles (1.5 tile), world-space on main camera only, depth between entities(5) and UI(100), area change refresh, dialogue-active guard on toggle key. Queued implement."
     result: pass
+  - task: 12
+    type: implement
+    story: US-18
+    description: "Created src/systems/debugOverlay.ts — F3 toggle, color-coded trigger zones (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID+type+condition, exit labels with destination+entry, NPC radii circles (1.5 tile, yellow). World-space at depth 50, UI cam ignored. Dialogue-active guard on toggle. Integrated into GameScene. ✓ US-18 complete"
+    result: pass
+    tokens: ~12000
   - task: 5
     type: investigate
     story: US-15
