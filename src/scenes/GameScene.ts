@@ -9,6 +9,8 @@ import { storyScenes, StorySceneDefinition } from '../data/story-scenes';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
+import { TriggerZoneSystem } from '../systems/triggerZone';
+import { setFlag } from '../triggers/flags';
 
 const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
 const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
@@ -20,6 +22,7 @@ export class GameScene extends Phaser.Scene {
   private npcInteraction!: NpcInteractionSystem;
   private dialogueSystem!: DialogueSystem;
   private thoughtBubble!: ThoughtBubbleSystem;
+  private triggerZone!: TriggerZoneSystem;
   private player!: Phaser.GameObjects.Rectangle;
 
   constructor() {
@@ -35,11 +38,31 @@ export class GameScene extends Phaser.Scene {
     this.dialogueSystem = new DialogueSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    this.triggerZone = new TriggerZoneSystem({
+      onDialogue: (actionRef) => {
+        const script = dialogues[actionRef];
+        if (script) this.dialogueSystem.start(script);
+      },
+      onStory: (actionRef) => {
+        this.launchStoryScene(actionRef);
+      },
+      onThought: (actionRef) => {
+        this.showThought(actionRef);
+      },
+    });
+    this.triggerZone.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.npcInteraction = new NpcInteractionSystem(this);
     this.npcInteraction.setInteractionCallback((npc) => {
       const script = dialogues[`${npc.id}-intro`];
       if (script) {
         this.dialogueSystem.start(script);
+      }
+    });
+    this.dialogueSystem.setOnChoice((choice) => {
+      if (choice.setFlags) {
+        for (const [key, value] of Object.entries(choice.setFlags)) {
+          setFlag(key, value);
+        }
       }
     });
   }
@@ -74,6 +97,12 @@ export class GameScene extends Phaser.Scene {
     const playerCenterY = this.player.y + PLAYER_SIZE / 2;
     this.npcInteraction.update(playerCenterX, playerCenterY);
     this.thoughtBubble.update(playerCenterX, playerCenterY);
+    this.triggerZone.update(
+      this.player.x - offset,
+      this.player.y - offset,
+      PLAYER_SIZE,
+      PLAYER_SIZE,
+    );
   }
 
   private renderTileMap(): void {
