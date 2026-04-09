@@ -21,13 +21,13 @@ Mobile UX phase — make the game properly responsive and touch-friendly. Three 
 - [x] Desktop browser: canvas scales within window without regression from current behavior [US-11]
 
 **US-12 — Dynamic UI positioning**
-- [ ] `src/systems/dialogue.ts` contains no hardcoded `800` or `600` pixel values — all position and size calculations (box position, box width, word wrap, choice positioning) derive from `this.scene.scale.width` / `this.scene.scale.height` [US-12]
-- [ ] `src/scenes/StoryScene.ts` contains no hardcoded `400` (half-width), `800` (full width), or `600` (full height) — center X, panel widths, and panel heights derive from scene scale dimensions [US-12]
-- [ ] Dialogue box anchors to bottom of current canvas height (Y = `scale.height - BOX_HEIGHT`) and spans full `scale.width` [US-12]
-- [ ] Word wrap width for dialogue text and story scene text adjusts to current `scale.width` minus padding [US-12]
-- [ ] If dialogue is active during a resize event, the dialogue box, text, speaker name, and any visible choices reposition to the new canvas dimensions without requiring close/reopen [US-12]
-- [ ] If StoryScene is active during a resize event, image panel, text panel, and advance prompt reposition to new canvas dimensions without requiring scene restart [US-12]
-- [ ] Resize handler repositions existing UI elements — does not destroy and re-create them. No duplicate game objects on rapid successive resize events [US-12]
+- [x] `src/systems/dialogue.ts` contains no hardcoded `800` or `600` pixel values — all position and size calculations (box position, box width, word wrap, choice positioning) derive from `this.scene.scale.width` / `this.scene.scale.height` [US-12]
+- [x] `src/scenes/StoryScene.ts` contains no hardcoded `400` (half-width), `800` (full width), or `600` (full height) — center X, panel widths, and panel heights derive from scene scale dimensions [US-12]
+- [x] Dialogue box anchors to bottom of current canvas height (Y = `scale.height - BOX_HEIGHT`) and spans full `scale.width` [US-12]
+- [x] Word wrap width for dialogue text and story scene text adjusts to current `scale.width` minus padding [US-12]
+- [x] If dialogue is active during a resize event, the dialogue box, text, speaker name, and any visible choices reposition to the new canvas dimensions without requiring close/reopen [US-12]
+- [x] If StoryScene is active during a resize event, image panel, text panel, and advance prompt reposition to new canvas dimensions without requiring scene restart [US-12]
+- [x] Resize handler repositions existing UI elements — does not destroy and re-create them. No duplicate game objects on rapid successive resize events [US-12]
 
 **US-13 — Mobile dialogue browse-then-confirm**
 - [ ] On touch-capable devices, dialogue choices render as full-width tappable areas with minimum 44px touch target height per choice [US-13]
