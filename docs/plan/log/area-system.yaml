@@ -88,3 +88,8 @@ entries:
     story: phase
     description: "review-pr PR #4 — 1 Critical (fog-marsh exit entryPoint col 46 row 17 is wall tile in Ashen Isle), 2 Concerns (NPC_SIZE duplication across 3 files, evaluateExitCondition duplicates TriggerZoneSystem condition parsing). Review posted to GitHub."
     result: pass
+  - task: 17
+    type: review
+    story: phase
+    description: "handle-pr-review PR #4 — 3 fixed, 0 challenged, 0 skipped. Fixed wall spawn (col 46→48), extracted NPC_SIZE to constants.ts, extracted evaluateCondition to systems/conditions.ts. Quality checks: error-path-coverage flagged 5 missing console.error guards for dialogue/story lookups — fixed. All checks pass. review_complete=true."
+    result: pass
