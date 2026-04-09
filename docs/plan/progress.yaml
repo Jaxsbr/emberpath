@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: null
+  task_number: 5
+  next_task: "[US-15] Investigate: Map all global data imports across collision.ts, movement.ts, npcInteraction.ts, triggerZone.ts, GameScene.ts — confirm refactor order and parameter signatures for area-parameterized loading"
   last_result: pass
   consecutive_fails: 0
 

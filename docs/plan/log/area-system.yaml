@@ -18,3 +18,8 @@ entries:
     description: "Created src/data/areas/types.ts (AreaDefinition, ExitDefinition, re-exported NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition + TriggerType with 'exit'), src/data/areas/ashen-isle.ts (50x38 map, Old Man NPC, 3 triggers, dialogue, story scene, spawn (2,2), visual config), src/data/areas/registry.ts (getArea lookup, getDefaultAreaId). All types pass tsc strict. ✓ US-14 complete"
     result: pass
     tokens: ~15000
+  - task: 4
+    type: investigate
+    story: US-15
+    description: "US-14 complete. US-15 needs all systems parameterized. Refactor chain: collision.ts (collidesWithWall needs map/dims, collidesWithNpc needs NPC list) → movement.ts (pass-through) → triggerZone.ts (triggers via constructor) → npcInteraction.ts (NPC list + dialogues) → GameScene.ts (load from area registry, pass data down). Queued investigate to confirm signatures."
+    result: pass
