@@ -1,5 +1,7 @@
 # Emberpath
 
+## Project type: phaser-game
+
 ## Purpose
 Mobile-first top-down exploration game with story scenes, inspired by Pilgrim's Progress, using AI-generated art (Midjourney + Flow). An allegorical journey game POC that proves three things: character exploration, story scene triggers, and AI art rendering in-engine.
 
@@ -93,7 +95,7 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Collision:** Bounding box corners checked against tile map and NPC bounds. Out-of-bounds = collision.
 - **Input priority:** Keyboard takes priority over joystick when any WASD key is held. Dialogue and StoryScene capture all input while active.
 - **Virtual joystick:** Created on pointerdown, destroyed on pointerup. Uses scrollFactor(0) to stay fixed on screen.
-- **Camera:** Follows player with bounds set to tile map pixel dimensions. Bounds update on resize.
+- **Camera:** Follows player with bounds set to tile map pixel dimensions. Bounds and zoom update on resize. Zoom is calculated from viewport size relative to a reference resolution (800x600) — on high-DPI mobile screens, the camera zooms in so tiles and characters appear at a readable physical size instead of mapping device pixels 1:1 to world pixels. Zoom never drops below 1×.
 - **NPC interaction:** Proximity-based (1.5 tile radius). Space (desktop) or tap (mobile) to interact. Interaction prompt appears/disappears based on distance.
 - **Dialogue:** Bottom-screen text box with typewriter effect. Space/tap advances or completes typewriter. All positions derive from `scale.width`/`scale.height` — no hardcoded pixel values. Data-driven node graphs in `data/dialogues.ts`.
 - **Dialogue choices (desktop):** Arrow keys browse (> prefix), Enter or tap confirms immediately. No Confirm button on non-touch devices.

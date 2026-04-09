@@ -17,6 +17,12 @@ const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
 const PLAYER_COLOR = 0xd4a24e; // warm gold — the character you control
 const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
 
+// Reference resolution for zoom calculation — the original design target.
+// Camera zoom scales so tiles and characters appear the same physical size
+// regardless of viewport resolution (fixes tiny rendering on high-DPI mobile).
+const REFERENCE_WIDTH = 800;
+const REFERENCE_HEIGHT = 600;
+
 export class GameScene extends Phaser.Scene {
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
@@ -137,16 +143,24 @@ export class GameScene extends Phaser.Scene {
     const mapHeight = MAP_ROWS * TILE_SIZE;
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
     this.cameras.main.startFollow(this.player);
+    this.cameras.main.setZoom(this.calculateZoom());
 
     this.scale.on('resize', this.handleResize, this);
     this.events.on('shutdown', this.cleanupResize, this);
     this.events.on('destroy', this.cleanupResize, this);
   }
 
+  private calculateZoom(): number {
+    const zoomX = this.scale.width / REFERENCE_WIDTH;
+    const zoomY = this.scale.height / REFERENCE_HEIGHT;
+    return Math.max(1, Math.min(zoomX, zoomY));
+  }
+
   private handleResize(): void {
     const mapWidth = MAP_COLS * TILE_SIZE;
     const mapHeight = MAP_ROWS * TILE_SIZE;
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+    this.cameras.main.setZoom(this.calculateZoom());
   }
 
   private cleanupResize(): void {
