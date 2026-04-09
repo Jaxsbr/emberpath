@@ -83,3 +83,8 @@ entries:
     story: US-16
     description: "US-15 complete. US-16 needs: exit overlap detection in update loop (check area.exits), transitionInProgress re-entrancy guard, camera fade-out → scene restart with new areaId + entryPoint → fade-in, input disabled during fade, mutual exclusion (dialogue/NPC/triggers suppressed), exit tile rendering with distinct color, error path for non-existent area. Implementation in GameScene only — ExitDefinition dispatch is separate from TriggerZoneSystem. Queued implement."
     result: pass
+  - task: 16
+    type: review
+    story: phase
+    description: "review-pr PR #4 — 1 Critical (fog-marsh exit entryPoint col 46 row 17 is wall tile in Ashen Isle), 2 Concerns (NPC_SIZE duplication across 3 files, evaluateExitCondition duplicates TriggerZoneSystem condition parsing). Review posted to GitHub."
+    result: pass
