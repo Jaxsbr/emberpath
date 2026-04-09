@@ -18,7 +18,6 @@ const MOBILE_CONFIRM_HEIGHT = 44;
 const MOBILE_CHOICE_BG = 0x1a1a33;
 const MOBILE_CHOICE_HIGHLIGHT_BG = 0x2a2a55;
 const MOBILE_CONFIRM_BG = 0x334422;
-const MOBILE_CONFIRM_HIGHLIGHT_BG = 0x446633;
 const CHOICE_TEXT_OFFSET_TOP = 60; // vertical offset from box top to first choice row
 
 export class DialogueSystem {
