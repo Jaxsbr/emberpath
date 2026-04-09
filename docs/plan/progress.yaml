@@ -23,12 +23,12 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: mobile-ux
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: "[phase] Update AGENTS.md with responsive scaling, dynamic UI positioning, and mobile browse-then-confirm in Controls and Behavior rules"
+  task_number: 10
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

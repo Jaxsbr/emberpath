@@ -41,8 +41,8 @@ Mobile UX phase — make the game properly responsive and touch-friendly. Three 
 - [x] Expanded dialogue box (text + 4 choices at 44px + Confirm button) does not overflow the canvas bottom edge on a 412x914 portrait viewport — layout capacity verified at maximum choice count [US-13]
 
 **Structural**
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [ ] AGENTS.md reflects responsive scaling behavior, dynamic UI positioning, and mobile browse-then-confirm pattern in Controls and Behavior rules sections [phase]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [x] AGENTS.md reflects responsive scaling behavior, dynamic UI positioning, and mobile browse-then-confirm pattern in Controls and Behavior rules sections [phase]
 
 ### Golden principles (phase-relevant)
 - Zone-level mutual exclusion (LEARNINGS #56) — resize handling must respect active dialogue/story scene state; resize during dialogue re-layouts UI without disrupting dialogue flow
