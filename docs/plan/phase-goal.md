@@ -1,46 +1,83 @@
 ## Phase goal
 
-Foundation phase — establish the Phaser 3 + TypeScript + Vite project scaffold with mobile-first responsive scaling, a tile-based world with collision, dual-input player movement (WASD + virtual joystick), camera follow with map bounds, and a title screen. All using programmer art (colored rectangles). This proves the core game shell: character exploration and tile-based world navigation.
+Interaction phase — build the core interaction systems: NPC entities on the world map, a dialogue engine with branching choices and typewriter effect, full-screen story scenes, floating thought bubbles, and a world trigger system with conditional flags. All using functional placeholders (colored rectangles, plain text). Architecture prioritizes clean separation so future art passes can animate and beautify each component independently without touching game logic.
+
+### Dependencies
+- foundation
 
 ### Stories in scope
-- US-01 — Project scaffolding with responsive scaling
-- US-02 — Tile-based world with collision
-- US-03 — Player character with dual-input movement
-- US-04 — Camera follow with map bounds
-- US-05 — Title screen
+- US-06 — NPC entities on the world map
+- US-07 — Dialogue engine with branching choices
+- US-08 — Story scene mode
+- US-09 — Thought bubble system
+- US-10 — World trigger system with conditional flags
 
 ### Done-when (observable)
-- [x] `package.json` lists `phaser` (^3.x), `typescript`, and `vite` as dependencies [US-01]
-- [x] `npm run dev` starts a Vite dev server that renders a Phaser game canvas in the browser [US-01]
-- [x] `npm run build` produces a `dist/` directory containing `index.html` and bundled JS [US-01]
-- [x] `tsconfig.json` has `"strict": true` [US-01]
-- [x] HTML page contains an explicit `<div id="game-container">` element; Phaser game config sets `parent: 'game-container'` [US-01] (Learning #62 — Phaser Scale Manager measures container offsetWidth, body padding is ignored)
-- [x] Phaser game config sets `scale.mode` to `Phaser.Scale.FIT` and `scale.autoCenter` to `Phaser.Scale.CENTER_BOTH` [US-01]
-- [x] A tile map data module exports a 2D array of tile types (minimum: floor = 0, wall = 1) [US-02]
-- [x] `TILE_SIZE`, `MAP_COLS`, and `MAP_ROWS` are defined as named constants (not magic numbers) [US-02]
-- [x] GameScene renders the tile map with visually distinct floor and wall tiles — floor reads as "walkable space" (lighter color), wall reads as "solid barrier" (darker/contrasting color) [US-02]
-- [x] Collision detection prevents the player entity from overlapping wall tile positions [US-02]
-- [x] Player entity renders as a colored rectangle visually distinct from tile map elements — reads as "the character you control" (different color from both floor and wall tiles) [US-03]
-- [x] Pressing W/A/S/D moves the player up/left/down/right respectively [US-03]
-- [x] Virtual joystick appears on touch input and moves the player in the drag direction [US-03]
-- [x] Player movement is frame-based smooth movement (position updates per frame), not tile-snapping [US-03]
-- [x] Player cannot move into or through wall tiles — collision stops movement at tile boundary [US-03]
-- [x] Movement speed is defined as a named constant (e.g., `PLAYER_SPEED`) [US-03]
-- [x] Camera follows the player entity during movement [US-04]
-- [x] Camera bounds are set to the tile map pixel dimensions — no empty/black space visible beyond map edges [US-04]
-- [x] Camera behavior is consistent across mobile (375x667) and desktop (1280x720) viewport sizes [US-04]
-- [x] TitleScene is the first scene loaded by the Phaser game [US-05]
-- [x] TitleScene displays "Emberpath" text centered horizontally on screen [US-05]
-- [x] TitleScene contains a "Start" interactive element that responds to `pointerdown` event [US-05]
-- [x] Clicking/tapping Start transitions to GameScene — scene switch occurs and GameScene renders the tile map [US-05]
-- [x] `src/` directory has separate modules for input handling, movement/collision, and scene management — establishing the systems-based entity architecture from the master PRD [phase]
-- [x] AGENTS.md includes an explicit depth map defining rendering order for visual layers (e.g., tiles: 0, entities: 5, UI: 100) [phase]
-- [x] AGENTS.md reflects new modules, directories, file ownership, and behavior rules introduced in this phase [phase]
-- [x] README.md documents how to run the project locally (`npm install`, `npm run dev`) and lists controls (WASD on desktop, virtual joystick on mobile) [phase]
-- [x] Verify command configured in progress.yaml: `npx tsc --noEmit && npm run build` [phase] (Learning #15 — Vite uses esbuild for transpilation, not tsc; explicit tsc --noEmit is required to enforce TypeScript strict mode)
+
+**US-06 — NPC entities**
+- [x] `src/data/npcs.ts` exports an array of NPC definitions each with `id`, `name`, `col`, `row`, and `color` fields [US-06]
+- [x] NPC rectangles render on the tile map at depth 5 (entities layer per depth map) [US-06]
+- [x] Player cannot walk through NPC bounding boxes — collision system rejects movement into NPC bounds [US-06]
+- [x] Interaction prompt text ("Space to talk" / "Tap to talk") appears when player center is within 1.5 tiles of an NPC center [US-06]
+- [x] Space key (desktop) or tap (mobile) while in range and prompt visible invokes the NPC's interaction callback [US-06]
+- [x] Interaction prompt disappears when the player moves out of the 1.5-tile range [US-06]
+- [x] At least one test NPC is placed on the Ashen Isle map and responds to interaction by launching dialogue [US-06]
+
+**US-07 — Dialogue engine**
+- [x] Dialogue text box renders at bottom of screen at depth 200 (UI layer) with `scrollFactor(0)` [US-07]
+- [x] Text appears character-by-character (typewriter effect) at a configurable characters-per-second rate [US-07]
+- [x] Tap/Space while typewriter is running completes the current line instantly [US-07]
+- [x] Tap/Space after line is complete advances to the next dialogue node [US-07]
+- [x] Speaker name is displayed above the dialogue text area [US-07]
+- [x] When a dialogue node has `choices`, 2-4 option buttons render and are selectable by tap/click or arrow keys + Enter [US-07]
+- [x] Selecting a choice navigates to the referenced `nextId` node in the dialogue graph [US-07]
+- [x] Dialogue scripts are defined in `src/data/dialogues.ts` as typed node graphs — not hardcoded in scene or system code [US-07]
+- [x] Reaching an end node (no `nextId`, no `choices`) closes the dialogue and returns input control to GameScene [US-07]
+- [x] Player movement is disabled while dialogue is active [US-07]
+- [x] NPC interaction zones and world trigger evaluation are suppressed while dialogue is active — no new interactions can fire until dialogue closes (LEARNINGS #56 — zone-level mutual exclusion) [US-07]
+- [x] After dialogue ends and the player walks away then returns to NPC range, the interaction prompt reappears and the NPC is re-interactable (LEARNINGS #49 — user journey completeness) [US-07]
+- [x] A test branching dialogue with at least 2 choice points and 3 leaf paths is playable via the test NPC [US-07]
+
+**US-08 — Story scene mode**
+- [x] `StoryScene` is a separate Phaser scene registered in the game config (`main.ts` scene array) [US-08]
+- [x] Story scene displays a placeholder rectangle for the image area (upper portion) and a text panel (lower portion) [US-08]
+- [x] Each story beat specifies a `text` string and an optional `imageKey` — the image area changes color/label per beat as a placeholder [US-08]
+- [x] Tap/Space advances to the next beat [US-08]
+- [x] Scene fades in on launch (`cameras.main.fadeIn`) and fades out on completion (`cameras.main.fadeOut`) [US-08]
+- [x] Story scene definitions are data-driven in `src/data/story-scenes.ts` (array of beats per scene ID) [US-08]
+- [x] At least one test story scene with 3+ beats is triggerable and plays through to completion [US-08]
+- [x] On completion, `StoryScene` stops itself and resumes `GameScene` with player position preserved [US-08]
+- [x] While `StoryScene` is active, `GameScene` update loop is paused — no player movement, no trigger evaluation, no NPC interaction (LEARNINGS #56 — zone-level mutual exclusion) [US-08]
+
+**US-09 — Thought bubble system**
+- [x] Thought text renders as a floating text element near the player at depth 150 with `scrollFactor(0)` [US-09]
+- [x] Thought bubble has a simple background rectangle behind the text for readability [US-09]
+- [x] Thought auto-dismisses after a configurable duration (default 3000ms) [US-09]
+- [x] Player movement and input are not blocked while a thought is displayed [US-09]
+- [x] When multiple thoughts are queued, they display sequentially — the next thought appears after the current one dismisses [US-09]
+- [x] Thought content and trigger associations are defined in data files, not hardcoded [US-09]
+- [x] If dialogue (US-07) is active, incoming thoughts queue until dialogue closes [US-09]
+- [x] At least one test thought triggers when the player enters a defined map area [US-09]
+
+**US-10 — World trigger system**
+- [x] Trigger zones are defined in `src/data/triggers.ts` with `id`, position (`col`, `row`), `size` (width/height in tiles), `type` (dialogue | story | thought), `actionRef` (ID referencing the target content), `condition` (optional), and `repeatable` (boolean) [US-10]
+- [x] Trigger fires when player bounding box overlaps the zone bounds [US-10]
+- [x] Triggers invoke the correct system based on type: dialogue engine (US-07), story scene (US-08), or thought bubble (US-09) [US-10]
+- [x] Conditions support flag comparisons: `flag == value`, `flag >= value`, `flag == true`, combined with AND logic [US-10]
+- [x] `src/triggers/flags.ts` exports `getFlag`, `setFlag`, `incrementFlag` functions operating on an in-memory store [US-10]
+- [x] Flags persist to localStorage under a namespaced key and survive page refresh [US-10]
+- [x] One-shot triggers (default) track their fired state via a flag and do not re-fire on subsequent zone entries; repeatable triggers fire on every zone entry after the player exits and re-enters (not continuously while standing inside) [US-10]
+- [x] Dialogue choice actions and NPC interaction events can set flags (e.g., a dialogue choice sets `spoke_to_old_man = true`) [US-10]
+- [x] At least one conditional trigger is configured as a test: zone only fires after a specific flag is set via prior interaction [US-10]
+- [x] Flag reset is available from TitleScene (clears all flags from localStorage) [US-10]
+
+**Structural**
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [x] AGENTS.md reflects new modules (`entities/`, `dialogue/`, `triggers/`, `data/`), file ownership, and updated depth map entries introduced in this phase [phase]
 
 ### Golden principles (phase-relevant)
-- `no-silent-pass` — tests must have unconditional assertions
-- `no-bare-except` — catch blocks must log or re-throw
-- `error-path-coverage` — error paths must have test coverage
-- `agents-consistency` — AGENTS.md rules must match actual code behavior
+- Systems-based entity architecture — new capabilities are systems/modules, not inlined in scene code
+- Depth map compliance — new visual layers must use defined depths (entities=5, UI=100+); new entries: thoughts=150, dialogue=200
+- Scene flow — TitleScene -> GameScene; StoryScene is a parallel scene launched/stopped by GameScene
+- Input priority — keyboard takes priority over joystick; dialogue/story scenes capture all input while active
+- Zone-level mutual exclusion — overlapping interactive layers disable underlying zones, not just guard handlers (LEARNINGS #56)

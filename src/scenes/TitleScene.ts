@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { resetAllFlags } from '../triggers/flags';
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -20,6 +21,19 @@ export class TitleScene extends Phaser.Scene {
 
     startText.on('pointerdown', () => {
       this.scene.start('GameScene');
+    });
+
+    const resetText = this.add.text(width / 2, height * 0.7, 'Reset Progress', {
+      fontSize: '18px',
+      color: '#666666',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    resetText.on('pointerdown', () => {
+      resetAllFlags();
+      resetText.setText('Progress Reset!');
+      this.time.delayedCall(1500, () => {
+        resetText.setText('Reset Progress');
+      });
     });
   }
 }

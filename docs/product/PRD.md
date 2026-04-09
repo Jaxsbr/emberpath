@@ -36,3 +36,4 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | Phase | Status | Stories | Spec |
 |---|---|---|---|
 | foundation | Shipped | US-01, US-02, US-03, US-04, US-05 | [phases/foundation.md](phases/foundation.md) |
+| interaction | Shipped | US-06, US-07, US-08, US-09, US-10 | [phases/interaction.md](phases/interaction.md) |

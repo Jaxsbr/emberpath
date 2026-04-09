@@ -1,4 +1,4 @@
-import { collidesWithWall } from './collision';
+import { collidesWithWall, collidesWithNpc } from './collision';
 import { InputVector } from './input';
 
 export interface Entity {
@@ -19,13 +19,15 @@ export function moveWithCollision(entity: Entity, velocity: InputVector, delta: 
 
   // Try X axis
   const candidateX = entity.x + velocity.x * dt;
-  if (!collidesWithWall(candidateX, entity.y, entity.width, entity.height)) {
+  if (!collidesWithWall(candidateX, entity.y, entity.width, entity.height) &&
+      !collidesWithNpc(candidateX, entity.y, entity.width, entity.height)) {
     newX = candidateX;
   }
 
   // Try Y axis
   const candidateY = entity.y + velocity.y * dt;
-  if (!collidesWithWall(newX, candidateY, entity.width, entity.height)) {
+  if (!collidesWithWall(newX, candidateY, entity.width, entity.height) &&
+      !collidesWithNpc(newX, candidateY, entity.width, entity.height)) {
     newY = candidateY;
   }
 
