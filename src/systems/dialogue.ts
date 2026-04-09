@@ -73,8 +73,13 @@ export class DialogueSystem {
     this.scene.events.on('destroy', this.cleanupResize, this);
   }
 
+  /** Scale a design-pixel value to canvas pixels using the main camera's zoom. */
+  private s(v: number): number {
+    return v * this.scene.cameras.main.zoom;
+  }
+
   private get boxY(): number {
-    return this.scene.scale.height - this.currentBoxHeight;
+    return this.scene.scale.height - this.s(this.currentBoxHeight);
   }
 
   private get canvasWidth(): number {
@@ -247,15 +252,15 @@ export class DialogueSystem {
 
   private showDesktopChoices(choices: DialogueChoice[]): void {
     this.selectedChoiceIndex = 0;
-    const startY = this.boxY + BOX_PADDING + 50;
+    const startY = this.boxY + this.s(BOX_PADDING + 50);
 
     for (let i = 0; i < choices.length; i++) {
       const choiceText = this.scene.add.text(
-        BOX_PADDING + 20,
-        startY + i * 22,
+        this.s(BOX_PADDING + 20),
+        startY + i * this.s(22),
         `${i === 0 ? '> ' : '  '}${choices[i].text}`,
         {
-          fontSize: `${CHOICE_FONT_SIZE}px`,
+          fontSize: `${this.s(CHOICE_FONT_SIZE)}px`,
           color: i === 0 ? '#ffdd44' : '#aaaaaa',
         },
       );
@@ -277,20 +282,20 @@ export class DialogueSystem {
     this.mobileHighlightIndex = -1;
     this.selectedChoiceIndex = 0;
 
-    // Calculate expanded box height
+    // Calculate expanded box height (design pixels — scaled via s() when rendering)
     const choiceAreaHeight = choices.length * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP)
       + MOBILE_CONFIRM_HEIGHT + MOBILE_CHOICE_GAP;
     this.currentBoxHeight = CHOICE_TEXT_OFFSET_TOP + choiceAreaHeight + BOX_PADDING;
     this.redrawBox();
 
-    const rowWidth = this.canvasWidth - BOX_PADDING * 2;
-    const startY = this.boxY + CHOICE_TEXT_OFFSET_TOP;
+    const rowWidth = this.canvasWidth - this.s(BOX_PADDING) * 2;
+    const startY = this.boxY + this.s(CHOICE_TEXT_OFFSET_TOP);
 
     for (let i = 0; i < choices.length; i++) {
-      const rowY = startY + i * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+      const rowY = startY + i * this.s(MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
 
       const bg = this.scene.add.rectangle(
-        BOX_PADDING, rowY, rowWidth, MOBILE_CHOICE_HEIGHT, MOBILE_CHOICE_BG,
+        this.s(BOX_PADDING), rowY, rowWidth, this.s(MOBILE_CHOICE_HEIGHT), MOBILE_CHOICE_BG,
       );
       bg.setOrigin(0, 0);
       bg.setScrollFactor(0);
@@ -303,10 +308,10 @@ export class DialogueSystem {
       this.choiceBgs.push(bg);
 
       const label = this.scene.add.text(
-        BOX_PADDING * 2, rowY + (MOBILE_CHOICE_HEIGHT - CHOICE_FONT_SIZE) / 2,
+        this.s(BOX_PADDING * 2), rowY + (this.s(MOBILE_CHOICE_HEIGHT) - this.s(CHOICE_FONT_SIZE)) / 2,
         choices[i].text,
         {
-          fontSize: `${CHOICE_FONT_SIZE}px`,
+          fontSize: `${this.s(CHOICE_FONT_SIZE)}px`,
           color: '#aaaaaa',
         },
       );
@@ -317,9 +322,9 @@ export class DialogueSystem {
     }
 
     // Confirm button — initially hidden
-    const confirmY = startY + choices.length * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+    const confirmY = startY + choices.length * this.s(MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
     this.confirmBg = this.scene.add.rectangle(
-      BOX_PADDING, confirmY, rowWidth, MOBILE_CONFIRM_HEIGHT, MOBILE_CONFIRM_BG,
+      this.s(BOX_PADDING), confirmY, rowWidth, this.s(MOBILE_CONFIRM_HEIGHT), MOBILE_CONFIRM_BG,
     );
     this.confirmBg.setOrigin(0, 0);
     this.confirmBg.setScrollFactor(0);
@@ -335,10 +340,10 @@ export class DialogueSystem {
     this.confirmBg.setVisible(false);
 
     this.confirmLabel = this.scene.add.text(
-      this.canvasWidth / 2, confirmY + MOBILE_CONFIRM_HEIGHT / 2,
+      this.canvasWidth / 2, confirmY + this.s(MOBILE_CONFIRM_HEIGHT) / 2,
       'Confirm',
       {
-        fontSize: `${CHOICE_FONT_SIZE}px`,
+        fontSize: `${this.s(CHOICE_FONT_SIZE)}px`,
         color: '#ffffff',
         fontStyle: 'bold',
       },
@@ -402,11 +407,11 @@ export class DialogueSystem {
     this.boxGraphics.setScrollFactor(0);
     this.boxGraphics.setDepth(DEPTH);
     this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
-    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.currentBoxHeight);
+    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.s(this.currentBoxHeight));
     this.ignoreOnMainCamera(this.boxGraphics);
 
-    this.speakerText = this.scene.add.text(BOX_PADDING, this.boxY - 20, '', {
-      fontSize: `${SPEAKER_FONT_SIZE}px`,
+    this.speakerText = this.scene.add.text(this.s(BOX_PADDING), this.boxY - this.s(20), '', {
+      fontSize: `${this.s(SPEAKER_FONT_SIZE)}px`,
       color: '#ffdd44',
       fontStyle: 'bold',
     });
@@ -414,10 +419,10 @@ export class DialogueSystem {
     this.speakerText.setDepth(DEPTH);
     this.ignoreOnMainCamera(this.speakerText);
 
-    this.dialogueText = this.scene.add.text(BOX_PADDING, this.boxY + BOX_PADDING, '', {
-      fontSize: `${TEXT_FONT_SIZE}px`,
+    this.dialogueText = this.scene.add.text(this.s(BOX_PADDING), this.boxY + this.s(BOX_PADDING), '', {
+      fontSize: `${this.s(TEXT_FONT_SIZE)}px`,
       color: '#ffffff',
-      wordWrap: { width: this.canvasWidth - BOX_PADDING * 2 },
+      wordWrap: { width: this.canvasWidth - this.s(BOX_PADDING) * 2 },
     });
     this.dialogueText.setScrollFactor(0);
     this.dialogueText.setDepth(DEPTH);
@@ -428,15 +433,17 @@ export class DialogueSystem {
     if (!this.boxGraphics) return;
     this.boxGraphics.clear();
     this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
-    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.currentBoxHeight);
+    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.s(this.currentBoxHeight));
 
     // Reposition text elements to match new box position
     if (this.speakerText) {
-      this.speakerText.setPosition(BOX_PADDING, this.boxY - 20);
+      this.speakerText.setPosition(this.s(BOX_PADDING), this.boxY - this.s(20));
+      this.speakerText.setFontSize(this.s(SPEAKER_FONT_SIZE));
     }
     if (this.dialogueText) {
-      this.dialogueText.setPosition(BOX_PADDING, this.boxY + BOX_PADDING);
-      this.dialogueText.setWordWrapWidth(this.canvasWidth - BOX_PADDING * 2);
+      this.dialogueText.setPosition(this.s(BOX_PADDING), this.boxY + this.s(BOX_PADDING));
+      this.dialogueText.setFontSize(this.s(TEXT_FONT_SIZE));
+      this.dialogueText.setWordWrapWidth(this.canvasWidth - this.s(BOX_PADDING) * 2);
     }
   }
 
@@ -446,35 +453,38 @@ export class DialogueSystem {
 
     if (this.mobileChoicesActive && this.currentNode?.choices) {
       // Reposition mobile choice rows
-      const rowWidth = this.canvasWidth - BOX_PADDING * 2;
-      const startY = this.boxY + CHOICE_TEXT_OFFSET_TOP;
+      const rowWidth = this.canvasWidth - this.s(BOX_PADDING) * 2;
+      const startY = this.boxY + this.s(CHOICE_TEXT_OFFSET_TOP);
 
       for (let i = 0; i < this.choiceBgs.length; i++) {
-        const rowY = startY + i * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
-        this.choiceBgs[i].setPosition(BOX_PADDING, rowY);
-        this.choiceBgs[i].setSize(rowWidth, MOBILE_CHOICE_HEIGHT);
+        const rowY = startY + i * this.s(MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+        this.choiceBgs[i].setPosition(this.s(BOX_PADDING), rowY);
+        this.choiceBgs[i].setSize(rowWidth, this.s(MOBILE_CHOICE_HEIGHT));
         if (this.choiceTexts[i]) {
           this.choiceTexts[i].setPosition(
-            BOX_PADDING * 2, rowY + (MOBILE_CHOICE_HEIGHT - CHOICE_FONT_SIZE) / 2,
+            this.s(BOX_PADDING * 2), rowY + (this.s(MOBILE_CHOICE_HEIGHT) - this.s(CHOICE_FONT_SIZE)) / 2,
           );
+          this.choiceTexts[i].setFontSize(this.s(CHOICE_FONT_SIZE));
         }
       }
 
       // Reposition confirm button
       if (this.confirmBg) {
         const confirmY = startY
-          + this.currentNode.choices.length * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
-        this.confirmBg.setPosition(BOX_PADDING, confirmY);
-        this.confirmBg.setSize(rowWidth, MOBILE_CONFIRM_HEIGHT);
+          + this.currentNode.choices.length * this.s(MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+        this.confirmBg.setPosition(this.s(BOX_PADDING), confirmY);
+        this.confirmBg.setSize(rowWidth, this.s(MOBILE_CONFIRM_HEIGHT));
         if (this.confirmLabel) {
-          this.confirmLabel.setPosition(this.canvasWidth / 2, confirmY + MOBILE_CONFIRM_HEIGHT / 2);
+          this.confirmLabel.setPosition(this.canvasWidth / 2, confirmY + this.s(MOBILE_CONFIRM_HEIGHT) / 2);
+          this.confirmLabel.setFontSize(this.s(CHOICE_FONT_SIZE));
         }
       }
     } else if (this.choiceTexts.length > 0) {
       // Reposition desktop choices
-      const startY = this.boxY + BOX_PADDING + 50;
+      const startY = this.boxY + this.s(BOX_PADDING + 50);
       for (let i = 0; i < this.choiceTexts.length; i++) {
-        this.choiceTexts[i].setPosition(BOX_PADDING + 20, startY + i * 22);
+        this.choiceTexts[i].setPosition(this.s(BOX_PADDING + 20), startY + i * this.s(22));
+        this.choiceTexts[i].setFontSize(this.s(CHOICE_FONT_SIZE));
       }
     }
   }
