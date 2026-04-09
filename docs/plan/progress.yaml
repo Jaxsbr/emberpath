@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: null
+  task_number: 10
+  next_task: "[US-17] Create Fog Marsh area definition (30x24 map, 1 NPC, all trigger types, 2-beat story scene, distinct colors) with bidirectional exits to Ashen Isle, and add exit zone to Ashen Isle pointing to Fog Marsh"
   last_result: pass
   consecutive_fails: 0
 

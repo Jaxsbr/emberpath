@@ -29,6 +29,11 @@ entries:
     description: "Added exit zone detection in GameScene update loop. Camera fadeOut→restart→fadeIn with re-entrancy guard (transitionInProgress). Entry point support in create(). Exit tiles rendered amber-gold (EXIT_COLOR 0xc89b3c). Condition evaluation for exits. Error path for non-existent area IDs. Cleanup of fade listeners on shutdown. ✓ US-16 complete"
     result: pass
     tokens: ~15000
+  - task: 9
+    type: investigate
+    story: US-17
+    description: "US-16 complete. US-17 needs Fog Marsh area (30x24 deliberately different map, distinct colors, 1 NPC with dialogue, all 4 trigger types including exit, 2-beat story scene, condition on at least 1 trigger). Also need exit zone added to Ashen Isle map pointing to Fog Marsh, and Fog Marsh exit back to Ashen Isle. Register in area registry. Queued implement."
+    result: pass
   - task: 5
     type: investigate
     story: US-15
