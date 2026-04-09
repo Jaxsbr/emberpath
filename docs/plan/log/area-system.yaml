@@ -40,6 +40,11 @@ entries:
     description: "Created fog-marsh.ts (30x24 map, Marsh Hermit NPC with branching dialogue, thought+story+dialogue triggers, 2-beat marsh-depths scene, distinct dark-green visual). Added exit zones to Ashen Isle (row 17, cols 47-48 → Fog Marsh) and Fog Marsh (col 1, row 12 → Ashen Isle). Fixed setFlags on DialogueChoice not DialogueNode. Registered in area registry. ✓ US-17 complete"
     result: pass
     tokens: ~15000
+  - task: 11
+    type: investigate
+    story: US-18
+    description: "US-17 complete. US-18 needs debugOverlay.ts in src/systems/ — keyboard toggle (off by default), semi-transparent color-coded rectangles per trigger type, text labels (ID+type+condition), exit labels (destination+entry), NPC radii circles (1.5 tile), world-space on main camera only, depth between entities(5) and UI(100), area change refresh, dialogue-active guard on toggle key. Queued implement."
+    result: pass
   - task: 5
     type: investigate
     story: US-15
