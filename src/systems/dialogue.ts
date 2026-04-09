@@ -40,6 +40,9 @@ export class DialogueSystem {
   private tapDownPos = { x: 0, y: 0 };
   private choiceJustSelected = false;
 
+  // Close guard — prevents NPC interaction from restarting dialogue on the same tap
+  private lastCloseTime = 0;
+
   // Callbacks
   private onEndCallback: (() => void) | null = null;
   private onChoiceCallback: ((choice: DialogueChoice) => void) | null = null;
@@ -63,6 +66,7 @@ export class DialogueSystem {
 
   start(script: DialogueScript): void {
     if (this.active) return;
+    if (this.scene.time.now - this.lastCloseTime < 100) return;
     this.active = true;
     this.script = script;
     this.createBox();
@@ -284,6 +288,7 @@ export class DialogueSystem {
   }
 
   private close(): void {
+    this.lastCloseTime = this.scene.time.now;
     this.typewriterTimer?.destroy();
     this.typewriterTimer = null;
     this.boxGraphics?.destroy();
