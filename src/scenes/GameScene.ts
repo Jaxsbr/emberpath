@@ -137,6 +137,22 @@ export class GameScene extends Phaser.Scene {
     const mapHeight = MAP_ROWS * TILE_SIZE;
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
     this.cameras.main.startFollow(this.player);
+
+    this.scale.on('resize', this.handleResize, this);
+    this.events.on('shutdown', this.cleanupResize, this);
+    this.events.on('destroy', this.cleanupResize, this);
+  }
+
+  private handleResize(): void {
+    const mapWidth = MAP_COLS * TILE_SIZE;
+    const mapHeight = MAP_ROWS * TILE_SIZE;
+    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+  }
+
+  private cleanupResize(): void {
+    this.scale.off('resize', this.handleResize, this);
+    this.events.off('shutdown', this.cleanupResize, this);
+    this.events.off('destroy', this.cleanupResize, this);
   }
 
   showThought(text: string, duration?: number): void {
