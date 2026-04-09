@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 14
-  next_task: null
+  task_number: 15
+  next_task: "[phase] Update AGENTS.md with new modules (data/, systems/dialogue.ts, systems/npcInteraction.ts, systems/thoughtBubble.ts, systems/triggerZone.ts, triggers/, scenes/StoryScene.ts), file ownership, updated depth map (thoughts=150, dialogue=200), new behavior rules (dialogue input capture, trigger evaluation, flag persistence, zone mutual exclusion), and scene flow (StoryScene addition)"
   last_result: pass
   consecutive_fails: 0
 
