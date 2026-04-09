@@ -5,6 +5,7 @@ import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
 import { npcs, NPC_SIZE } from '../data/npcs';
 import { dialogues } from '../data/dialogues';
+import { storyScenes, StorySceneDefinition } from '../data/story-scenes';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
 
@@ -98,6 +99,13 @@ export class GameScene extends Phaser.Scene {
     const mapHeight = MAP_ROWS * TILE_SIZE;
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
     this.cameras.main.startFollow(this.player);
+  }
+
+  launchStoryScene(definitionId: string): void {
+    const definition = storyScenes[definitionId];
+    if (!definition) return;
+    this.scene.pause('GameScene');
+    this.scene.launch('StoryScene', { definition });
   }
 
   private createPlayer(): void {
