@@ -8,6 +8,7 @@ import { dialogues } from '../data/dialogues';
 import { storyScenes, StorySceneDefinition } from '../data/story-scenes';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
+import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 
 const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
 const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
@@ -18,6 +19,7 @@ export class GameScene extends Phaser.Scene {
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
   private dialogueSystem!: DialogueSystem;
+  private thoughtBubble!: ThoughtBubbleSystem;
   private player!: Phaser.GameObjects.Rectangle;
 
   constructor() {
@@ -31,6 +33,8 @@ export class GameScene extends Phaser.Scene {
     this.setupCamera();
     this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
+    this.thoughtBubble = new ThoughtBubbleSystem(this);
+    this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.npcInteraction = new NpcInteractionSystem(this);
     this.npcInteraction.setInteractionCallback((npc) => {
       const script = dialogues[`${npc.id}-intro`];
@@ -44,6 +48,10 @@ export class GameScene extends Phaser.Scene {
     // Zone-level mutual exclusion: dialogue suppresses movement, NPC interaction, triggers
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
+      // Thought bubble still tracks player position during dialogue (queued thoughts display after)
+      const pcx = this.player.x + PLAYER_SIZE / 2;
+      const pcy = this.player.y + PLAYER_SIZE / 2;
+      this.thoughtBubble.update(pcx, pcy);
       return;
     }
 
@@ -65,6 +73,7 @@ export class GameScene extends Phaser.Scene {
     const playerCenterX = this.player.x + PLAYER_SIZE / 2;
     const playerCenterY = this.player.y + PLAYER_SIZE / 2;
     this.npcInteraction.update(playerCenterX, playerCenterY);
+    this.thoughtBubble.update(playerCenterX, playerCenterY);
   }
 
   private renderTileMap(): void {
@@ -99,6 +108,10 @@ export class GameScene extends Phaser.Scene {
     const mapHeight = MAP_ROWS * TILE_SIZE;
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
     this.cameras.main.startFollow(this.player);
+  }
+
+  showThought(text: string, duration?: number): void {
+    this.thoughtBubble.show({ text, duration });
   }
 
   launchStoryScene(definitionId: string): void {
