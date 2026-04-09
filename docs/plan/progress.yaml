@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
-  next_task: "[US-16] Implement exit zone overlap detection, fade transition with re-entrancy guard, entry point support in GameScene.create, exit tile rendering, and mutual exclusion during transition"
+  task_number: 9
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

@@ -23,6 +23,12 @@ entries:
     story: US-15
     description: "US-14 complete. US-15 needs all systems parameterized. Refactor chain: collision.ts (collidesWithWall needs map/dims, collidesWithNpc needs NPC list) → movement.ts (pass-through) → triggerZone.ts (triggers via constructor) → npcInteraction.ts (NPC list + dialogues) → GameScene.ts (load from area registry, pass data down). Queued investigate to confirm signatures."
     result: pass
+  - task: 8
+    type: implement
+    story: US-16
+    description: "Added exit zone detection in GameScene update loop. Camera fadeOut→restart→fadeIn with re-entrancy guard (transitionInProgress). Entry point support in create(). Exit tiles rendered amber-gold (EXIT_COLOR 0xc89b3c). Condition evaluation for exits. Error path for non-existent area IDs. Cleanup of fade listeners on shutdown. ✓ US-16 complete"
+    result: pass
+    tokens: ~15000
   - task: 5
     type: investigate
     story: US-15
