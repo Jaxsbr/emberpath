@@ -27,7 +27,7 @@ export const ashenIsle: AreaDefinition = {
     [W,F,F,F,F,F,F,F,F,W,W,W,W,F,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,F,W,W,W,W,W,F,F,F,F,F,F,F,F,F,W],
     [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
     [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W],
+    [W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,F,F,W],
     [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
     [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
     [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
@@ -184,6 +184,16 @@ export const ashenIsle: AreaDefinition = {
     },
   },
   playerSpawn: { col: 2, row: 2 },
-  exits: [],
+  exits: [
+    {
+      id: 'ashen-to-fog',
+      col: 47,
+      row: 17,
+      width: 2,
+      height: 1,
+      destinationAreaId: 'fog-marsh',
+      entryPoint: { col: 2, row: 12 },
+    },
+  ],
   visual: { floorColor: 0x4a6741, wallColor: 0x2c2c3a },
 };
