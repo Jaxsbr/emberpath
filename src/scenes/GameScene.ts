@@ -17,11 +17,10 @@ const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
 const PLAYER_COLOR = 0xd4a24e; // warm gold — the character you control
 const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
 
-// Reference resolution for zoom calculation — the original design target.
-// Camera zoom scales so tiles and characters appear the same physical size
-// regardless of viewport resolution (fixes tiny rendering on high-DPI mobile).
-const REFERENCE_WIDTH = 800;
-const REFERENCE_HEIGHT = 600;
+// Target tile count along the viewport's shorter axis. Camera zoom scales so
+// roughly this many tiles are visible, keeping characters and text readable
+// regardless of device resolution or orientation.
+const TARGET_VISIBLE_TILES = 10;
 
 export class GameScene extends Phaser.Scene {
   private inputSystem!: InputSystem;
@@ -151,9 +150,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private calculateZoom(): number {
-    const zoomX = this.scale.width / REFERENCE_WIDTH;
-    const zoomY = this.scale.height / REFERENCE_HEIGHT;
-    return Math.max(1, Math.min(zoomX, zoomY));
+    const shortSide = Math.min(this.scale.width, this.scale.height);
+    const targetWorldSize = TARGET_VISIBLE_TILES * TILE_SIZE;
+    return Math.max(1, shortSide / targetWorldSize);
   }
 
   private handleResize(): void {
