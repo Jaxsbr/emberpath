@@ -45,3 +45,8 @@ entries:
     description: "Built DialogueSystem — text box at depth 200, typewriter effect, speaker name, choices with arrow+Enter and tap selection, node graph traversal, zone-level mutual exclusion. Connected to NPC interaction. ✓ US-06 complete ✓ US-07 complete"
     result: pass
     tokens: ~20000
+  - task: 9
+    type: investigate
+    story: US-08
+    description: "US-06, US-07 complete. Moving to US-08 — Story scene mode. Queued full implementation."
+    result: pass

@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
-  next_task: null
+  task_number: 9
+  next_task: "[US-08] Build StoryScene (separate Phaser scene) with data-driven story beats, placeholder image area, text panel, tap/Space to advance, fade in/out, and GameScene pause/resume — register in main.ts scene array, create src/data/story-scenes.ts with test scene"
   last_result: pass
   consecutive_fails: 0
 
