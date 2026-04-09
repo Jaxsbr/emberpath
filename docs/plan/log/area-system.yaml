@@ -6,3 +6,8 @@ entries:
     story: US-14
     description: "Investigated codebase. All 49 criteria unmet. 4 global data files (npcs, triggers, dialogues, story-scenes) + worldMap + MAP_COLS/MAP_ROWS in constants. GameScene, collision, npcInteraction, triggerZone all import globals directly. Queued US-14 investigate for AreaDefinition/ExitDefinition planning."
     result: pass
+  - task: 2
+    type: investigate
+    story: US-14
+    description: "Deep investigation of existing types. NpcDefinition, TriggerDefinition/TriggerType, DialogueScript/Node/Choice, StorySceneDefinition/Beat all exist. NPC_SIZE and getNpcBounds are utilities to keep accessible. collision.ts/npcInteraction.ts/triggerZone.ts all import globals directly. Migration plan: create src/data/areas/ with types.ts (AreaDefinition, ExitDefinition), ashen-isle.ts (area data), registry.ts (lookup). Queued implement task."
+    result: pass

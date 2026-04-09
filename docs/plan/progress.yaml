@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-14] Investigate: Review existing type exports (NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition) and data files to plan AreaDefinition/ExitDefinition interfaces, area registry module, and Ashen Isle area migration strategy"
+  task_number: 3
+  next_task: "[US-14] Create AreaDefinition and ExitDefinition types in src/data/areas/types.ts, area registry in src/data/areas/registry.ts, and refactor Ashen Isle data into src/data/areas/ashen-isle.ts as a valid AreaDefinition"
   last_result: pass
   consecutive_fails: 0
 
