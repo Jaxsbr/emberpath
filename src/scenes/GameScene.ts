@@ -31,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
+  private boundWindowResize: (() => void) | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -155,6 +156,21 @@ export class GameScene extends Phaser.Scene {
     uiCam.ignore([this.tileGraphics, this.player, ...this.npcRects]);
 
     this.scale.on('resize', this.handleResize, this);
+
+    // Direct window resize listener — Phaser's ScaleManager only sets a dirty flag
+    // on window.resize (it calls refresh() only on orientationchange). Chrome DevTools
+    // rotation fires resize, not orientationchange, so Phaser may miss the update if
+    // the DOM hasn't settled by the next step(). We force a refresh after one animation
+    // frame so the parent container has its final dimensions.
+    this.boundWindowResize = () => {
+      requestAnimationFrame(() => {
+        if (this.scene.isActive()) {
+          this.scale.refresh();
+        }
+      });
+    };
+    window.addEventListener('resize', this.boundWindowResize);
+
     this.events.on('shutdown', this.cleanupResize, this);
     this.events.on('destroy', this.cleanupResize, this);
   }
@@ -183,6 +199,10 @@ export class GameScene extends Phaser.Scene {
 
   private cleanupResize(): void {
     this.scale.off('resize', this.handleResize, this);
+    if (this.boundWindowResize) {
+      window.removeEventListener('resize', this.boundWindowResize);
+      this.boundWindowResize = null;
+    }
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
   }
