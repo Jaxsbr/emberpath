@@ -8,12 +8,14 @@ import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { TriggerZoneSystem } from '../systems/triggerZone';
-import { setFlag } from '../triggers/flags';
+import { getFlag, setFlag } from '../triggers/flags';
 
 const PLAYER_COLOR = 0xd4a24e;
 const PLAYER_SIZE = 24;
 const NPC_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
+const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
+const FADE_DURATION = 400;
 
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
@@ -26,12 +28,14 @@ export class GameScene extends Phaser.Scene {
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
   private boundWindowResize: (() => void) | null = null;
+  private transitionInProgress = false;
 
   constructor() {
     super({ key: 'GameScene' });
   }
 
-  create(data?: { areaId?: string }): void {
+  create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {
+    this.transitionInProgress = false;
     const areaId = data?.areaId ?? getDefaultAreaId();
     const area = getArea(areaId);
     if (!area) {
@@ -42,8 +46,12 @@ export class GameScene extends Phaser.Scene {
 
     this.renderTileMap();
     this.renderNpcs();
-    this.createPlayer();
+    this.createPlayer(data?.entryPoint);
     this.setupCamera();
+    // Fade in when entering from an area transition
+    if (data?.entryPoint) {
+      this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
+    }
     this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
@@ -78,6 +86,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // Suppress all interaction during area transition
+    if (this.transitionInProgress) return;
+
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
       const pcx = this.player.x + PLAYER_SIZE / 2;
@@ -106,24 +117,40 @@ export class GameScene extends Phaser.Scene {
     const playerCenterY = this.player.y + PLAYER_SIZE / 2;
     this.npcInteraction.update(playerCenterX, playerCenterY);
     this.thoughtBubble.update(playerCenterX, playerCenterY);
-    this.triggerZone.update(
-      this.player.x - offset,
-      this.player.y - offset,
-      PLAYER_SIZE,
-      PLAYER_SIZE,
-    );
+
+    const playerBoundsX = this.player.x - offset;
+    const playerBoundsY = this.player.y - offset;
+    this.triggerZone.update(playerBoundsX, playerBoundsY, PLAYER_SIZE, PLAYER_SIZE);
+    this.checkExitZones(playerBoundsX, playerBoundsY, PLAYER_SIZE, PLAYER_SIZE);
   }
 
   private renderTileMap(): void {
     this.tileGraphics = this.add.graphics();
     this.tileGraphics.setDepth(0);
 
+    // Build a set of exit zone tile coordinates for distinct rendering
+    const exitTiles = new Set<string>();
+    for (const exit of this.area.exits) {
+      for (let r = exit.row; r < exit.row + exit.height; r++) {
+        for (let c = exit.col; c < exit.col + exit.width; c++) {
+          exitTiles.add(`${c},${r}`);
+        }
+      }
+    }
+
     for (let row = 0; row < this.area.mapRows; row++) {
       for (let col = 0; col < this.area.mapCols; col++) {
         const tile = this.area.map[row][col];
         const x = col * TILE_SIZE;
         const y = row * TILE_SIZE;
-        const color = tile === TileType.WALL ? this.area.visual.wallColor : this.area.visual.floorColor;
+        let color: number;
+        if (exitTiles.has(`${col},${row}`)) {
+          color = EXIT_COLOR;
+        } else if (tile === TileType.WALL) {
+          color = this.area.visual.wallColor;
+        } else {
+          color = this.area.visual.floorColor;
+        }
         this.tileGraphics.fillStyle(color);
         this.tileGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
       }
@@ -198,12 +225,77 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private checkExitZones(px: number, py: number, pw: number, ph: number): void {
+    for (const exit of this.area.exits) {
+      const zoneX = exit.col * TILE_SIZE;
+      const zoneY = exit.row * TILE_SIZE;
+      const zoneW = exit.width * TILE_SIZE;
+      const zoneH = exit.height * TILE_SIZE;
+
+      const overlaps =
+        px < zoneX + zoneW &&
+        px + pw > zoneX &&
+        py < zoneY + zoneH &&
+        py + ph > zoneY;
+
+      if (overlaps) {
+        if (exit.condition && !this.evaluateExitCondition(exit.condition)) {
+          continue;
+        }
+        this.transitionToArea(exit.destinationAreaId, exit.entryPoint);
+        return;
+      }
+    }
+  }
+
+  private evaluateExitCondition(condition: string): boolean {
+    const clauses = condition.split(/\s+AND\s+/);
+    return clauses.every((clause) => {
+      const match = clause.trim().match(/^(\S+)\s*(==|>=|>|<=|<|!=)\s*(.+)$/);
+      if (!match) return false;
+      const [, flagName, operator, rawValue] = match;
+      const flagValue = getFlag(flagName);
+      let expected: string | number | boolean;
+      if (rawValue === 'true') expected = true;
+      else if (rawValue === 'false') expected = false;
+      else if (!isNaN(Number(rawValue))) expected = Number(rawValue);
+      else expected = rawValue;
+      const actual = flagValue ?? (typeof expected === 'boolean' ? false : typeof expected === 'number' ? 0 : '');
+      switch (operator) {
+        case '==': return actual === expected;
+        case '!=': return actual !== expected;
+        case '>=': return Number(actual) >= Number(expected);
+        case '>': return Number(actual) > Number(expected);
+        case '<=': return Number(actual) <= Number(expected);
+        case '<': return Number(actual) < Number(expected);
+        default: return false;
+      }
+    });
+  }
+
+  private transitionToArea(areaId: string, entryPoint: { col: number; row: number }): void {
+    const destination = getArea(areaId);
+    if (!destination) {
+      console.error(`Exit zone references non-existent area: ${areaId}`);
+      return;
+    }
+
+    this.transitionInProgress = true;
+
+    this.cameras.main.fadeOut(FADE_DURATION, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.scene.restart({ areaId, entryPoint });
+    });
+  }
+
   private cleanupResize(): void {
     this.scale.off('resize', this.handleResize, this);
     if (this.boundWindowResize) {
       window.removeEventListener('resize', this.boundWindowResize);
       this.boundWindowResize = null;
     }
+    // Clean up any in-progress fade tweens to prevent orphaned callbacks
+    this.cameras.main.removeAllListeners('camerafadeoutcomplete');
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
   }
@@ -219,10 +311,11 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch('StoryScene', { definition });
   }
 
-  private createPlayer(): void {
+  private createPlayer(entryPoint?: { col: number; row: number }): void {
+    const spawn = entryPoint ?? this.area.playerSpawn;
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
-    const x = this.area.playerSpawn.col * TILE_SIZE + offset;
-    const y = this.area.playerSpawn.row * TILE_SIZE + offset;
+    const x = spawn.col * TILE_SIZE + offset;
+    const y = spawn.row * TILE_SIZE + offset;
 
     this.player = this.add.rectangle(x, y, PLAYER_SIZE, PLAYER_SIZE, PLAYER_COLOR);
     this.player.setOrigin(0, 0);
