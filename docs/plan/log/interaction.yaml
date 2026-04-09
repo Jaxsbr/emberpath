@@ -50,3 +50,9 @@ entries:
     story: US-08
     description: "US-06, US-07 complete. Moving to US-08 — Story scene mode. Queued full implementation."
     result: pass
+  - task: 10
+    type: implement
+    story: US-08
+    description: "Built StoryScene — separate Phaser scene with data-driven beats, placeholder image area, text panel, fade in/out, GameScene pause/resume. Test scene with 4 beats. ✓ US-08 complete"
+    result: pass
+    tokens: ~15000
