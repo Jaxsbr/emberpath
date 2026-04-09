@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 13
-  next_task: null
+  task_number: 14
+  next_task: "[phase] Remove old global data files (data/npcs.ts, data/triggers.ts, data/dialogues.ts, data/story-scenes.ts, maps/worldMap.ts), remove MAP_COLS/MAP_ROWS from constants.ts, and update AGENTS.md"
   last_result: pass
   consecutive_fails: 0
 
