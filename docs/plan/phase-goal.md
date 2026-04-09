@@ -13,12 +13,12 @@ Mobile UX phase — make the game properly responsive and touch-friendly. Three 
 ### Done-when (observable)
 
 **US-11 — Responsive canvas scaling**
-- [ ] Phaser config in `src/main.ts` does not use fixed `width: 800, height: 600` with `FIT` mode — canvas dimensions adapt to container/viewport size [US-11]
-- [ ] `index.html` CSS and `#game-container` setup follows LEARNINGS #62: explicit container with explicit CSS dimensions, no padding on body or container that would mislead Phaser's `offsetWidth` measurement [US-11]
-- [ ] Browser `resize` event (including device orientation change) triggers canvas re-layout — Scale Manager recalculates dimensions, no scene restart required [US-11]
-- [ ] Camera bounds update after resize to correctly constrain the viewport within the tile map world (1600x1216 world pixels) [US-11]
-- [ ] Resize event listener is cleaned up on game destroy to prevent memory leaks (async cleanup) [US-11]
-- [ ] Desktop browser: canvas scales within window without regression from current behavior [US-11]
+- [x] Phaser config in `src/main.ts` does not use fixed `width: 800, height: 600` with `FIT` mode — canvas dimensions adapt to container/viewport size [US-11]
+- [x] `index.html` CSS and `#game-container` setup follows LEARNINGS #62: explicit container with explicit CSS dimensions, no padding on body or container that would mislead Phaser's `offsetWidth` measurement [US-11]
+- [x] Browser `resize` event (including device orientation change) triggers canvas re-layout — Scale Manager recalculates dimensions, no scene restart required [US-11]
+- [x] Camera bounds update after resize to correctly constrain the viewport within the tile map world (1600x1216 world pixels) [US-11]
+- [x] Resize event listener is cleaned up on game destroy to prevent memory leaks (async cleanup) [US-11]
+- [x] Desktop browser: canvas scales within window without regression from current behavior [US-11]
 
 **US-12 — Dynamic UI positioning**
 - [ ] `src/systems/dialogue.ts` contains no hardcoded `800` or `600` pixel values — all position and size calculations (box position, box width, word wrap, choice positioning) derive from `this.scene.scale.width` / `this.scene.scale.height` [US-12]
