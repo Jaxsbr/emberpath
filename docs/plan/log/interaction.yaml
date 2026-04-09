@@ -72,3 +72,9 @@ entries:
     story: US-10
     description: "US-09 7/8 (last needs triggers). Moving to US-10 — flag store, trigger zones, condition parser, type dispatch. Also completes US-09."
     result: pass
+  - task: 14
+    type: implement
+    story: US-10
+    description: "Built flag store, trigger zone system, condition parser, type dispatch. Wired into GameScene and dialogue choices. Added flag reset to TitleScene. ✓ US-09 complete ✓ US-10 complete. All 5 stories complete."
+    result: pass
+    tokens: ~20000
