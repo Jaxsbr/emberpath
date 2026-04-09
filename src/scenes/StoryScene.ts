@@ -4,6 +4,7 @@ import { StorySceneDefinition, StoryBeat } from '../data/areas/types';
 const FADE_DURATION = 500;
 const IMAGE_HEIGHT_RATIO = 0.58; // ~350/600 — upper portion for image
 const TEXT_PADDING = 20;
+const CHARS_PER_SECOND = 40;
 
 export class StoryScene extends Phaser.Scene {
   private definition!: StorySceneDefinition;
@@ -15,6 +16,10 @@ export class StoryScene extends Phaser.Scene {
   private advanceHint: Phaser.GameObjects.Text | null = null;
   private spaceKey: Phaser.Input.Keyboard.Key | null = null;
   private ready = false;
+  private fullText = '';
+  private revealedCount = 0;
+  private typewriterComplete = false;
+  private typewriterTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
     super({ key: 'StoryScene' });
@@ -123,17 +128,62 @@ export class StoryScene extends Phaser.Scene {
     if (this.imageLabel) {
       this.imageLabel.setText(beat.imageLabel ?? '');
     }
+
+    this.fullText = beat.text;
+    this.revealedCount = 0;
+    this.typewriterComplete = false;
     if (this.beatText) {
-      this.beatText.setText(beat.text);
+      this.beatText.setText('');
     }
+    if (this.advanceHint) {
+      this.advanceHint.setVisible(false);
+    }
+
+    this.typewriterTimer?.destroy();
+    this.typewriterTimer = this.time.addEvent({
+      delay: 1000 / CHARS_PER_SECOND,
+      callback: () => {
+        this.revealedCount++;
+        if (this.beatText) {
+          this.beatText.setText(this.fullText.substring(0, this.revealedCount));
+        }
+        if (this.revealedCount >= this.fullText.length) {
+          this.typewriterComplete = true;
+          this.typewriterTimer?.destroy();
+          this.typewriterTimer = null;
+          if (this.advanceHint) {
+            this.advanceHint.setVisible(true);
+          }
+        }
+      },
+      loop: true,
+    });
   }
 
   private advanceBeat(): void {
+    // First tap completes typewriter, second tap advances
+    if (!this.typewriterComplete) {
+      this.completeTypewriter();
+      return;
+    }
     this.currentBeatIndex++;
     if (this.currentBeatIndex < this.definition.beats.length) {
       this.showBeat(this.definition.beats[this.currentBeatIndex]);
     } else {
       this.exitScene();
+    }
+  }
+
+  private completeTypewriter(): void {
+    this.typewriterTimer?.destroy();
+    this.typewriterTimer = null;
+    this.revealedCount = this.fullText.length;
+    this.typewriterComplete = true;
+    if (this.beatText) {
+      this.beatText.setText(this.fullText);
+    }
+    if (this.advanceHint) {
+      this.advanceHint.setVisible(true);
     }
   }
 

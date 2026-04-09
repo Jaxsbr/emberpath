@@ -47,6 +47,7 @@ export class DialogueSystem {
   private revealedCount = 0;
   private typewriterTimer: Phaser.Time.TimerEvent | null = null;
   private typewriterComplete = false;
+  private continueHint: Phaser.GameObjects.Text | null = null;
 
   // Input
   private spaceKey: Phaser.Input.Keyboard.Key | null = null;
@@ -206,6 +207,9 @@ export class DialogueSystem {
     this.fullText = node.text;
     this.revealedCount = 0;
     this.typewriterComplete = false;
+    if (this.continueHint) {
+      this.continueHint.setVisible(false);
+    }
 
     if (this.dialogueText) {
       this.dialogueText.setText('');
@@ -225,6 +229,8 @@ export class DialogueSystem {
           this.typewriterTimer = null;
           if (node.choices) {
             this.showChoices(node.choices);
+          } else if (this.continueHint) {
+            this.continueHint.setVisible(true);
           }
         }
       },
@@ -242,6 +248,8 @@ export class DialogueSystem {
     }
     if (this.currentNode?.choices) {
       this.showChoices(this.currentNode.choices);
+    } else if (this.continueHint) {
+      this.continueHint.setVisible(true);
     }
   }
 
@@ -432,6 +440,19 @@ export class DialogueSystem {
     this.dialogueText.setScrollFactor(0);
     this.dialogueText.setDepth(DEPTH);
     this.ignoreOnMainCamera(this.dialogueText);
+
+    const hintLabel = this.isTouchDevice ? 'Tap to continue' : 'Space to continue';
+    this.continueHint = this.scene.add.text(
+      this.canvasWidth - this.s(BOX_PADDING),
+      this.boxY + this.s(this.currentBoxHeight) - this.s(BOX_PADDING),
+      hintLabel,
+      { fontSize: `${this.s(10)}px`, color: '#666666' },
+    );
+    this.continueHint.setOrigin(1, 1);
+    this.continueHint.setScrollFactor(0);
+    this.continueHint.setDepth(DEPTH);
+    this.continueHint.setVisible(false);
+    this.ignoreOnMainCamera(this.continueHint);
   }
 
   private redrawBox(): void {
@@ -449,6 +470,13 @@ export class DialogueSystem {
       this.dialogueText.setPosition(this.s(BOX_PADDING), this.boxY + this.s(BOX_PADDING));
       this.dialogueText.setFontSize(this.s(TEXT_FONT_SIZE));
       this.dialogueText.setWordWrapWidth(this.canvasWidth - this.s(BOX_PADDING) * 2);
+    }
+    if (this.continueHint) {
+      this.continueHint.setPosition(
+        this.canvasWidth - this.s(BOX_PADDING),
+        this.boxY + this.s(this.currentBoxHeight) - this.s(BOX_PADDING),
+      );
+      this.continueHint.setFontSize(this.s(10));
     }
   }
 
@@ -529,6 +557,8 @@ export class DialogueSystem {
     this.speakerText = null;
     this.dialogueText?.destroy();
     this.dialogueText = null;
+    this.continueHint?.destroy();
+    this.continueHint = null;
     this.clearChoices();
     this.currentBoxHeight = BOX_HEIGHT;
     this.active = false;

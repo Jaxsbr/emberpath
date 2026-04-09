@@ -283,7 +283,7 @@ export class GameScene extends Phaser.Scene {
       this.boundWindowResize = null;
     }
     // Clean up any in-progress fade tweens to prevent orphaned callbacks
-    this.cameras.main.removeAllListeners('camerafadeoutcomplete');
+    this.cameras?.main?.removeAllListeners('camerafadeoutcomplete');
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
   }
