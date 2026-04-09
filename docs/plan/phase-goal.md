@@ -10,11 +10,11 @@ Introduce a multi-area architecture that decouples GameScene from hardcoded worl
 - US-18 — Debug overlay for trigger and exit zones
 
 ### Done-when (observable)
-- [ ] `AreaDefinition` interface exported from a shared module with fields: id, name, map (TileType[][]), mapCols, mapRows, npcs (NpcDefinition[]), triggers (TriggerDefinition[]), dialogues (Record<string, DialogueScript>), storyScenes (Record<string, StorySceneDefinition>), playerSpawn ({ col, row }), exits (ExitDefinition[]), visual ({ floorColor, wallColor }) [US-14]
-- [ ] `ExitDefinition` type exported with fields: id, col, row, width, height, destinationAreaId, entryPoint ({ col, row }), condition (optional string) [US-14]
-- [ ] Area registry module exports a record or function that maps area IDs to AreaDefinitions — single lookup point for all registered areas [US-14]
-- [ ] Ashen Isle area definition exists as a valid AreaDefinition containing: the 50x38 tile map, Old Man NPC, 3 existing triggers, old-man-intro dialogue, ashen-isle-intro story scene, spawn at (2, 2), visual config matching current colors (floorColor: 0x4a6741, wallColor: 0x2c2c3a) [US-14]
-- [ ] `npx tsc --noEmit` passes — all area types fully typed, no `any` casts [US-14]
+- [x] `AreaDefinition` interface exported from a shared module with fields: id, name, map (TileType[][]), mapCols, mapRows, npcs (NpcDefinition[]), triggers (TriggerDefinition[]), dialogues (Record<string, DialogueScript>), storyScenes (Record<string, StorySceneDefinition>), playerSpawn ({ col, row }), exits (ExitDefinition[]), visual ({ floorColor, wallColor }) [US-14]
+- [x] `ExitDefinition` type exported with fields: id, col, row, width, height, destinationAreaId, entryPoint ({ col, row }), condition (optional string) [US-14]
+- [x] Area registry module exports a record or function that maps area IDs to AreaDefinitions — single lookup point for all registered areas [US-14]
+- [x] Ashen Isle area definition exists as a valid AreaDefinition containing: the 50x38 tile map, Old Man NPC, 3 existing triggers, old-man-intro dialogue, ashen-isle-intro story scene, spawn at (2, 2), visual config matching current colors (floorColor: 0x4a6741, wallColor: 0x2c2c3a) [US-14]
+- [x] `npx tsc --noEmit` passes — all area types fully typed, no `any` casts [US-14]
 - [ ] GameScene.create() reads area ID from scene data and loads the corresponding AreaDefinition via the area registry [US-15]
 - [ ] Tile map renders from the area's map array and visual config (floorColor, wallColor), not hardcoded worldMap import [US-15]
 - [ ] NPC rendering uses the area's npcs array, not the global npcs import [US-15]
