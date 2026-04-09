@@ -11,6 +11,16 @@ const BOX_COLOR = 0x111122;
 const BOX_ALPHA = 0.9;
 const DEPTH = 200;
 
+// Mobile choice layout
+const MOBILE_CHOICE_HEIGHT = 44;
+const MOBILE_CHOICE_GAP = 2;
+const MOBILE_CONFIRM_HEIGHT = 44;
+const MOBILE_CHOICE_BG = 0x1a1a33;
+const MOBILE_CHOICE_HIGHLIGHT_BG = 0x2a2a55;
+const MOBILE_CONFIRM_BG = 0x334422;
+const MOBILE_CONFIRM_HIGHLIGHT_BG = 0x446633;
+const CHOICE_TEXT_OFFSET_TOP = 60; // vertical offset from box top to first choice row
+
 export class DialogueSystem {
   private scene: Phaser.Scene;
   private active = false;
@@ -23,6 +33,15 @@ export class DialogueSystem {
   private dialogueText: Phaser.GameObjects.Text | null = null;
   private choiceTexts: Phaser.GameObjects.Text[] = [];
   private selectedChoiceIndex = 0;
+
+  // Mobile choice elements
+  private isTouchDevice: boolean;
+  private currentBoxHeight = BOX_HEIGHT;
+  private mobileChoicesActive = false;
+  private mobileHighlightIndex = -1;
+  private choiceBgs: Phaser.GameObjects.Rectangle[] = [];
+  private confirmBg: Phaser.GameObjects.Rectangle | null = null;
+  private confirmLabel: Phaser.GameObjects.Text | null = null;
 
   // Typewriter state
   private fullText = '';
@@ -48,6 +67,7 @@ export class DialogueSystem {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    this.isTouchDevice = scene.sys.game.device.input.touch;
     this.setupInput();
     this.scene.scale.on('resize', this.handleResize, this);
     this.scene.events.on('shutdown', this.cleanupResize, this);
@@ -55,7 +75,7 @@ export class DialogueSystem {
   }
 
   private get boxY(): number {
-    return this.scene.scale.height - BOX_HEIGHT;
+    return this.scene.scale.height - this.currentBoxHeight;
   }
 
   private get canvasWidth(): number {
@@ -79,6 +99,7 @@ export class DialogueSystem {
     if (this.scene.time.now - this.lastCloseTime < 100) return;
     this.active = true;
     this.script = script;
+    this.currentBoxHeight = BOX_HEIGHT;
     this.createBox();
     const startNode = script.nodes.find(n => n.id === script.startNodeId);
     if (startNode) {
@@ -106,6 +127,8 @@ export class DialogueSystem {
         this.choiceJustSelected = false;
         return;
       }
+      // On mobile with choices active, don't advance from general taps
+      if (this.mobileChoicesActive) return;
       const duration = pointer.upTime - this.tapDownTime;
       const dx = pointer.x - this.tapDownPos.x;
       const dy = pointer.y - this.tapDownPos.y;
@@ -143,6 +166,7 @@ export class DialogueSystem {
     }
 
     if (this.currentNode?.choices) {
+      if (this.isTouchDevice) return; // Mobile: choices handle their own input
       this.selectChoice();
       return;
     }
@@ -161,6 +185,10 @@ export class DialogueSystem {
   private showNode(node: DialogueNode): void {
     this.currentNode = node;
     this.clearChoices();
+
+    // Reset box to normal height when showing a new node
+    this.currentBoxHeight = BOX_HEIGHT;
+    this.redrawBox();
 
     if (this.speakerText) {
       this.speakerText.setText(node.speaker);
@@ -210,6 +238,15 @@ export class DialogueSystem {
 
   private showChoices(choices: DialogueChoice[]): void {
     this.clearChoices();
+
+    if (this.isTouchDevice) {
+      this.showMobileChoices(choices);
+    } else {
+      this.showDesktopChoices(choices);
+    }
+  }
+
+  private showDesktopChoices(choices: DialogueChoice[]): void {
     this.selectedChoiceIndex = 0;
     const startY = this.boxY + BOX_PADDING + 50;
 
@@ -228,20 +265,111 @@ export class DialogueSystem {
       choiceText.setInteractive();
       choiceText.on('pointerdown', () => {
         this.selectedChoiceIndex = i;
-        this.updateChoiceHighlight();
+        this.updateDesktopChoiceHighlight();
         this.selectChoice();
       });
       this.choiceTexts.push(choiceText);
     }
   }
 
+  private showMobileChoices(choices: DialogueChoice[]): void {
+    this.mobileChoicesActive = true;
+    this.mobileHighlightIndex = -1;
+    this.selectedChoiceIndex = 0;
+
+    // Calculate expanded box height
+    const choiceAreaHeight = choices.length * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP)
+      + MOBILE_CONFIRM_HEIGHT + MOBILE_CHOICE_GAP;
+    this.currentBoxHeight = CHOICE_TEXT_OFFSET_TOP + choiceAreaHeight + BOX_PADDING;
+    this.redrawBox();
+
+    const rowWidth = this.canvasWidth - BOX_PADDING * 2;
+    const startY = this.boxY + CHOICE_TEXT_OFFSET_TOP;
+
+    for (let i = 0; i < choices.length; i++) {
+      const rowY = startY + i * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+
+      const bg = this.scene.add.rectangle(
+        BOX_PADDING, rowY, rowWidth, MOBILE_CHOICE_HEIGHT, MOBILE_CHOICE_BG,
+      );
+      bg.setOrigin(0, 0);
+      bg.setScrollFactor(0);
+      bg.setDepth(DEPTH);
+      bg.setInteractive();
+      bg.on('pointerdown', () => {
+        this.highlightMobileChoice(i);
+      });
+      this.choiceBgs.push(bg);
+
+      const label = this.scene.add.text(
+        BOX_PADDING * 2, rowY + (MOBILE_CHOICE_HEIGHT - CHOICE_FONT_SIZE) / 2,
+        choices[i].text,
+        {
+          fontSize: `${CHOICE_FONT_SIZE}px`,
+          color: '#aaaaaa',
+        },
+      );
+      label.setScrollFactor(0);
+      label.setDepth(DEPTH);
+      this.choiceTexts.push(label);
+    }
+
+    // Confirm button — initially hidden
+    const confirmY = startY + choices.length * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+    this.confirmBg = this.scene.add.rectangle(
+      BOX_PADDING, confirmY, rowWidth, MOBILE_CONFIRM_HEIGHT, MOBILE_CONFIRM_BG,
+    );
+    this.confirmBg.setOrigin(0, 0);
+    this.confirmBg.setScrollFactor(0);
+    this.confirmBg.setDepth(DEPTH);
+    this.confirmBg.setInteractive();
+    this.confirmBg.on('pointerdown', () => {
+      if (this.mobileHighlightIndex >= 0) {
+        this.selectedChoiceIndex = this.mobileHighlightIndex;
+        this.selectChoice();
+      }
+    });
+    this.confirmBg.setVisible(false);
+
+    this.confirmLabel = this.scene.add.text(
+      this.canvasWidth / 2, confirmY + MOBILE_CONFIRM_HEIGHT / 2,
+      'Confirm',
+      {
+        fontSize: `${CHOICE_FONT_SIZE}px`,
+        color: '#ffffff',
+        fontStyle: 'bold',
+      },
+    );
+    this.confirmLabel.setOrigin(0.5, 0.5);
+    this.confirmLabel.setScrollFactor(0);
+    this.confirmLabel.setDepth(DEPTH);
+    this.confirmLabel.setVisible(false);
+  }
+
+  private highlightMobileChoice(index: number): void {
+    this.mobileHighlightIndex = index;
+
+    // Update choice row backgrounds and text colors
+    for (let i = 0; i < this.choiceBgs.length; i++) {
+      const isHighlighted = i === index;
+      this.choiceBgs[i].setFillStyle(isHighlighted ? MOBILE_CHOICE_HIGHLIGHT_BG : MOBILE_CHOICE_BG);
+      if (this.choiceTexts[i]) {
+        this.choiceTexts[i].setColor(isHighlighted ? '#ffdd44' : '#aaaaaa');
+      }
+    }
+
+    // Show confirm button
+    if (this.confirmBg) this.confirmBg.setVisible(true);
+    if (this.confirmLabel) this.confirmLabel.setVisible(true);
+  }
+
   private moveChoiceSelection(dir: number): void {
     if (this.choiceTexts.length === 0) return;
     this.selectedChoiceIndex = (this.selectedChoiceIndex + dir + this.choiceTexts.length) % this.choiceTexts.length;
-    this.updateChoiceHighlight();
+    this.updateDesktopChoiceHighlight();
   }
 
-  private updateChoiceHighlight(): void {
+  private updateDesktopChoiceHighlight(): void {
     if (!this.currentNode?.choices) return;
     for (let i = 0; i < this.choiceTexts.length; i++) {
       const prefix = i === this.selectedChoiceIndex ? '> ' : '  ';
@@ -270,7 +398,7 @@ export class DialogueSystem {
     this.boxGraphics.setScrollFactor(0);
     this.boxGraphics.setDepth(DEPTH);
     this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
-    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, BOX_HEIGHT);
+    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.currentBoxHeight);
 
     this.speakerText = this.scene.add.text(BOX_PADDING, this.boxY - 20, '', {
       fontSize: `${SPEAKER_FONT_SIZE}px`,
@@ -289,29 +417,54 @@ export class DialogueSystem {
     this.dialogueText.setDepth(DEPTH);
   }
 
-  private handleResize(): void {
-    if (!this.active) return;
+  private redrawBox(): void {
+    if (!this.boxGraphics) return;
+    this.boxGraphics.clear();
+    this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
+    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.currentBoxHeight);
 
-    // Reposition box graphics
-    if (this.boxGraphics) {
-      this.boxGraphics.clear();
-      this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
-      this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, BOX_HEIGHT);
-    }
-
-    // Reposition speaker text
+    // Reposition text elements to match new box position
     if (this.speakerText) {
       this.speakerText.setPosition(BOX_PADDING, this.boxY - 20);
     }
-
-    // Reposition dialogue text and update word wrap
     if (this.dialogueText) {
       this.dialogueText.setPosition(BOX_PADDING, this.boxY + BOX_PADDING);
       this.dialogueText.setWordWrapWidth(this.canvasWidth - BOX_PADDING * 2);
     }
+  }
 
-    // Reposition choices
-    if (this.choiceTexts.length > 0) {
+  private handleResize(): void {
+    if (!this.active) return;
+    this.redrawBox();
+
+    if (this.mobileChoicesActive && this.currentNode?.choices) {
+      // Reposition mobile choice rows
+      const rowWidth = this.canvasWidth - BOX_PADDING * 2;
+      const startY = this.boxY + CHOICE_TEXT_OFFSET_TOP;
+
+      for (let i = 0; i < this.choiceBgs.length; i++) {
+        const rowY = startY + i * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+        this.choiceBgs[i].setPosition(BOX_PADDING, rowY);
+        this.choiceBgs[i].setSize(rowWidth, MOBILE_CHOICE_HEIGHT);
+        if (this.choiceTexts[i]) {
+          this.choiceTexts[i].setPosition(
+            BOX_PADDING * 2, rowY + (MOBILE_CHOICE_HEIGHT - CHOICE_FONT_SIZE) / 2,
+          );
+        }
+      }
+
+      // Reposition confirm button
+      if (this.confirmBg) {
+        const confirmY = startY
+          + this.currentNode.choices.length * (MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+        this.confirmBg.setPosition(BOX_PADDING, confirmY);
+        this.confirmBg.setSize(rowWidth, MOBILE_CONFIRM_HEIGHT);
+        if (this.confirmLabel) {
+          this.confirmLabel.setPosition(this.canvasWidth / 2, confirmY + MOBILE_CONFIRM_HEIGHT / 2);
+        }
+      }
+    } else if (this.choiceTexts.length > 0) {
+      // Reposition desktop choices
       const startY = this.boxY + BOX_PADDING + 50;
       for (let i = 0; i < this.choiceTexts.length; i++) {
         this.choiceTexts[i].setPosition(BOX_PADDING + 20, startY + i * 22);
@@ -325,6 +478,23 @@ export class DialogueSystem {
     }
     this.choiceTexts = [];
     this.selectedChoiceIndex = 0;
+
+    // Clean up mobile choice elements
+    for (const bg of this.choiceBgs) {
+      bg.destroy();
+    }
+    this.choiceBgs = [];
+    this.mobileHighlightIndex = -1;
+    this.mobileChoicesActive = false;
+
+    if (this.confirmBg) {
+      this.confirmBg.destroy();
+      this.confirmBg = null;
+    }
+    if (this.confirmLabel) {
+      this.confirmLabel.destroy();
+      this.confirmLabel = null;
+    }
   }
 
   private close(): void {
@@ -338,6 +508,7 @@ export class DialogueSystem {
     this.dialogueText?.destroy();
     this.dialogueText = null;
     this.clearChoices();
+    this.currentBoxHeight = BOX_HEIGHT;
     this.active = false;
     this.script = null;
     this.currentNode = null;
