@@ -99,3 +99,8 @@ entries:
     story: phase
     description: "Created PR #2 from build/interaction to main. Queued review-pr."
     result: pass
+  - task: 19
+    type: review
+    story: phase
+    description: "review-pr PR #2: 1 critical (dialogue choice double-fire), 1 concern (joystick churn during dialogue). Posted as COMMENT. Queued handle-pr-review."
+    result: pass
