@@ -34,3 +34,8 @@ entries:
     description: "Refactored all systems: collision.ts accepts map+npcs params, movement.ts passes AreaCollisionData through, triggerZone.ts takes TriggerDefinition[] via constructor, npcInteraction.ts takes NpcDefinition[] via constructor, GameScene.ts loads from area registry and passes data to all systems. StoryScene.ts and dialogue.ts import types from areas/types.ts. Build drops from 24 to 21 modules (3 old data files now unused). ✓ US-15 complete"
     result: pass
     tokens: ~20000
+  - task: 7
+    type: investigate
+    story: US-16
+    description: "US-15 complete. US-16 needs: exit overlap detection in update loop (check area.exits), transitionInProgress re-entrancy guard, camera fade-out → scene restart with new areaId + entryPoint → fade-in, input disabled during fade, mutual exclusion (dialogue/NPC/triggers suppressed), exit tile rendering with distinct color, error path for non-existent area. Implementation in GameScene only — ExitDefinition dispatch is separate from TriggerZoneSystem. Queued implement."
+    result: pass
