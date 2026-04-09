@@ -35,16 +35,16 @@ Introduce a multi-area architecture that decouples GameScene from hardcoded worl
 - [x] Transition fade tweens/timers are cleaned up on scene shutdown to prevent orphaned callbacks [US-16] (async cleanup)
 - [x] Exit zone tiles use a visually distinct color from both floor and wall tiles, positioned at map edges — reads as a passage or doorway, not decoration or obstacle [US-16] (visual reads-as)
 - [x] If exit zone references a non-existent area ID, a console error is logged and the transition does not fire — no crash, no blank screen [US-16] (error path)
-- [ ] Fog Marsh AreaDefinition exists with a tile map of different dimensions than Ashen Isle's 50x38 (e.g., 30x24 or similar — deliberately different to validate dynamic sizing) [US-17]
-- [ ] Fog Marsh has at least 1 NPC with a unique dialogue script (branching or linear) [US-17]
-- [ ] Fog Marsh has at least 1 thought-type trigger zone [US-17]
-- [ ] Fog Marsh has at least 1 story-type trigger zone with a StorySceneDefinition of at least 2 beats [US-17]
-- [ ] Fog Marsh has at least 1 dialogue-type trigger zone (zone-triggered dialogue, distinct from NPC-triggered) [US-17]
-- [ ] Fog Marsh has distinct visual config — different floorColor and wallColor from Ashen Isle [US-17]
-- [ ] Bidirectional exit zones connect Ashen Isle <-> Fog Marsh (exit in each area leads to the other) [US-17]
-- [ ] At least one Fog Marsh trigger has a condition, and the condition evaluates correctly (fires only when condition is met, does not fire otherwise) [US-17]
-- [ ] Shared trigger behaviors verified on Fog Marsh triggers: condition evaluation with AND logic, one-shot flag tracking via `_trigger_fired_` prefix, repeatable exit-then-re-enter semantics, dialogue-active suppression [US-17] (class baseline per Learning #59)
-- [ ] Fog Marsh NPC data, dialogue scripts, triggers, and story scene definitions are co-located with the area definition — not in global files [US-17]
+- [x] Fog Marsh AreaDefinition exists with a tile map of different dimensions than Ashen Isle's 50x38 (e.g., 30x24 or similar — deliberately different to validate dynamic sizing) [US-17]
+- [x] Fog Marsh has at least 1 NPC with a unique dialogue script (branching or linear) [US-17]
+- [x] Fog Marsh has at least 1 thought-type trigger zone [US-17]
+- [x] Fog Marsh has at least 1 story-type trigger zone with a StorySceneDefinition of at least 2 beats [US-17]
+- [x] Fog Marsh has at least 1 dialogue-type trigger zone (zone-triggered dialogue, distinct from NPC-triggered) [US-17]
+- [x] Fog Marsh has distinct visual config — different floorColor and wallColor from Ashen Isle [US-17]
+- [x] Bidirectional exit zones connect Ashen Isle <-> Fog Marsh (exit in each area leads to the other) [US-17]
+- [x] At least one Fog Marsh trigger has a condition, and the condition evaluates correctly (fires only when condition is met, does not fire otherwise) [US-17]
+- [x] Shared trigger behaviors verified on Fog Marsh triggers: condition evaluation with AND logic, one-shot flag tracking via `_trigger_fired_` prefix, repeatable exit-then-re-enter semantics, dialogue-active suppression [US-17] (class baseline per Learning #59)
+- [x] Fog Marsh NPC data, dialogue scripts, triggers, and story scene definitions are co-located with the area definition — not in global files [US-17]
 - [ ] A keyboard shortcut toggles the debug overlay on/off (not visible by default) [US-18]
 - [ ] Trigger zones render as semi-transparent colored rectangles in world space, color-coded by type (distinct color per trigger type: thought, story, dialogue, exit) [US-18]
 - [ ] Each zone overlay shows the zone's ID and type as a text label [US-18]
