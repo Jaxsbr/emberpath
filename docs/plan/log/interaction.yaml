@@ -39,3 +39,9 @@ entries:
     story: US-07
     description: "US-07 needs dialogue engine (renderer + state machine). Queued full dialogue system implementation."
     result: pass
+  - task: 8
+    type: implement
+    story: US-07
+    description: "Built DialogueSystem — text box at depth 200, typewriter effect, speaker name, choices with arrow+Enter and tap selection, node graph traversal, zone-level mutual exclusion. Connected to NPC interaction. ✓ US-06 complete ✓ US-07 complete"
+    result: pass
+    tokens: ~20000
