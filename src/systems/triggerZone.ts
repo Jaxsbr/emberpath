@@ -73,6 +73,7 @@ export class TriggerZoneSystem {
     }
 
     // Dispatch by type
+    console.log('[trigger] firing:', trigger.id, 'type:', trigger.type);
     switch (trigger.type) {
       case 'dialogue':
         this.callbacks.onDialogue(trigger.actionRef);

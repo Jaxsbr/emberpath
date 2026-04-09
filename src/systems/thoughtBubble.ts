@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
 
 const THOUGHT_DEPTH = 150;
-const DEFAULT_DURATION = 3000;
-const PADDING_X = 8;
-const PADDING_Y = 4;
-const OFFSET_Y = -40; // above the player
+const DEFAULT_DURATION = 4000;
+const PADDING_X = 10;
+const PADDING_Y = 6;
+const OFFSET_Y = -50; // above the player
+const FONT_SIZE = 14;
+const FONT_COLOR = '#ffffff';
+const BG_COLOR = 0x222244;
+const BG_ALPHA = 0.85;
 
 export interface ThoughtRequest {
   text: string;
@@ -63,10 +67,12 @@ export class ThoughtBubbleSystem {
   private displayThought(request: ThoughtRequest): void {
     this.active = true;
     const duration = request.duration ?? DEFAULT_DURATION;
+    console.log('[thought] displaying:', request.text, 'duration:', duration);
 
     this.currentText = this.scene.add.text(0, 0, request.text, {
-      fontSize: '12px',
-      color: '#e0e0e0',
+      fontSize: `${FONT_SIZE}px`,
+      color: FONT_COLOR,
+      fontStyle: 'italic',
     });
     this.currentText.setOrigin(0.5, 1);
     this.currentText.setScrollFactor(0);
@@ -81,8 +87,8 @@ export class ThoughtBubbleSystem {
       0,
       textWidth + PADDING_X * 2,
       textHeight + PADDING_Y * 2,
-      0x222233,
-      0.8,
+      BG_COLOR,
+      BG_ALPHA,
     );
     this.currentBg.setOrigin(0.5, 1);
     this.currentBg.setScrollFactor(0);

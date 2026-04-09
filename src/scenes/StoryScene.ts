@@ -1,10 +1,16 @@
 import Phaser from 'phaser';
 import { StorySceneDefinition, StoryBeat } from '../data/areas/types';
 
+// --- Story scene tuning ---
 const FADE_DURATION = 500;
-const IMAGE_HEIGHT_RATIO = 0.58; // ~350/600 — upper portion for image
+const IMAGE_HEIGHT_RATIO = 0.58; // upper portion for image placeholder
 const TEXT_PADDING = 20;
-const CHARS_PER_SECOND = 40;
+const BEAT_FONT_SIZE = 18;        // body text (design pixels)
+const BEAT_LINE_SPACING = 8;
+const BEAT_FONT_FAMILY = 'serif';  // 'serif', 'sans-serif', or a loaded font name
+const LABEL_FONT_SIZE = 22;       // image label
+const HINT_FONT_SIZE = 12;
+const CHARS_PER_SECOND = 35;
 
 export class StoryScene extends Phaser.Scene {
   private definition!: StorySceneDefinition;
@@ -45,8 +51,9 @@ export class StoryScene extends Phaser.Scene {
     this.imageRect.setOrigin(0.5, 0.5);
 
     this.imageLabel = this.add.text(width / 2, imageH / 2, '', {
-      fontSize: '20px',
+      fontSize: `${LABEL_FONT_SIZE}px`,
       color: '#999999',
+      fontFamily: BEAT_FONT_FAMILY,
     });
     this.imageLabel.setOrigin(0.5, 0.5);
 
@@ -56,15 +63,16 @@ export class StoryScene extends Phaser.Scene {
     this.panelGraphics.fillRect(0, imageH, width, height - imageH);
 
     this.beatText = this.add.text(TEXT_PADDING, imageH + TEXT_PADDING, '', {
-      fontSize: '16px',
+      fontSize: `${BEAT_FONT_SIZE}px`,
       color: '#ffffff',
+      fontFamily: BEAT_FONT_FAMILY,
       wordWrap: { width: width - TEXT_PADDING * 2 },
-      lineSpacing: 6,
+      lineSpacing: BEAT_LINE_SPACING,
     });
 
     // Advance prompt
     this.advanceHint = this.add.text(width / 2, height - 20, 'Tap or press Space to continue', {
-      fontSize: '11px',
+      fontSize: `${HINT_FONT_SIZE}px`,
       color: '#666666',
     });
     this.advanceHint.setOrigin(0.5, 0.5);
