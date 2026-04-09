@@ -72,8 +72,8 @@ Interaction phase — build the core interaction systems: NPC entities on the wo
 - [x] Flag reset is available from TitleScene (clears all flags from localStorage) [US-10]
 
 **Structural**
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [ ] AGENTS.md reflects new modules (`entities/`, `dialogue/`, `triggers/`, `data/`), file ownership, and updated depth map entries introduced in this phase [phase]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [x] AGENTS.md reflects new modules (`entities/`, `dialogue/`, `triggers/`, `data/`), file ownership, and updated depth map entries introduced in this phase [phase]
 
 ### Golden principles (phase-relevant)
 - Systems-based entity architecture — new capabilities are systems/modules, not inlined in scene code

@@ -83,3 +83,14 @@ entries:
     story: phase
     description: "All 5 stories complete. Structural criteria: verify passes, AGENTS.md needs update for new modules. Queued AGENTS.md update."
     result: pass
+  - task: 16
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md with all new modules, depth map, behavior rules, scene flow."
+    result: pass
+    tokens: ~10000
+  - task: 17
+    type: gate
+    story: phase
+    description: "Phase Completion Gate — all 49 criteria verified. Files exist, depths correct, AGENTS.md consistent, verify passes."
+    result: pass
