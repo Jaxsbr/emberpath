@@ -1,83 +1,52 @@
 ## Phase goal
 
-Interaction phase — build the core interaction systems: NPC entities on the world map, a dialogue engine with branching choices and typewriter effect, full-screen story scenes, floating thought bubbles, and a world trigger system with conditional flags. All using functional placeholders (colored rectangles, plain text). Architecture prioritizes clean separation so future art passes can animate and beautify each component independently without touching game logic.
+Mobile UX phase — make the game properly responsive and touch-friendly. Three concerns: (1) responsive canvas scaling that adapts to any device/orientation without letterboxing, (2) dynamic UI positioning so dialogue, story scenes, and thought bubbles work at any canvas size, (3) a mobile browse-then-confirm pattern for dialogue choices to prevent mis-taps.
 
 ### Dependencies
-- foundation
+- interaction
 
 ### Stories in scope
-- US-06 — NPC entities on the world map
-- US-07 — Dialogue engine with branching choices
-- US-08 — Story scene mode
-- US-09 — Thought bubble system
-- US-10 — World trigger system with conditional flags
+- US-11 — Responsive canvas scaling
+- US-12 — Dynamic UI positioning
+- US-13 — Mobile dialogue browse-then-confirm
 
 ### Done-when (observable)
 
-**US-06 — NPC entities**
-- [x] `src/data/npcs.ts` exports an array of NPC definitions each with `id`, `name`, `col`, `row`, and `color` fields [US-06]
-- [x] NPC rectangles render on the tile map at depth 5 (entities layer per depth map) [US-06]
-- [x] Player cannot walk through NPC bounding boxes — collision system rejects movement into NPC bounds [US-06]
-- [x] Interaction prompt text ("Space to talk" / "Tap to talk") appears when player center is within 1.5 tiles of an NPC center [US-06]
-- [x] Space key (desktop) or tap (mobile) while in range and prompt visible invokes the NPC's interaction callback [US-06]
-- [x] Interaction prompt disappears when the player moves out of the 1.5-tile range [US-06]
-- [x] At least one test NPC is placed on the Ashen Isle map and responds to interaction by launching dialogue [US-06]
+**US-11 — Responsive canvas scaling**
+- [ ] Phaser config in `src/main.ts` does not use fixed `width: 800, height: 600` with `FIT` mode — canvas dimensions adapt to container/viewport size [US-11]
+- [ ] `index.html` CSS and `#game-container` setup follows LEARNINGS #62: explicit container with explicit CSS dimensions, no padding on body or container that would mislead Phaser's `offsetWidth` measurement [US-11]
+- [ ] Browser `resize` event (including device orientation change) triggers canvas re-layout — Scale Manager recalculates dimensions, no scene restart required [US-11]
+- [ ] Camera bounds update after resize to correctly constrain the viewport within the tile map world (1600x1216 world pixels) [US-11]
+- [ ] Resize event listener is cleaned up on game destroy to prevent memory leaks (async cleanup) [US-11]
+- [ ] Desktop browser: canvas scales within window without regression from current behavior [US-11]
 
-**US-07 — Dialogue engine**
-- [x] Dialogue text box renders at bottom of screen at depth 200 (UI layer) with `scrollFactor(0)` [US-07]
-- [x] Text appears character-by-character (typewriter effect) at a configurable characters-per-second rate [US-07]
-- [x] Tap/Space while typewriter is running completes the current line instantly [US-07]
-- [x] Tap/Space after line is complete advances to the next dialogue node [US-07]
-- [x] Speaker name is displayed above the dialogue text area [US-07]
-- [x] When a dialogue node has `choices`, 2-4 option buttons render and are selectable by tap/click or arrow keys + Enter [US-07]
-- [x] Selecting a choice navigates to the referenced `nextId` node in the dialogue graph [US-07]
-- [x] Dialogue scripts are defined in `src/data/dialogues.ts` as typed node graphs — not hardcoded in scene or system code [US-07]
-- [x] Reaching an end node (no `nextId`, no `choices`) closes the dialogue and returns input control to GameScene [US-07]
-- [x] Player movement is disabled while dialogue is active [US-07]
-- [x] NPC interaction zones and world trigger evaluation are suppressed while dialogue is active — no new interactions can fire until dialogue closes (LEARNINGS #56 — zone-level mutual exclusion) [US-07]
-- [x] After dialogue ends and the player walks away then returns to NPC range, the interaction prompt reappears and the NPC is re-interactable (LEARNINGS #49 — user journey completeness) [US-07]
-- [x] A test branching dialogue with at least 2 choice points and 3 leaf paths is playable via the test NPC [US-07]
+**US-12 — Dynamic UI positioning**
+- [ ] `src/systems/dialogue.ts` contains no hardcoded `800` or `600` pixel values — all position and size calculations (box position, box width, word wrap, choice positioning) derive from `this.scene.scale.width` / `this.scene.scale.height` [US-12]
+- [ ] `src/scenes/StoryScene.ts` contains no hardcoded `400` (half-width), `800` (full width), or `600` (full height) — center X, panel widths, and panel heights derive from scene scale dimensions [US-12]
+- [ ] Dialogue box anchors to bottom of current canvas height (Y = `scale.height - BOX_HEIGHT`) and spans full `scale.width` [US-12]
+- [ ] Word wrap width for dialogue text and story scene text adjusts to current `scale.width` minus padding [US-12]
+- [ ] If dialogue is active during a resize event, the dialogue box, text, speaker name, and any visible choices reposition to the new canvas dimensions without requiring close/reopen [US-12]
+- [ ] If StoryScene is active during a resize event, image panel, text panel, and advance prompt reposition to new canvas dimensions without requiring scene restart [US-12]
+- [ ] Resize handler repositions existing UI elements — does not destroy and re-create them. No duplicate game objects on rapid successive resize events [US-12]
 
-**US-08 — Story scene mode**
-- [x] `StoryScene` is a separate Phaser scene registered in the game config (`main.ts` scene array) [US-08]
-- [x] Story scene displays a placeholder rectangle for the image area (upper portion) and a text panel (lower portion) [US-08]
-- [x] Each story beat specifies a `text` string and an optional `imageKey` — the image area changes color/label per beat as a placeholder [US-08]
-- [x] Tap/Space advances to the next beat [US-08]
-- [x] Scene fades in on launch (`cameras.main.fadeIn`) and fades out on completion (`cameras.main.fadeOut`) [US-08]
-- [x] Story scene definitions are data-driven in `src/data/story-scenes.ts` (array of beats per scene ID) [US-08]
-- [x] At least one test story scene with 3+ beats is triggerable and plays through to completion [US-08]
-- [x] On completion, `StoryScene` stops itself and resumes `GameScene` with player position preserved [US-08]
-- [x] While `StoryScene` is active, `GameScene` update loop is paused — no player movement, no trigger evaluation, no NPC interaction (LEARNINGS #56 — zone-level mutual exclusion) [US-08]
-
-**US-09 — Thought bubble system**
-- [x] Thought text renders as a floating text element near the player at depth 150 with `scrollFactor(0)` [US-09]
-- [x] Thought bubble has a simple background rectangle behind the text for readability [US-09]
-- [x] Thought auto-dismisses after a configurable duration (default 3000ms) [US-09]
-- [x] Player movement and input are not blocked while a thought is displayed [US-09]
-- [x] When multiple thoughts are queued, they display sequentially — the next thought appears after the current one dismisses [US-09]
-- [x] Thought content and trigger associations are defined in data files, not hardcoded [US-09]
-- [x] If dialogue (US-07) is active, incoming thoughts queue until dialogue closes [US-09]
-- [x] At least one test thought triggers when the player enters a defined map area [US-09]
-
-**US-10 — World trigger system**
-- [x] Trigger zones are defined in `src/data/triggers.ts` with `id`, position (`col`, `row`), `size` (width/height in tiles), `type` (dialogue | story | thought), `actionRef` (ID referencing the target content), `condition` (optional), and `repeatable` (boolean) [US-10]
-- [x] Trigger fires when player bounding box overlaps the zone bounds [US-10]
-- [x] Triggers invoke the correct system based on type: dialogue engine (US-07), story scene (US-08), or thought bubble (US-09) [US-10]
-- [x] Conditions support flag comparisons: `flag == value`, `flag >= value`, `flag == true`, combined with AND logic [US-10]
-- [x] `src/triggers/flags.ts` exports `getFlag`, `setFlag`, `incrementFlag` functions operating on an in-memory store [US-10]
-- [x] Flags persist to localStorage under a namespaced key and survive page refresh [US-10]
-- [x] One-shot triggers (default) track their fired state via a flag and do not re-fire on subsequent zone entries; repeatable triggers fire on every zone entry after the player exits and re-enters (not continuously while standing inside) [US-10]
-- [x] Dialogue choice actions and NPC interaction events can set flags (e.g., a dialogue choice sets `spoke_to_old_man = true`) [US-10]
-- [x] At least one conditional trigger is configured as a test: zone only fires after a specific flag is set via prior interaction [US-10]
-- [x] Flag reset is available from TitleScene (clears all flags from localStorage) [US-10]
+**US-13 — Mobile dialogue browse-then-confirm**
+- [ ] On touch-capable devices, dialogue choices render as full-width tappable areas with minimum 44px touch target height per choice [US-13]
+- [ ] Tapping a mobile choice highlights it (visually distinct from unselected choices — background fill or border change) without advancing the dialogue [US-13]
+- [ ] A "Confirm" button appears when a choice is highlighted, anchored below the choices inside the dialogue box, labeled with action text ("Confirm" or equivalent — not icon-only) [US-13]
+- [ ] Tapping Confirm commits the selected choice and advances to the next dialogue node [US-13]
+- [ ] Tapping a different choice switches the highlight to the new choice without committing [US-13]
+- [ ] Desktop keyboard flow unchanged: arrow keys browse choices, Enter confirms selection — no Confirm button displayed on non-touch devices [US-13]
+- [ ] The `choiceJustSelected` guard flag (LEARNINGS #69) continues to prevent input bleed-through after mobile choice confirmation [US-13]
+- [ ] Confirm button uses `scrollFactor(0)` and depth 200 per the depth map, and is destroyed when dialogue closes [US-13]
+- [ ] Expanded dialogue box (text + 4 choices at 44px + Confirm button) does not overflow the canvas bottom edge on a 412x914 portrait viewport — layout capacity verified at maximum choice count [US-13]
 
 **Structural**
-- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [x] AGENTS.md reflects new modules (`entities/`, `dialogue/`, `triggers/`, `data/`), file ownership, and updated depth map entries introduced in this phase [phase]
+- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [ ] AGENTS.md reflects responsive scaling behavior, dynamic UI positioning, and mobile browse-then-confirm pattern in Controls and Behavior rules sections [phase]
 
 ### Golden principles (phase-relevant)
-- Systems-based entity architecture — new capabilities are systems/modules, not inlined in scene code
-- Depth map compliance — new visual layers must use defined depths (entities=5, UI=100+); new entries: thoughts=150, dialogue=200
-- Scene flow — TitleScene -> GameScene; StoryScene is a parallel scene launched/stopped by GameScene
-- Input priority — keyboard takes priority over joystick; dialogue/story scenes capture all input while active
-- Zone-level mutual exclusion — overlapping interactive layers disable underlying zones, not just guard handlers (LEARNINGS #56)
+- Zone-level mutual exclusion (LEARNINGS #56) — resize handling must respect active dialogue/story scene state; resize during dialogue re-layouts UI without disrupting dialogue flow
+- Input priority — keyboard takes priority over joystick; desktop keyboard dialogue flow (arrows + Enter) must not regress
+- Depth map compliance — Confirm button at depth 200 (dialogue layer); no ad-hoc depth values
+- Systems-based architecture — responsive layout logic lives in the systems that own the UI, not inlined in scenes
+- Camera follows player with bounds = tile map pixel dimensions — bounds must update on resize
