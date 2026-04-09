@@ -1,6 +1,7 @@
 import { TILE_SIZE } from '../maps/constants';
 import { TriggerDefinition } from '../data/areas/types';
 import { getFlag, setFlag } from '../triggers/flags';
+import { evaluateCondition } from './conditions';
 
 export interface TriggerCallbacks {
   onDialogue: (actionRef: string) => void;
@@ -62,7 +63,7 @@ export class TriggerZoneSystem {
     }
 
     // Check condition
-    if (trigger.condition && !this.evaluateCondition(trigger.condition)) {
+    if (trigger.condition && !evaluateCondition(trigger.condition)) {
       return;
     }
 
@@ -85,43 +86,4 @@ export class TriggerZoneSystem {
     }
   }
 
-  private evaluateCondition(condition: string): boolean {
-    // Parse conditions: "flag == value AND flag2 >= value2"
-    const clauses = condition.split(/\s+AND\s+/);
-    for (const clause of clauses) {
-      if (!this.evaluateClause(clause.trim())) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private evaluateClause(clause: string): boolean {
-    // Match: flagName operator value
-    const match = clause.match(/^(\S+)\s*(==|>=|>|<=|<|!=)\s*(.+)$/);
-    if (!match) return false;
-
-    const [, flagName, operator, rawValue] = match;
-    const flagValue = getFlag(flagName);
-
-    // Parse the expected value
-    let expected: string | number | boolean;
-    if (rawValue === 'true') expected = true;
-    else if (rawValue === 'false') expected = false;
-    else if (!isNaN(Number(rawValue))) expected = Number(rawValue);
-    else expected = rawValue;
-
-    // If flag doesn't exist, treat as false/0/""
-    const actual = flagValue ?? (typeof expected === 'boolean' ? false : typeof expected === 'number' ? 0 : '');
-
-    switch (operator) {
-      case '==': return actual === expected;
-      case '!=': return actual !== expected;
-      case '>=': return Number(actual) >= Number(expected);
-      case '>': return Number(actual) > Number(expected);
-      case '<=': return Number(actual) <= Number(expected);
-      case '<': return Number(actual) < Number(expected);
-      default: return false;
-    }
-  }
 }

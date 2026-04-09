@@ -160,7 +160,7 @@ export const fogMarsh: AreaDefinition = {
       width: 1,
       height: 2,
       destinationAreaId: 'ashen-isle',
-      entryPoint: { col: 46, row: 17 },
+      entryPoint: { col: 48, row: 17 },
     },
   ],
   visual: { floorColor: 0x3a4a3a, wallColor: 0x1a2a1a },

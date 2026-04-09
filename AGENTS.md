@@ -36,7 +36,8 @@ src/
     npcInteraction.ts  # NpcInteractionSystem — proximity detection, interaction prompt, Space/tap trigger
     dialogue.ts        # DialogueSystem — text box, typewriter effect, choices, node graph traversal
     thoughtBubble.ts   # ThoughtBubbleSystem — floating text near player, auto-dismiss, sequential queue
-    triggerZone.ts     # TriggerZoneSystem — zone overlap detection, condition parsing, type dispatch
+    triggerZone.ts     # TriggerZoneSystem — zone overlap detection, type dispatch
+    conditions.ts      # evaluateCondition — shared flag-based condition parsing (AND logic, comparison operators)
     debugOverlay.ts    # DebugOverlaySystem — F3 toggleable overlay showing trigger zones, exit zones, NPC radii
   data/
     areas/
@@ -63,14 +64,15 @@ src/
 | `systems/npcInteraction.ts` | NPC proximity detection, interaction prompt, Space/tap trigger — accepts NPC list via constructor |
 | `systems/dialogue.ts` | Dialogue UI (text box, typewriter, choices), node graph state machine |
 | `systems/thoughtBubble.ts` | Thought bubble display, auto-dismiss, sequential queue |
-| `systems/triggerZone.ts` | Trigger zone evaluation, condition parsing, type dispatch — accepts triggers via constructor |
+| `systems/triggerZone.ts` | Trigger zone evaluation, type dispatch — accepts triggers via constructor |
+| `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
 | `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radii in world space |
 | `data/areas/types.ts` | All shared types — AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
 | `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions |
 | `data/areas/ashen-isle.ts` | Ashen Isle area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
-| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, TileType enum |
+| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
 
 ## Depth map
 

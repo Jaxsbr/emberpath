@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { AreaDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -9,11 +9,11 @@ import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
-import { getFlag, setFlag } from '../triggers/flags';
+import { evaluateCondition } from '../systems/conditions';
+import { setFlag } from '../triggers/flags';
 
 const PLAYER_COLOR = 0xd4a24e;
 const PLAYER_SIZE = 24;
-const NPC_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
 const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
@@ -246,38 +246,13 @@ export class GameScene extends Phaser.Scene {
         py + ph > zoneY;
 
       if (overlaps) {
-        if (exit.condition && !this.evaluateExitCondition(exit.condition)) {
+        if (exit.condition && !evaluateCondition(exit.condition)) {
           continue;
         }
         this.transitionToArea(exit.destinationAreaId, exit.entryPoint);
         return;
       }
     }
-  }
-
-  private evaluateExitCondition(condition: string): boolean {
-    const clauses = condition.split(/\s+AND\s+/);
-    return clauses.every((clause) => {
-      const match = clause.trim().match(/^(\S+)\s*(==|>=|>|<=|<|!=)\s*(.+)$/);
-      if (!match) return false;
-      const [, flagName, operator, rawValue] = match;
-      const flagValue = getFlag(flagName);
-      let expected: string | number | boolean;
-      if (rawValue === 'true') expected = true;
-      else if (rawValue === 'false') expected = false;
-      else if (!isNaN(Number(rawValue))) expected = Number(rawValue);
-      else expected = rawValue;
-      const actual = flagValue ?? (typeof expected === 'boolean' ? false : typeof expected === 'number' ? 0 : '');
-      switch (operator) {
-        case '==': return actual === expected;
-        case '!=': return actual !== expected;
-        case '>=': return Number(actual) >= Number(expected);
-        case '>': return Number(actual) > Number(expected);
-        case '<=': return Number(actual) <= Number(expected);
-        case '<': return Number(actual) < Number(expected);
-        default: return false;
-      }
-    });
   }
 
   private transitionToArea(areaId: string, entryPoint: { col: number; row: number }): void {

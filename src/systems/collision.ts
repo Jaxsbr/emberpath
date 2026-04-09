@@ -1,7 +1,5 @@
-import { TILE_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { NpcDefinition } from '../data/areas/types';
-
-const NPC_SIZE = 24;
 
 function getNpcBounds(npc: NpcDefinition): { x: number; y: number; width: number; height: number } {
   const offset = (TILE_SIZE - NPC_SIZE) / 2;

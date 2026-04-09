@@ -1,8 +1,6 @@
 import Phaser from 'phaser';
-import { TILE_SIZE } from '../maps/constants';
+import { TILE_SIZE, NPC_SIZE } from '../maps/constants';
 import { NpcDefinition } from '../data/areas/types';
-
-const NPC_SIZE = 24;
 const INTERACTION_RANGE = 1.5 * TILE_SIZE;
 const TAP_MAX_DURATION = 300;
 const TAP_MAX_DISTANCE = 15;
