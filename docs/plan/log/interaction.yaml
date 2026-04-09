@@ -61,3 +61,9 @@ entries:
     story: US-09
     description: "US-06, US-07, US-08 complete. Moving to US-09 — Thought bubble system. Queued full implementation."
     result: pass
+  - task: 12
+    type: implement
+    story: US-09
+    description: "Built ThoughtBubbleSystem — floating text at depth 150, auto-dismiss, sequential queue, dialogue-aware. 7/8 US-09 criteria met (last needs trigger system)."
+    result: pass
+    tokens: ~12000

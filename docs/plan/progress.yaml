@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-09] Build thought bubble system — floating text near player at depth 150 with scrollFactor(0), background rectangle, auto-dismiss after configurable duration, sequential queue, dialogue-aware queueing, data-driven content"
+  task_number: 12
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
