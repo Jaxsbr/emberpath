@@ -17,3 +17,9 @@ entries:
     story: US-12
     description: "US-11 complete. US-12 needs hardcoded pixel values replaced in dialogue.ts (BOX_Y=480, width=800) and StoryScene.ts (400/800/600). Queued dialogue.ts refactor first."
     result: pass
+  - task: 4
+    type: implement
+    story: US-12
+    description: "Refactored dialogue.ts — replaced all hardcoded 800/600/480 with scale.width/scale.height getters. Added resize handler that repositions active box, speaker, text, and choices without recreating."
+    result: pass
+    tokens: ~12000

@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: "[US-12] Implement dynamic UI positioning in dialogue.ts — replace hardcoded 800/600/480 with scale.width/scale.height calculations, add resize handler to reposition active UI"
+  task_number: 5
+  next_task: "[US-12] Implement dynamic UI positioning in StoryScene.ts — replace hardcoded 400/800/600 with scale dimensions, add resize handler to reposition active panels"
   last_result: pass
   consecutive_fails: 0
 
