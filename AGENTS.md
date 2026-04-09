@@ -82,9 +82,9 @@ Explicit rendering order for visual layers (Learning #57):
 |---|---|---|---|
 | Tiles | 0 | main | Floor, wall, and exit zone tile graphics |
 | Entities | 5 | main | Player character and NPCs |
+| Thoughts | 8 | main | Thought bubble text and background (world-space, above player) |
 | Debug overlay | 50 | main | Trigger zone rectangles, exit labels, NPC radii (F3 toggle) |
 | UI | 100 | ui | Virtual joystick, HUD elements |
-| Thoughts | 150 | ui | Thought bubble text and background |
 | Interaction prompt | 150 | main | NPC interaction prompt text (world-space) |
 | Dialogue | 200 | ui | Dialogue box, speaker name, choice buttons |
 
