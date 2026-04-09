@@ -1,28 +1,22 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, MAP_COLS, MAP_ROWS, TileType } from '../maps/constants';
-import { worldMap } from '../maps/worldMap';
+import { TILE_SIZE, TileType } from '../maps/constants';
+import { AreaDefinition } from '../data/areas/types';
+import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
-import { npcs, NPC_SIZE } from '../data/npcs';
-import { dialogues } from '../data/dialogues';
-import { storyScenes, StorySceneDefinition } from '../data/story-scenes';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { setFlag } from '../triggers/flags';
 
-const FLOOR_COLOR = 0x4a6741; // muted green — walkable space
-const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
-const PLAYER_COLOR = 0xd4a24e; // warm gold — the character you control
-const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
-
-// Target tile count along the viewport's shorter axis. Camera zoom scales so
-// roughly this many tiles are visible, keeping characters and text readable
-// regardless of device resolution or orientation.
+const PLAYER_COLOR = 0xd4a24e;
+const PLAYER_SIZE = 24;
+const NPC_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
 
 export class GameScene extends Phaser.Scene {
+  private area!: AreaDefinition;
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
   private dialogueSystem!: DialogueSystem;
@@ -37,7 +31,15 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' });
   }
 
-  create(): void {
+  create(data?: { areaId?: string }): void {
+    const areaId = data?.areaId ?? getDefaultAreaId();
+    const area = getArea(areaId);
+    if (!area) {
+      console.error(`Area not found: ${areaId}`);
+      return;
+    }
+    this.area = area;
+
     this.renderTileMap();
     this.renderNpcs();
     this.createPlayer();
@@ -46,9 +48,9 @@ export class GameScene extends Phaser.Scene {
     this.dialogueSystem = new DialogueSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
-    this.triggerZone = new TriggerZoneSystem({
+    this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
-        const script = dialogues[actionRef];
+        const script = this.area.dialogues[actionRef];
         if (script) this.dialogueSystem.start(script);
       },
       onStory: (actionRef) => {
@@ -59,9 +61,9 @@ export class GameScene extends Phaser.Scene {
       },
     });
     this.triggerZone.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
-    this.npcInteraction = new NpcInteractionSystem(this);
+    this.npcInteraction = new NpcInteractionSystem(this, this.area.npcs);
     this.npcInteraction.setInteractionCallback((npc) => {
-      const script = dialogues[`${npc.id}-intro`];
+      const script = this.area.dialogues[`${npc.id}-intro`];
       if (script) {
         this.dialogueSystem.start(script);
       }
@@ -76,10 +78,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    // Zone-level mutual exclusion: dialogue suppresses movement, NPC interaction, triggers
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
-      // Thought bubble still tracks player position during dialogue (queued thoughts display after)
       const pcx = this.player.x + PLAYER_SIZE / 2;
       const pcy = this.player.y + PLAYER_SIZE / 2;
       this.thoughtBubble.update(pcx, pcy);
@@ -98,6 +98,7 @@ export class GameScene extends Phaser.Scene {
       },
       velocity,
       delta,
+      { map: this.area.map, npcs: this.area.npcs },
     );
     this.player.setPosition(newPos.x + offset, newPos.y + offset);
 
@@ -115,14 +116,14 @@ export class GameScene extends Phaser.Scene {
 
   private renderTileMap(): void {
     this.tileGraphics = this.add.graphics();
-    this.tileGraphics.setDepth(0); // tiles at depth 0
+    this.tileGraphics.setDepth(0);
 
-    for (let row = 0; row < MAP_ROWS; row++) {
-      for (let col = 0; col < MAP_COLS; col++) {
-        const tile = worldMap[row][col];
+    for (let row = 0; row < this.area.mapRows; row++) {
+      for (let col = 0; col < this.area.mapCols; col++) {
+        const tile = this.area.map[row][col];
         const x = col * TILE_SIZE;
         const y = row * TILE_SIZE;
-        const color = tile === TileType.WALL ? WALL_COLOR : FLOOR_COLOR;
+        const color = tile === TileType.WALL ? this.area.visual.wallColor : this.area.visual.floorColor;
         this.tileGraphics.fillStyle(color);
         this.tileGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
       }
@@ -131,19 +132,19 @@ export class GameScene extends Phaser.Scene {
 
   private renderNpcs(): void {
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
-    for (const npc of npcs) {
+    for (const npc of this.area.npcs) {
       const x = npc.col * TILE_SIZE + offset;
       const y = npc.row * TILE_SIZE + offset;
       const rect = this.add.rectangle(x, y, NPC_SIZE, NPC_SIZE, npc.color);
       rect.setOrigin(0, 0);
-      rect.setDepth(5); // entities depth layer
+      rect.setDepth(5);
       this.npcRects.push(rect);
     }
   }
 
   private setupCamera(): void {
-    const mapWidth = MAP_COLS * TILE_SIZE;
-    const mapHeight = MAP_ROWS * TILE_SIZE;
+    const mapWidth = this.area.mapCols * TILE_SIZE;
+    const mapHeight = this.area.mapRows * TILE_SIZE;
     const cam = this.cameras.main;
     cam.setZoom(this.calculateZoom());
     cam.setBounds(0, 0, mapWidth, mapHeight);
@@ -182,8 +183,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleResize(): void {
-    const mapWidth = MAP_COLS * TILE_SIZE;
-    const mapHeight = MAP_ROWS * TILE_SIZE;
+    const mapWidth = this.area.mapCols * TILE_SIZE;
+    const mapHeight = this.area.mapRows * TILE_SIZE;
     const cam = this.cameras.main;
     // Zoom first — setBounds clamps scroll using displayWidth which depends on zoom
     cam.setZoom(this.calculateZoom());
@@ -212,19 +213,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   launchStoryScene(definitionId: string): void {
-    const definition = storyScenes[definitionId];
+    const definition = this.area.storyScenes[definitionId];
     if (!definition) return;
     this.scene.pause('GameScene');
     this.scene.launch('StoryScene', { definition });
   }
 
   private createPlayer(): void {
-    // Start in an open floor area (row 2, col 2 — inside the walled perimeter)
-    const startCol = 2;
-    const startRow = 2;
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
-    const x = startCol * TILE_SIZE + offset;
-    const y = startRow * TILE_SIZE + offset;
+    const x = this.area.playerSpawn.col * TILE_SIZE + offset;
+    const y = this.area.playerSpawn.row * TILE_SIZE + offset;
 
     this.player = this.add.rectangle(x, y, PLAYER_SIZE, PLAYER_SIZE, PLAYER_COLOR);
     this.player.setOrigin(0, 0);

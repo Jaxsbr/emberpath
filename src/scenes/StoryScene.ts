@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { StorySceneDefinition, StoryBeat } from '../data/story-scenes';
+import { StorySceneDefinition, StoryBeat } from '../data/areas/types';
 
 const FADE_DURATION = 500;
 const IMAGE_HEIGHT_RATIO = 0.58; // ~350/600 — upper portion for image

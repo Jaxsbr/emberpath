@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DialogueScript, DialogueNode, DialogueChoice } from '../data/dialogues';
+import { DialogueScript, DialogueNode, DialogueChoice } from '../data/areas/types';
 
 const BOX_HEIGHT = 120;
 const BOX_PADDING = 12;

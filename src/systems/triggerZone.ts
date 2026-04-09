@@ -1,5 +1,5 @@
 import { TILE_SIZE } from '../maps/constants';
-import { triggers, TriggerDefinition } from '../data/triggers';
+import { TriggerDefinition } from '../data/areas/types';
 import { getFlag, setFlag } from '../triggers/flags';
 
 export interface TriggerCallbacks {
@@ -9,11 +9,13 @@ export interface TriggerCallbacks {
 }
 
 export class TriggerZoneSystem {
+  private triggers: TriggerDefinition[];
   private callbacks: TriggerCallbacks;
-  private insideZones: Set<string> = new Set(); // tracks which zones the player is currently inside
+  private insideZones: Set<string> = new Set();
   private dialogueActiveCheck: (() => boolean) | null = null;
 
-  constructor(callbacks: TriggerCallbacks) {
+  constructor(triggers: TriggerDefinition[], callbacks: TriggerCallbacks) {
+    this.triggers = triggers;
     this.callbacks = callbacks;
   }
 
@@ -27,7 +29,7 @@ export class TriggerZoneSystem {
 
     const currentlyInside = new Set<string>();
 
-    for (const trigger of triggers) {
+    for (const trigger of this.triggers) {
       const zoneX = trigger.col * TILE_SIZE;
       const zoneY = trigger.row * TILE_SIZE;
       const zoneW = trigger.width * TILE_SIZE;
