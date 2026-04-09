@@ -104,3 +104,8 @@ entries:
     story: phase
     description: "review-pr PR #2: 1 critical (dialogue choice double-fire), 1 concern (joystick churn during dialogue). Posted as COMMENT. Queued handle-pr-review."
     result: pass
+  - task: 20
+    type: review
+    story: phase
+    description: "handle-pr-review PR #2: Fixed choice double-fire (choiceJustSelected guard flag). Skipped joystick churn (accepted as-is). Quality checks pass. Review complete."
+    result: pass
