@@ -29,3 +29,8 @@ entries:
     description: "Refactored StoryScene.ts — replaced hardcoded 400/800/600 with scale dimensions, proportional IMAGE_HEIGHT_RATIO, resize handler. ✓ US-12 complete"
     result: pass
     tokens: ~10000
+  - task: 6
+    type: investigate
+    story: US-13
+    description: "US-11, US-12 complete. US-13 needs mobile browse-then-confirm: full-width 44px tap areas, highlight without commit, Confirm button, preserve desktop flow. Queued implementation."
+    result: pass
