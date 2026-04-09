@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { DialogueScript, DialogueNode, DialogueChoice } from '../data/dialogues';
 
 const BOX_HEIGHT = 120;
-const BOX_Y = 480; // bottom of 600px canvas
 const BOX_PADDING = 12;
 const SPEAKER_FONT_SIZE = 14;
 const TEXT_FONT_SIZE = 16;
@@ -50,6 +49,17 @@ export class DialogueSystem {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.setupInput();
+    this.scene.scale.on('resize', this.handleResize, this);
+    this.scene.events.on('shutdown', this.cleanupResize, this);
+    this.scene.events.on('destroy', this.cleanupResize, this);
+  }
+
+  private get boxY(): number {
+    return this.scene.scale.height - BOX_HEIGHT;
+  }
+
+  private get canvasWidth(): number {
+    return this.scene.scale.width;
   }
 
   get isActive(): boolean {
@@ -201,7 +211,7 @@ export class DialogueSystem {
   private showChoices(choices: DialogueChoice[]): void {
     this.clearChoices();
     this.selectedChoiceIndex = 0;
-    const startY = BOX_Y + BOX_PADDING + 50;
+    const startY = this.boxY + BOX_PADDING + 50;
 
     for (let i = 0; i < choices.length; i++) {
       const choiceText = this.scene.add.text(
@@ -260,9 +270,9 @@ export class DialogueSystem {
     this.boxGraphics.setScrollFactor(0);
     this.boxGraphics.setDepth(DEPTH);
     this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
-    this.boxGraphics.fillRect(0, BOX_Y, 800, BOX_HEIGHT);
+    this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, BOX_HEIGHT);
 
-    this.speakerText = this.scene.add.text(BOX_PADDING, BOX_Y - 20, '', {
+    this.speakerText = this.scene.add.text(BOX_PADDING, this.boxY - 20, '', {
       fontSize: `${SPEAKER_FONT_SIZE}px`,
       color: '#ffdd44',
       fontStyle: 'bold',
@@ -270,13 +280,43 @@ export class DialogueSystem {
     this.speakerText.setScrollFactor(0);
     this.speakerText.setDepth(DEPTH);
 
-    this.dialogueText = this.scene.add.text(BOX_PADDING, BOX_Y + BOX_PADDING, '', {
+    this.dialogueText = this.scene.add.text(BOX_PADDING, this.boxY + BOX_PADDING, '', {
       fontSize: `${TEXT_FONT_SIZE}px`,
       color: '#ffffff',
-      wordWrap: { width: 800 - BOX_PADDING * 2 },
+      wordWrap: { width: this.canvasWidth - BOX_PADDING * 2 },
     });
     this.dialogueText.setScrollFactor(0);
     this.dialogueText.setDepth(DEPTH);
+  }
+
+  private handleResize(): void {
+    if (!this.active) return;
+
+    // Reposition box graphics
+    if (this.boxGraphics) {
+      this.boxGraphics.clear();
+      this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
+      this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, BOX_HEIGHT);
+    }
+
+    // Reposition speaker text
+    if (this.speakerText) {
+      this.speakerText.setPosition(BOX_PADDING, this.boxY - 20);
+    }
+
+    // Reposition dialogue text and update word wrap
+    if (this.dialogueText) {
+      this.dialogueText.setPosition(BOX_PADDING, this.boxY + BOX_PADDING);
+      this.dialogueText.setWordWrapWidth(this.canvasWidth - BOX_PADDING * 2);
+    }
+
+    // Reposition choices
+    if (this.choiceTexts.length > 0) {
+      const startY = this.boxY + BOX_PADDING + 50;
+      for (let i = 0; i < this.choiceTexts.length; i++) {
+        this.choiceTexts[i].setPosition(BOX_PADDING + 20, startY + i * 22);
+      }
+    }
   }
 
   private clearChoices(): void {
@@ -306,7 +346,14 @@ export class DialogueSystem {
     }
   }
 
+  private cleanupResize(): void {
+    this.scene.scale.off('resize', this.handleResize, this);
+    this.scene.events.off('shutdown', this.cleanupResize, this);
+    this.scene.events.off('destroy', this.cleanupResize, this);
+  }
+
   destroy(): void {
+    this.cleanupResize();
     this.close();
   }
 }
