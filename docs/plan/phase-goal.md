@@ -39,15 +39,15 @@ Interaction phase — build the core interaction systems: NPC entities on the wo
 - [x] A test branching dialogue with at least 2 choice points and 3 leaf paths is playable via the test NPC [US-07]
 
 **US-08 — Story scene mode**
-- [ ] `StoryScene` is a separate Phaser scene registered in the game config (`main.ts` scene array) [US-08]
-- [ ] Story scene displays a placeholder rectangle for the image area (upper portion) and a text panel (lower portion) [US-08]
-- [ ] Each story beat specifies a `text` string and an optional `imageKey` — the image area changes color/label per beat as a placeholder [US-08]
-- [ ] Tap/Space advances to the next beat [US-08]
-- [ ] Scene fades in on launch (`cameras.main.fadeIn`) and fades out on completion (`cameras.main.fadeOut`) [US-08]
-- [ ] Story scene definitions are data-driven in `src/data/story-scenes.ts` (array of beats per scene ID) [US-08]
-- [ ] At least one test story scene with 3+ beats is triggerable and plays through to completion [US-08]
-- [ ] On completion, `StoryScene` stops itself and resumes `GameScene` with player position preserved [US-08]
-- [ ] While `StoryScene` is active, `GameScene` update loop is paused — no player movement, no trigger evaluation, no NPC interaction (LEARNINGS #56 — zone-level mutual exclusion) [US-08]
+- [x] `StoryScene` is a separate Phaser scene registered in the game config (`main.ts` scene array) [US-08]
+- [x] Story scene displays a placeholder rectangle for the image area (upper portion) and a text panel (lower portion) [US-08]
+- [x] Each story beat specifies a `text` string and an optional `imageKey` — the image area changes color/label per beat as a placeholder [US-08]
+- [x] Tap/Space advances to the next beat [US-08]
+- [x] Scene fades in on launch (`cameras.main.fadeIn`) and fades out on completion (`cameras.main.fadeOut`) [US-08]
+- [x] Story scene definitions are data-driven in `src/data/story-scenes.ts` (array of beats per scene ID) [US-08]
+- [x] At least one test story scene with 3+ beats is triggerable and plays through to completion [US-08]
+- [x] On completion, `StoryScene` stops itself and resumes `GameScene` with player position preserved [US-08]
+- [x] While `StoryScene` is active, `GameScene` update loop is paused — no player movement, no trigger evaluation, no NPC interaction (LEARNINGS #56 — zone-level mutual exclusion) [US-08]
 
 **US-09 — Thought bubble system**
 - [ ] Thought text renders as a floating text element near the player at depth 150 with `scrollFactor(0)` [US-09]
