@@ -8,6 +8,7 @@ import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { TriggerZoneSystem } from '../systems/triggerZone';
+import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { getFlag, setFlag } from '../triggers/flags';
 
 const PLAYER_COLOR = 0xd4a24e;
@@ -24,6 +25,7 @@ export class GameScene extends Phaser.Scene {
   private dialogueSystem!: DialogueSystem;
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
+  private debugOverlay!: DebugOverlaySystem;
   private player!: Phaser.GameObjects.Rectangle;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
@@ -83,6 +85,9 @@ export class GameScene extends Phaser.Scene {
         }
       }
     });
+    this.debugOverlay = new DebugOverlaySystem(this);
+    this.debugOverlay.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    this.debugOverlay.loadArea(this.area);
   }
 
   update(_time: number, delta: number): void {
@@ -94,6 +99,7 @@ export class GameScene extends Phaser.Scene {
       const pcx = this.player.x + PLAYER_SIZE / 2;
       const pcy = this.player.y + PLAYER_SIZE / 2;
       this.thoughtBubble.update(pcx, pcy);
+      this.debugOverlay.update();
       return;
     }
 
@@ -122,6 +128,7 @@ export class GameScene extends Phaser.Scene {
     const playerBoundsY = this.player.y - offset;
     this.triggerZone.update(playerBoundsX, playerBoundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.checkExitZones(playerBoundsX, playerBoundsY, PLAYER_SIZE, PLAYER_SIZE);
+    this.debugOverlay.update();
   }
 
   private renderTileMap(): void {
