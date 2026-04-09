@@ -60,16 +60,16 @@ Interaction phase — build the core interaction systems: NPC entities on the wo
 - [x] At least one test thought triggers when the player enters a defined map area [US-09]
 
 **US-10 — World trigger system**
-- [ ] Trigger zones are defined in `src/data/triggers.ts` with `id`, position (`col`, `row`), `size` (width/height in tiles), `type` (dialogue | story | thought), `actionRef` (ID referencing the target content), `condition` (optional), and `repeatable` (boolean) [US-10]
-- [ ] Trigger fires when player bounding box overlaps the zone bounds [US-10]
-- [ ] Triggers invoke the correct system based on type: dialogue engine (US-07), story scene (US-08), or thought bubble (US-09) [US-10]
-- [ ] Conditions support flag comparisons: `flag == value`, `flag >= value`, `flag == true`, combined with AND logic [US-10]
-- [ ] `src/triggers/flags.ts` exports `getFlag`, `setFlag`, `incrementFlag` functions operating on an in-memory store [US-10]
-- [ ] Flags persist to localStorage under a namespaced key and survive page refresh [US-10]
-- [ ] One-shot triggers (default) track their fired state via a flag and do not re-fire on subsequent zone entries; repeatable triggers fire on every zone entry after the player exits and re-enters (not continuously while standing inside) [US-10]
-- [ ] Dialogue choice actions and NPC interaction events can set flags (e.g., a dialogue choice sets `spoke_to_old_man = true`) [US-10]
-- [ ] At least one conditional trigger is configured as a test: zone only fires after a specific flag is set via prior interaction [US-10]
-- [ ] Flag reset is available from TitleScene (clears all flags from localStorage) [US-10]
+- [x] Trigger zones are defined in `src/data/triggers.ts` with `id`, position (`col`, `row`), `size` (width/height in tiles), `type` (dialogue | story | thought), `actionRef` (ID referencing the target content), `condition` (optional), and `repeatable` (boolean) [US-10]
+- [x] Trigger fires when player bounding box overlaps the zone bounds [US-10]
+- [x] Triggers invoke the correct system based on type: dialogue engine (US-07), story scene (US-08), or thought bubble (US-09) [US-10]
+- [x] Conditions support flag comparisons: `flag == value`, `flag >= value`, `flag == true`, combined with AND logic [US-10]
+- [x] `src/triggers/flags.ts` exports `getFlag`, `setFlag`, `incrementFlag` functions operating on an in-memory store [US-10]
+- [x] Flags persist to localStorage under a namespaced key and survive page refresh [US-10]
+- [x] One-shot triggers (default) track their fired state via a flag and do not re-fire on subsequent zone entries; repeatable triggers fire on every zone entry after the player exits and re-enters (not continuously while standing inside) [US-10]
+- [x] Dialogue choice actions and NPC interaction events can set flags (e.g., a dialogue choice sets `spoke_to_old_man = true`) [US-10]
+- [x] At least one conditional trigger is configured as a test: zone only fires after a specific flag is set via prior interaction [US-10]
+- [x] Flag reset is available from TitleScene (clears all flags from localStorage) [US-10]
 
 **Structural**
 - [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
