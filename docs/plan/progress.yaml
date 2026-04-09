@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
-  next_task: null
+  task_number: 9
+  next_task: "[phase] Update AGENTS.md with responsive scaling, dynamic UI positioning, and mobile browse-then-confirm in Controls and Behavior rules"
   last_result: pass
   consecutive_fails: 0
 

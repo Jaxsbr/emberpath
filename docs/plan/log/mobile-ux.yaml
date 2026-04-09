@@ -40,3 +40,8 @@ entries:
     description: "Implemented mobile browse-then-confirm pattern: 44px choice rows, highlight-on-tap, Confirm button. Desktop keyboard flow preserved. Box expands dynamically. ✓ US-13 complete. All 3 stories complete."
     result: pass
     tokens: ~20000
+  - task: 8
+    type: investigate
+    story: phase
+    description: "All 3 stories complete (US-11, US-12, US-13). Structural criterion: AGENTS.md needs update for responsive scaling, dynamic UI, and mobile browse-then-confirm. Queued AGENTS.md update."
+    result: pass
