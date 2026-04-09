@@ -61,7 +61,11 @@ export class GameScene extends Phaser.Scene {
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
         const script = this.area.dialogues[actionRef];
-        if (script) this.dialogueSystem.start(script);
+        if (!script) {
+          console.error(`Dialogue script not found: ${actionRef}`);
+          return;
+        }
+        this.dialogueSystem.start(script);
       },
       onStory: (actionRef) => {
         this.launchStoryScene(actionRef);
@@ -74,9 +78,11 @@ export class GameScene extends Phaser.Scene {
     this.npcInteraction = new NpcInteractionSystem(this, this.area.npcs);
     this.npcInteraction.setInteractionCallback((npc) => {
       const script = this.area.dialogues[`${npc.id}-intro`];
-      if (script) {
-        this.dialogueSystem.start(script);
+      if (!script) {
+        console.error(`NPC dialogue script not found: ${npc.id}-intro`);
+        return;
       }
+      this.dialogueSystem.start(script);
     });
     this.dialogueSystem.setOnChoice((choice) => {
       if (choice.setFlags) {
@@ -288,7 +294,10 @@ export class GameScene extends Phaser.Scene {
 
   launchStoryScene(definitionId: string): void {
     const definition = this.area.storyScenes[definitionId];
-    if (!definition) return;
+    if (!definition) {
+      console.error(`Story scene definition not found: ${definitionId}`);
+      return;
+    }
     this.scene.pause('GameScene');
     this.scene.launch('StoryScene', { definition });
   }

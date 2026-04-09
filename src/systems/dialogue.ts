@@ -106,9 +106,11 @@ export class DialogueSystem {
     this.currentBoxHeight = BOX_HEIGHT;
     this.createBox();
     const startNode = script.nodes.find(n => n.id === script.startNodeId);
-    if (startNode) {
-      this.showNode(startNode);
+    if (!startNode) {
+      console.error(`Dialogue start node not found: ${script.startNodeId}`);
+      return;
     }
+    this.showNode(startNode);
   }
 
   private setupInput(): void {
@@ -177,10 +179,13 @@ export class DialogueSystem {
 
     if (this.currentNode?.nextId) {
       const nextNode = this.script!.nodes.find(n => n.id === this.currentNode!.nextId);
-      if (nextNode) {
-        this.showNode(nextNode);
+      if (!nextNode) {
+        console.error(`Dialogue next node not found: ${this.currentNode.nextId}`);
+        this.close();
         return;
       }
+      this.showNode(nextNode);
+      return;
     }
 
     this.close();
