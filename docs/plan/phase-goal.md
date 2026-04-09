@@ -26,15 +26,15 @@ Introduce a multi-area architecture that decouples GameScene from hardcoded worl
 - [x] Player spawns at the area's playerSpawn coordinates [US-15]
 - [x] NpcInteractionSystem receives the area's NPC list and dialogue records — not global imports [US-15]
 - [x] Ashen Isle gameplay unchanged after refactor — same map, same NPC, same triggers, same dialogues, same story scene (manual smoke test) [US-15]
-- [ ] TriggerType union includes `'exit'` or exit zones are dispatched via ExitDefinition[] separate from triggers (either approach acceptable, but the choice is documented in the area definition) [US-16]
-- [ ] Walking into an exit zone fires fade-out → area reload with new AreaDefinition → fade-in [US-16]
-- [ ] Player position after transition matches the destination exit's entryPoint (col, row) [US-16]
-- [ ] A transition-in-progress guard prevents double-firing if player overlaps a second exit zone during fade (re-entrancy guard per Learning #63) [US-16]
-- [ ] Dialogue, NPC interaction, and trigger evaluation are suppressed during transition (zone-level mutual exclusion per Learning #56) [US-16]
-- [ ] Input (movement) is disabled during fade to prevent player drift during area load [US-16]
-- [ ] Transition fade tweens/timers are cleaned up on scene shutdown to prevent orphaned callbacks [US-16] (async cleanup)
-- [ ] Exit zone tiles use a visually distinct color from both floor and wall tiles, positioned at map edges — reads as a passage or doorway, not decoration or obstacle [US-16] (visual reads-as)
-- [ ] If exit zone references a non-existent area ID, a console error is logged and the transition does not fire — no crash, no blank screen [US-16] (error path)
+- [x] TriggerType union includes `'exit'` or exit zones are dispatched via ExitDefinition[] separate from triggers (either approach acceptable, but the choice is documented in the area definition) [US-16]
+- [x] Walking into an exit zone fires fade-out → area reload with new AreaDefinition → fade-in [US-16]
+- [x] Player position after transition matches the destination exit's entryPoint (col, row) [US-16]
+- [x] A transition-in-progress guard prevents double-firing if player overlaps a second exit zone during fade (re-entrancy guard per Learning #63) [US-16]
+- [x] Dialogue, NPC interaction, and trigger evaluation are suppressed during transition (zone-level mutual exclusion per Learning #56) [US-16]
+- [x] Input (movement) is disabled during fade to prevent player drift during area load [US-16]
+- [x] Transition fade tweens/timers are cleaned up on scene shutdown to prevent orphaned callbacks [US-16] (async cleanup)
+- [x] Exit zone tiles use a visually distinct color from both floor and wall tiles, positioned at map edges — reads as a passage or doorway, not decoration or obstacle [US-16] (visual reads-as)
+- [x] If exit zone references a non-existent area ID, a console error is logged and the transition does not fire — no crash, no blank screen [US-16] (error path)
 - [ ] Fog Marsh AreaDefinition exists with a tile map of different dimensions than Ashen Isle's 50x38 (e.g., 30x24 or similar — deliberately different to validate dynamic sizing) [US-17]
 - [ ] Fog Marsh has at least 1 NPC with a unique dialogue script (branching or linear) [US-17]
 - [ ] Fog Marsh has at least 1 thought-type trigger zone [US-17]
