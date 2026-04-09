@@ -1,3 +1,8 @@
 phase: area-system
 started: 2026-04-09T22:15:26Z
-entries: []
+entries:
+  - task: 1
+    type: investigate
+    story: US-14
+    description: "Investigated codebase. All 49 criteria unmet. 4 global data files (npcs, triggers, dialogues, story-scenes) + worldMap + MAP_COLS/MAP_ROWS in constants. GameScene, collision, npcInteraction, triggerZone all import globals directly. Queued US-14 investigate for AreaDefinition/ExitDefinition planning."
+    result: pass

@@ -27,9 +27,9 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
-  last_result: null
+  task_number: 2
+  next_task: "[US-14] Investigate: Review existing type exports (NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition) and data files to plan AreaDefinition/ExitDefinition interfaces, area registry module, and Ashen Isle area migration strategy"
+  last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
