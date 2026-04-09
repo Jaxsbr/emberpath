@@ -28,3 +28,9 @@ entries:
     story: US-15
     description: "Confirmed refactor signatures. collision: collidesWithWall(x,y,w,h,map) + collidesWithNpc(x,y,w,h,npcs). movement: moveWithCollision needs map+npcs passed through. triggerZone: constructor takes TriggerDefinition[]. npcInteraction: constructor takes NpcDefinition[]. GameScene: load AreaDefinition from registry, pass to all systems. Must be done atomically. Queued implement."
     result: pass
+  - task: 6
+    type: implement
+    story: US-15
+    description: "Refactored all systems: collision.ts accepts map+npcs params, movement.ts passes AreaCollisionData through, triggerZone.ts takes TriggerDefinition[] via constructor, npcInteraction.ts takes NpcDefinition[] via constructor, GameScene.ts loads from area registry and passes data to all systems. StoryScene.ts and dialogue.ts import types from areas/types.ts. Build drops from 24 to 21 modules (3 old data files now unused). ✓ US-15 complete"
+    result: pass
+    tokens: ~20000
