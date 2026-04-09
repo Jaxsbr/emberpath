@@ -51,6 +51,22 @@ entries:
     description: "Created src/systems/debugOverlay.ts — F3 toggle, color-coded trigger zones (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID+type+condition, exit labels with destination+entry, NPC radii circles (1.5 tile, yellow). World-space at depth 50, UI cam ignored. Dialogue-active guard on toggle. Integrated into GameScene. ✓ US-18 complete"
     result: pass
     tokens: ~12000
+  - task: 13
+    type: investigate
+    story: phase
+    description: "All 5 stories complete. 3 structural criteria remain: remove old data files, remove MAP_COLS/MAP_ROWS, update AGENTS.md. Queued implement."
+    result: pass
+  - task: 14
+    type: implement
+    story: phase
+    description: "Removed 5 old global data files (npcs, triggers, dialogues, story-scenes, worldMap). Removed MAP_COLS/MAP_ROWS from constants.ts. Updated AGENTS.md: directory layout with areas/, file ownership for area files + debugOverlay, depth map with debug overlay at 50, behavior rules for exit zones + area transitions + debug overlay + cross-area flags."
+    result: pass
+    tokens: ~8000
+  - task: 15
+    type: gate
+    story: phase
+    description: "Phase Completion Gate — all 49 criteria verified. Verify passes, AGENTS.md consistent (all referenced files exist, deleted files gone, MAP_COLS/MAP_ROWS absent). Error paths verified (2 console.error guards for invalid area IDs). Phase complete."
+    result: pass
   - task: 5
     type: investigate
     story: US-15

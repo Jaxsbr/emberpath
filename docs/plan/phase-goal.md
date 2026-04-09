@@ -56,9 +56,9 @@ Introduce a multi-area architecture that decouples GameScene from hardcoded worl
 - [x] Debug overlay depth is between entities (5) and UI (100), value documented in AGENTS.md depth map [US-18]
 - [x] Debug overlay logic lives in `src/systems/` as a system module, not inline in GameScene (per Learning #64 — scene code must call systems-module functions) [US-18]
 - [x] Debug toggle key is ignored while dialogue is active — does not conflict with dialogue input handlers (per Learning #69 — scene-level input handler guard) [US-18]
-- [ ] AGENTS.md updated: directory layout includes area definitions path, file ownership for area definition files and area registry, behavior rules for area transitions and exit zones, depth map includes debug overlay layer, exit trigger type documented [phase]
-- [ ] Old single-area global data files (`data/npcs.ts`, `data/triggers.ts`, `data/dialogues.ts`, `data/story-scenes.ts`, `maps/worldMap.ts`) are removed — their data lives in area definitions; imports updated throughout the codebase [phase]
-- [ ] `maps/constants.ts` retains only truly global constants (TILE_SIZE, PLAYER_SPEED, TileType enum) — MAP_COLS and MAP_ROWS removed since dimensions are per-area [phase]
+- [x] AGENTS.md updated: directory layout includes area definitions path, file ownership for area definition files and area registry, behavior rules for area transitions and exit zones, depth map includes debug overlay layer, exit trigger type documented [phase]
+- [x] Old single-area global data files (`data/npcs.ts`, `data/triggers.ts`, `data/dialogues.ts`, `data/story-scenes.ts`, `maps/worldMap.ts`) are removed — their data lives in area definitions; imports updated throughout the codebase [phase]
+- [x] `maps/constants.ts` retains only truly global constants (TILE_SIZE, PLAYER_SPEED, TileType enum) — MAP_COLS and MAP_ROWS removed since dimensions are per-area [phase]
 
 ### Golden principles (phase-relevant)
 - **Responsive scaling** — areas with different dimensions must scale correctly via the existing zoom formula (TARGET_VISIBLE_TILES)
