@@ -15,13 +15,13 @@ Interaction phase — build the core interaction systems: NPC entities on the wo
 ### Done-when (observable)
 
 **US-06 — NPC entities**
-- [ ] `src/data/npcs.ts` exports an array of NPC definitions each with `id`, `name`, `col`, `row`, and `color` fields [US-06]
-- [ ] NPC rectangles render on the tile map at depth 5 (entities layer per depth map) [US-06]
-- [ ] Player cannot walk through NPC bounding boxes — collision system rejects movement into NPC bounds [US-06]
-- [ ] Interaction prompt text ("Space to talk" / "Tap to talk") appears when player center is within 1.5 tiles of an NPC center [US-06]
-- [ ] Space key (desktop) or tap (mobile) while in range and prompt visible invokes the NPC's interaction callback [US-06]
-- [ ] Interaction prompt disappears when the player moves out of the 1.5-tile range [US-06]
-- [ ] At least one test NPC is placed on the Ashen Isle map and responds to interaction by launching dialogue [US-06]
+- [x] `src/data/npcs.ts` exports an array of NPC definitions each with `id`, `name`, `col`, `row`, and `color` fields [US-06]
+- [x] NPC rectangles render on the tile map at depth 5 (entities layer per depth map) [US-06]
+- [x] Player cannot walk through NPC bounding boxes — collision system rejects movement into NPC bounds [US-06]
+- [x] Interaction prompt text ("Space to talk" / "Tap to talk") appears when player center is within 1.5 tiles of an NPC center [US-06]
+- [x] Space key (desktop) or tap (mobile) while in range and prompt visible invokes the NPC's interaction callback [US-06]
+- [x] Interaction prompt disappears when the player moves out of the 1.5-tile range [US-06]
+- [x] At least one test NPC is placed on the Ashen Isle map and responds to interaction by launching dialogue [US-06]
 
 **US-07 — Dialogue engine**
 - [ ] Dialogue text box renders at bottom of screen at depth 200 (UI layer) with `scrollFactor(0)` [US-07]
