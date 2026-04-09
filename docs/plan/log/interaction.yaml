@@ -56,3 +56,8 @@ entries:
     description: "Built StoryScene — separate Phaser scene with data-driven beats, placeholder image area, text panel, fade in/out, GameScene pause/resume. Test scene with 4 beats. ✓ US-08 complete"
     result: pass
     tokens: ~15000
+  - task: 11
+    type: investigate
+    story: US-09
+    description: "US-06, US-07, US-08 complete. Moving to US-09 — Thought bubble system. Queued full implementation."
+    result: pass
