@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-12] Implement dynamic UI positioning in StoryScene.ts — replace hardcoded 400/800/600 with scale dimensions, add resize handler to reposition active panels"
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

@@ -23,3 +23,9 @@ entries:
     description: "Refactored dialogue.ts — replaced all hardcoded 800/600/480 with scale.width/scale.height getters. Added resize handler that repositions active box, speaker, text, and choices without recreating."
     result: pass
     tokens: ~12000
+  - task: 5
+    type: implement
+    story: US-12
+    description: "Refactored StoryScene.ts — replaced hardcoded 400/800/600 with scale dimensions, proportional IMAGE_HEIGHT_RATIO, resize handler. ✓ US-12 complete"
+    result: pass
+    tokens: ~10000
