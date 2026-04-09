@@ -30,15 +30,15 @@ Mobile UX phase — make the game properly responsive and touch-friendly. Three 
 - [x] Resize handler repositions existing UI elements — does not destroy and re-create them. No duplicate game objects on rapid successive resize events [US-12]
 
 **US-13 — Mobile dialogue browse-then-confirm**
-- [ ] On touch-capable devices, dialogue choices render as full-width tappable areas with minimum 44px touch target height per choice [US-13]
-- [ ] Tapping a mobile choice highlights it (visually distinct from unselected choices — background fill or border change) without advancing the dialogue [US-13]
-- [ ] A "Confirm" button appears when a choice is highlighted, anchored below the choices inside the dialogue box, labeled with action text ("Confirm" or equivalent — not icon-only) [US-13]
-- [ ] Tapping Confirm commits the selected choice and advances to the next dialogue node [US-13]
-- [ ] Tapping a different choice switches the highlight to the new choice without committing [US-13]
-- [ ] Desktop keyboard flow unchanged: arrow keys browse choices, Enter confirms selection — no Confirm button displayed on non-touch devices [US-13]
-- [ ] The `choiceJustSelected` guard flag (LEARNINGS #69) continues to prevent input bleed-through after mobile choice confirmation [US-13]
-- [ ] Confirm button uses `scrollFactor(0)` and depth 200 per the depth map, and is destroyed when dialogue closes [US-13]
-- [ ] Expanded dialogue box (text + 4 choices at 44px + Confirm button) does not overflow the canvas bottom edge on a 412x914 portrait viewport — layout capacity verified at maximum choice count [US-13]
+- [x] On touch-capable devices, dialogue choices render as full-width tappable areas with minimum 44px touch target height per choice [US-13]
+- [x] Tapping a mobile choice highlights it (visually distinct from unselected choices — background fill or border change) without advancing the dialogue [US-13]
+- [x] A "Confirm" button appears when a choice is highlighted, anchored below the choices inside the dialogue box, labeled with action text ("Confirm" or equivalent — not icon-only) [US-13]
+- [x] Tapping Confirm commits the selected choice and advances to the next dialogue node [US-13]
+- [x] Tapping a different choice switches the highlight to the new choice without committing [US-13]
+- [x] Desktop keyboard flow unchanged: arrow keys browse choices, Enter confirms selection — no Confirm button displayed on non-touch devices [US-13]
+- [x] The `choiceJustSelected` guard flag (LEARNINGS #69) continues to prevent input bleed-through after mobile choice confirmation [US-13]
+- [x] Confirm button uses `scrollFactor(0)` and depth 200 per the depth map, and is destroyed when dialogue closes [US-13]
+- [x] Expanded dialogue box (text + 4 choices at 44px + Confirm button) does not overflow the canvas bottom edge on a 412x914 portrait viewport — layout capacity verified at maximum choice count [US-13]
 
 **Structural**
 - [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
