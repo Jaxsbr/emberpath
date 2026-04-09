@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-11] Implement responsive canvas scaling — change Phaser config from FIT 800x600 to RESIZE mode, add resize handler for camera bounds, clean up listener on destroy"
+  task_number: 3
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
