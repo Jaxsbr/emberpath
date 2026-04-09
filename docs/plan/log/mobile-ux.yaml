@@ -12,3 +12,8 @@ entries:
     description: "Changed Phaser config from FIT 800x600 to RESIZE mode. Added resize handler in GameScene for camera bounds update. Cleanup on shutdown/destroy. ✓ US-11 complete"
     result: pass
     tokens: ~8000
+  - task: 3
+    type: investigate
+    story: US-12
+    description: "US-11 complete. US-12 needs hardcoded pixel values replaced in dialogue.ts (BOX_Y=480, width=800) and StoryScene.ts (400/800/600). Queued dialogue.ts refactor first."
+    result: pass
