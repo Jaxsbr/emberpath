@@ -1,0 +1,58 @@
+phase: mobile-ux
+started: 2026-04-09T03:36:19Z
+entries:
+  - task: 1
+    type: investigate
+    story: US-11
+    description: "Investigated codebase. All 24 criteria unmet. main.ts uses FIT 800x600, dialogue.ts has 6 hardcoded pixel values, StoryScene.ts has 5. Queued US-11 responsive canvas scaling."
+    result: pass
+  - task: 2
+    type: implement
+    story: US-11
+    description: "Changed Phaser config from FIT 800x600 to RESIZE mode. Added resize handler in GameScene for camera bounds update. Cleanup on shutdown/destroy. ✓ US-11 complete"
+    result: pass
+    tokens: ~8000
+  - task: 3
+    type: investigate
+    story: US-12
+    description: "US-11 complete. US-12 needs hardcoded pixel values replaced in dialogue.ts (BOX_Y=480, width=800) and StoryScene.ts (400/800/600). Queued dialogue.ts refactor first."
+    result: pass
+  - task: 4
+    type: implement
+    story: US-12
+    description: "Refactored dialogue.ts — replaced all hardcoded 800/600/480 with scale.width/scale.height getters. Added resize handler that repositions active box, speaker, text, and choices without recreating."
+    result: pass
+    tokens: ~12000
+  - task: 5
+    type: implement
+    story: US-12
+    description: "Refactored StoryScene.ts — replaced hardcoded 400/800/600 with scale dimensions, proportional IMAGE_HEIGHT_RATIO, resize handler. ✓ US-12 complete"
+    result: pass
+    tokens: ~10000
+  - task: 6
+    type: investigate
+    story: US-13
+    description: "US-11, US-12 complete. US-13 needs mobile browse-then-confirm: full-width 44px tap areas, highlight without commit, Confirm button, preserve desktop flow. Queued implementation."
+    result: pass
+  - task: 7
+    type: implement
+    story: US-13
+    description: "Implemented mobile browse-then-confirm pattern: 44px choice rows, highlight-on-tap, Confirm button. Desktop keyboard flow preserved. Box expands dynamically. ✓ US-13 complete. All 3 stories complete."
+    result: pass
+    tokens: ~20000
+  - task: 8
+    type: investigate
+    story: phase
+    description: "All 3 stories complete (US-11, US-12, US-13). Structural criterion: AGENTS.md needs update for responsive scaling, dynamic UI, and mobile browse-then-confirm. Queued AGENTS.md update."
+    result: pass
+  - task: 9
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md Controls and Behavior rules with responsive scaling, dynamic UI positioning, and mobile browse-then-confirm."
+    result: pass
+    tokens: ~5000
+  - task: 10
+    type: gate
+    story: phase
+    description: "Phase Completion Gate — all 24 criteria verified. Verify passes, AGENTS.md consistent, no error paths (client-only). Phase complete."
+    result: pass

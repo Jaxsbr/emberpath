@@ -93,6 +93,9 @@ export class NpcInteractionSystem {
       });
       this.promptText.setOrigin(0.5, 0);
       this.promptText.setDepth(150);
+      // World object — prevent UI camera from rendering it at wrong scale
+      const uiCam = this.scene.cameras.getCamera('ui');
+      if (uiCam) uiCam.ignore(this.promptText);
     }
 
     this.promptText.setText(text);

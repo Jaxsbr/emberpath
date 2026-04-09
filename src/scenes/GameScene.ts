@@ -17,6 +17,11 @@ const WALL_COLOR = 0x2c2c3a;  // dark slate — solid barrier
 const PLAYER_COLOR = 0xd4a24e; // warm gold — the character you control
 const PLAYER_SIZE = 24; // slightly smaller than tile for visual clearance
 
+// Target tile count along the viewport's shorter axis. Camera zoom scales so
+// roughly this many tiles are visible, keeping characters and text readable
+// regardless of device resolution or orientation.
+const TARGET_VISIBLE_TILES = 10;
+
 export class GameScene extends Phaser.Scene {
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
@@ -24,6 +29,9 @@ export class GameScene extends Phaser.Scene {
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
   private player!: Phaser.GameObjects.Rectangle;
+  private tileGraphics!: Phaser.GameObjects.Graphics;
+  private npcRects: Phaser.GameObjects.Rectangle[] = [];
+  private boundWindowResize: (() => void) | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -106,8 +114,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderTileMap(): void {
-    const graphics = this.add.graphics();
-    graphics.setDepth(0); // tiles at depth 0
+    this.tileGraphics = this.add.graphics();
+    this.tileGraphics.setDepth(0); // tiles at depth 0
 
     for (let row = 0; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
@@ -115,8 +123,8 @@ export class GameScene extends Phaser.Scene {
         const x = col * TILE_SIZE;
         const y = row * TILE_SIZE;
         const color = tile === TileType.WALL ? WALL_COLOR : FLOOR_COLOR;
-        graphics.fillStyle(color);
-        graphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        this.tileGraphics.fillStyle(color);
+        this.tileGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
       }
     }
   }
@@ -129,14 +137,74 @@ export class GameScene extends Phaser.Scene {
       const rect = this.add.rectangle(x, y, NPC_SIZE, NPC_SIZE, npc.color);
       rect.setOrigin(0, 0);
       rect.setDepth(5); // entities depth layer
+      this.npcRects.push(rect);
     }
   }
 
   private setupCamera(): void {
     const mapWidth = MAP_COLS * TILE_SIZE;
     const mapHeight = MAP_ROWS * TILE_SIZE;
-    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
-    this.cameras.main.startFollow(this.player);
+    const cam = this.cameras.main;
+    cam.setZoom(this.calculateZoom());
+    cam.setBounds(0, 0, mapWidth, mapHeight);
+    cam.startFollow(this.player);
+
+    // UI camera — no zoom/scroll, renders dialogue/joystick/thought bubbles at screen coords
+    const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
+    uiCam.setScroll(0, 0);
+    // Prevent UI camera from double-rendering world objects
+    uiCam.ignore([this.tileGraphics, this.player, ...this.npcRects]);
+
+    this.scale.on('resize', this.handleResize, this);
+
+    // Direct window resize listener — Phaser's ScaleManager only sets a dirty flag
+    // on window.resize (it calls refresh() only on orientationchange). Chrome DevTools
+    // rotation fires resize, not orientationchange, so Phaser may miss the update if
+    // the DOM hasn't settled by the next step(). We force a refresh after one animation
+    // frame so the parent container has its final dimensions.
+    this.boundWindowResize = () => {
+      requestAnimationFrame(() => {
+        if (this.scene.isActive()) {
+          this.scale.refresh();
+        }
+      });
+    };
+    window.addEventListener('resize', this.boundWindowResize);
+
+    this.events.on('shutdown', this.cleanupResize, this);
+    this.events.on('destroy', this.cleanupResize, this);
+  }
+
+  private calculateZoom(): number {
+    const shortSide = Math.min(this.scale.width, this.scale.height);
+    const targetWorldSize = TARGET_VISIBLE_TILES * TILE_SIZE;
+    return Math.max(1, shortSide / targetWorldSize);
+  }
+
+  private handleResize(): void {
+    const mapWidth = MAP_COLS * TILE_SIZE;
+    const mapHeight = MAP_ROWS * TILE_SIZE;
+    const cam = this.cameras.main;
+    // Zoom first — setBounds clamps scroll using displayWidth which depends on zoom
+    cam.setZoom(this.calculateZoom());
+    cam.setBounds(0, 0, mapWidth, mapHeight);
+    // Snap camera to player after dimension/zoom change (prevents stale scroll on rotation)
+    cam.centerOn(this.player.x + PLAYER_SIZE / 2, this.player.y + PLAYER_SIZE / 2);
+
+    const uiCam = this.cameras.getCamera('ui');
+    if (uiCam) {
+      uiCam.setSize(this.scale.width, this.scale.height);
+    }
+  }
+
+  private cleanupResize(): void {
+    this.scale.off('resize', this.handleResize, this);
+    if (this.boundWindowResize) {
+      window.removeEventListener('resize', this.boundWindowResize);
+      this.boundWindowResize = null;
+    }
+    this.events.off('shutdown', this.cleanupResize, this);
+    this.events.off('destroy', this.cleanupResize, this);
   }
 
   showThought(text: string, duration?: number): void {
