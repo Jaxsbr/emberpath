@@ -67,3 +67,8 @@ entries:
     description: "Built ThoughtBubbleSystem — floating text at depth 150, auto-dismiss, sequential queue, dialogue-aware. 7/8 US-09 criteria met (last needs trigger system)."
     result: pass
     tokens: ~12000
+  - task: 13
+    type: investigate
+    story: US-10
+    description: "US-09 7/8 (last needs triggers). Moving to US-10 — flag store, trigger zones, condition parser, type dispatch. Also completes US-09."
+    result: pass

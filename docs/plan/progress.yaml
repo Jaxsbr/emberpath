@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 12
-  next_task: null
+  task_number: 13
+  next_task: "[US-10] Build flag store (src/triggers/flags.ts) with getFlag, setFlag, incrementFlag, localStorage persistence under namespaced key, and flag reset. Build trigger zone system (src/data/triggers.ts for data, src/systems/triggerZone.ts for evaluation) — zone overlap detection, type dispatch (dialogue/story/thought), condition parsing with AND logic, one-shot vs repeatable triggers with exit-then-re-enter. Wire into GameScene update loop and dialogue choice actions. Add test triggers including conditional trigger. Add flag reset to TitleScene."
   last_result: pass
   consecutive_fails: 0
 
