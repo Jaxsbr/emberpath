@@ -50,14 +50,14 @@ Interaction phase — build the core interaction systems: NPC entities on the wo
 - [x] While `StoryScene` is active, `GameScene` update loop is paused — no player movement, no trigger evaluation, no NPC interaction (LEARNINGS #56 — zone-level mutual exclusion) [US-08]
 
 **US-09 — Thought bubble system**
-- [ ] Thought text renders as a floating text element near the player at depth 150 with `scrollFactor(0)` [US-09]
-- [ ] Thought bubble has a simple background rectangle behind the text for readability [US-09]
-- [ ] Thought auto-dismisses after a configurable duration (default 3000ms) [US-09]
-- [ ] Player movement and input are not blocked while a thought is displayed [US-09]
-- [ ] When multiple thoughts are queued, they display sequentially — the next thought appears after the current one dismisses [US-09]
-- [ ] Thought content and trigger associations are defined in data files, not hardcoded [US-09]
-- [ ] If dialogue (US-07) is active, incoming thoughts queue until dialogue closes [US-09]
-- [ ] At least one test thought triggers when the player enters a defined map area [US-09]
+- [x] Thought text renders as a floating text element near the player at depth 150 with `scrollFactor(0)` [US-09]
+- [x] Thought bubble has a simple background rectangle behind the text for readability [US-09]
+- [x] Thought auto-dismisses after a configurable duration (default 3000ms) [US-09]
+- [x] Player movement and input are not blocked while a thought is displayed [US-09]
+- [x] When multiple thoughts are queued, they display sequentially — the next thought appears after the current one dismisses [US-09]
+- [x] Thought content and trigger associations are defined in data files, not hardcoded [US-09]
+- [x] If dialogue (US-07) is active, incoming thoughts queue until dialogue closes [US-09]
+- [x] At least one test thought triggers when the player enters a defined map area [US-09]
 
 **US-10 — World trigger system**
 - [ ] Trigger zones are defined in `src/data/triggers.ts` with `id`, position (`col`, `row`), `size` (width/height in tiles), `type` (dialogue | story | thought), `actionRef` (ID referencing the target content), `condition` (optional), and `repeatable` (boolean) [US-10]
