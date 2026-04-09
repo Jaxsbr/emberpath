@@ -35,10 +35,10 @@ export class ThoughtBubbleSystem {
 
   update(playerCenterX: number, playerCenterY: number): void {
     if (this.active && this.currentBg && this.currentText) {
-      // Position thought near player using screen coordinates
-      const camera = this.scene.cameras.main;
-      const screenX = playerCenterX - camera.scrollX;
-      const screenY = playerCenterY - camera.scrollY + OFFSET_Y;
+      // Convert player world position to screen coordinates (accounting for camera zoom)
+      const cam = this.scene.cameras.main;
+      const screenX = (playerCenterX - cam.scrollX) * cam.zoom;
+      const screenY = (playerCenterY - cam.scrollY) * cam.zoom + OFFSET_Y;
       this.currentText.setPosition(screenX, screenY);
       this.currentBg.setPosition(screenX, screenY);
     }
@@ -71,6 +71,7 @@ export class ThoughtBubbleSystem {
     this.currentText.setOrigin(0.5, 1);
     this.currentText.setScrollFactor(0);
     this.currentText.setDepth(THOUGHT_DEPTH);
+    this.scene.cameras.main.ignore(this.currentText);
 
     const textWidth = this.currentText.width;
     const textHeight = this.currentText.height;
@@ -86,6 +87,7 @@ export class ThoughtBubbleSystem {
     this.currentBg.setOrigin(0.5, 1);
     this.currentBg.setScrollFactor(0);
     this.currentBg.setDepth(THOUGHT_DEPTH - 1);
+    this.scene.cameras.main.ignore(this.currentBg);
 
     this.dismissTimer = this.scene.time.delayedCall(duration, () => {
       this.dismiss();

@@ -44,9 +44,11 @@ export class InputSystem {
       this.joystickBase = this.scene.add.circle(pointer.x, pointer.y, JOYSTICK_RADIUS, JOYSTICK_BASE_COLOR, JOYSTICK_ALPHA)
         .setScrollFactor(0)
         .setDepth(100);
+      this.scene.cameras.main.ignore(this.joystickBase);
       this.joystickHandle = this.scene.add.circle(pointer.x, pointer.y, JOYSTICK_RADIUS * 0.4, JOYSTICK_HANDLE_COLOR, JOYSTICK_ALPHA + 0.2)
         .setScrollFactor(0)
         .setDepth(100);
+      this.scene.cameras.main.ignore(this.joystickHandle);
     });
 
     this.scene.input.on('pointerup', () => {

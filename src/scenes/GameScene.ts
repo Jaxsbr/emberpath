@@ -29,6 +29,8 @@ export class GameScene extends Phaser.Scene {
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
   private player!: Phaser.GameObjects.Rectangle;
+  private tileGraphics!: Phaser.GameObjects.Graphics;
+  private npcRects: Phaser.GameObjects.Rectangle[] = [];
 
   constructor() {
     super({ key: 'GameScene' });
@@ -111,8 +113,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderTileMap(): void {
-    const graphics = this.add.graphics();
-    graphics.setDepth(0); // tiles at depth 0
+    this.tileGraphics = this.add.graphics();
+    this.tileGraphics.setDepth(0); // tiles at depth 0
 
     for (let row = 0; row < MAP_ROWS; row++) {
       for (let col = 0; col < MAP_COLS; col++) {
@@ -120,8 +122,8 @@ export class GameScene extends Phaser.Scene {
         const x = col * TILE_SIZE;
         const y = row * TILE_SIZE;
         const color = tile === TileType.WALL ? WALL_COLOR : FLOOR_COLOR;
-        graphics.fillStyle(color);
-        graphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        this.tileGraphics.fillStyle(color);
+        this.tileGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
       }
     }
   }
@@ -134,15 +136,23 @@ export class GameScene extends Phaser.Scene {
       const rect = this.add.rectangle(x, y, NPC_SIZE, NPC_SIZE, npc.color);
       rect.setOrigin(0, 0);
       rect.setDepth(5); // entities depth layer
+      this.npcRects.push(rect);
     }
   }
 
   private setupCamera(): void {
     const mapWidth = MAP_COLS * TILE_SIZE;
     const mapHeight = MAP_ROWS * TILE_SIZE;
-    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
-    this.cameras.main.startFollow(this.player);
-    this.cameras.main.setZoom(this.calculateZoom());
+    const cam = this.cameras.main;
+    cam.setZoom(this.calculateZoom());
+    cam.setBounds(0, 0, mapWidth, mapHeight);
+    cam.startFollow(this.player);
+
+    // UI camera — no zoom/scroll, renders dialogue/joystick/thought bubbles at screen coords
+    const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
+    uiCam.setScroll(0, 0);
+    // Prevent UI camera from double-rendering world objects
+    uiCam.ignore([this.tileGraphics, this.player, ...this.npcRects]);
 
     this.scale.on('resize', this.handleResize, this);
     this.events.on('shutdown', this.cleanupResize, this);
@@ -158,8 +168,17 @@ export class GameScene extends Phaser.Scene {
   private handleResize(): void {
     const mapWidth = MAP_COLS * TILE_SIZE;
     const mapHeight = MAP_ROWS * TILE_SIZE;
-    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
-    this.cameras.main.setZoom(this.calculateZoom());
+    const cam = this.cameras.main;
+    // Zoom first — setBounds clamps scroll using displayWidth which depends on zoom
+    cam.setZoom(this.calculateZoom());
+    cam.setBounds(0, 0, mapWidth, mapHeight);
+    // Snap camera to player after dimension/zoom change (prevents stale scroll on rotation)
+    cam.centerOn(this.player.x + PLAYER_SIZE / 2, this.player.y + PLAYER_SIZE / 2);
+
+    const uiCam = this.cameras.getCamera('ui');
+    if (uiCam) {
+      uiCam.setSize(this.scale.width, this.scale.height);
+    }
   }
 
   private cleanupResize(): void {

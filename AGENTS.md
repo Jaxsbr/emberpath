@@ -75,14 +75,14 @@ src/
 
 Explicit rendering order for visual layers (Learning #57):
 
-| Layer | Depth | Description |
-|---|---|---|
-| Tiles | 0 | Floor and wall tile graphics |
-| Entities | 5 | Player character and NPCs |
-| UI | 100 | Virtual joystick, HUD elements |
-| Thoughts | 150 | Thought bubble text and background (scrollFactor 0) |
-| Interaction prompt | 150 | NPC interaction prompt text |
-| Dialogue | 200 | Dialogue box, speaker name, choice buttons (scrollFactor 0) |
+| Layer | Depth | Camera | Description |
+|---|---|---|---|
+| Tiles | 0 | main | Floor and wall tile graphics |
+| Entities | 5 | main | Player character and NPCs |
+| UI | 100 | ui | Virtual joystick, HUD elements |
+| Thoughts | 150 | ui | Thought bubble text and background |
+| Interaction prompt | 150 | main | NPC interaction prompt text (world-space) |
+| Dialogue | 200 | ui | Dialogue box, speaker name, choice buttons |
 
 New visual elements must reference this map. Ad-hoc depth values are prohibited.
 
@@ -95,7 +95,7 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Collision:** Bounding box corners checked against tile map and NPC bounds. Out-of-bounds = collision.
 - **Input priority:** Keyboard takes priority over joystick when any WASD key is held. Dialogue and StoryScene capture all input while active.
 - **Virtual joystick:** Created on pointerdown, destroyed on pointerup. Uses scrollFactor(0) to stay fixed on screen.
-- **Camera:** Follows player with bounds set to tile map pixel dimensions. Bounds and zoom update on resize. Zoom is calculated from viewport size relative to a reference resolution (800x600) — on high-DPI mobile screens, the camera zooms in so tiles and characters appear at a readable physical size instead of mapping device pixels 1:1 to world pixels. Zoom never drops below 1×.
+- **Camera:** Dual-camera setup. Main camera follows player with zoom and world bounds. UI camera ('ui') has no zoom or scroll — renders dialogue, joystick, and thought bubbles at screen coordinates. Zoom = `min(viewportW, viewportH) / (10 × TILE_SIZE)`, clamped ≥ 1. On resize: zoom updates first, then bounds (order matters for clamp correctness), then centerOn player. UI objects must call `cameras.main.ignore(obj)` so the zoomed camera doesn't render them off-screen. World objects created after camera setup must call `uiCam.ignore(obj)` to prevent double-rendering.
 - **NPC interaction:** Proximity-based (1.5 tile radius). Space (desktop) or tap (mobile) to interact. Interaction prompt appears/disappears based on distance.
 - **Dialogue:** Bottom-screen text box with typewriter effect. Space/tap advances or completes typewriter. All positions derive from `scale.width`/`scale.height` — no hardcoded pixel values. Data-driven node graphs in `data/dialogues.ts`.
 - **Dialogue choices (desktop):** Arrow keys browse (> prefix), Enter or tap confirms immediately. No Confirm button on non-touch devices.

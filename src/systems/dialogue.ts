@@ -261,6 +261,7 @@ export class DialogueSystem {
       );
       choiceText.setScrollFactor(0);
       choiceText.setDepth(DEPTH);
+      this.ignoreOnMainCamera(choiceText);
       choiceText.setInteractive();
       choiceText.on('pointerdown', () => {
         this.selectedChoiceIndex = i;
@@ -294,6 +295,7 @@ export class DialogueSystem {
       bg.setOrigin(0, 0);
       bg.setScrollFactor(0);
       bg.setDepth(DEPTH);
+      this.ignoreOnMainCamera(bg);
       bg.setInteractive();
       bg.on('pointerdown', () => {
         this.highlightMobileChoice(i);
@@ -310,6 +312,7 @@ export class DialogueSystem {
       );
       label.setScrollFactor(0);
       label.setDepth(DEPTH);
+      this.ignoreOnMainCamera(label);
       this.choiceTexts.push(label);
     }
 
@@ -321,6 +324,7 @@ export class DialogueSystem {
     this.confirmBg.setOrigin(0, 0);
     this.confirmBg.setScrollFactor(0);
     this.confirmBg.setDepth(DEPTH);
+    this.ignoreOnMainCamera(this.confirmBg);
     this.confirmBg.setInteractive();
     this.confirmBg.on('pointerdown', () => {
       if (this.mobileHighlightIndex >= 0) {
@@ -342,6 +346,7 @@ export class DialogueSystem {
     this.confirmLabel.setOrigin(0.5, 0.5);
     this.confirmLabel.setScrollFactor(0);
     this.confirmLabel.setDepth(DEPTH);
+    this.ignoreOnMainCamera(this.confirmLabel);
     this.confirmLabel.setVisible(false);
   }
 
@@ -398,6 +403,7 @@ export class DialogueSystem {
     this.boxGraphics.setDepth(DEPTH);
     this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
     this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.currentBoxHeight);
+    this.ignoreOnMainCamera(this.boxGraphics);
 
     this.speakerText = this.scene.add.text(BOX_PADDING, this.boxY - 20, '', {
       fontSize: `${SPEAKER_FONT_SIZE}px`,
@@ -406,6 +412,7 @@ export class DialogueSystem {
     });
     this.speakerText.setScrollFactor(0);
     this.speakerText.setDepth(DEPTH);
+    this.ignoreOnMainCamera(this.speakerText);
 
     this.dialogueText = this.scene.add.text(BOX_PADDING, this.boxY + BOX_PADDING, '', {
       fontSize: `${TEXT_FONT_SIZE}px`,
@@ -414,6 +421,7 @@ export class DialogueSystem {
     });
     this.dialogueText.setScrollFactor(0);
     this.dialogueText.setDepth(DEPTH);
+    this.ignoreOnMainCamera(this.dialogueText);
   }
 
   private redrawBox(): void {
@@ -514,6 +522,10 @@ export class DialogueSystem {
     if (this.onEndCallback) {
       this.onEndCallback();
     }
+  }
+
+  private ignoreOnMainCamera(obj: Phaser.GameObjects.GameObject): void {
+    this.scene.cameras.main.ignore(obj);
   }
 
   private cleanupResize(): void {
