@@ -14,7 +14,9 @@ npm run build    # Production build to dist/
 ## Controls
 
 - **Desktop:** W/A/S/D to move up/left/down/right
+- **Desktop dialogue choices:** Arrow keys browse (> prefix on selected), Enter confirms
 - **Mobile:** Touch and drag anywhere to activate virtual joystick
+- **Mobile dialogue choices:** Tap a choice to highlight it (browse), tap Confirm button to commit (browse-then-confirm pattern — prevents mis-taps)
 
 ## Directory layout
 
@@ -85,14 +87,18 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 ## Behavior rules
 
 - **Scene flow:** TitleScene → GameScene. StoryScene is a parallel scene launched/stopped by GameScene. TitleScene is always the first scene loaded.
+- **Responsive scaling:** Phaser Scale.RESIZE mode — canvas adapts to container/viewport size. No fixed 800x600. The tile map world is fixed at 1600x1216 pixels; the camera viewport shows more or fewer tiles depending on screen dimensions.
+- **Resize handling:** Browser resize (including orientation change) triggers canvas re-layout. Camera bounds re-set to tile map world. Active dialogue and StoryScene UI elements reposition to new dimensions without destroy/recreate. Resize listeners cleaned up on scene shutdown/destroy.
 - **Movement:** Frame-based smooth movement (delta-time), not tile-snapping. Axis-independent collision allows sliding along walls and NPCs.
 - **Collision:** Bounding box corners checked against tile map and NPC bounds. Out-of-bounds = collision.
 - **Input priority:** Keyboard takes priority over joystick when any WASD key is held. Dialogue and StoryScene capture all input while active.
 - **Virtual joystick:** Created on pointerdown, destroyed on pointerup. Uses scrollFactor(0) to stay fixed on screen.
-- **Camera:** Follows player with bounds set to tile map pixel dimensions.
+- **Camera:** Follows player with bounds set to tile map pixel dimensions. Bounds update on resize.
 - **NPC interaction:** Proximity-based (1.5 tile radius). Space (desktop) or tap (mobile) to interact. Interaction prompt appears/disappears based on distance.
-- **Dialogue:** Bottom-screen text box with typewriter effect. Space/tap advances or completes typewriter. Choices via arrow keys + Enter or tap/click. Data-driven node graphs in `data/dialogues.ts`.
-- **Zone-level mutual exclusion (LEARNINGS #56):** When dialogue is active, movement, NPC interaction, and trigger evaluation are all suppressed. When StoryScene is active, GameScene is fully paused. Thought bubbles queue during dialogue and display after.
+- **Dialogue:** Bottom-screen text box with typewriter effect. Space/tap advances or completes typewriter. All positions derive from `scale.width`/`scale.height` — no hardcoded pixel values. Data-driven node graphs in `data/dialogues.ts`.
+- **Dialogue choices (desktop):** Arrow keys browse (> prefix), Enter or tap confirms immediately. No Confirm button on non-touch devices.
+- **Dialogue choices (mobile):** Full-width 44px tappable rows. Tap to highlight (no commit). Confirm button appears below choices. Tap Confirm to commit. Browse-then-confirm pattern prevents mis-taps. Box expands dynamically to accommodate choices + Confirm.
+- **Zone-level mutual exclusion (LEARNINGS #56):** When dialogue is active, movement, NPC interaction, and trigger evaluation are all suppressed. When StoryScene is active, GameScene is fully paused. Thought bubbles queue during dialogue and display after. On mobile, general taps are blocked while choice rows are active (`mobileChoicesActive` guard).
 - **Trigger zones:** Fire on player entry (bounding box overlap). One-shot triggers use internal flags. Repeatable triggers require exit-then-re-enter. Conditions use flag comparisons with AND logic.
 - **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Reset available from TitleScene.
 
