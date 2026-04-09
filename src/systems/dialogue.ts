@@ -38,6 +38,7 @@ export class DialogueSystem {
   private enterKey: Phaser.Input.Keyboard.Key | null = null;
   private tapDownTime = 0;
   private tapDownPos = { x: 0, y: 0 };
+  private choiceJustSelected = false;
 
   // Callbacks
   private onEndCallback: (() => void) | null = null;
@@ -87,6 +88,10 @@ export class DialogueSystem {
 
     this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (!this.active) return;
+      if (this.choiceJustSelected) {
+        this.choiceJustSelected = false;
+        return;
+      }
       const duration = pointer.upTime - this.tapDownTime;
       const dx = pointer.x - this.tapDownPos.x;
       const dy = pointer.y - this.tapDownPos.y;
@@ -233,6 +238,7 @@ export class DialogueSystem {
 
   private selectChoice(): void {
     if (!this.currentNode?.choices || this.choiceTexts.length === 0) return;
+    this.choiceJustSelected = true;
     const choice = this.currentNode.choices[this.selectedChoiceIndex];
     if (this.onChoiceCallback) {
       this.onChoiceCallback(choice);
