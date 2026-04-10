@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-24] Create fox rig definition (skeleton + 5 direction profiles + 16 named parts) and placeholder texture atlas (fox.png + fox.json) with paper-puppet aesthetic body parts"
+  task_number: 3
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
