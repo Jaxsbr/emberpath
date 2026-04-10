@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-26] Create idle animation controller — breathing, tail sway, head turn, sit-down, ear flick, timer cleanup"
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-23, US-24, US-25]
+  completed_stories: [US-23, US-24, US-25, US-26]
