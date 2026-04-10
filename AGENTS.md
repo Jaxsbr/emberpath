@@ -109,7 +109,7 @@ tools/
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
 | `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
 | `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update |
-| `rig/characters/fox.ts` | Fox (Pip) rig definition — 16 named parts, 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
+| `rig/characters/fox.ts` | Fox (Pip) rig definition — 46 named parts (body, neck, head, snout, eyes, nose, ears, shoulders, hips, 4 legs with upper/lower/ankle/paw/4 toes, 3 tail segments), 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
 | `rig/animations/walkRun.ts` | Walk/run animation controller — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
 | `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn after 3s, sit-down after 6s, all reset on movement |
 | `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies |
