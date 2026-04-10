@@ -25,3 +25,15 @@ entries:
     description: "Created mapRenderer.ts — canvas renders tile grid with floorColor/wallColor, NPC labeled circles, trigger zone colored rectangles (matching debug overlay colors), exit zones with destination labels, player spawn diamond marker, row/col axis labels. Click handler populates detail panel with all type fields. Both game and visualizer tsc+build pass. ✓ US-20 complete"
     result: pass
     tokens: ~15000
+  - task: 5
+    type: investigate
+    story: US-21
+    description: "US-20 complete. US-21 needs dialogue tree node graph: BFS layout, DOM nodes + SVG edges, choice labels, setFlags annotations, start/terminal styling, click-to-detail. Separate dialogueRenderer.ts module. Queued implement."
+    result: pass
+    tokens: ~2000
+  - task: 6
+    type: implement
+    story: US-21
+    description: "Created dialogueRenderer.ts — dialogue selector dropdown, BFS top-down layout, DOM node boxes with speaker+truncated text, SVG bezier edges with choice text labels, setFlags flag annotations in orange, start node green border, terminal node red border, click-to-detail. Both game and visualizer tsc+build pass. ✓ US-21 complete"
+    result: pass
+    tokens: ~15000
