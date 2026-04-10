@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: "[US-28] Rename tools/visualizer/ to tools/editor/ — directory rename, update package.json name, index.html title, all internal references, AGENTS.md, .gitignore"
+  task_number: 2
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
