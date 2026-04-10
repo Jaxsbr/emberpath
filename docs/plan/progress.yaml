@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 1
-  next_task: null
+  next_task: "[US-19] Scaffold tools/visualizer/ — package.json, vite.config.ts, tsconfig.json, index.html, main.ts with area selector and tab navigation"
   last_result: null
   consecutive_fails: 0
 
