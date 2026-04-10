@@ -113,33 +113,13 @@ export class WalkRunController implements AnimationController {
 
     // Pair 1: front-left + back-right (phase 0)
     const pair1 = Math.sin(phase) * legSwing;
-    if (boneStates['front-left-upper-leg']) {
-      boneStates['front-left-upper-leg'].rotation = pair1;
-    }
-    if (boneStates['front-left-lower-leg']) {
-      boneStates['front-left-lower-leg'].rotation = pair1 * 0.6;
-    }
-    if (boneStates['back-right-upper-leg']) {
-      boneStates['back-right-upper-leg'].rotation = pair1;
-    }
-    if (boneStates['back-right-lower-leg']) {
-      boneStates['back-right-lower-leg'].rotation = pair1 * 0.6;
-    }
+    this.applyLegSwing(boneStates, 'front-left', pair1);
+    this.applyLegSwing(boneStates, 'back-right', pair1);
 
     // Pair 2: front-right + back-left (phase offset π)
     const pair2 = Math.sin(phase + Math.PI) * legSwing;
-    if (boneStates['front-right-upper-leg']) {
-      boneStates['front-right-upper-leg'].rotation = pair2;
-    }
-    if (boneStates['front-right-lower-leg']) {
-      boneStates['front-right-lower-leg'].rotation = pair2 * 0.6;
-    }
-    if (boneStates['back-left-upper-leg']) {
-      boneStates['back-left-upper-leg'].rotation = pair2;
-    }
-    if (boneStates['back-left-lower-leg']) {
-      boneStates['back-left-lower-leg'].rotation = pair2 * 0.6;
-    }
+    this.applyLegSwing(boneStates, 'front-right', pair2);
+    this.applyLegSwing(boneStates, 'back-left', pair2);
 
     // --- Tail follow-through (progressive phase delay) ---
     const tailSwing = p.walkTailSwing * runScale * amp;
@@ -171,6 +151,25 @@ export class WalkRunController implements AnimationController {
       }
       if (boneStates['right-eye']) {
         boneStates['right-eye'].scaleY = squint;
+      }
+    }
+  }
+
+  /** Apply leg swing to upper-leg, lower-leg, and foot subtree (ankle/paw/toes). */
+  private applyLegSwing(boneStates: Record<string, BoneState>, prefix: string, swing: number): void {
+    if (boneStates[`${prefix}-upper-leg`]) {
+      boneStates[`${prefix}-upper-leg`].rotation = swing;
+    }
+    const lowerSwing = swing * 0.6;
+    if (boneStates[`${prefix}-lower-leg`]) {
+      boneStates[`${prefix}-lower-leg`].rotation = lowerSwing;
+    }
+    // Foot subtree follows lower-leg
+    const footParts = [`${prefix}-ankle`, `${prefix}-paw`,
+      `${prefix}-toe-1`, `${prefix}-toe-2`, `${prefix}-toe-3`, `${prefix}-toe-4`];
+    for (const name of footParts) {
+      if (boneStates[name]) {
+        boneStates[name].rotation = lowerSwing;
       }
     }
   }

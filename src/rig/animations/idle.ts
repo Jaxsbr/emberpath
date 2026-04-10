@@ -135,21 +135,9 @@ export class IdleController implements AnimationController {
         boneStates['head'].offsetY += this.params.sitLowerAmount * 0.5 * sitEase;
       }
 
-      // Front legs tuck
-      if (boneStates['front-left-upper-leg']) {
-        boneStates['front-left-upper-leg'].rotation += -0.3 * sitEase;
-      }
-      if (boneStates['front-right-upper-leg']) {
-        boneStates['front-right-upper-leg'].rotation += 0.3 * sitEase;
-      }
-      if (boneStates['front-left-lower-leg']) {
-        boneStates['front-left-lower-leg'].rotation += -0.5 * sitEase;
-        boneStates['front-left-lower-leg'].offsetY += -4 * sitEase;
-      }
-      if (boneStates['front-right-lower-leg']) {
-        boneStates['front-right-lower-leg'].rotation += 0.5 * sitEase;
-        boneStates['front-right-lower-leg'].offsetY += -4 * sitEase;
-      }
+      // Front legs tuck (with foot subtree following)
+      this.applySitLeg(boneStates, 'front-left', -0.3, -0.5, -4, sitEase);
+      this.applySitLeg(boneStates, 'front-right', 0.3, 0.5, -4, sitEase);
 
       // Tail curls around
       if (boneStates['tail-1']) {
@@ -215,6 +203,31 @@ export class IdleController implements AnimationController {
       } else {
         if (isLeft) this.leftEarFlickTimer = newTimer;
         else this.rightEarFlickTimer = newTimer;
+      }
+    }
+  }
+
+  /** Apply sit tuck to a leg and its foot subtree (ankle/paw/toes). */
+  private applySitLeg(
+    boneStates: Record<string, BoneState>,
+    prefix: string,
+    upperRot: number, lowerRot: number, lowerOffY: number,
+    sitEase: number,
+  ): void {
+    if (boneStates[`${prefix}-upper-leg`]) {
+      boneStates[`${prefix}-upper-leg`].rotation += upperRot * sitEase;
+    }
+    if (boneStates[`${prefix}-lower-leg`]) {
+      boneStates[`${prefix}-lower-leg`].rotation += lowerRot * sitEase;
+      boneStates[`${prefix}-lower-leg`].offsetY += lowerOffY * sitEase;
+    }
+    // Foot subtree follows lower-leg
+    const footParts = [`${prefix}-ankle`, `${prefix}-paw`,
+      `${prefix}-toe-1`, `${prefix}-toe-2`, `${prefix}-toe-3`, `${prefix}-toe-4`];
+    for (const name of footParts) {
+      if (boneStates[name]) {
+        boneStates[name].rotation += lowerRot * sitEase;
+        boneStates[name].offsetY += lowerOffY * sitEase;
       }
     }
   }
