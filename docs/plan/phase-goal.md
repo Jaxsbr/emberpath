@@ -52,8 +52,8 @@ Dev tool — functional and clean. Dark background with high-contrast overlays. 
 - [x] Conditional exits display their condition text on or near the arrow [US-22]
 - [x] The default area (from `getDefaultAreaId()`) has a visually distinct border or marker indicating it is the player's starting point [US-22]
 - [x] Clicking an area box navigates to the Map tab with that area selected [US-22]
-- [ ] AGENTS.md directory layout updated to include `tools/visualizer/` with a description of its purpose [phase]
-- [ ] AGENTS.md file ownership table includes entries for visualizer modules [phase]
+- [x] AGENTS.md directory layout updated to include `tools/visualizer/` with a description of its purpose [phase]
+- [x] AGENTS.md file ownership table includes entries for visualizer modules [phase]
 
 ### Golden principles (phase-relevant)
 - **Single source of truth** — visualizer imports from `src/data/areas/` directly; no data duplication or separate data files

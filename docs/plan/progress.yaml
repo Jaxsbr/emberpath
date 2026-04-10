@@ -23,12 +23,12 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: story-visualizer
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[phase] Update AGENTS.md — add tools/visualizer/ to directory layout and file ownership table"
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

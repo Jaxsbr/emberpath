@@ -49,3 +49,14 @@ entries:
     description: "Created flowRenderer.ts — row layout of area boxes with trigger lists (colored dots + IDs), exit arrows with ID labels and condition text, flag dependency dashed lines via extractFlagSources/extractFlagConsumers, default area red border + star, click navigates to Map tab. Both game and visualizer tsc+build pass. ✓ US-22 complete"
     result: pass
     tokens: ~15000
+  - task: 9
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: directory layout with tools/visualizer/ tree, file ownership for all 4 visualizer modules, registry description updated, visualizer running instructions added."
+    result: pass
+    tokens: ~5000
+  - task: 10
+    type: gate
+    story: phase
+    description: "Phase Completion Gate — all 38 criteria verified. Game and visualizer tsc+build pass. AGENTS.md consistent (directory layout matches actual structure, file ownership matches existing files). No endpoints to error-path check (read-only dev tool). Phase complete."
+    result: pass
