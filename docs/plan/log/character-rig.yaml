@@ -49,3 +49,15 @@ entries:
     description: "Created src/rig/animations/walkRun.ts (WalkRunController — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run after 0.8s, deceleration settle, speed source of truth). Updated GameScene to use controller speed. Verify passes. ✓ US-25 complete"
     result: pass
     tokens: ~18000
+  - task: 9
+    type: investigate
+    story: US-26
+    description: "US-25 complete. Queued US-26 idle controller."
+    result: pass
+    tokens: ~500
+  - task: 10
+    type: implement
+    story: US-26
+    description: "Created src/rig/animations/idle.ts (IdleController — breathing, tail sway, head turn after 3s, sit after 6s, random ear flicks). Registered in GameScene. Verify passes. ✓ US-26 complete"
+    result: pass
+    tokens: ~15000
