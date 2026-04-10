@@ -19,3 +19,9 @@ entries:
     description: "US-28 complete. US-29 needs: Phaser dependency in editor, rig tab in toolbar, embedded Phaser scene with CharacterRig + fox atlas, direction picker (8 buttons), skeleton hierarchy panel, checkerboard grid, selection highlighting, dark theme. Editor currently has vite+ts only, imports game types via @game. tsconfig needs to include rig types. Queued full US-29 implementation."
     result: pass
     tokens: ~3000
+  - task: 4
+    type: implement
+    story: US-29
+    description: "Added Phaser 3 dependency to editor, updated tsconfig to include rig types, added publicDir for game assets. Created rigRenderer.ts with embedded RigPreviewScene (CharacterRig + checkerboard grid at depth 0 + selection highlight at depth 1000), rig selector dropdown, 8-direction compass picker, collapsible skeleton hierarchy panel with click-to-select. Updated index.html with Rig tab, main.ts with rig view routing and destroy lifecycle. All 14 US-29 criteria met. Verify passes. ✓ US-29 complete"
+    result: pass
+    tokens: ~20000
