@@ -2,6 +2,7 @@ import { getArea, getAllAreaIds, getDefaultAreaId } from '@game/data/areas/regis
 import type { AreaDefinition } from '@game/data/areas/types';
 import { renderMap } from './mapRenderer';
 import { renderDialogue } from './dialogueRenderer';
+import { renderFlow } from './flowRenderer';
 
 type ViewName = 'map' | 'dialogue' | 'flow';
 
@@ -62,7 +63,11 @@ function renderActiveView(): void {
       renderDialogue(container, activeArea);
       break;
     case 'flow':
-      container.textContent = `Flow view — ${getAllAreaIds().length} areas`;
+      renderFlow(container, (areaId: string) => {
+        areaSelect.value = areaId;
+        loadArea(areaId);
+        switchView('map');
+      });
       break;
   }
 }
