@@ -1,6 +1,6 @@
 # Phase: area-system
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -8,7 +8,7 @@ Introduce a multi-area architecture that decouples GameScene from hardcoded worl
 
 ## Stories
 
-### US-14 — Declarative area definition format
+### US-14 — Declarative area definition format [Shipped]
 
 As a developer, I want a typed `AreaDefinition` interface that bundles a tile map, NPCs, triggers, dialogues, story scenes, visual config, spawn point, and exit zones into one co-located unit, so that each area's complete rule set is reviewable in one place.
 
@@ -23,7 +23,7 @@ As a developer, I want a typed `AreaDefinition` interface that bundles a tile ma
 
 **Design rationale:** Co-located area definitions chosen over scattered global files because the primary debugging workflow is reviewing all of an area's rules, conditions, NPCs, and triggers in one place. A single AreaDefinition (or co-located file pair for large maps) lets a developer read one file and understand an area's complete behavior.
 
-### US-15 — Dynamic area loading in GameScene
+### US-15 — Dynamic area loading in GameScene [Shipped]
 
 As a developer, I want GameScene to load all world data from an AreaDefinition passed at scene start, so that the engine is decoupled from any specific area's data.
 
@@ -39,7 +39,7 @@ As a developer, I want GameScene to load all world data from an AreaDefinition p
 
 **Design rationale:** Parameterized loading (area data injected via scene init and passed to systems) chosen over import-time binding to enable area switching without full scene reconstruction. Collision functions become pure (map + NPCs as parameters) rather than coupled to globals.
 
-### US-16 — Exit zone triggers and area transitions
+### US-16 — Exit zone triggers and area transitions [Shipped]
 
 As a player, I want to walk into an exit zone and transition to a different area with a fade effect, so that I can explore multiple connected locations.
 
@@ -58,7 +58,7 @@ As a player, I want to walk into an exit zone and transition to a different area
 
 **Design rationale:** Exit zones implemented as a trigger-like mechanism rather than special map tile types because it reuses the existing trigger infrastructure (conditions, one-shot/repeatable flags, dialogue suppression) and keeps the data authoring format uniform — area authors define exits the same way they define triggers.
 
-### US-17 — Second test area (Fog Marsh prototype)
+### US-17 — Second test area (Fog Marsh prototype) [Shipped]
 
 As a developer, I want a second area definition with a distinct map, NPCs, and all trigger mechanism types, so that the area system is tested end-to-end and every interaction mechanism is demonstrable in at least one area.
 
@@ -75,7 +75,7 @@ As a developer, I want a second area definition with a distinct map, NPCs, and a
 
 **Design rationale:** Fog Marsh uses different map dimensions deliberately to validate dynamic sizing code paths (camera zoom, collision bounds, tile rendering). Includes every trigger mechanism type to serve as a comprehensive testbed — this is foundational work, so proving each mechanism works across areas is the priority over story content quality.
 
-### US-18 — Debug overlay for trigger and exit zones
+### US-18 — Debug overlay for trigger and exit zones [Shipped]
 
 As a developer, I want a toggleable debug overlay that renders trigger zone boundaries, types, conditions, and NPC interaction radii on the game map, so that I can visually verify area rule sets during testing without reading data files.
 
