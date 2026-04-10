@@ -64,10 +64,10 @@ Paper-puppet storybook aesthetic. Body parts are warm-colored organic shapes (or
 - [x] Art Replacement section provides numbered steps: (1) atlas file locations, (2) naming convention for part PNGs, (3) recommended dimensions/resolution, (4) how to generate the atlas JSON, (5) how to verify the replacement in-game [US-27]
 - [x] New Character section walks through "adding the Keeper — a white heron" as a concrete example: define RigDefinition, create direction profiles, create placeholder atlas, register with GameScene, verify [US-27]
 - [x] All file paths and type names in the guide match actual codebase locations (e.g., `src/rig/types.ts`, `CharacterRig`, `RigDefinition`) [US-27]
-- [ ] AGENTS.md directory layout includes `src/rig/` tree with descriptions: `CharacterRig.ts`, `types.ts`, `characters/`, `animations/` [phase]
-- [ ] AGENTS.md file ownership table includes entries for all rig modules (`CharacterRig.ts`, `types.ts`, `characters/fox.ts`, `animations/walkRun.ts`, `animations/idle.ts`) [phase]
-- [ ] AGENTS.md depth map remains unchanged — fox rig renders at Entities depth (5), no new depth layers introduced [phase]
-- [ ] Fox rig texture atlas loaded in Phaser's preload — atlas key is documented in AGENTS.md behavior rules or file ownership [phase]
+- [x] AGENTS.md directory layout includes `src/rig/` tree with descriptions: `CharacterRig.ts`, `types.ts`, `characters/`, `animations/` [phase]
+- [x] AGENTS.md file ownership table includes entries for all rig modules (`CharacterRig.ts`, `types.ts`, `characters/fox.ts`, `animations/walkRun.ts`, `animations/idle.ts`) [phase]
+- [x] AGENTS.md depth map remains unchanged — fox rig renders at Entities depth (5), no new depth layers introduced [phase]
+- [x] Fox rig texture atlas loaded in Phaser's preload — atlas key is documented in AGENTS.md behavior rules or file ownership [phase]
 
 ### Golden principles (phase-relevant)
 - **Depth map adherence** (AGENTS.md) — fox rig renders at depth 5 (Entities layer); no ad-hoc depth values

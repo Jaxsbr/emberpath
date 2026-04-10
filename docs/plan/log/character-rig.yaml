@@ -61,3 +61,23 @@ entries:
     description: "Created src/rig/animations/idle.ts (IdleController — breathing, tail sway, head turn after 3s, sit after 6s, random ear flicks). Registered in GameScene. Verify passes. ✓ US-26 complete"
     result: pass
     tokens: ~15000
+  - task: 11
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: added rig modules to file ownership table (types.ts, CharacterRig.ts, fox.ts, walkRun.ts, idle.ts, generate-fox-atlas.mjs), updated GameScene description, added fox rig behavior rules (atlas preload, walk/run speed, idle progression), fixed duplicate tools/ in directory layout. Depth map unchanged. Verify passes. ✓ All [phase] criteria complete"
+    result: pass
+    tokens: ~8000
+  - task: 12
+    type: gate
+    story: phase
+    description: >
+      Phase Completion Gate — all 55 done-when criteria verified:
+      US-23 (rig engine): types.ts exports 11 interfaces, CharacterRig class with setDirection/update/addAnimationController, 8-dir with 3 mirrored.
+      US-24 (fox rig): 16 named parts in skeleton, 5 direction profiles (S/N/E/SE/NE), atlas 256x64 with 16 frames, warm palette, GameScene integration (preload atlas, createPlayer uses CharacterRig, camera follows container, depth 5, collision 24px).
+      US-25 (walk/run): WalkRunController with body bob, leg gait, tail follow-through, walk-to-run after 0.8s, deceleration, getCurrentSpeed() as speed source of truth.
+      US-26 (idle): IdleController with breathing, tail sway, ear flick, head turn at 3s, sit at 6s, destroy cleanup.
+      US-27 (guide): 6 sections (Architecture, Bone Hierarchy, Direction Profile, Animation Controller, Art Replacement, New Character), file references match codebase.
+      [phase]: AGENTS.md directory layout, file ownership, depth map unchanged, behavior rules with atlas preload.
+      Verify passes. AGENTS.md consistent. No error paths (game client, no endpoints).
+    result: pass
+    tokens: ~5000
