@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 2
-  next_task: null
+  next_task: "[US-29] Add Phaser dependency to editor, create Rig tab in HTML/main.ts, scaffold rigRenderer module with embedded Phaser scene that loads CharacterRig with fox rig, direction picker (8 buttons), skeleton hierarchy panel, checkerboard grid background"
   last_result: pass
   consecutive_fails: 0
 

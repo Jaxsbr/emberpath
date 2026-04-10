@@ -13,3 +13,9 @@ entries:
     description: "Renamed tools/visualizer/ to tools/editor/ via git mv. Updated package.json name to emberpath-editor, index.html title to EmberPath Editor, mapRenderer.ts comment, package-lock.json. Updated AGENTS.md running instructions, directory layout, file ownership. Zero visualizer references remain in editor/src/ or AGENTS.md. Verify passes. ✓ US-28 complete"
     result: pass
     tokens: ~10000
+  - task: 3
+    type: investigate
+    story: US-29
+    description: "US-28 complete. US-29 needs: Phaser dependency in editor, rig tab in toolbar, embedded Phaser scene with CharacterRig + fox atlas, direction picker (8 buttons), skeleton hierarchy panel, checkerboard grid, selection highlighting, dark theme. Editor currently has vite+ts only, imports game types via @game. tsconfig needs to include rig types. Queued full US-29 implementation."
+    result: pass
+    tokens: ~3000
