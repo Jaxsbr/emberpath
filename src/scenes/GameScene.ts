@@ -14,6 +14,7 @@ import { setFlag } from '../triggers/flags';
 import { CharacterRig } from '../rig/CharacterRig';
 import { foxRigDefinition } from '../rig/characters/fox';
 import { Direction } from '../rig/types';
+import { WalkRunController } from '../rig/animations/walkRun';
 
 const PLAYER_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
@@ -29,6 +30,7 @@ export class GameScene extends Phaser.Scene {
   private triggerZone!: TriggerZoneSystem;
   private debugOverlay!: DebugOverlaySystem;
   private player!: CharacterRig;
+  private walkRunController!: WalkRunController;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
   private boundWindowResize: (() => void) | null = null;
@@ -118,8 +120,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.inputSystem.update();
-    const velocity = this.inputSystem.getVelocity();
-    // Convert container center to top-left collision bounds for moveWithCollision
+    const inputVelocity = this.inputSystem.getVelocity();
+    const inputSpeed = Math.sqrt(inputVelocity.x * inputVelocity.x + inputVelocity.y * inputVelocity.y);
+    const hasInput = inputSpeed > 0;
+
+    // Update rig direction and animation state
+    if (hasInput) {
+      this.player.setDirection(velocityToDirection(inputVelocity.x, inputVelocity.y));
+    }
+    this.player.setVelocity(inputSpeed);
+    this.player.update(delta);
+
+    // Walk/run controller is the source of truth for movement speed
+    const actualSpeed = hasInput ? this.walkRunController.getCurrentSpeed() : 0;
+    let moveVx = 0;
+    let moveVy = 0;
+    if (hasInput && actualSpeed > 0) {
+      const dirX = inputVelocity.x / inputSpeed;
+      const dirY = inputVelocity.y / inputSpeed;
+      moveVx = dirX * actualSpeed;
+      moveVy = dirY * actualSpeed;
+    }
+
     const halfSize = PLAYER_SIZE / 2;
     const newPos = moveWithCollision(
       {
@@ -128,20 +150,11 @@ export class GameScene extends Phaser.Scene {
         width: PLAYER_SIZE,
         height: PLAYER_SIZE,
       },
-      velocity,
+      { x: moveVx, y: moveVy },
       delta,
       { map: this.area.map, npcs: this.area.npcs },
     );
-    // Convert back to center position for the container
     this.player.container.setPosition(newPos.x + halfSize, newPos.y + halfSize);
-
-    // Update rig direction based on velocity
-    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
-    if (speed > 0) {
-      this.player.setDirection(velocityToDirection(velocity.x, velocity.y));
-    }
-    this.player.setVelocity(speed);
-    this.player.update(delta);
 
     this.npcInteraction.update(this.player.container.x, this.player.container.y);
     this.thoughtBubble.update(this.player.container.x, this.player.container.y);
@@ -330,6 +343,8 @@ export class GameScene extends Phaser.Scene {
 
     this.player = new CharacterRig(this, foxRigDefinition, x, y);
     this.player.container.setDepth(5); // entities at depth 5 per depth map
+    this.walkRunController = new WalkRunController(foxRigDefinition.walkRunParams);
+    this.player.addAnimationController(this.walkRunController);
   }
 }
 
