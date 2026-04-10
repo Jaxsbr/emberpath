@@ -162,6 +162,17 @@ export class WalkRunController implements AnimationController {
     if (boneStates['right-ear']) {
       boneStates['right-ear'].rotation = Math.sin(phase * 1.5 + 0.4) * earSwing;
     }
+
+    // --- Eye squint when running (flatten dots into lines) ---
+    if (running) {
+      const squint = 0.3; // scaleY multiplier — flat line look
+      if (boneStates['left-eye']) {
+        boneStates['left-eye'].scaleY = squint;
+      }
+      if (boneStates['right-eye']) {
+        boneStates['right-eye'].scaleY = squint;
+      }
+    }
   }
 
   destroy(): void {

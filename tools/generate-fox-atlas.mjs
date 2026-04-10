@@ -20,6 +20,7 @@ const RUSSET = [165, 85, 35, 255];         // darker accents
 const CREAM = [240, 215, 175, 255];        // belly, snout
 const BROWN = [120, 70, 30, 255];          // ear tips, paw pads
 const TAIL_TIP = [235, 195, 120, 255];     // lighter tail end
+const BLACK = [30, 25, 20, 255];           // eyes and nose
 
 // --- Part definitions: name, width, height, color, shape ---
 const parts = [
@@ -39,6 +40,9 @@ const parts = [
   { name: 'back-left-lower-leg',    w: 10, h: 14, color: RUSSET, shape: 'rect' },
   { name: 'back-right-upper-leg',   w: 12, h: 16, color: ORANGE, shape: 'rect' },
   { name: 'back-right-lower-leg',   w: 10, h: 14, color: RUSSET, shape: 'rect' },
+  { name: 'left-eye',               w: 4,  h: 4,  color: BLACK,  shape: 'ellipse' },
+  { name: 'right-eye',              w: 4,  h: 4,  color: BLACK,  shape: 'ellipse' },
+  { name: 'nose',                   w: 3,  h: 3,  color: BLACK,  shape: 'ellipse' },
 ];
 
 // --- Atlas packing (simple row-based) ---

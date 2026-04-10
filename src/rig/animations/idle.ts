@@ -164,6 +164,15 @@ export class IdleController implements AnimationController {
         boneStates['tail-3'].rotation += 0.6 * sitEase;
         boneStates['tail-3'].offsetY += 4 * sitEase;
       }
+
+      // Happy squint — eyes flatten into curved lines when sitting
+      const eyeSquint = 1 - 0.6 * sitEase; // 1.0 → 0.4 (dot → line)
+      if (boneStates['left-eye']) {
+        boneStates['left-eye'].scaleY *= eyeSquint;
+      }
+      if (boneStates['right-eye']) {
+        boneStates['right-eye'].scaleY *= eyeSquint;
+      }
     }
   }
 

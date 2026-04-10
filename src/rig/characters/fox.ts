@@ -2,7 +2,7 @@ import { RigDefinition, UniqueDirection, DirectionProfile } from '../types';
 
 /**
  * Fox (Pip) rig definition — paper-puppet storybook aesthetic.
- * 16 named parts, 5 unique direction profiles (W, SW, NW mirrored from E, SE, NE).
+ * 19 named parts, 5 unique direction profiles (W, SW, NW mirrored from E, SE, NE).
  */
 
 // --- Skeleton hierarchy ---
@@ -13,6 +13,9 @@ const skeleton = {
       name: 'head',
       children: [
         { name: 'snout' },
+        { name: 'left-eye' },
+        { name: 'right-eye' },
+        { name: 'nose' },
         { name: 'left-ear' },
         { name: 'right-ear' },
       ],
@@ -34,6 +37,9 @@ const profileS: DirectionProfile = {
     'body':                   { x: 0, y: 2, scaleX: 1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 0, y: -14, scaleX: 1, scaleY: 1, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 0, y: -8, scaleX: 1, scaleY: 1, rotation: 0, depth: 11, visible: true },
+    'left-eye':               { x: -5, y: -16, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
+    'right-eye':              { x: 5, y: -16, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
+    'nose':                   { x: 0, y: -10, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
     'left-ear':               { x: -9, y: -26, scaleX: 1, scaleY: 1, rotation: -0.2, depth: 9, visible: true },
     'right-ear':              { x: 9, y: -26, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 9, visible: true },
     'tail-1':                 { x: 0, y: 12, scaleX: 0.5, scaleY: 0.5, rotation: 0, depth: 1, visible: true, alpha: 0.4 },
@@ -56,6 +62,9 @@ const profileN: DirectionProfile = {
     'body':                   { x: 0, y: 2, scaleX: 1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 0, y: -14, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 0, y: -10, scaleX: 0.8, scaleY: 0.6, rotation: 0, depth: 9, visible: false },
+    'left-eye':               { x: 0, y: -16, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: false },
+    'right-eye':              { x: 0, y: -16, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: false },
+    'nose':                   { x: 0, y: -10, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: false },
     'left-ear':               { x: -8, y: -24, scaleX: 1, scaleY: 0.9, rotation: -0.15, depth: 11, visible: true },
     'right-ear':              { x: 8, y: -24, scaleX: 1, scaleY: 0.9, rotation: 0.15, depth: 11, visible: true },
     'tail-1':                 { x: 0, y: -8, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
@@ -78,6 +87,9 @@ const profileE: DirectionProfile = {
     'body':                   { x: 0, y: 0, scaleX: 1.2, scaleY: 0.8, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 14, y: -10, scaleX: 0.9, scaleY: 0.9, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 24, y: -8, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 11, visible: true },
+    'left-eye':               { x: 18, y: -13, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
+    'right-eye':              { x: 18, y: -13, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: false },
+    'nose':                   { x: 28, y: -8, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
     'left-ear':               { x: 12, y: -24, scaleX: 0.9, scaleY: 1, rotation: 0.1, depth: 11, visible: true },
     'right-ear':              { x: 12, y: -24, scaleX: 0.9, scaleY: 1, rotation: 0.1, depth: 9, visible: false },
     'tail-1':                 { x: -18, y: -2, scaleX: 1, scaleY: 1, rotation: -0.15, depth: 2, visible: true },
@@ -102,6 +114,9 @@ const profileSE: DirectionProfile = {
     'body':                   { x: 0, y: 1, scaleX: 1.1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 8, y: -12, scaleX: 0.95, scaleY: 0.95, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 14, y: -8, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 11, visible: true },
+    'left-eye':               { x: 4, y: -15, scaleX: 0.9, scaleY: 1, rotation: 0, depth: 12, visible: true, alpha: 0.7 },
+    'right-eye':              { x: 12, y: -14, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
+    'nose':                   { x: 17, y: -9, scaleX: 1, scaleY: 1, rotation: 0, depth: 12, visible: true },
     'left-ear':               { x: -2, y: -24, scaleX: 0.8, scaleY: 0.9, rotation: -0.15, depth: 9, visible: true, alpha: 0.7 },
     'right-ear':              { x: 12, y: -25, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 11, visible: true },
     'tail-1':                 { x: -14, y: 4, scaleX: 0.9, scaleY: 0.9, rotation: -0.1, depth: 2, visible: true },
@@ -126,6 +141,9 @@ const profileNE: DirectionProfile = {
     'body':                   { x: 0, y: 1, scaleX: 1.1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 8, y: -12, scaleX: 0.9, scaleY: 0.9, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 16, y: -10, scaleX: 0.7, scaleY: 0.6, rotation: 0, depth: 11, visible: true, alpha: 0.5 },
+    'left-eye':               { x: 12, y: -14, scaleX: 0.8, scaleY: 1, rotation: 0, depth: 12, visible: true, alpha: 0.3 },
+    'right-eye':              { x: 12, y: -14, scaleX: 0.8, scaleY: 1, rotation: 0, depth: 12, visible: false },
+    'nose':                   { x: 19, y: -10, scaleX: 0.7, scaleY: 0.7, rotation: 0, depth: 12, visible: true, alpha: 0.4 },
     'left-ear':               { x: 2, y: -24, scaleX: 0.85, scaleY: 0.9, rotation: -0.1, depth: 11, visible: true },
     'right-ear':              { x: 14, y: -24, scaleX: 1, scaleY: 1, rotation: 0.15, depth: 9, visible: true, alpha: 0.7 },
     'tail-1':                 { x: -14, y: -4, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 12, visible: true },
