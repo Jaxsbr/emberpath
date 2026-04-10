@@ -10,6 +10,7 @@ const AVAILABLE_RIGS: RigDefinition[] = [foxRigDefinition];
 let game: Phaser.Game | null = null;
 let previewScene: RigPreviewScene | null = null;
 let rendered = false;
+let activeRigIndex = 0;
 
 // Selection state shared between DOM and Phaser
 let selectedPartName: string | null = null;
@@ -18,7 +19,7 @@ let onPartSelected: ((name: string | null) => void) | null = null;
 // --- Phaser scene ---
 class RigPreviewScene extends Phaser.Scene {
   private rig: CharacterRig | null = null;
-  private definition: RigDefinition = AVAILABLE_RIGS[0];
+  private definition: RigDefinition = AVAILABLE_RIGS[activeRigIndex];
   private highlightGraphics: Phaser.GameObjects.Graphics | null = null;
   private gridGraphics: Phaser.GameObjects.Graphics | null = null;
 
@@ -467,8 +468,8 @@ export function renderRig(container: HTMLElement): void {
 
   // Rig selector
   sidebar.appendChild(createRigSelector(AVAILABLE_RIGS, (def) => {
-    previewScene?.setRigDefinition(def);
-    // Rebuild hierarchy for new rig
+    activeRigIndex = AVAILABLE_RIGS.indexOf(def);
+    destroyRig();
     renderRig(container);
   }));
 
