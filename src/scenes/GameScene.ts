@@ -15,6 +15,7 @@ import { CharacterRig } from '../rig/CharacterRig';
 import { foxRigDefinition } from '../rig/characters/fox';
 import { Direction } from '../rig/types';
 import { WalkRunController } from '../rig/animations/walkRun';
+import { IdleController } from '../rig/animations/idle';
 
 const PLAYER_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
@@ -345,6 +346,7 @@ export class GameScene extends Phaser.Scene {
     this.player.container.setDepth(5); // entities at depth 5 per depth map
     this.walkRunController = new WalkRunController(foxRigDefinition.walkRunParams);
     this.player.addAnimationController(this.walkRunController);
+    this.player.addAnimationController(new IdleController(foxRigDefinition.idleParams));
   }
 }
 
