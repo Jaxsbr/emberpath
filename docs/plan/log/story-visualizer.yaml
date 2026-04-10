@@ -37,3 +37,15 @@ entries:
     description: "Created dialogueRenderer.ts — dialogue selector dropdown, BFS top-down layout, DOM node boxes with speaker+truncated text, SVG bezier edges with choice text labels, setFlags flag annotations in orange, start node green border, terminal node red border, click-to-detail. Both game and visualizer tsc+build pass. ✓ US-21 complete"
     result: pass
     tokens: ~15000
+  - task: 7
+    type: investigate
+    story: US-22
+    description: "US-21 complete. US-22 needs flow overview: area boxes with trigger lists, exit arrows between areas, flag dependency dashed lines connecting setFlags to conditions, conditional exit labels, default area marking, click-to-navigate. Separate flowRenderer.ts module. Queued implement."
+    result: pass
+    tokens: ~3000
+  - task: 8
+    type: implement
+    story: US-22
+    description: "Created flowRenderer.ts — row layout of area boxes with trigger lists (colored dots + IDs), exit arrows with ID labels and condition text, flag dependency dashed lines via extractFlagSources/extractFlagConsumers, default area red border + star, click navigates to Map tab. Both game and visualizer tsc+build pass. ✓ US-22 complete"
+    result: pass
+    tokens: ~15000
