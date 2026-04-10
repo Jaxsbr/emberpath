@@ -30,7 +30,7 @@ Dev tool — functional and clean. Dark background with high-contrast overlays. 
 
 ## Stories
 
-### US-19 — Visualizer project scaffold
+### US-19 — Visualizer project scaffold [Shipped]
 
 As a developer, I want a separate Vite + TypeScript dev tool in `tools/visualizer/` that imports EmberPath's area data directly, so that I have a foundation to build visualization views without affecting the game build.
 
@@ -48,7 +48,7 @@ As a developer, I want a separate Vite + TypeScript dev tool in `tools/visualize
 
 **Design rationale:** Separate Vite project rather than adding a route to the game because the visualizer has different dependencies (DOM-based UI) and should not affect the game's bundle size or build.
 
-### US-20 — Area map view
+### US-20 — Area map view [Shipped]
 
 As a story author, I want to see an area's tile map with NPCs, triggers, and exits overlaid in a spatial view, so that I can understand the physical layout and placement of story elements without running the game.
 
@@ -67,7 +67,7 @@ As a story author, I want to see an area's tile map with NPCs, triggers, and exi
 
 **Interaction model:** Click any element (trigger zone, NPC, exit) on the map canvas to select it — the detail panel updates to show the clicked element's full data. Click empty space to deselect. Hover shows coordinates.
 
-### US-21 — Dialogue tree view
+### US-21 — Dialogue tree view [Shipped]
 
 As a story author, I want to see dialogue scripts rendered as node graphs showing speaker lines, branching choices, and flag mutations, so that I can trace conversation flow and verify branching logic without reading nested arrays.
 
@@ -86,7 +86,7 @@ As a story author, I want to see dialogue scripts rendered as node graphs showin
 
 **Interaction model:** Select a dialogue from the dropdown to render its graph. Click a node to see full text content in the detail panel. The graph auto-layouts top-to-bottom (start node at top, terminals at bottom).
 
-### US-22 — Story flow overview
+### US-22 — Story flow overview [Shipped]
 
 As a story author, I want to see all areas, their connections, and flag dependencies in a single overview, so that I can trace the player's narrative journey across the entire game.
 
@@ -108,52 +108,52 @@ As a story author, I want to see all areas, their connections, and flag dependen
 ## Done-when (observable)
 
 **US-19 — Visualizer project scaffold**
-- [ ] `tools/visualizer/package.json` exists with `vite` and `typescript` as devDependencies [US-19]
-- [ ] `tools/visualizer/vite.config.ts` exists with a path alias resolving imports from `../../src/data/areas/` [US-19]
-- [ ] `tools/visualizer/tsconfig.json` exists and compiles the visualizer source plus the shared `src/data/areas/` types [US-19]
-- [ ] `npm install && npm run dev` from `tools/visualizer/` starts a dev server without errors on a port other than 5173 [US-19]
-- [ ] The app imports area data via `getArea()` and `getDefaultAreaId()` from the area registry — area selector dropdown lists all registered areas (currently 2: Ashen Isle, Fog Marsh) [US-19]
-- [ ] Three view tabs (Map, Dialogue, Flow) are visible; clicking a tab switches the visible view container [US-19]
-- [ ] Selecting a different area in the dropdown updates the active view to show that area's data [US-19]
-- [ ] Active area name is visible in the dropdown and active view tab is visually highlighted at all times [US-19]
-- [ ] `npm run build` in `tools/visualizer/` completes without errors [US-19]
-- [ ] `npx tsc --noEmit` passes in `tools/visualizer/` with no type errors [US-19]
+- [x] `tools/visualizer/package.json` exists with `vite` and `typescript` as devDependencies [US-19]
+- [x] `tools/visualizer/vite.config.ts` exists with a path alias resolving imports from `../../src/data/areas/` [US-19]
+- [x] `tools/visualizer/tsconfig.json` exists and compiles the visualizer source plus the shared `src/data/areas/` types [US-19]
+- [x] `npm install && npm run dev` from `tools/visualizer/` starts a dev server without errors on a port other than 5173 [US-19]
+- [x] The app imports area data via `getArea()` and `getDefaultAreaId()` from the area registry — area selector dropdown lists all registered areas (currently 2: Ashen Isle, Fog Marsh) [US-19]
+- [x] Three view tabs (Map, Dialogue, Flow) are visible; clicking a tab switches the visible view container [US-19]
+- [x] Selecting a different area in the dropdown updates the active view to show that area's data [US-19]
+- [x] Active area name is visible in the dropdown and active view tab is visually highlighted at all times [US-19]
+- [x] `npm run build` in `tools/visualizer/` completes without errors [US-19]
+- [x] `npx tsc --noEmit` passes in `tools/visualizer/` with no type errors [US-19]
 
 **US-20 — Area map view**
-- [ ] Canvas element renders when Map tab is active, sized to fit the area's tile grid [US-20]
-- [ ] Floor tiles render in the area's `visual.floorColor`, wall tiles in `visual.wallColor` [US-20]
-- [ ] NPC positions render as labeled circles at their (col, row) tile coordinates with name text [US-20]
-- [ ] Trigger zones render as colored semi-transparent rectangles: thought=blue, story=magenta, dialogue=green — matching the debug overlay color scheme in `systems/debugOverlay.ts` [US-20]
-- [ ] Exit zones render as orange rectangles with destination area ID as label text [US-20]
-- [ ] Clicking a trigger zone populates the detail panel with all `TriggerDefinition` fields (id, col, row, width, height, type, actionRef, condition, repeatable) [US-20]
-- [ ] Clicking an NPC populates the detail panel with all `NpcDefinition` fields (id, name, col, row, color) [US-20]
-- [ ] Clicking an exit populates the detail panel with all `ExitDefinition` fields (id, col, row, width, height, destinationAreaId, entryPoint, condition) [US-20]
-- [ ] Player spawn position renders as a distinct marker (different shape or color from NPCs) at `playerSpawn` coordinates [US-20]
-- [ ] Row and column indices are visible along the map edges (axis labels) [US-20]
+- [x] Canvas element renders when Map tab is active, sized to fit the area's tile grid [US-20]
+- [x] Floor tiles render in the area's `visual.floorColor`, wall tiles in `visual.wallColor` [US-20]
+- [x] NPC positions render as labeled circles at their (col, row) tile coordinates with name text [US-20]
+- [x] Trigger zones render as colored semi-transparent rectangles: thought=blue, story=magenta, dialogue=green — matching the debug overlay color scheme in `systems/debugOverlay.ts` [US-20]
+- [x] Exit zones render as orange rectangles with destination area ID as label text [US-20]
+- [x] Clicking a trigger zone populates the detail panel with all `TriggerDefinition` fields (id, col, row, width, height, type, actionRef, condition, repeatable) [US-20]
+- [x] Clicking an NPC populates the detail panel with all `NpcDefinition` fields (id, name, col, row, color) [US-20]
+- [x] Clicking an exit populates the detail panel with all `ExitDefinition` fields (id, col, row, width, height, destinationAreaId, entryPoint, condition) [US-20]
+- [x] Player spawn position renders as a distinct marker (different shape or color from NPCs) at `playerSpawn` coordinates [US-20]
+- [x] Row and column indices are visible along the map edges (axis labels) [US-20]
 
 **US-21 — Dialogue tree view**
-- [ ] Dialogue dropdown lists all keys from the selected area's `dialogues` record [US-21]
-- [ ] Selecting a dialogue renders a directed graph with one visual node per `DialogueNode` [US-21]
-- [ ] Directed edges connect nodes via `nextId` references [US-21]
-- [ ] Choice branches render as separate labeled edges — each edge shows the choice `text` [US-21]
-- [ ] Nodes display `speaker` name and truncated `text` (max 50 characters, ellipsis if longer) [US-21]
-- [ ] Clicking a node populates the detail panel with the full `DialogueNode` content (id, speaker, full text, nextId, choices) [US-21]
-- [ ] `setFlags` entries on choices render as highlighted annotations on the corresponding edge (flag name + value) [US-21]
-- [ ] Start node (matching `startNodeId`) has a visually distinct border or background color [US-21]
-- [ ] Terminal nodes (no `nextId` and no `choices`) have a visually distinct style (different color or border) [US-21]
+- [x] Dialogue dropdown lists all keys from the selected area's `dialogues` record [US-21]
+- [x] Selecting a dialogue renders a directed graph with one visual node per `DialogueNode` [US-21]
+- [x] Directed edges connect nodes via `nextId` references [US-21]
+- [x] Choice branches render as separate labeled edges — each edge shows the choice `text` [US-21]
+- [x] Nodes display `speaker` name and truncated `text` (max 50 characters, ellipsis if longer) [US-21]
+- [x] Clicking a node populates the detail panel with the full `DialogueNode` content (id, speaker, full text, nextId, choices) [US-21]
+- [x] `setFlags` entries on choices render as highlighted annotations on the corresponding edge (flag name + value) [US-21]
+- [x] Start node (matching `startNodeId`) has a visually distinct border or background color [US-21]
+- [x] Terminal nodes (no `nextId` and no `choices`) have a visually distinct style (different color or border) [US-21]
 
 **US-22 — Story flow overview**
-- [ ] All registered areas render as labeled boxes — layout is automatic, not manually positioned [US-22]
-- [ ] Exit connections render as directed arrows from source area box to destination area box, labeled with the exit ID [US-22]
-- [ ] Each area box lists its triggers with type-colored indicators (same color scheme as map view) and trigger IDs [US-22]
-- [ ] Flag dependencies render as dashed lines: `setFlags` in dialogue choices connect to triggers/exits whose `condition` references the same flag name [US-22]
-- [ ] Conditional exits display their condition text on or near the arrow [US-22]
-- [ ] The default area (from `getDefaultAreaId()`) has a visually distinct border or marker indicating it is the player's starting point [US-22]
-- [ ] Clicking an area box navigates to the Map tab with that area selected [US-22]
+- [x] All registered areas render as labeled boxes — layout is automatic, not manually positioned [US-22]
+- [x] Exit connections render as directed arrows from source area box to destination area box, labeled with the exit ID [US-22]
+- [x] Each area box lists its triggers with type-colored indicators (same color scheme as map view) and trigger IDs [US-22]
+- [x] Flag dependencies render as dashed lines: `setFlags` in dialogue choices connect to triggers/exits whose `condition` references the same flag name [US-22]
+- [x] Conditional exits display their condition text on or near the arrow [US-22]
+- [x] The default area (from `getDefaultAreaId()`) has a visually distinct border or marker indicating it is the player's starting point [US-22]
+- [x] Clicking an area box navigates to the Map tab with that area selected [US-22]
 
 **Structural**
-- [ ] AGENTS.md directory layout updated to include `tools/visualizer/` with a description of its purpose [phase]
-- [ ] AGENTS.md file ownership table includes entries for visualizer modules [phase]
+- [x] AGENTS.md directory layout updated to include `tools/visualizer/` with a description of its purpose [phase]
+- [x] AGENTS.md file ownership table includes entries for visualizer modules [phase]
 
 ### Safety criteria
 Safety criteria: N/A — this phase introduces no endpoints, user input fields, or query interpolation. The visualizer is a local dev tool that reads static area data.
