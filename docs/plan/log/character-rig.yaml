@@ -1,3 +1,9 @@
 phase: character-rig
 started: 2026-04-10T10:47:06Z
-entries: []
+entries:
+  - task: 1
+    type: investigate
+    story: US-23
+    description: "Investigated codebase for phase start. GameScene.createPlayer() creates a rectangle (24px, depth 5, origin 0,0). InputSystem.getVelocity() returns velocity at PLAYER_SPEED (160). No src/rig/ directory, no texture atlas infrastructure, no assets/ or public/ dir. Verify passes. Phase is CSS/JS-only. Queued US-23 rig types + CharacterRig implementation."
+    result: pass
+    tokens: ~12000
