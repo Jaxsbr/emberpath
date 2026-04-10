@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EmberPath Visualizer</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="toolbar">
+      <div id="area-selector-wrap">
+        <label for="area-select">Area:</label>
+        <select id="area-select"></select>
+      </div>
+      <nav id="view-tabs">
+        <button class="tab active" data-view="map">Map</button>
+        <button class="tab" data-view="dialogue">Dialogue</button>
+        <button class="tab" data-view="flow">Flow</button>
+      </nav>
+    </header>
+    <main id="workspace">
+      <div id="view-container">
+        <div id="view-map" class="view active"></div>
+        <div id="view-dialogue" class="view"></div>
+        <div id="view-flow" class="view"></div>
+      </div>
+      <aside id="detail-panel">
+        <h3>Detail</h3>
+        <pre id="detail-content">Select an element to inspect.</pre>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
