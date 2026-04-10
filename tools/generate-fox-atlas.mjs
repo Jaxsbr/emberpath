@@ -43,6 +43,36 @@ const parts = [
   { name: 'left-eye',               w: 4,  h: 4,  color: BLACK,  shape: 'ellipse' },
   { name: 'right-eye',              w: 4,  h: 4,  color: BLACK,  shape: 'ellipse' },
   { name: 'nose',                   w: 3,  h: 3,  color: BLACK,  shape: 'ellipse' },
+  // Ankles (4)
+  { name: 'front-left-ankle',       w: 6,  h: 6,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-right-ankle',      w: 6,  h: 6,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-left-ankle',        w: 6,  h: 6,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-right-ankle',       w: 6,  h: 6,  color: BROWN,  shape: 'ellipse' },
+  // Paws (4)
+  { name: 'front-left-paw',         w: 8,  h: 8,  color: RUSSET, shape: 'ellipse' },
+  { name: 'front-right-paw',        w: 8,  h: 8,  color: RUSSET, shape: 'ellipse' },
+  { name: 'back-left-paw',          w: 8,  h: 8,  color: RUSSET, shape: 'ellipse' },
+  { name: 'back-right-paw',         w: 8,  h: 8,  color: RUSSET, shape: 'ellipse' },
+  // Toes — front-left (4)
+  { name: 'front-left-toe-1',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-left-toe-2',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-left-toe-3',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-left-toe-4',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  // Toes — front-right (4)
+  { name: 'front-right-toe-1',      w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-right-toe-2',      w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-right-toe-3',      w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'front-right-toe-4',      w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  // Toes — back-left (4)
+  { name: 'back-left-toe-1',        w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-left-toe-2',        w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-left-toe-3',        w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-left-toe-4',        w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  // Toes — back-right (4)
+  { name: 'back-right-toe-1',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-right-toe-2',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-right-toe-3',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  { name: 'back-right-toe-4',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
 ];
 
 // --- Atlas packing (simple row-based) ---

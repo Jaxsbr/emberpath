@@ -1,8 +1,11 @@
-import { RigDefinition, UniqueDirection, DirectionProfile } from '../types';
+import { RigDefinition, UniqueDirection, DirectionProfile, PartProfile } from '../types';
 
 /**
  * Fox (Pip) rig definition — paper-puppet storybook aesthetic.
- * 19 named parts, 5 unique direction profiles (W, SW, NW mirrored from E, SE, NE).
+ * 43 named parts, 5 unique direction profiles (W, SW, NW mirrored from E, SE, NE).
+ *
+ * Leg hierarchy: upper-leg → lower-leg → ankle → paw → [toe-1..4]
+ * Toes splay per direction: S shows 4, E shows 2 (near-side), N shows back-paw toes.
  */
 
 // --- Skeleton hierarchy ---
@@ -21,10 +24,59 @@ const skeleton = {
       ],
     },
     { name: 'tail-1', children: [{ name: 'tail-2', children: [{ name: 'tail-3' }] }] },
-    { name: 'front-left-upper-leg', children: [{ name: 'front-left-lower-leg' }] },
-    { name: 'front-right-upper-leg', children: [{ name: 'front-right-lower-leg' }] },
-    { name: 'back-left-upper-leg', children: [{ name: 'back-left-lower-leg' }] },
-    { name: 'back-right-upper-leg', children: [{ name: 'back-right-lower-leg' }] },
+    { name: 'front-left-upper-leg', children: [{ name: 'front-left-lower-leg', children: [
+      { name: 'front-left-ankle', children: [{ name: 'front-left-paw', children: [
+        { name: 'front-left-toe-1' }, { name: 'front-left-toe-2' },
+        { name: 'front-left-toe-3' }, { name: 'front-left-toe-4' },
+      ]}]},
+    ]}]},
+    { name: 'front-right-upper-leg', children: [{ name: 'front-right-lower-leg', children: [
+      { name: 'front-right-ankle', children: [{ name: 'front-right-paw', children: [
+        { name: 'front-right-toe-1' }, { name: 'front-right-toe-2' },
+        { name: 'front-right-toe-3' }, { name: 'front-right-toe-4' },
+      ]}]},
+    ]}]},
+    { name: 'back-left-upper-leg', children: [{ name: 'back-left-lower-leg', children: [
+      { name: 'back-left-ankle', children: [{ name: 'back-left-paw', children: [
+        { name: 'back-left-toe-1' }, { name: 'back-left-toe-2' },
+        { name: 'back-left-toe-3' }, { name: 'back-left-toe-4' },
+      ]}]},
+    ]}]},
+    { name: 'back-right-upper-leg', children: [{ name: 'back-right-lower-leg', children: [
+      { name: 'back-right-ankle', children: [{ name: 'back-right-paw', children: [
+        { name: 'back-right-toe-1' }, { name: 'back-right-toe-2' },
+        { name: 'back-right-toe-3' }, { name: 'back-right-toe-4' },
+      ]}]},
+    ]}]},
+  ],
+};
+
+// --- Helper: generate ankle/paw/toe profiles for a leg ---
+type LegFootProfile = {
+  ankle: PartProfile;
+  paw: PartProfile;
+  toes: [PartProfile, PartProfile, PartProfile, PartProfile];
+};
+
+function legFoot(prefix: string, foot: LegFootProfile): Record<string, PartProfile> {
+  const result: Record<string, PartProfile> = {};
+  result[`${prefix}-ankle`] = foot.ankle;
+  result[`${prefix}-paw`] = foot.paw;
+  result[`${prefix}-toe-1`] = foot.toes[0];
+  result[`${prefix}-toe-2`] = foot.toes[1];
+  result[`${prefix}-toe-3`] = foot.toes[2];
+  result[`${prefix}-toe-4`] = foot.toes[3];
+  return result;
+}
+
+const HIDDEN_FOOT: LegFootProfile = {
+  ankle: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+  paw:   { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+  toes: [
+    { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+    { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+    { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+    { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
   ],
 };
 
@@ -33,7 +85,7 @@ const skeleton = {
 
 const profileS: DirectionProfile = {
   parts: {
-    // Front-facing: wide body, face visible, 2 front legs, tail hidden
+    // Front-facing: wide body, face visible, 2 front legs with splayed toes, tail hidden
     'body':                   { x: 0, y: 2, scaleX: 1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 0, y: -14, scaleX: 1, scaleY: 1, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 0, y: -8, scaleX: 1, scaleY: 1, rotation: 0, depth: 11, visible: true },
@@ -53,12 +105,36 @@ const profileS: DirectionProfile = {
     'back-left-lower-leg':    { x: -8, y: 22, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: false },
     'back-right-upper-leg':   { x: 8, y: 12, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: false },
     'back-right-lower-leg':   { x: 8, y: 22, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: false },
+    // Front paws: visible with 4 toes splayed
+    ...legFoot('front-left', {
+      ankle: { x: -6, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      paw:   { x: -6, y: 34, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
+      toes: [
+        { x: -10, y: 38, scaleX: 1, scaleY: 1, rotation: -0.3, depth: 6, visible: true },
+        { x: -7,  y: 39, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 6, visible: true },
+        { x: -5,  y: 39, scaleX: 1, scaleY: 1, rotation: 0.1, depth: 6, visible: true },
+        { x: -2,  y: 38, scaleX: 1, scaleY: 1, rotation: 0.3, depth: 6, visible: true },
+      ],
+    }),
+    ...legFoot('front-right', {
+      ankle: { x: 6, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      paw:   { x: 6, y: 34, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
+      toes: [
+        { x: 2,  y: 38, scaleX: 1, scaleY: 1, rotation: -0.3, depth: 6, visible: true },
+        { x: 5,  y: 39, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 6, visible: true },
+        { x: 7,  y: 39, scaleX: 1, scaleY: 1, rotation: 0.1, depth: 6, visible: true },
+        { x: 10, y: 38, scaleX: 1, scaleY: 1, rotation: 0.3, depth: 6, visible: true },
+      ],
+    }),
+    // Back paws: hidden (back legs hidden in S)
+    ...legFoot('back-left', HIDDEN_FOOT),
+    ...legFoot('back-right', HIDDEN_FOOT),
   },
 };
 
 const profileN: DirectionProfile = {
   parts: {
-    // Back-facing: tail prominent, back of head, back legs visible
+    // Back-facing: tail prominent, back of head, back legs with toes visible
     'body':                   { x: 0, y: 2, scaleX: 1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 0, y: -14, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 0, y: -10, scaleX: 0.8, scaleY: 0.6, rotation: 0, depth: 9, visible: false },
@@ -78,12 +154,36 @@ const profileN: DirectionProfile = {
     'back-left-lower-leg':    { x: -7, y: 24, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
     'back-right-upper-leg':   { x: 7, y: 14, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
     'back-right-lower-leg':   { x: 7, y: 24, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
+    // Front paws: hidden (front legs hidden in N)
+    ...legFoot('front-left', HIDDEN_FOOT),
+    ...legFoot('front-right', HIDDEN_FOOT),
+    // Back paws: visible with 4 toes splayed
+    ...legFoot('back-left', {
+      ankle: { x: -7, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      paw:   { x: -7, y: 34, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
+      toes: [
+        { x: -11, y: 38, scaleX: 1, scaleY: 1, rotation: -0.3, depth: 6, visible: true },
+        { x: -8,  y: 39, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 6, visible: true },
+        { x: -6,  y: 39, scaleX: 1, scaleY: 1, rotation: 0.1, depth: 6, visible: true },
+        { x: -3,  y: 38, scaleX: 1, scaleY: 1, rotation: 0.3, depth: 6, visible: true },
+      ],
+    }),
+    ...legFoot('back-right', {
+      ankle: { x: 7, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      paw:   { x: 7, y: 34, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
+      toes: [
+        { x: 3,  y: 38, scaleX: 1, scaleY: 1, rotation: -0.3, depth: 6, visible: true },
+        { x: 6,  y: 39, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 6, visible: true },
+        { x: 8,  y: 39, scaleX: 1, scaleY: 1, rotation: 0.1, depth: 6, visible: true },
+        { x: 11, y: 38, scaleX: 1, scaleY: 1, rotation: 0.3, depth: 6, visible: true },
+      ],
+    }),
   },
 };
 
 const profileE: DirectionProfile = {
   parts: {
-    // Side-facing (right): full body profile, 4 legs, full tail chain
+    // Side-facing (right): full body profile, 4 legs, 2 toes per paw (side view)
     'body':                   { x: 0, y: 0, scaleX: 1.2, scaleY: 0.8, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 14, y: -10, scaleX: 0.9, scaleY: 0.9, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 24, y: -8, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 11, visible: true },
@@ -105,12 +205,54 @@ const profileE: DirectionProfile = {
     'front-left-lower-leg':   { x: 6, y: 22, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
     'back-left-upper-leg':    { x: -10, y: 12, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
     'back-left-lower-leg':    { x: -10, y: 22, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
+    // Near paws (right) — 2 toes visible from side
+    ...legFoot('front-right', {
+      ankle: { x: 8, y: 28, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      paw:   { x: 8, y: 32, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      toes: [
+        { x: 10, y: 35, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 7, visible: true },
+        { x: 7,  y: 36, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 7, visible: true },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    ...legFoot('back-right', {
+      ankle: { x: -8, y: 28, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      paw:   { x: -8, y: 32, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      toes: [
+        { x: -6, y: 35, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 7, visible: true },
+        { x: -9, y: 36, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 7, visible: true },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    // Far paws (left) — 2 toes, reduced alpha
+    ...legFoot('front-left', {
+      ankle: { x: 6, y: 28, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
+      paw:   { x: 6, y: 32, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
+      toes: [
+        { x: 8, y: 35, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 3, visible: true, alpha: 0.7 },
+        { x: 5, y: 36, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 3, visible: true, alpha: 0.7 },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    ...legFoot('back-left', {
+      ankle: { x: -10, y: 28, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
+      paw:   { x: -10, y: 32, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.7 },
+      toes: [
+        { x: -8,  y: 35, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 3, visible: true, alpha: 0.7 },
+        { x: -11, y: 36, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 3, visible: true, alpha: 0.7 },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
   },
 };
 
 const profileSE: DirectionProfile = {
   parts: {
-    // Diagonal front-right: mix of front and side
+    // Diagonal front-right: mix of front and side, 3 toes on near paws, 2 on far
     'body':                   { x: 0, y: 1, scaleX: 1.1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 8, y: -12, scaleX: 0.95, scaleY: 0.95, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 14, y: -8, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 11, visible: true },
@@ -132,12 +274,54 @@ const profileSE: DirectionProfile = {
     'front-left-lower-leg':   { x: 4, y: 24, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
     'back-left-upper-leg':    { x: -8, y: 13, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
     'back-left-lower-leg':    { x: -8, y: 23, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+    // Near paws (right) — 3 toes visible (diagonal view)
+    ...legFoot('front-right', {
+      ankle: { x: 8, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      paw:   { x: 8, y: 34, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 7, visible: true },
+      toes: [
+        { x: 5,  y: 38, scaleX: 1, scaleY: 1, rotation: -0.2, depth: 7, visible: true },
+        { x: 8,  y: 39, scaleX: 1, scaleY: 1, rotation: 0, depth: 7, visible: true },
+        { x: 11, y: 38, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 7, visible: true },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    ...legFoot('back-right', {
+      ankle: { x: -4, y: 29, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      paw:   { x: -4, y: 33, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 6, visible: true },
+      toes: [
+        { x: -7, y: 37, scaleX: 1, scaleY: 1, rotation: -0.2, depth: 6, visible: true },
+        { x: -4, y: 38, scaleX: 1, scaleY: 1, rotation: 0, depth: 6, visible: true },
+        { x: -1, y: 37, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 6, visible: true },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    // Far paws (left) — 2 toes, reduced alpha
+    ...legFoot('front-left', {
+      ankle: { x: 4, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      paw:   { x: 4, y: 34, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      toes: [
+        { x: 2, y: 38, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 3, visible: true, alpha: 0.6 },
+        { x: 5, y: 38, scaleX: 1, scaleY: 1, rotation: 0.1, depth: 3, visible: true, alpha: 0.6 },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    ...legFoot('back-left', {
+      ankle: { x: -8, y: 29, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      paw:   { x: -8, y: 33, scaleX: 1, scaleY: 0.9, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      toes: [
+        { x: -10, y: 37, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 3, visible: true, alpha: 0.6 },
+        { x: -7,  y: 37, scaleX: 1, scaleY: 1, rotation: 0.1, depth: 3, visible: true, alpha: 0.6 },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
   },
 };
 
 const profileNE: DirectionProfile = {
   parts: {
-    // Diagonal back-right: back of head, tail visible, rear emphasis
+    // Diagonal back-right: back of head, tail visible, rear emphasis, 2-3 toes
     'body':                   { x: 0, y: 1, scaleX: 1.1, scaleY: 0.85, rotation: 0, depth: 5, visible: true },
     'head':                   { x: 8, y: -12, scaleX: 0.9, scaleY: 0.9, rotation: 0, depth: 10, visible: true },
     'snout':                  { x: 16, y: -10, scaleX: 0.7, scaleY: 0.6, rotation: 0, depth: 11, visible: true, alpha: 0.5 },
@@ -159,6 +343,48 @@ const profileNE: DirectionProfile = {
     'front-left-lower-leg':   { x: 4, y: 24, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
     'back-left-upper-leg':    { x: -8, y: 13, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
     'back-left-lower-leg':    { x: -8, y: 23, scaleX: 1, scaleY: 1, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+    // Near paws (right) — 2 toes from rear angle
+    ...legFoot('front-right', {
+      ankle: { x: 6, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      paw:   { x: 6, y: 33, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 7, visible: true },
+      toes: [
+        { x: 8, y: 36, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 7, visible: true },
+        { x: 5, y: 37, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 7, visible: true },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    ...legFoot('back-right', {
+      ankle: { x: -6, y: 29, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      paw:   { x: -6, y: 32, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 6, visible: true },
+      toes: [
+        { x: -4, y: 35, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 6, visible: true },
+        { x: -7, y: 36, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 6, visible: true },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    // Far paws (left) — 2 toes, reduced alpha
+    ...legFoot('front-left', {
+      ankle: { x: 4, y: 30, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      paw:   { x: 4, y: 33, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      toes: [
+        { x: 6, y: 36, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 3, visible: true, alpha: 0.6 },
+        { x: 3, y: 37, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 3, visible: true, alpha: 0.6 },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
+    ...legFoot('back-left', {
+      ankle: { x: -8, y: 29, scaleX: 0.8, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      paw:   { x: -8, y: 32, scaleX: 1, scaleY: 0.8, rotation: 0, depth: 3, visible: true, alpha: 0.6 },
+      toes: [
+        { x: -6, y: 35, scaleX: 1, scaleY: 1, rotation: 0.2, depth: 3, visible: true, alpha: 0.6 },
+        { x: -9, y: 36, scaleX: 1, scaleY: 1, rotation: -0.1, depth: 3, visible: true, alpha: 0.6 },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+        { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, depth: 0, visible: false },
+      ],
+    }),
   },
 };
 
