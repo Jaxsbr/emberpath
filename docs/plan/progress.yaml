@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 4
-  next_task: null
+  next_task: "[US-25] Create walk/run animation controller — body bob, leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration, speed as source of truth"
   last_result: pass
   consecutive_fails: 0
 
