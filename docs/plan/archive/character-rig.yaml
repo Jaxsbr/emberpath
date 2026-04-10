@@ -1,0 +1,95 @@
+phase: character-rig
+started: 2026-04-10T10:47:06Z
+entries:
+  - task: 1
+    type: investigate
+    story: US-23
+    description: "Investigated codebase for phase start. GameScene.createPlayer() creates a rectangle (24px, depth 5, origin 0,0). InputSystem.getVelocity() returns velocity at PLAYER_SPEED (160). No src/rig/ directory, no texture atlas infrastructure, no assets/ or public/ dir. Verify passes. Phase is CSS/JS-only. Queued US-23 rig types + CharacterRig implementation."
+    result: pass
+    tokens: ~12000
+  - task: 2
+    type: implement
+    story: US-23
+    description: "Created src/rig/types.ts (RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams interfaces) and src/rig/CharacterRig.ts (container + atlas sprites, 8-direction with mirroring, pluggable controllers, delta-time update). Verify passes. ✓ US-23 complete"
+    result: pass
+    tokens: ~15000
+  - task: 3
+    type: investigate
+    story: US-24
+    description: "US-23 complete. US-24 needs: fox rig definition with 16+ named parts, 5 unique direction profiles, texture atlas (fox.png+fox.json), paper-puppet warm colors. GameScene integration replaces rectangle with CharacterRig. Queued fox definition + atlas task."
+    result: pass
+    tokens: ~2000
+  - task: 4
+    type: implement
+    story: US-24
+    description: "Created src/rig/characters/fox.ts (foxRigDefinition — 16 parts, 5 direction profiles, walkRun/idle params), tools/generate-fox-atlas.mjs (atlas generator — warm palette ellipses/shapes), assets/characters/fox.png+fox.json (256x64 atlas, 16 named frames). Verify passes."
+    result: pass
+    tokens: ~18000
+  - task: 5
+    type: investigate
+    story: US-24
+    description: "Fox definition + atlas done. Remaining US-24 criteria: integrate into GameScene (preload atlas, replace rectangle, camera follow container, collision bounding box matches PLAYER_SIZE 24px, area transitions). Queued integration task."
+    result: pass
+    tokens: ~1000
+  - task: 6
+    type: implement
+    story: US-24
+    description: "Integrated fox rig into GameScene: preload atlas via Vite publicDir=assets, replace rectangle with CharacterRig, camera follows container, collision uses PLAYER_SIZE 24px, direction from velocity (8-way), rig cleanup on shutdown. Verify passes. ✓ US-24 complete"
+    result: pass
+    tokens: ~15000
+  - task: 7
+    type: investigate
+    story: US-25
+    description: "US-24 complete. US-25 needs walkRun controller: sine-wave body bob, alternating leg gait, tail follow-through with phase delay, ear sway, walk-to-run transition after 0.8s hold, deceleration on stop, speed sourced from controller. Must integrate with InputSystem velocity and GameScene movement. Queued implement."
+    result: pass
+    tokens: ~1000
+  - task: 8
+    type: implement
+    story: US-25
+    description: "Created src/rig/animations/walkRun.ts (WalkRunController — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run after 0.8s, deceleration settle, speed source of truth). Updated GameScene to use controller speed. Verify passes. ✓ US-25 complete"
+    result: pass
+    tokens: ~18000
+  - task: 9
+    type: investigate
+    story: US-26
+    description: "US-25 complete. Queued US-26 idle controller."
+    result: pass
+    tokens: ~500
+  - task: 10
+    type: implement
+    story: US-26
+    description: "Created src/rig/animations/idle.ts (IdleController — breathing, tail sway, head turn after 3s, sit after 6s, random ear flicks). Registered in GameScene. Verify passes. ✓ US-26 complete"
+    result: pass
+    tokens: ~15000
+  - task: 11
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: added rig modules to file ownership table (types.ts, CharacterRig.ts, fox.ts, walkRun.ts, idle.ts, generate-fox-atlas.mjs), updated GameScene description, added fox rig behavior rules (atlas preload, walk/run speed, idle progression), fixed duplicate tools/ in directory layout. Depth map unchanged. Verify passes. ✓ All [phase] criteria complete"
+    result: pass
+    tokens: ~8000
+  - task: 12
+    type: gate
+    story: phase
+    description: >
+      Phase Completion Gate — all 55 done-when criteria verified:
+      US-23 (rig engine): types.ts exports 11 interfaces, CharacterRig class with setDirection/update/addAnimationController, 8-dir with 3 mirrored.
+      US-24 (fox rig): 16 named parts in skeleton, 5 direction profiles (S/N/E/SE/NE), atlas 256x64 with 16 frames, warm palette, GameScene integration (preload atlas, createPlayer uses CharacterRig, camera follows container, depth 5, collision 24px).
+      US-25 (walk/run): WalkRunController with body bob, leg gait, tail follow-through, walk-to-run after 0.8s, deceleration, getCurrentSpeed() as speed source of truth.
+      US-26 (idle): IdleController with breathing, tail sway, ear flick, head turn at 3s, sit at 6s, destroy cleanup.
+      US-27 (guide): 6 sections (Architecture, Bone Hierarchy, Direction Profile, Animation Controller, Art Replacement, New Character), file references match codebase.
+      [phase]: AGENTS.md directory layout, file ownership, depth map unchanged, behavior rules with atlas preload.
+      Verify passes. AGENTS.md consistent. No error paths (game client, no endpoints).
+    result: pass
+    tokens: ~5000
+  - task: 13
+    type: review
+    story: phase
+    description: "review-pr PR #6 — 0 critical, 3 concerns (ear flick state reset, silent profile fallback, walkRun state ordering), 1 nit (hardcoded head turn speed). Review posted as COMMENT."
+    result: pass
+    tokens: ~10000
+  - task: 14
+    type: review
+    story: phase
+    description: "handle-pr-review PR #6 — fixed 2 (ear flick progress reset on movement, walkRun ordering comment), skipped 2 (silent fallback — POC scope, head turn speed — nit). Verify passes. All threads resolved. Phase review complete."
+    result: pass
+    tokens: ~8000
