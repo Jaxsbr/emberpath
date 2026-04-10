@@ -25,3 +25,9 @@ entries:
     description: "Added Phaser 3 dependency to editor, updated tsconfig to include rig types, added publicDir for game assets. Created rigRenderer.ts with embedded RigPreviewScene (CharacterRig + checkerboard grid at depth 0 + selection highlight at depth 1000), rig selector dropdown, 8-direction compass picker, collapsible skeleton hierarchy panel with click-to-select. Updated index.html with Rig tab, main.ts with rig view routing and destroy lifecycle. All 14 US-29 criteria met. Verify passes. ✓ US-29 complete"
     result: pass
     tokens: ~20000
+  - task: 5
+    type: investigate
+    story: US-30
+    description: "US-29 complete. US-30 needs: property editor panel (right sidebar) showing x, y, scaleX, scaleY, rotation, depth, visible, alpha for selected part + direction. Edits must update Phaser scene in real time. Direction profiles stored as editor state (mutable copy from definition). Mirror indicator for W/SW/NW. DOM event isolation to prevent Phaser clicks when editing inputs. Queued implementation."
+    result: pass
+    tokens: ~2000

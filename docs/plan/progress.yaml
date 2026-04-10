@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 4
-  next_task: null
+  next_task: "[US-30] Add property editor panel to rig tab — per-part per-direction editing (x, y, scaleX, scaleY, rotation, depth, visible, alpha) with real-time Phaser preview updates, direction-aware state management, mirror indicator for W/SW/NW, scene-to-DOM event isolation"
   last_result: pass
   consecutive_fails: 0
 
