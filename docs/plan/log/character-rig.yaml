@@ -43,3 +43,9 @@ entries:
     description: "US-24 complete. US-25 needs walkRun controller: sine-wave body bob, alternating leg gait, tail follow-through with phase delay, ear sway, walk-to-run transition after 0.8s hold, deceleration on stop, speed sourced from controller. Must integrate with InputSystem velocity and GameScene movement. Queued implement."
     result: pass
     tokens: ~1000
+  - task: 8
+    type: implement
+    story: US-25
+    description: "Created src/rig/animations/walkRun.ts (WalkRunController — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run after 0.8s, deceleration settle, speed source of truth). Updated GameScene to use controller speed. Verify passes. ✓ US-25 complete"
+    result: pass
+    tokens: ~18000
