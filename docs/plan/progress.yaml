@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 7
-  next_task: null
+  next_task: "[phase] Update AGENTS.md — add src/rig/ to directory layout, rig modules to file ownership, document fox atlas preload in behavior rules"
   last_result: pass
   consecutive_fails: 0
 
