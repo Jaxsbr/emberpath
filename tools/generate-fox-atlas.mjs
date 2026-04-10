@@ -73,6 +73,10 @@ const parts = [
   { name: 'back-right-toe-2',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
   { name: 'back-right-toe-3',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
   { name: 'back-right-toe-4',       w: 3,  h: 3,  color: BROWN,  shape: 'ellipse' },
+  // Joints
+  { name: 'neck',                   w: 10, h: 8,  color: ORANGE, shape: 'ellipse' },
+  { name: 'shoulders',              w: 14, h: 8,  color: ORANGE, shape: 'ellipse' },
+  { name: 'hips',                   w: 12, h: 8,  color: ORANGE, shape: 'ellipse' },
 ];
 
 // --- Atlas packing (simple row-based) ---

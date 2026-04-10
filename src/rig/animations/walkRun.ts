@@ -103,9 +103,25 @@ export class WalkRunController implements AnimationController {
       }
     }
 
+    // --- Neck follows body bob (dampened), slight forward pitch ---
+    if (boneStates['neck']) {
+      boneStates['neck'].offsetY = Math.sin(phase * 2) * bobHeight * 0.7;
+      boneStates['neck'].rotation = Math.sin(phase) * 0.03 * amp;
+    }
+
     // --- Head follows body bob (dampened) ---
     if (boneStates['head']) {
       boneStates['head'].offsetY = Math.sin(phase * 2) * bobHeight * 0.5;
+    }
+
+    // --- Shoulders bob with body (subtle) ---
+    if (boneStates['shoulders']) {
+      boneStates['shoulders'].offsetY = Math.sin(phase * 2) * bobHeight * 0.8;
+    }
+
+    // --- Hips bob with body (subtle, phase offset for sway) ---
+    if (boneStates['hips']) {
+      boneStates['hips'].offsetY = Math.sin(phase * 2 + 0.3) * bobHeight * 0.6;
     }
 
     // --- Leg gait (alternating pairs: front-left + back-right, front-right + back-left) ---

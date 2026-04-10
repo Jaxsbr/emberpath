@@ -74,6 +74,10 @@ export class IdleController implements AnimationController {
       boneStates['body'].scaleX = breathScale;
       boneStates['body'].scaleY = breathScale;
     }
+    // Shoulders follow breathing (subtle expand/contract)
+    if (boneStates['shoulders']) {
+      boneStates['shoulders'].scaleX = breathScale;
+    }
 
     // --- Tail sway (immediate, distinct from walk tail) ---
     this.tailPhase += deltaSec / this.params.tailSwayPeriod * Math.PI * 2;
@@ -109,6 +113,10 @@ export class IdleController implements AnimationController {
       const turnAmount = this.headTurnProgress < 0.5
         ? this.headTurnProgress * 2 // 0 to 1 (turning)
         : (1 - this.headTurnProgress) * 2; // 1 to 0 (returning)
+      // Neck leads the turn (half angle), head follows full angle
+      if (boneStates['neck']) {
+        boneStates['neck'].rotation = turnAmount * this.params.headTurnAngle * 0.5 * this.headTurnDirection;
+      }
       if (boneStates['head']) {
         boneStates['head'].rotation = turnAmount * this.params.headTurnAngle * this.headTurnDirection;
       }
@@ -129,6 +137,18 @@ export class IdleController implements AnimationController {
       // Body lowers
       if (boneStates['body']) {
         boneStates['body'].offsetY += this.params.sitLowerAmount * sitEase;
+      }
+      // Hips drop with body (rear lowers more in a sit)
+      if (boneStates['hips']) {
+        boneStates['hips'].offsetY += this.params.sitLowerAmount * 1.2 * sitEase;
+      }
+      // Shoulders stay higher (front legs prop up the front)
+      if (boneStates['shoulders']) {
+        boneStates['shoulders'].offsetY += this.params.sitLowerAmount * 0.3 * sitEase;
+      }
+      // Neck follows body down slightly
+      if (boneStates['neck']) {
+        boneStates['neck'].offsetY += this.params.sitLowerAmount * 0.4 * sitEase;
       }
       // Head follows body down (less)
       if (boneStates['head']) {

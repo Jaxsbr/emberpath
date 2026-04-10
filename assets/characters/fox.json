@@ -859,6 +859,66 @@
         "w": 3,
         "h": 3
       }
+    },
+    "neck": {
+      "frame": {
+        "x": 209,
+        "y": 40,
+        "w": 10,
+        "h": 8
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 8
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 8
+      }
+    },
+    "shoulders": {
+      "frame": {
+        "x": 221,
+        "y": 40,
+        "w": 14,
+        "h": 8
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 14,
+        "h": 8
+      },
+      "sourceSize": {
+        "w": 14,
+        "h": 8
+      }
+    },
+    "hips": {
+      "frame": {
+        "x": 237,
+        "y": 40,
+        "w": 12,
+        "h": 8
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "sourceSize": {
+        "w": 12,
+        "h": 8
+      }
     }
   },
   "meta": {
