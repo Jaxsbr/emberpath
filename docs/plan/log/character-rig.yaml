@@ -13,3 +13,9 @@ entries:
     description: "Created src/rig/types.ts (RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams interfaces) and src/rig/CharacterRig.ts (container + atlas sprites, 8-direction with mirroring, pluggable controllers, delta-time update). Verify passes. ✓ US-23 complete"
     result: pass
     tokens: ~15000
+  - task: 3
+    type: investigate
+    story: US-24
+    description: "US-23 complete. US-24 needs: fox rig definition with 16+ named parts, 5 unique direction profiles, texture atlas (fox.png+fox.json), paper-puppet warm colors. GameScene integration replaces rectangle with CharacterRig. Queued fox definition + atlas task."
+    result: pass
+    tokens: ~2000
