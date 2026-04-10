@@ -27,9 +27,9 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: "[US-23] Create rig type definitions (RigDefinition, DirectionProfile, BoneDefinition, AnimationController) and CharacterRig class with container, setDirection, update, and addAnimationController"
-  last_result: null
+  task_number: 2
+  next_task: null
+  last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---

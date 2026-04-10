@@ -7,3 +7,9 @@ entries:
     description: "Investigated codebase for phase start. GameScene.createPlayer() creates a rectangle (24px, depth 5, origin 0,0). InputSystem.getVelocity() returns velocity at PLAYER_SPEED (160). No src/rig/ directory, no texture atlas infrastructure, no assets/ or public/ dir. Verify passes. Phase is CSS/JS-only. Queued US-23 rig types + CharacterRig implementation."
     result: pass
     tokens: ~12000
+  - task: 2
+    type: implement
+    story: US-23
+    description: "Created src/rig/types.ts (RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams interfaces) and src/rig/CharacterRig.ts (container + atlas sprites, 8-direction with mirroring, pluggable controllers, delta-time update). Verify passes. ✓ US-23 complete"
+    result: pass
+    tokens: ~15000
