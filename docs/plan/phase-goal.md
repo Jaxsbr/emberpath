@@ -1,61 +1,78 @@
 ## Phase goal
 
-Build a read-only story visualizer — a separate Vite dev tool in `tools/visualizer/` that imports EmberPath's area data directly and renders three views: (1) spatial area map with NPCs, triggers, and exits overlaid, (2) dialogue tree node graphs showing branching and flag mutations, (3) inter-area story flow overview with flag dependencies. The visualizer gives the story author a feedback loop for crafting the narrative without running the game or reading raw TypeScript data files.
+Build a reusable 2D skeletal rig system with procedural animation, and implement Pip (fox kit) as the first character. The rig system uses bone hierarchies, 8-direction profiles, and texture atlas body parts — designed so that any character can be defined as a data-driven rig and animated without per-frame sprite art. Pip replaces the colored square in GameScene with a paper-puppet aesthetic fox that trots, runs, and idles with personality. Documentation is a first-class deliverable so future developers and artists can create new characters and swap art.
 
 ### Design direction
 
-Dev tool — functional and clean. Dark background with high-contrast overlays. Color-coded elements matching the in-game debug overlay scheme (blue=thought, magenta=story, green=dialogue, orange=exit). Readable labels, no decorative elements. Optimized for a wide desktop viewport.
-
-### Dependencies
-- area-system
+Paper-puppet storybook aesthetic. Body parts are warm-colored organic shapes (oranges, russets, creams, browns) with soft edges, evoking cut-out illustrations from a children's book. The fox should look deliberate — a style choice, not programmer placeholder. Think paper theater puppets or Eric Carle-style layered shapes. No flat geometric programmer art (pure rectangles, neon colors, hard pixel edges).
 
 ### Stories in scope
-- US-19 — Visualizer project scaffold
-- US-20 — Area map view
-- US-21 — Dialogue tree view
-- US-22 — Story flow overview
+- US-23 — Reusable skeletal rig engine
+- US-24 — Fox character rig (Pip)
+- US-25 — Walk and run procedural animations
+- US-26 — Idle animation suite
+- US-27 — Rig system implementor guide
 
 ### Done-when (observable)
-- [x] `tools/visualizer/package.json` exists with `vite` and `typescript` as devDependencies [US-19]
-- [x] `tools/visualizer/vite.config.ts` exists with a path alias resolving imports from `../../src/data/areas/` [US-19]
-- [x] `tools/visualizer/tsconfig.json` exists and compiles the visualizer source plus the shared `src/data/areas/` types [US-19]
-- [x] `npm install && npm run dev` from `tools/visualizer/` starts a dev server without errors on a port other than 5173 [US-19]
-- [x] The app imports area data via `getArea()` and `getDefaultAreaId()` from the area registry — area selector dropdown lists all registered areas (currently 2: Ashen Isle, Fog Marsh) [US-19]
-- [x] Three view tabs (Map, Dialogue, Flow) are visible; clicking a tab switches the visible view container [US-19]
-- [x] Selecting a different area in the dropdown updates the active view to show that area's data [US-19]
-- [x] Active area name is visible in the dropdown and active view tab is visually highlighted at all times [US-19]
-- [x] `npm run build` in `tools/visualizer/` completes without errors [US-19]
-- [x] `npx tsc --noEmit` passes in `tools/visualizer/` with no type errors [US-19]
-- [x] Canvas element renders when Map tab is active, sized to fit the area's tile grid [US-20]
-- [x] Floor tiles render in the area's `visual.floorColor`, wall tiles in `visual.wallColor` [US-20]
-- [x] NPC positions render as labeled circles at their (col, row) tile coordinates with name text [US-20]
-- [x] Trigger zones render as colored semi-transparent rectangles: thought=blue, story=magenta, dialogue=green — matching the debug overlay color scheme in `systems/debugOverlay.ts` [US-20]
-- [x] Exit zones render as orange rectangles with destination area ID as label text [US-20]
-- [x] Clicking a trigger zone populates the detail panel with all `TriggerDefinition` fields (id, col, row, width, height, type, actionRef, condition, repeatable) [US-20]
-- [x] Clicking an NPC populates the detail panel with all `NpcDefinition` fields (id, name, col, row, color) [US-20]
-- [x] Clicking an exit populates the detail panel with all `ExitDefinition` fields (id, col, row, width, height, destinationAreaId, entryPoint, condition) [US-20]
-- [x] Player spawn position renders as a distinct marker (different shape or color from NPCs) at `playerSpawn` coordinates [US-20]
-- [x] Row and column indices are visible along the map edges (axis labels) [US-20]
-- [x] Dialogue dropdown lists all keys from the selected area's `dialogues` record [US-21]
-- [x] Selecting a dialogue renders a directed graph with one visual node per `DialogueNode` [US-21]
-- [x] Directed edges connect nodes via `nextId` references [US-21]
-- [x] Choice branches render as separate labeled edges — each edge shows the choice `text` [US-21]
-- [x] Nodes display `speaker` name and truncated `text` (max 50 characters, ellipsis if longer) [US-21]
-- [x] Clicking a node populates the detail panel with the full `DialogueNode` content (id, speaker, full text, nextId, choices) [US-21]
-- [x] `setFlags` entries on choices render as highlighted annotations on the corresponding edge (flag name + value) [US-21]
-- [x] Start node (matching `startNodeId`) has a visually distinct border or background color [US-21]
-- [x] Terminal nodes (no `nextId` and no `choices`) have a visually distinct style (different color or border) [US-21]
-- [x] All registered areas render as labeled boxes — layout is automatic, not manually positioned [US-22]
-- [x] Exit connections render as directed arrows from source area box to destination area box, labeled with the exit ID [US-22]
-- [x] Each area box lists its triggers with type-colored indicators (same color scheme as map view) and trigger IDs [US-22]
-- [x] Flag dependencies render as dashed lines: `setFlags` in dialogue choices connect to triggers/exits whose `condition` references the same flag name [US-22]
-- [x] Conditional exits display their condition text on or near the arrow [US-22]
-- [x] The default area (from `getDefaultAreaId()`) has a visually distinct border or marker indicating it is the player's starting point [US-22]
-- [x] Clicking an area box navigates to the Map tab with that area selected [US-22]
-- [x] AGENTS.md directory layout updated to include `tools/visualizer/` with a description of its purpose [phase]
-- [x] AGENTS.md file ownership table includes entries for visualizer modules [phase]
+- [x] `src/rig/CharacterRig.ts` exists and exports a `CharacterRig` class [US-23]
+- [x] `src/rig/types.ts` exists and exports `RigDefinition`, `DirectionProfile`, `BoneDefinition`, and `AnimationController` interfaces [US-23]
+- [x] `CharacterRig` constructor accepts a `RigDefinition` and a Phaser Scene, creates a Phaser Container with child Sprite objects sourced from a texture atlas [US-23]
+- [x] `CharacterRig.setDirection(dir)` accepts 8 directions (N, NE, E, SE, S, SW, W, NW) and updates per-part visibility, position, scale, rotation, and depth order per the direction's profile [US-23]
+- [x] Direction profiles for W, SW, NW are derived by mirroring E, SE, NE (container or part scaleX flip) — the fox rig definition contains only 5 unique direction profiles [US-23]
+- [x] `CharacterRig.update(delta)` calls all registered animation controllers, passing delta time and current bone state [US-23]
+- [x] Animation controllers are added via `addAnimationController()` or equivalent registration method — `CharacterRig` contains no animation logic itself [US-23]
+- [x] `RigDefinition` and `DirectionProfile` are plain data objects (object literals / interfaces), not class instances [US-23]
+- [x] `npx tsc --noEmit && npm run build` passes with the new rig module included [US-23]
+- [x] `src/rig/characters/fox.ts` exists and exports a fox rig definition conforming to `RigDefinition` [US-24]
+- [x] Fox rig defines minimum 16 named parts: body, head, snout, left-ear, right-ear, tail-1, tail-2, tail-3, front-left-upper-leg, front-left-lower-leg, front-right-upper-leg, front-right-lower-leg, back-left-upper-leg, back-left-lower-leg, back-right-upper-leg, back-right-lower-leg [US-24]
+- [x] 5 unique direction profiles exist (S, N, E, SE, NE) with per-part position, scale, rotation, depth, and visibility configs [US-24]
+- [x] S profile: face visible (eyes/snout detail), body wide and short (foreshortened), 2 front legs visible, back legs hidden, tail hidden or peeking [US-24]
+- [x] E profile: full body profile (long oval), 4 legs visible (near pair at higher alpha/depth than far pair), 1 ear visible, full tail chain trailing [US-24]
+- [x] N profile: back of head, tail prominent above/behind body, back legs visible, no face detail [US-24]
+- [x] `assets/characters/fox.png` and `assets/characters/fox.json` exist as a valid Phaser texture atlas with named frames matching all fox body parts [US-24]
+- [x] Placeholder PNGs use warm-palette colors (oranges, russets, creams, browns) with organic shapes — paper-puppet storybook aesthetic, not geometric programmer art (aspirational — visual verification required) [US-24]
+- [x] Fox character reads as a fox from S and E facing directions — identifiable pointed ears, snout, and bushy multi-segment tail (aspirational — visual verification required) [US-24]
+- [x] `GameScene.createPlayer()` creates a `CharacterRig` with the fox definition instead of `this.add.rectangle()` [US-24]
+- [x] Fox rig container is positioned at the same coordinates as the previous rectangle and uses `setDepth(5)` per the depth map (Entities layer) [US-24]
+- [x] Camera follows the fox rig container center — panning and zoom behavior unchanged from the rectangle player [US-24]
+- [x] Collision bounding box derived from the fox rig matches PLAYER_SIZE (24px) — `moveWithCollision`, `NpcInteractionSystem`, `TriggerZoneSystem`, and `checkExitZones` all function without changes to their input dimensions [US-24]
+- [x] Area transitions (fade-out → scene restart → fade-in) work with the fox rig — no visual glitches or position errors on area change [US-24]
+- [x] `src/rig/animations/walkRun.ts` exists and exports a walk/run animation controller conforming to `AnimationController` [US-25]
+- [x] When velocity > 0 at walk speed: body oscillates vertically (visible bob), legs rotate in alternating gait (front-left pairs with back-right), tail segments follow with progressive phase offset, ears sway [US-25]
+- [x] When velocity > 0 at run speed: animation cycle is faster, bob amplitude is larger, body rotation tilts forward, tail segments stream behind with less sway [US-25]
+- [x] Walk-to-run speed transition occurs after holding a direction continuously for a configurable delay (default ~0.8s) — player speed increases from PLAYER_SPEED to PLAYER_SPEED x run multiplier [US-25]
+- [x] Releasing and re-pressing a direction resets the walk-to-run timer — brief taps stay at walk speed [US-25]
+- [x] Direction changes call `CharacterRig.setDirection()` — animation continues at the current phase (no restart from frame 0) [US-25]
+- [x] Stopping movement (velocity returns to 0) plays a brief deceleration — bob settles, legs return to neutral, tail swings to rest — before idle begins [US-25]
+- [x] Walk/run parameters (bob height, leg swing amplitude, tail amplitude, run multiplier, walk-to-run delay) are read from the rig definition, not hardcoded in the controller [US-25]
+- [x] The walk/run animation controller is the source of truth for current movement speed — GameScene queries the controller's current speed and applies it to the velocity calculation, replacing the hardcoded PLAYER_SPEED used in `InputSystem.getVelocity()` for the player character [US-25]
+- [x] `npx tsc --noEmit && npm run build` passes [US-25]
+- [x] `src/rig/animations/idle.ts` exists and exports an idle animation controller conforming to `AnimationController` [US-26]
+- [x] At velocity 0: breathing plays immediately — body scaleX/scaleY oscillates gently (period >= 2 seconds) [US-26]
+- [x] At velocity 0: tail sway plays immediately — tail segments oscillate at a slower frequency and smaller amplitude than the walk tail motion [US-26]
+- [x] After ~3 seconds idle (configurable): head rotation plays — head turns left or right (direction randomized), then returns to center [US-26]
+- [x] After ~6 seconds idle (configurable): sit animation plays — legs tuck or fold, body Y position lowers, tail curls to the side or around the body [US-26]
+- [x] Ear flick triggers at random intervals on individual ears — small rotation spike that returns to baseline (not synchronized with breathing or tail) [US-26]
+- [x] Any movement input (velocity > 0) resets idle timer to 0, cancels sit/head-turn in progress, returns rig to standing neutral pose [US-26]
+- [x] Breathing, tail sway, and ear flick all play simultaneously (composable, not mutually exclusive) [US-26]
+- [x] Idle timing parameters (head-turn delay, sit delay, ear-flick interval range, breathing period) are defined in the rig definition [US-26]
+- [x] Idle controller cleans up any internal timers or state on scene shutdown/destroy — no lingering references after scene teardown [US-26]
+- [x] `docs/rig-system-guide.md` exists with sections: Architecture Overview, Bone Hierarchy Model, Direction Profile Authoring, Animation Controller API, Art Replacement Workflow, Creating a New Character [US-27]
+- [x] Architecture section contains an ASCII or Mermaid diagram showing: RigDefinition -> CharacterRig -> Container(Sprites), DirectionProfile -> setDirection(), AnimationController -> update() [US-27]
+- [x] Direction Profile section includes a parameter table (field, description, type, example value) and annotated before/after layouts for S (front-facing) and E (side-facing) directions [US-27]
+- [x] Animation Controller section includes a parameter table for the sine-wave model (parameter name, what it controls, default value, sensible range for tuning) [US-27]
+- [x] Art Replacement section provides numbered steps: (1) atlas file locations, (2) naming convention for part PNGs, (3) recommended dimensions/resolution, (4) how to generate the atlas JSON, (5) how to verify the replacement in-game [US-27]
+- [x] New Character section walks through "adding the Keeper — a white heron" as a concrete example: define RigDefinition, create direction profiles, create placeholder atlas, register with GameScene, verify [US-27]
+- [x] All file paths and type names in the guide match actual codebase locations (e.g., `src/rig/types.ts`, `CharacterRig`, `RigDefinition`) [US-27]
+- [x] AGENTS.md directory layout includes `src/rig/` tree with descriptions: `CharacterRig.ts`, `types.ts`, `characters/`, `animations/` [phase]
+- [x] AGENTS.md file ownership table includes entries for all rig modules (`CharacterRig.ts`, `types.ts`, `characters/fox.ts`, `animations/walkRun.ts`, `animations/idle.ts`) [phase]
+- [x] AGENTS.md depth map remains unchanged — fox rig renders at Entities depth (5), no new depth layers introduced [phase]
+- [x] Fox rig texture atlas loaded in Phaser's preload — atlas key is documented in AGENTS.md behavior rules or file ownership [phase]
 
 ### Golden principles (phase-relevant)
-- **Single source of truth** — visualizer imports from `src/data/areas/` directly; no data duplication or separate data files
-- **Systems-module architecture** (Learning #64) — visualizer code organized into renderer modules per view, not monolithic
-- **Debug overlay color scheme** — map view trigger colors must match `systems/debugOverlay.ts` for consistency (blue=thought, magenta=story, green=dialogue, orange=exit)
+- **Depth map adherence** (AGENTS.md) — fox rig renders at depth 5 (Entities layer); no ad-hoc depth values
+- **Systems-module architecture** — rig engine, character definitions, and animation controllers are separate modules, not monolithic
+- **Zone-level mutual exclusion** (AGENTS.md, Learning #56) — rig animations must not interfere with dialogue/story input capture; idle state is the natural result of velocity = 0 during dialogue
+- **Responsive scaling** (AGENTS.md) — rig must render correctly across viewport sizes; camera zoom affects the rig container like any other world-space object
+- **Frame-based delta-time movement** (AGENTS.md) — all animation uses delta time, no fixed-frame assumptions
+- **Parameterized systems** (AGENTS.md, area-system pattern) — rig receives definition data via constructor/parameters, no global imports of character-specific data
