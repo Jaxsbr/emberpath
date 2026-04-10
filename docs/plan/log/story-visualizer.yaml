@@ -19,3 +19,9 @@ entries:
     description: "US-19 complete. US-20 needs a canvas-based map renderer: tile grid using area's floorColor/wallColor, NPC labeled circles, trigger zone colored rectangles (matching debug overlay colors), exit zone orange rectangles with dest labels, click detection for detail panel, player spawn marker, axis labels. Separate module in tools/visualizer/src/mapRenderer.ts. Queued implement."
     result: pass
     tokens: ~3000
+  - task: 4
+    type: implement
+    story: US-20
+    description: "Created mapRenderer.ts — canvas renders tile grid with floorColor/wallColor, NPC labeled circles, trigger zone colored rectangles (matching debug overlay colors), exit zones with destination labels, player spawn diamond marker, row/col axis labels. Click handler populates detail panel with all type fields. Both game and visualizer tsc+build pass. ✓ US-20 complete"
+    result: pass
+    tokens: ~15000
