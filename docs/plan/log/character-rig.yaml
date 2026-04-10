@@ -87,3 +87,9 @@ entries:
     description: "review-pr PR #6 — 0 critical, 3 concerns (ear flick state reset, silent profile fallback, walkRun state ordering), 1 nit (hardcoded head turn speed). Review posted as COMMENT."
     result: pass
     tokens: ~10000
+  - task: 14
+    type: review
+    story: phase
+    description: "handle-pr-review PR #6 — fixed 2 (ear flick progress reset on movement, walkRun ordering comment), skipped 2 (silent fallback — POC scope, head turn speed — nit). Verify passes. All threads resolved. Phase review complete."
+    result: pass
+    tokens: ~8000
