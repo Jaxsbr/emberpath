@@ -31,3 +31,9 @@ entries:
     description: "Fox definition + atlas done. Remaining US-24 criteria: integrate into GameScene (preload atlas, replace rectangle, camera follow container, collision bounding box matches PLAYER_SIZE 24px, area transitions). Queued integration task."
     result: pass
     tokens: ~1000
+  - task: 6
+    type: implement
+    story: US-24
+    description: "Integrated fox rig into GameScene: preload atlas via Vite publicDir=assets, replace rectangle with CharacterRig, camera follows container, collision uses PLAYER_SIZE 24px, direction from velocity (8-way), rig cleanup on shutdown. Verify passes. ✓ US-24 complete"
+    result: pass
+    tokens: ~15000

@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-24] Integrate fox rig into GameScene — preload atlas, replace rectangle with CharacterRig, wire camera follow, collision, NPC interaction, trigger zones, area transitions"
+  task_number: 4
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
