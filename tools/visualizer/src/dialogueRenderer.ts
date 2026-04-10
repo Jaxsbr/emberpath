@@ -261,8 +261,7 @@ export function renderDialogue(container: HTMLElement, area: AreaDefinition): vo
     path.setAttribute('stroke-width', '1.5');
     path.setAttribute('fill', 'none');
 
-    // Arrowhead
-    const angle = Math.atan2(y2 - midY, x2 - x2);
+    // Arrowhead (fixed downward triangle — edges flow top to bottom)
     const arrowSize = 6;
     const ax = x2;
     const ay = y2;

@@ -5,7 +5,6 @@ import { showDetail } from './main';
 const BOX_W = 260;
 const BOX_MIN_H = 120;
 const BOX_GAP_X = 200;
-const BOX_GAP_Y = 80;
 const TRIGGER_COLORS: Record<string, string> = {
   thought: '#4488ff',
   story: '#ff44ff',
@@ -224,7 +223,6 @@ export function renderFlow(container: HTMLElement, onNavigate: (areaId: string) 
         depLine.setAttribute('stroke-width', '1.5');
         depLine.setAttribute('stroke-dasharray', '6,4');
         depLine.setAttribute('fill', 'none');
-        svg.appendChild(depLine);
 
         // Flag name label
         const midLabelX = (srcX + dstX) / 2;
