@@ -11,8 +11,10 @@ import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { evaluateCondition } from '../systems/conditions';
 import { setFlag } from '../triggers/flags';
+import { CharacterRig } from '../rig/CharacterRig';
+import { foxRigDefinition } from '../rig/characters/fox';
+import { Direction } from '../rig/types';
 
-const PLAYER_COLOR = 0xd4a24e;
 const PLAYER_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
 const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
@@ -26,7 +28,7 @@ export class GameScene extends Phaser.Scene {
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
   private debugOverlay!: DebugOverlaySystem;
-  private player!: Phaser.GameObjects.Rectangle;
+  private player!: CharacterRig;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
   private boundWindowResize: (() => void) | null = null;
@@ -34,6 +36,14 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  preload(): void {
+    this.load.atlas(
+      foxRigDefinition.atlasKey,
+      'characters/fox.png',
+      'characters/fox.json',
+    );
   }
 
   create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {
@@ -102,20 +112,19 @@ export class GameScene extends Phaser.Scene {
 
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
-      const pcx = this.player.x + PLAYER_SIZE / 2;
-      const pcy = this.player.y + PLAYER_SIZE / 2;
-      this.thoughtBubble.update(pcx, pcy);
+      this.thoughtBubble.update(this.player.container.x, this.player.container.y);
       this.debugOverlay.update();
       return;
     }
 
     this.inputSystem.update();
     const velocity = this.inputSystem.getVelocity();
-    const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
+    // Convert container center to top-left collision bounds for moveWithCollision
+    const halfSize = PLAYER_SIZE / 2;
     const newPos = moveWithCollision(
       {
-        x: this.player.x - offset,
-        y: this.player.y - offset,
+        x: this.player.container.x - halfSize,
+        y: this.player.container.y - halfSize,
         width: PLAYER_SIZE,
         height: PLAYER_SIZE,
       },
@@ -123,17 +132,25 @@ export class GameScene extends Phaser.Scene {
       delta,
       { map: this.area.map, npcs: this.area.npcs },
     );
-    this.player.setPosition(newPos.x + offset, newPos.y + offset);
+    // Convert back to center position for the container
+    this.player.container.setPosition(newPos.x + halfSize, newPos.y + halfSize);
 
-    const playerCenterX = this.player.x + PLAYER_SIZE / 2;
-    const playerCenterY = this.player.y + PLAYER_SIZE / 2;
-    this.npcInteraction.update(playerCenterX, playerCenterY);
-    this.thoughtBubble.update(playerCenterX, playerCenterY);
+    // Update rig direction based on velocity
+    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+    if (speed > 0) {
+      this.player.setDirection(velocityToDirection(velocity.x, velocity.y));
+    }
+    this.player.setVelocity(speed);
+    this.player.update(delta);
 
-    const playerBoundsX = this.player.x - offset;
-    const playerBoundsY = this.player.y - offset;
-    this.triggerZone.update(playerBoundsX, playerBoundsY, PLAYER_SIZE, PLAYER_SIZE);
-    this.checkExitZones(playerBoundsX, playerBoundsY, PLAYER_SIZE, PLAYER_SIZE);
+    this.npcInteraction.update(this.player.container.x, this.player.container.y);
+    this.thoughtBubble.update(this.player.container.x, this.player.container.y);
+
+    // Collision bounds for trigger/exit zone checks
+    const boundsX = this.player.container.x - halfSize;
+    const boundsY = this.player.container.y - halfSize;
+    this.triggerZone.update(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
+    this.checkExitZones(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.debugOverlay.update();
   }
 
@@ -188,13 +205,13 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setZoom(this.calculateZoom());
     cam.setBounds(0, 0, mapWidth, mapHeight);
-    cam.startFollow(this.player);
+    cam.startFollow(this.player.container);
 
     // UI camera — no zoom/scroll, renders dialogue/joystick/thought bubbles at screen coords
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([this.tileGraphics, this.player, ...this.npcRects]);
+    uiCam.ignore([this.tileGraphics, this.player.container, ...this.npcRects]);
 
     this.scale.on('resize', this.handleResize, this);
 
@@ -230,7 +247,7 @@ export class GameScene extends Phaser.Scene {
     cam.setZoom(this.calculateZoom());
     cam.setBounds(0, 0, mapWidth, mapHeight);
     // Snap camera to player after dimension/zoom change (prevents stale scroll on rotation)
-    cam.centerOn(this.player.x + PLAYER_SIZE / 2, this.player.y + PLAYER_SIZE / 2);
+    cam.centerOn(this.player.container.x, this.player.container.y);
 
     const uiCam = this.cameras.getCamera('ui');
     if (uiCam) {
@@ -284,6 +301,8 @@ export class GameScene extends Phaser.Scene {
     }
     // Clean up any in-progress fade tweens to prevent orphaned callbacks
     this.cameras?.main?.removeAllListeners('camerafadeoutcomplete');
+    // Clean up rig and its animation controllers
+    this.player?.destroy();
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
   }
@@ -305,11 +324,27 @@ export class GameScene extends Phaser.Scene {
   private createPlayer(entryPoint?: { col: number; row: number }): void {
     const spawn = entryPoint ?? this.area.playerSpawn;
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
-    const x = spawn.col * TILE_SIZE + offset;
-    const y = spawn.row * TILE_SIZE + offset;
+    // Position is center of the player's collision tile cell
+    const x = spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
+    const y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
 
-    this.player = this.add.rectangle(x, y, PLAYER_SIZE, PLAYER_SIZE, PLAYER_COLOR);
-    this.player.setOrigin(0, 0);
-    this.player.setDepth(5); // entities at depth 5
+    this.player = new CharacterRig(this, foxRigDefinition, x, y);
+    this.player.container.setDepth(5); // entities at depth 5 per depth map
   }
+}
+
+/** Convert velocity vector to 8-direction compass (Phaser: +Y = down). */
+function velocityToDirection(vx: number, vy: number): Direction {
+  const angle = Math.atan2(vy, vx);
+  const sector = Math.round(angle / (Math.PI / 4));
+  // sector: 0=E, 1=SE, 2=S, 3=SW, ±4=W, -3=NW, -2=N, -1=NE
+  if (sector === 0) return 'E';
+  if (sector === 1) return 'SE';
+  if (sector === 2) return 'S';
+  if (sector === 3) return 'SW';
+  if (sector === 4 || sector === -4) return 'W';
+  if (sector === -3) return 'NW';
+  if (sector === -2) return 'N';
+  if (sector === -1) return 'NE';
+  return 'S';
 }
