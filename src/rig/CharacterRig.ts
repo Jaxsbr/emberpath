@@ -98,6 +98,9 @@ export class CharacterRig {
       sprite.setDepth(partProfile.depth);
       sprite.setAlpha(partProfile.alpha ?? 1);
     }
+
+    // Container renders children in list order — sort by depth so profiles control layering
+    this.container.sort('depth');
   }
 
   /** Set the current movement velocity magnitude (used by animation controllers). */
