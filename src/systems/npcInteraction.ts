@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
-import { TILE_SIZE } from '../maps/constants';
-import { npcs, NPC_SIZE, NpcDefinition } from '../data/npcs';
-
-const INTERACTION_RANGE = 1.5 * TILE_SIZE; // 1.5 tiles in pixels
-const TAP_MAX_DURATION = 300; // ms — longer than this is a drag, not a tap
-const TAP_MAX_DISTANCE = 15; // px — further than this is a drag
+import { TILE_SIZE, NPC_SIZE } from '../maps/constants';
+import { NpcDefinition } from '../data/areas/types';
+const INTERACTION_RANGE = 1.5 * TILE_SIZE;
+const TAP_MAX_DURATION = 300;
+const TAP_MAX_DISTANCE = 15;
 
 export class NpcInteractionSystem {
   private scene: Phaser.Scene;
+  private npcs: NpcDefinition[];
   private spaceKey: Phaser.Input.Keyboard.Key | null = null;
   private promptText: Phaser.GameObjects.Text | null = null;
   private nearestNpc: NpcDefinition | null = null;
@@ -15,8 +15,9 @@ export class NpcInteractionSystem {
   private pointerDownPos = { x: 0, y: 0 };
   private interactionCallback: ((npc: NpcDefinition) => void) | null = null;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, npcs: NpcDefinition[]) {
     this.scene = scene;
+    this.npcs = npcs;
     this.setupInput();
   }
 
@@ -65,7 +66,7 @@ export class NpcInteractionSystem {
     let nearestDist = Infinity;
 
     const npcOffset = TILE_SIZE / 2;
-    for (const npc of npcs) {
+    for (const npc of this.npcs) {
       const npcCenterX = npc.col * TILE_SIZE + npcOffset;
       const npcCenterY = npc.row * TILE_SIZE + npcOffset;
       const dx = px - npcCenterX;

@@ -27,26 +27,28 @@ src/
   main.ts              # Phaser game config + bootstrap
   scenes/
     TitleScene.ts      # Title screen — "Emberpath" + Start button + flag reset
-    GameScene.ts       # Game world — tile rendering, player, camera, system orchestration
+    GameScene.ts       # Game world — area loading, tile rendering, player, camera, system orchestration, exit zone transitions
     StoryScene.ts      # Full-screen story scenes — image placeholder + text panel + fade
   systems/
     input.ts           # InputSystem — WASD keyboard + virtual joystick
-    movement.ts        # moveWithCollision — axis-independent movement
-    collision.ts       # collidesWithWall + collidesWithNpc — bounding box vs tile map and NPCs
+    movement.ts        # moveWithCollision — axis-independent movement with area collision data
+    collision.ts       # collidesWithWall + collidesWithNpc — bounding box vs area map and NPCs
     npcInteraction.ts  # NpcInteractionSystem — proximity detection, interaction prompt, Space/tap trigger
     dialogue.ts        # DialogueSystem — text box, typewriter effect, choices, node graph traversal
     thoughtBubble.ts   # ThoughtBubbleSystem — floating text near player, auto-dismiss, sequential queue
-    triggerZone.ts     # TriggerZoneSystem — zone overlap detection, condition parsing, type dispatch
+    triggerZone.ts     # TriggerZoneSystem — zone overlap detection, type dispatch
+    conditions.ts      # evaluateCondition — shared flag-based condition parsing (AND logic, comparison operators)
+    debugOverlay.ts    # DebugOverlaySystem — F3 toggleable overlay showing trigger zones, exit zones, NPC radii
   data/
-    npcs.ts            # NPC definitions (id, name, col, row, color)
-    dialogues.ts       # Dialogue scripts as typed node graphs
-    story-scenes.ts    # Story scene definitions (beats with text + placeholder image)
-    triggers.ts        # Trigger zone definitions (position, size, type, condition, repeatable)
+    areas/
+      types.ts         # AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition
+      registry.ts      # Area registry — getArea(id), getDefaultAreaId()
+      ashen-isle.ts    # Ashen Isle area definition (50x38 map, Old Man NPC, triggers, dialogues, story scene)
+      fog-marsh.ts     # Fog Marsh area definition (30x24 map, Marsh Hermit NPC, triggers, dialogues, story scene)
   triggers/
     flags.ts           # Flag store — getFlag, setFlag, incrementFlag, resetAllFlags, localStorage persistence
   maps/
-    constants.ts       # TILE_SIZE, MAP_COLS, MAP_ROWS, PLAYER_SPEED, TileType
-    worldMap.ts        # 2D tile array (50x38)
+    constants.ts       # TILE_SIZE, PLAYER_SPEED, TileType
 ```
 
 ## File ownership
@@ -54,22 +56,23 @@ src/
 | Module | Owns |
 |---|---|
 | `scenes/TitleScene.ts` | Title screen UI, scene transition to GameScene, flag reset |
-| `scenes/GameScene.ts` | Tile rendering, player entity, camera setup, update loop, system orchestration |
+| `scenes/GameScene.ts` | Area loading from registry, tile rendering, player entity, camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
 | `scenes/StoryScene.ts` | Full-screen story scenes — beat display, fade transitions, GameScene pause/resume |
 | `systems/input.ts` | All input handling — keyboard keys, touch joystick lifecycle |
-| `systems/movement.ts` | Position updates with collision checking (walls + NPCs) |
-| `systems/collision.ts` | Wall and NPC collision detection against tile map and entity bounds |
-| `systems/npcInteraction.ts` | NPC proximity detection, interaction prompt, Space/tap trigger |
+| `systems/movement.ts` | Position updates with collision checking — accepts area collision data (map + NPCs) |
+| `systems/collision.ts` | Wall and NPC collision detection — accepts map and NPC arrays as parameters |
+| `systems/npcInteraction.ts` | NPC proximity detection, interaction prompt, Space/tap trigger — accepts NPC list via constructor |
 | `systems/dialogue.ts` | Dialogue UI (text box, typewriter, choices), node graph state machine |
 | `systems/thoughtBubble.ts` | Thought bubble display, auto-dismiss, sequential queue |
-| `systems/triggerZone.ts` | Trigger zone evaluation, condition parsing, type dispatch |
-| `data/npcs.ts` | NPC definitions — id, name, position, color |
-| `data/dialogues.ts` | Dialogue scripts — typed node graphs with choices |
-| `data/story-scenes.ts` | Story scene definitions — beats with text and image placeholders |
-| `data/triggers.ts` | Trigger zone definitions — position, size, type, conditions |
-| `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence |
-| `maps/constants.ts` | All game constants — tile size, map dimensions, player speed |
-| `maps/worldMap.ts` | Tile map data — 2D array defining the world layout |
+| `systems/triggerZone.ts` | Trigger zone evaluation, type dispatch — accepts triggers via constructor |
+| `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
+| `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radii in world space |
+| `data/areas/types.ts` | All shared types — AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
+| `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions |
+| `data/areas/ashen-isle.ts` | Ashen Isle area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
+| `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
+| `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
+| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
 
 ## Depth map
 
@@ -77,10 +80,11 @@ Explicit rendering order for visual layers (Learning #57):
 
 | Layer | Depth | Camera | Description |
 |---|---|---|---|
-| Tiles | 0 | main | Floor and wall tile graphics |
+| Tiles | 0 | main | Floor, wall, and exit zone tile graphics |
 | Entities | 5 | main | Player character and NPCs |
+| Thoughts | 8 | main | Thought bubble text and background (world-space, above player) |
+| Debug overlay | 50 | main | Trigger zone rectangles, exit labels, NPC radii (F3 toggle) |
 | UI | 100 | ui | Virtual joystick, HUD elements |
-| Thoughts | 150 | ui | Thought bubble text and background |
 | Interaction prompt | 150 | main | NPC interaction prompt text (world-space) |
 | Dialogue | 200 | ui | Dialogue box, speaker name, choice buttons |
 
@@ -101,8 +105,11 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Dialogue choices (desktop):** Arrow keys browse (> prefix), Enter or tap confirms immediately. No Confirm button on non-touch devices.
 - **Dialogue choices (mobile):** Full-width 44px tappable rows. Tap to highlight (no commit). Confirm button appears below choices. Tap Confirm to commit. Browse-then-confirm pattern prevents mis-taps. Box expands dynamically to accommodate choices + Confirm.
 - **Zone-level mutual exclusion (LEARNINGS #56):** When dialogue is active, movement, NPC interaction, and trigger evaluation are all suppressed. When StoryScene is active, GameScene is fully paused. Thought bubbles queue during dialogue and display after. On mobile, general taps are blocked while choice rows are active (`mobileChoicesActive` guard).
-- **Trigger zones:** Fire on player entry (bounding box overlap). One-shot triggers use internal flags. Repeatable triggers require exit-then-re-enter. Conditions use flag comparisons with AND logic.
-- **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Reset available from TitleScene.
+- **Trigger zones:** Fire on player entry (bounding box overlap). One-shot triggers use internal flags. Repeatable triggers require exit-then-re-enter. Conditions use flag comparisons with AND logic. Trigger types: `thought`, `story`, `dialogue`, `exit`.
+- **Exit zones:** Defined in `ExitDefinition[]` on each area, separate from triggers. Walking into an exit zone fires fade-out → scene restart with new area → fade-in. Re-entrancy guard prevents double-fire during fade. Optional conditions (same syntax as triggers). Exit tiles rendered amber-gold (EXIT_COLOR 0xc89b3c). Non-existent destination logs console error without crashing.
+- **Area transitions:** GameScene accepts `{ areaId, entryPoint }` via scene data. All systems (collision, movement, triggers, NPC interaction, dialogue, story scenes) are parameterized — they receive area data via constructor or method parameters, no global imports. During transition: movement, NPC interaction, triggers, and dialogue are suppressed (transitionInProgress guard).
+- **Debug overlay:** F3 toggles visibility (off by default). Shows trigger zones as color-coded semi-transparent rectangles (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID/type/condition, exit destination labels, NPC interaction radii as yellow circles. World-space at depth 50. Toggle is guarded during dialogue.
+- **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Flags work cross-area — set in one area, readable in another. Reset available from TitleScene.
 
 ## Scaling tuning guide
 

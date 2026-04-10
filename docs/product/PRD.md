@@ -37,4 +37,5 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 |---|---|---|---|
 | foundation | Shipped | US-01, US-02, US-03, US-04, US-05 | [phases/foundation.md](phases/foundation.md) |
 | interaction | Shipped | US-06, US-07, US-08, US-09, US-10 | [phases/interaction.md](phases/interaction.md) |
-| mobile-ux | Draft | US-11, US-12, US-13 | [phases/mobile-ux.md](phases/mobile-ux.md) |
+| mobile-ux | Shipped | US-11, US-12, US-13 | [phases/mobile-ux.md](phases/mobile-ux.md) |
+| area-system | Shipped | US-14, US-15, US-16, US-17, US-18 | [phases/area-system.md](phases/area-system.md) |

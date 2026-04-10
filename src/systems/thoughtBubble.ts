@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
 
-const THOUGHT_DEPTH = 150;
-const DEFAULT_DURATION = 3000;
-const PADDING_X = 8;
-const PADDING_Y = 4;
-const OFFSET_Y = -40; // above the player
+const THOUGHT_DEPTH = 8; // above entities (5) but below debug overlay (50)
+const DEFAULT_DURATION = 4000;
+const PADDING_X = 6;
+const PADDING_Y = 3;
+const OFFSET_Y = -30; // world pixels above player center
+const FONT_SIZE = 10; // world pixels — camera zoom scales this visually
+const FONT_COLOR = '#ffffff';
+const BG_COLOR = 0x222244;
+const BG_ALPHA = 0.85;
 
 export interface ThoughtRequest {
   text: string;
@@ -35,12 +39,9 @@ export class ThoughtBubbleSystem {
 
   update(playerCenterX: number, playerCenterY: number): void {
     if (this.active && this.currentBg && this.currentText) {
-      // Convert player world position to screen coordinates (accounting for camera zoom)
-      const cam = this.scene.cameras.main;
-      const screenX = (playerCenterX - cam.scrollX) * cam.zoom;
-      const screenY = (playerCenterY - cam.scrollY) * cam.zoom + OFFSET_Y;
-      this.currentText.setPosition(screenX, screenY);
-      this.currentBg.setPosition(screenX, screenY);
+      // Position in world space — camera zoom handles visual scaling
+      this.currentText.setPosition(playerCenterX, playerCenterY + OFFSET_Y);
+      this.currentBg.setPosition(playerCenterX, playerCenterY + OFFSET_Y);
     }
 
     // Try to show queued thoughts when dialogue closes
@@ -65,13 +66,18 @@ export class ThoughtBubbleSystem {
     const duration = request.duration ?? DEFAULT_DURATION;
 
     this.currentText = this.scene.add.text(0, 0, request.text, {
-      fontSize: '12px',
-      color: '#e0e0e0',
+      fontSize: `${FONT_SIZE}px`,
+      color: FONT_COLOR,
+      fontStyle: 'italic',
     });
     this.currentText.setOrigin(0.5, 1);
-    this.currentText.setScrollFactor(0);
     this.currentText.setDepth(THOUGHT_DEPTH);
-    this.scene.cameras.main.ignore(this.currentText);
+
+    // Tell the UI camera to ignore world-space thought objects
+    const uiCam = this.scene.cameras.getCamera('ui');
+    if (uiCam) {
+      uiCam.ignore(this.currentText);
+    }
 
     const textWidth = this.currentText.width;
     const textHeight = this.currentText.height;
@@ -81,13 +87,14 @@ export class ThoughtBubbleSystem {
       0,
       textWidth + PADDING_X * 2,
       textHeight + PADDING_Y * 2,
-      0x222233,
-      0.8,
+      BG_COLOR,
+      BG_ALPHA,
     );
     this.currentBg.setOrigin(0.5, 1);
-    this.currentBg.setScrollFactor(0);
     this.currentBg.setDepth(THOUGHT_DEPTH - 1);
-    this.scene.cameras.main.ignore(this.currentBg);
+    if (uiCam) {
+      uiCam.ignore(this.currentBg);
+    }
 
     this.dismissTimer = this.scene.time.delayedCall(duration, () => {
       this.dismiss();

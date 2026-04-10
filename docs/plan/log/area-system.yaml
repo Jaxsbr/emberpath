@@ -1,0 +1,95 @@
+phase: area-system
+started: 2026-04-09T22:15:26Z
+entries:
+  - task: 1
+    type: investigate
+    story: US-14
+    description: "Investigated codebase. All 49 criteria unmet. 4 global data files (npcs, triggers, dialogues, story-scenes) + worldMap + MAP_COLS/MAP_ROWS in constants. GameScene, collision, npcInteraction, triggerZone all import globals directly. Queued US-14 investigate for AreaDefinition/ExitDefinition planning."
+    result: pass
+    tokens: ~5000
+  - task: 2
+    type: investigate
+    story: US-14
+    description: "Deep investigation of existing types. NpcDefinition, TriggerDefinition/TriggerType, DialogueScript/Node/Choice, StorySceneDefinition/Beat all exist. NPC_SIZE and getNpcBounds are utilities to keep accessible. collision.ts/npcInteraction.ts/triggerZone.ts all import globals directly. Migration plan: create src/data/areas/ with types.ts (AreaDefinition, ExitDefinition), ashen-isle.ts (area data), registry.ts (lookup). Queued implement task."
+    result: pass
+  - task: 3
+    type: implement
+    story: US-14
+    description: "Created src/data/areas/types.ts (AreaDefinition, ExitDefinition, re-exported NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition + TriggerType with 'exit'), src/data/areas/ashen-isle.ts (50x38 map, Old Man NPC, 3 triggers, dialogue, story scene, spawn (2,2), visual config), src/data/areas/registry.ts (getArea lookup, getDefaultAreaId). All types pass tsc strict. ✓ US-14 complete"
+    result: pass
+    tokens: ~15000
+  - task: 4
+    type: investigate
+    story: US-15
+    description: "US-14 complete. US-15 needs all systems parameterized. Refactor chain: collision.ts (collidesWithWall needs map/dims, collidesWithNpc needs NPC list) → movement.ts (pass-through) → triggerZone.ts (triggers via constructor) → npcInteraction.ts (NPC list + dialogues) → GameScene.ts (load from area registry, pass data down). Queued investigate to confirm signatures."
+    result: pass
+  - task: 8
+    type: implement
+    story: US-16
+    description: "Added exit zone detection in GameScene update loop. Camera fadeOut→restart→fadeIn with re-entrancy guard (transitionInProgress). Entry point support in create(). Exit tiles rendered amber-gold (EXIT_COLOR 0xc89b3c). Condition evaluation for exits. Error path for non-existent area IDs. Cleanup of fade listeners on shutdown. ✓ US-16 complete"
+    result: pass
+    tokens: ~15000
+  - task: 9
+    type: investigate
+    story: US-17
+    description: "US-16 complete. US-17 needs Fog Marsh area (30x24 deliberately different map, distinct colors, 1 NPC with dialogue, all 4 trigger types including exit, 2-beat story scene, condition on at least 1 trigger). Also need exit zone added to Ashen Isle map pointing to Fog Marsh, and Fog Marsh exit back to Ashen Isle. Register in area registry. Queued implement."
+    result: pass
+  - task: 10
+    type: implement
+    story: US-17
+    description: "Created fog-marsh.ts (30x24 map, Marsh Hermit NPC with branching dialogue, thought+story+dialogue triggers, 2-beat marsh-depths scene, distinct dark-green visual). Added exit zones to Ashen Isle (row 17, cols 47-48 → Fog Marsh) and Fog Marsh (col 1, row 12 → Ashen Isle). Fixed setFlags on DialogueChoice not DialogueNode. Registered in area registry. ✓ US-17 complete"
+    result: pass
+    tokens: ~15000
+  - task: 11
+    type: investigate
+    story: US-18
+    description: "US-17 complete. US-18 needs debugOverlay.ts in src/systems/ — keyboard toggle (off by default), semi-transparent color-coded rectangles per trigger type, text labels (ID+type+condition), exit labels (destination+entry), NPC radii circles (1.5 tile), world-space on main camera only, depth between entities(5) and UI(100), area change refresh, dialogue-active guard on toggle key. Queued implement."
+    result: pass
+  - task: 12
+    type: implement
+    story: US-18
+    description: "Created src/systems/debugOverlay.ts — F3 toggle, color-coded trigger zones (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID+type+condition, exit labels with destination+entry, NPC radii circles (1.5 tile, yellow). World-space at depth 50, UI cam ignored. Dialogue-active guard on toggle. Integrated into GameScene. ✓ US-18 complete"
+    result: pass
+    tokens: ~12000
+  - task: 13
+    type: investigate
+    story: phase
+    description: "All 5 stories complete. 3 structural criteria remain: remove old data files, remove MAP_COLS/MAP_ROWS, update AGENTS.md. Queued implement."
+    result: pass
+  - task: 14
+    type: implement
+    story: phase
+    description: "Removed 5 old global data files (npcs, triggers, dialogues, story-scenes, worldMap). Removed MAP_COLS/MAP_ROWS from constants.ts. Updated AGENTS.md: directory layout with areas/, file ownership for area files + debugOverlay, depth map with debug overlay at 50, behavior rules for exit zones + area transitions + debug overlay + cross-area flags."
+    result: pass
+    tokens: ~8000
+  - task: 15
+    type: gate
+    story: phase
+    description: "Phase Completion Gate — all 49 criteria verified. Verify passes, AGENTS.md consistent (all referenced files exist, deleted files gone, MAP_COLS/MAP_ROWS absent). Error paths verified (2 console.error guards for invalid area IDs). Phase complete."
+    result: pass
+  - task: 5
+    type: investigate
+    story: US-15
+    description: "Confirmed refactor signatures. collision: collidesWithWall(x,y,w,h,map) + collidesWithNpc(x,y,w,h,npcs). movement: moveWithCollision needs map+npcs passed through. triggerZone: constructor takes TriggerDefinition[]. npcInteraction: constructor takes NpcDefinition[]. GameScene: load AreaDefinition from registry, pass to all systems. Must be done atomically. Queued implement."
+    result: pass
+  - task: 6
+    type: implement
+    story: US-15
+    description: "Refactored all systems: collision.ts accepts map+npcs params, movement.ts passes AreaCollisionData through, triggerZone.ts takes TriggerDefinition[] via constructor, npcInteraction.ts takes NpcDefinition[] via constructor, GameScene.ts loads from area registry and passes data to all systems. StoryScene.ts and dialogue.ts import types from areas/types.ts. Build drops from 24 to 21 modules (3 old data files now unused). ✓ US-15 complete"
+    result: pass
+    tokens: ~20000
+  - task: 7
+    type: investigate
+    story: US-16
+    description: "US-15 complete. US-16 needs: exit overlap detection in update loop (check area.exits), transitionInProgress re-entrancy guard, camera fade-out → scene restart with new areaId + entryPoint → fade-in, input disabled during fade, mutual exclusion (dialogue/NPC/triggers suppressed), exit tile rendering with distinct color, error path for non-existent area. Implementation in GameScene only — ExitDefinition dispatch is separate from TriggerZoneSystem. Queued implement."
+    result: pass
+  - task: 16
+    type: review
+    story: phase
+    description: "review-pr PR #4 — 1 Critical (fog-marsh exit entryPoint col 46 row 17 is wall tile in Ashen Isle), 2 Concerns (NPC_SIZE duplication across 3 files, evaluateExitCondition duplicates TriggerZoneSystem condition parsing). Review posted to GitHub."
+    result: pass
+  - task: 17
+    type: review
+    story: phase
+    description: "handle-pr-review PR #4 — 3 fixed, 0 challenged, 0 skipped. Fixed wall spawn (col 46→48), extracted NPC_SIZE to constants.ts, extracted evaluateCondition to systems/conditions.ts. Quality checks: error-path-coverage flagged 5 missing console.error guards for dialogue/story lookups — fixed. All checks pass. review_complete=true."
+    result: pass

@@ -1,9 +1,18 @@
 import Phaser from 'phaser';
-import { StorySceneDefinition, StoryBeat } from '../data/story-scenes';
+import { StorySceneDefinition, StoryBeat } from '../data/areas/types';
+import { TILE_SIZE } from '../maps/constants';
 
+// --- Story scene tuning (design pixels — scaled by zoom at render time) ---
 const FADE_DURATION = 500;
-const IMAGE_HEIGHT_RATIO = 0.58; // ~350/600 — upper portion for image
-const TEXT_PADDING = 20;
+const IMAGE_HEIGHT_RATIO = 0.55; // upper portion for image placeholder
+const TEXT_PADDING = 16;
+const BEAT_FONT_SIZE = 16;        // body text (scales with zoom like dialogue)
+const BEAT_LINE_SPACING = 6;
+const BEAT_FONT_FAMILY = 'serif';  // 'serif', 'sans-serif', or a loaded font name
+const LABEL_FONT_SIZE = 18;       // image label
+const HINT_FONT_SIZE = 10;
+const CHARS_PER_SECOND = 35;
+const TARGET_VISIBLE_TILES = 10;  // same as GameScene — keeps scaling consistent
 
 export class StoryScene extends Phaser.Scene {
   private definition!: StorySceneDefinition;
@@ -15,9 +24,20 @@ export class StoryScene extends Phaser.Scene {
   private advanceHint: Phaser.GameObjects.Text | null = null;
   private spaceKey: Phaser.Input.Keyboard.Key | null = null;
   private ready = false;
+  private fullText = '';
+  private revealedCount = 0;
+  private typewriterComplete = false;
+  private typewriterTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
     super({ key: 'StoryScene' });
+  }
+
+  /** Scale a design-pixel value by the same zoom factor GameScene uses. */
+  private s(v: number): number {
+    const shortSide = Math.min(this.scale.width, this.scale.height);
+    const zoom = Math.max(1, shortSide / (TARGET_VISIBLE_TILES * TILE_SIZE));
+    return v * zoom;
   }
 
   init(data: { definition: StorySceneDefinition }): void {
@@ -40,8 +60,9 @@ export class StoryScene extends Phaser.Scene {
     this.imageRect.setOrigin(0.5, 0.5);
 
     this.imageLabel = this.add.text(width / 2, imageH / 2, '', {
-      fontSize: '20px',
+      fontSize: `${this.s(LABEL_FONT_SIZE)}px`,
       color: '#999999',
+      fontFamily: BEAT_FONT_FAMILY,
     });
     this.imageLabel.setOrigin(0.5, 0.5);
 
@@ -50,16 +71,18 @@ export class StoryScene extends Phaser.Scene {
     this.panelGraphics.fillStyle(0x111122, 0.95);
     this.panelGraphics.fillRect(0, imageH, width, height - imageH);
 
-    this.beatText = this.add.text(TEXT_PADDING, imageH + TEXT_PADDING, '', {
-      fontSize: '16px',
+    const pad = this.s(TEXT_PADDING);
+    this.beatText = this.add.text(pad, imageH + pad, '', {
+      fontSize: `${this.s(BEAT_FONT_SIZE)}px`,
       color: '#ffffff',
-      wordWrap: { width: width - TEXT_PADDING * 2 },
-      lineSpacing: 6,
+      fontFamily: BEAT_FONT_FAMILY,
+      wordWrap: { width: width - pad * 2 },
+      lineSpacing: this.s(BEAT_LINE_SPACING),
     });
 
     // Advance prompt
-    this.advanceHint = this.add.text(width / 2, height - 20, 'Tap or press Space to continue', {
-      fontSize: '11px',
+    this.advanceHint = this.add.text(width / 2, height - this.s(12), 'Tap or press Space to continue', {
+      fontSize: `${this.s(HINT_FONT_SIZE)}px`,
       color: '#666666',
     });
     this.advanceHint.setOrigin(0.5, 0.5);
@@ -90,6 +113,7 @@ export class StoryScene extends Phaser.Scene {
     const width = gameSize.width;
     const height = gameSize.height;
     const imageH = Math.round(height * IMAGE_HEIGHT_RATIO);
+    const pad = this.s(TEXT_PADDING);
 
     if (this.imageRect) {
       this.imageRect.setPosition(width / 2, imageH / 2);
@@ -98,6 +122,7 @@ export class StoryScene extends Phaser.Scene {
 
     if (this.imageLabel) {
       this.imageLabel.setPosition(width / 2, imageH / 2);
+      this.imageLabel.setFontSize(this.s(LABEL_FONT_SIZE));
     }
 
     if (this.panelGraphics) {
@@ -107,12 +132,14 @@ export class StoryScene extends Phaser.Scene {
     }
 
     if (this.beatText) {
-      this.beatText.setPosition(TEXT_PADDING, imageH + TEXT_PADDING);
-      this.beatText.setWordWrapWidth(width - TEXT_PADDING * 2);
+      this.beatText.setPosition(pad, imageH + pad);
+      this.beatText.setFontSize(this.s(BEAT_FONT_SIZE));
+      this.beatText.setWordWrapWidth(width - pad * 2);
     }
 
     if (this.advanceHint) {
-      this.advanceHint.setPosition(width / 2, height - 20);
+      this.advanceHint.setPosition(width / 2, height - this.s(12));
+      this.advanceHint.setFontSize(this.s(HINT_FONT_SIZE));
     }
   }
 
@@ -123,17 +150,62 @@ export class StoryScene extends Phaser.Scene {
     if (this.imageLabel) {
       this.imageLabel.setText(beat.imageLabel ?? '');
     }
+
+    this.fullText = beat.text;
+    this.revealedCount = 0;
+    this.typewriterComplete = false;
     if (this.beatText) {
-      this.beatText.setText(beat.text);
+      this.beatText.setText('');
     }
+    if (this.advanceHint) {
+      this.advanceHint.setVisible(false);
+    }
+
+    this.typewriterTimer?.destroy();
+    this.typewriterTimer = this.time.addEvent({
+      delay: 1000 / CHARS_PER_SECOND,
+      callback: () => {
+        this.revealedCount++;
+        if (this.beatText) {
+          this.beatText.setText(this.fullText.substring(0, this.revealedCount));
+        }
+        if (this.revealedCount >= this.fullText.length) {
+          this.typewriterComplete = true;
+          this.typewriterTimer?.destroy();
+          this.typewriterTimer = null;
+          if (this.advanceHint) {
+            this.advanceHint.setVisible(true);
+          }
+        }
+      },
+      loop: true,
+    });
   }
 
   private advanceBeat(): void {
+    // First tap completes typewriter, second tap advances
+    if (!this.typewriterComplete) {
+      this.completeTypewriter();
+      return;
+    }
     this.currentBeatIndex++;
     if (this.currentBeatIndex < this.definition.beats.length) {
       this.showBeat(this.definition.beats[this.currentBeatIndex]);
     } else {
       this.exitScene();
+    }
+  }
+
+  private completeTypewriter(): void {
+    this.typewriterTimer?.destroy();
+    this.typewriterTimer = null;
+    this.revealedCount = this.fullText.length;
+    this.typewriterComplete = true;
+    if (this.beatText) {
+      this.beatText.setText(this.fullText);
+    }
+    if (this.advanceHint) {
+      this.advanceHint.setVisible(true);
     }
   }
 
