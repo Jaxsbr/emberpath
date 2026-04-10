@@ -25,3 +25,9 @@ entries:
     description: "Created src/rig/characters/fox.ts (foxRigDefinition — 16 parts, 5 direction profiles, walkRun/idle params), tools/generate-fox-atlas.mjs (atlas generator — warm palette ellipses/shapes), assets/characters/fox.png+fox.json (256x64 atlas, 16 named frames). Verify passes."
     result: pass
     tokens: ~18000
+  - task: 5
+    type: investigate
+    story: US-24
+    description: "Fox definition + atlas done. Remaining US-24 criteria: integrate into GameScene (preload atlas, replace rectangle, camera follow container, collision bounding box matches PLAYER_SIZE 24px, area transitions). Queued integration task."
+    result: pass
+    tokens: ~1000
