@@ -105,6 +105,34 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     ctx.textAlign = 'left';
     ctx.fillText(trigger.id, x + 2, y + 8);
 
+    // Resolve actionRef to actual content
+    let content: unknown = trigger.actionRef;
+    if (trigger.type === 'dialogue') {
+      const script = area.dialogues[trigger.actionRef];
+      if (script) {
+        content = script.nodes.map(n => ({
+          id: n.id,
+          speaker: n.speaker,
+          text: n.text,
+          nextId: n.nextId ?? null,
+          choices: n.choices?.map(c => ({
+            text: c.text,
+            nextId: c.nextId,
+            setFlags: c.setFlags ?? null,
+          })) ?? null,
+        }));
+      }
+    } else if (trigger.type === 'story') {
+      const scene = area.storyScenes[trigger.actionRef];
+      if (scene) {
+        content = scene.beats.map(b => ({
+          text: b.text,
+          imageLabel: b.imageLabel ?? null,
+        }));
+      }
+    }
+    // For 'thought', actionRef IS the text — no resolution needed
+
     clickables.push({
       x, y, w, h,
       data: {
@@ -118,6 +146,7 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
         actionRef: trigger.actionRef,
         condition: trigger.condition ?? null,
         repeatable: trigger.repeatable,
+        content,
       },
     });
   }
