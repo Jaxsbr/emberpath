@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 5
-  next_task: null
+  next_task: "[phase] Update AGENTS.md — add tools/visualizer/ to directory layout and file ownership table"
   last_result: pass
   consecutive_fails: 0
 
