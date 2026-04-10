@@ -1,6 +1,7 @@
 import { getArea, getAllAreaIds, getDefaultAreaId } from '@game/data/areas/registry';
 import type { AreaDefinition } from '@game/data/areas/types';
 import { renderMap } from './mapRenderer';
+import { renderDialogue } from './dialogueRenderer';
 
 type ViewName = 'map' | 'dialogue' | 'flow';
 
@@ -58,7 +59,7 @@ function renderActiveView(): void {
       renderMap(container, activeArea);
       break;
     case 'dialogue':
-      container.textContent = `Dialogue view — ${Object.keys(activeArea.dialogues).length} scripts`;
+      renderDialogue(container, activeArea);
       break;
     case 'flow':
       container.textContent = `Flow view — ${getAllAreaIds().length} areas`;
