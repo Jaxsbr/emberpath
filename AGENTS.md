@@ -13,6 +13,15 @@ npm run dev      # Vite dev server at localhost:5173
 npm run build    # Production build to dist/
 ```
 
+### Visualizer (dev tool)
+
+```bash
+cd tools/visualizer
+npm install
+npm run dev      # Vite dev server at localhost:5174
+npm run build    # Production build to tools/visualizer/dist/
+```
+
 ## Controls
 
 - **Desktop:** W/A/S/D to move up/left/down/right
@@ -42,13 +51,25 @@ src/
   data/
     areas/
       types.ts         # AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition
-      registry.ts      # Area registry — getArea(id), getDefaultAreaId()
+      registry.ts      # Area registry — getArea(id), getAllAreaIds(), getDefaultAreaId()
       ashen-isle.ts    # Ashen Isle area definition (50x38 map, Old Man NPC, triggers, dialogues, story scene)
       fog-marsh.ts     # Fog Marsh area definition (30x24 map, Marsh Hermit NPC, triggers, dialogues, story scene)
   triggers/
     flags.ts           # Flag store — getFlag, setFlag, incrementFlag, resetAllFlags, localStorage persistence
   maps/
     constants.ts       # TILE_SIZE, PLAYER_SPEED, TileType
+tools/
+  visualizer/          # Standalone Vite dev tool — area map, dialogue tree, and story flow visualizer
+    src/
+      main.ts          # App shell — area selector, tab navigation, detail panel
+      style.css        # Dark theme CSS with debug overlay color variables
+      mapRenderer.ts   # Canvas-based area map — tile grid, NPC circles, trigger/exit overlays
+      dialogueRenderer.ts  # Dialogue tree node graph — BFS layout, SVG edges, flag annotations
+      flowRenderer.ts  # Story flow overview — area boxes, exit arrows, flag dependency lines
+    index.html         # Entry point
+    package.json       # Separate Vite + TypeScript project
+    vite.config.ts     # @game path alias to ../../src
+    tsconfig.json      # Compiles visualizer + shared game types
 ```
 
 ## File ownership
@@ -68,11 +89,15 @@ src/
 | `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
 | `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radii in world space |
 | `data/areas/types.ts` | All shared types — AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
-| `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions |
+| `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions, getAllAreaIds() for enumeration |
 | `data/areas/ashen-isle.ts` | Ashen Isle area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
+| `tools/visualizer/src/main.ts` | Visualizer app shell — area selector, tab navigation, view dispatch, detail panel |
+| `tools/visualizer/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
+| `tools/visualizer/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
+| `tools/visualizer/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
 
 ## Depth map
 

@@ -1,0 +1,62 @@
+phase: story-visualizer
+started: 2026-04-10T04:44:40Z
+entries:
+  - task: 1
+    type: investigate
+    story: US-19
+    description: "Investigated codebase. tools/ dir doesn't exist. Area types/registry at src/data/areas/. Game uses Vite 5 + TS 5 + ESNext modules. Debug overlay colors: thought=0x4488ff, story=0xff44ff, dialogue=0x44ff88, exit=0xffaa44. Verify passes. Phase is CSS/JS-only (separate tool project). Queued US-19 scaffold task."
+    result: pass
+    tokens: ~8000
+  - task: 2
+    type: implement
+    story: US-19
+    description: "Scaffolded tools/visualizer/ — package.json (vite+ts), vite.config.ts (@game alias), tsconfig.json (shared types), index.html, style.css (dark theme, debug overlay colors as CSS vars), main.ts (area selector dropdown, 3 tab buttons, view switching, detail panel). Added getAllAreaIds() to registry. Both game and visualizer tsc+build pass. ✓ US-19 complete"
+    result: pass
+    tokens: ~12000
+  - task: 3
+    type: investigate
+    story: US-20
+    description: "US-19 complete. US-20 needs a canvas-based map renderer: tile grid using area's floorColor/wallColor, NPC labeled circles, trigger zone colored rectangles (matching debug overlay colors), exit zone orange rectangles with dest labels, click detection for detail panel, player spawn marker, axis labels. Separate module in tools/visualizer/src/mapRenderer.ts. Queued implement."
+    result: pass
+    tokens: ~3000
+  - task: 4
+    type: implement
+    story: US-20
+    description: "Created mapRenderer.ts — canvas renders tile grid with floorColor/wallColor, NPC labeled circles, trigger zone colored rectangles (matching debug overlay colors), exit zones with destination labels, player spawn diamond marker, row/col axis labels. Click handler populates detail panel with all type fields. Both game and visualizer tsc+build pass. ✓ US-20 complete"
+    result: pass
+    tokens: ~15000
+  - task: 5
+    type: investigate
+    story: US-21
+    description: "US-20 complete. US-21 needs dialogue tree node graph: BFS layout, DOM nodes + SVG edges, choice labels, setFlags annotations, start/terminal styling, click-to-detail. Separate dialogueRenderer.ts module. Queued implement."
+    result: pass
+    tokens: ~2000
+  - task: 6
+    type: implement
+    story: US-21
+    description: "Created dialogueRenderer.ts — dialogue selector dropdown, BFS top-down layout, DOM node boxes with speaker+truncated text, SVG bezier edges with choice text labels, setFlags flag annotations in orange, start node green border, terminal node red border, click-to-detail. Both game and visualizer tsc+build pass. ✓ US-21 complete"
+    result: pass
+    tokens: ~15000
+  - task: 7
+    type: investigate
+    story: US-22
+    description: "US-21 complete. US-22 needs flow overview: area boxes with trigger lists, exit arrows between areas, flag dependency dashed lines connecting setFlags to conditions, conditional exit labels, default area marking, click-to-navigate. Separate flowRenderer.ts module. Queued implement."
+    result: pass
+    tokens: ~3000
+  - task: 8
+    type: implement
+    story: US-22
+    description: "Created flowRenderer.ts — row layout of area boxes with trigger lists (colored dots + IDs), exit arrows with ID labels and condition text, flag dependency dashed lines via extractFlagSources/extractFlagConsumers, default area red border + star, click navigates to Map tab. Both game and visualizer tsc+build pass. ✓ US-22 complete"
+    result: pass
+    tokens: ~15000
+  - task: 9
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: directory layout with tools/visualizer/ tree, file ownership for all 4 visualizer modules, registry description updated, visualizer running instructions added."
+    result: pass
+    tokens: ~5000
+  - task: 10
+    type: gate
+    story: phase
+    description: "Phase Completion Gate — all 38 criteria verified. Game and visualizer tsc+build pass. AGENTS.md consistent (directory layout matches actual structure, file ownership matches existing files). No endpoints to error-path check (read-only dev tool). Phase complete."
+    result: pass

@@ -22,12 +22,12 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: area-system
+  phase: story-visualizer
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 19
+  task_number: 9
   next_task: null
   last_result: pass
   consecutive_fails: 0
@@ -35,10 +35,10 @@ state:
   # --- Review (owner: iterator) ---
   review_stage: review_posted
   review_complete: true
-  pr_number: 4
+  pr_number: 5
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-14, US-15, US-16, US-17, US-18]
+  completed_stories: [US-19, US-20, US-21, US-22]
