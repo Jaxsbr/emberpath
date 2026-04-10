@@ -54,11 +54,24 @@ src/
       registry.ts      # Area registry — getArea(id), getAllAreaIds(), getDefaultAreaId()
       ashen-isle.ts    # Ashen Isle area definition (50x38 map, Old Man NPC, triggers, dialogues, story scene)
       fog-marsh.ts     # Fog Marsh area definition (30x24 map, Marsh Hermit NPC, triggers, dialogues, story scene)
+  rig/
+    types.ts           # RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState interfaces
+    CharacterRig.ts    # 2D skeletal rig engine — container with atlas sprites, direction profiles, pluggable animation controllers
+    characters/
+      fox.ts           # Fox (Pip) rig definition — 16 parts, 5 direction profiles, walk/run/idle params
+    animations/
+      walkRun.ts       # WalkRunController — body bob, leg gait, tail follow-through, walk-to-run transition, speed source of truth
+      idle.ts          # IdleController — breathing, tail sway, head turn, sit-down, ear flick
   triggers/
     flags.ts           # Flag store — getFlag, setFlag, incrementFlag, resetAllFlags, localStorage persistence
   maps/
     constants.ts       # TILE_SIZE, PLAYER_SPEED, TileType
+assets/
+  characters/
+    fox.png            # Fox texture atlas spritesheet (256x64, 16 body parts)
+    fox.json           # Phaser JSON Hash atlas — frame coordinates for fox body parts
 tools/
+  generate-fox-atlas.mjs  # Atlas generator script — creates fox.png + fox.json from code (no dependencies)
   visualizer/          # Standalone Vite dev tool — area map, dialogue tree, and story flow visualizer
     src/
       main.ts          # App shell — area selector, tab navigation, detail panel
@@ -77,7 +90,7 @@ tools/
 | Module | Owns |
 |---|---|
 | `scenes/TitleScene.ts` | Title screen UI, scene transition to GameScene, flag reset |
-| `scenes/GameScene.ts` | Area loading from registry, tile rendering, player entity, camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
+| `scenes/GameScene.ts` | Area loading, tile rendering, fox rig player (CharacterRig + WalkRunController + IdleController), camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
 | `scenes/StoryScene.ts` | Full-screen story scenes — beat display, fade transitions, GameScene pause/resume |
 | `systems/input.ts` | All input handling — keyboard keys, touch joystick lifecycle |
 | `systems/movement.ts` | Position updates with collision checking — accepts area collision data (map + NPCs) |
@@ -94,6 +107,12 @@ tools/
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
+| `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
+| `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update |
+| `rig/characters/fox.ts` | Fox (Pip) rig definition — 16 named parts, 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
+| `rig/animations/walkRun.ts` | Walk/run animation controller — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
+| `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn after 3s, sit-down after 6s, all reset on movement |
+| `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies |
 | `tools/visualizer/src/main.ts` | Visualizer app shell — area selector, tab navigation, view dispatch, detail panel |
 | `tools/visualizer/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/visualizer/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
@@ -135,6 +154,9 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Area transitions:** GameScene accepts `{ areaId, entryPoint }` via scene data. All systems (collision, movement, triggers, NPC interaction, dialogue, story scenes) are parameterized — they receive area data via constructor or method parameters, no global imports. During transition: movement, NPC interaction, triggers, and dialogue are suppressed (transitionInProgress guard).
 - **Debug overlay:** F3 toggles visibility (off by default). Shows trigger zones as color-coded semi-transparent rectangles (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID/type/condition, exit destination labels, NPC interaction radii as yellow circles. World-space at depth 50. Toggle is guarded during dialogue.
 - **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Flags work cross-area — set in one area, readable in another. Reset available from TitleScene.
+- **Character rig (fox):** Player is a `CharacterRig` (Phaser Container at Entities depth 5) with fox rig definition. Atlas preloaded in `GameScene.preload()` via `this.load.atlas(foxRigDefinition.atlasKey, 'characters/fox.png', 'characters/fox.json')` — Vite serves from `assets/` (`publicDir: 'assets'` in vite.config.ts). Direction derived from velocity via 8-sector atan2 mapping. Collision bounding box is PLAYER_SIZE (24px), same as the previous rectangle player.
+- **Walk/run speed:** `WalkRunController` is the source of truth for player movement speed. Walk speed = PLAYER_SPEED (160). After holding a direction for 0.8s, speed transitions to PLAYER_SPEED × runMultiplier (1.8). Releasing and re-pressing resets the timer. GameScene queries `walkRunController.getCurrentSpeed()` each frame.
+- **Idle progression:** At velocity 0: breathing + tail sway start immediately. After 3s: random head turn. After 6s: sit-down with eased leg tuck and body lower. Random ear flicks throughout. Any movement resets all idle state.
 
 ## Scaling tuning guide
 
