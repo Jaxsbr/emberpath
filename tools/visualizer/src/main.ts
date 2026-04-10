@@ -1,5 +1,6 @@
 import { getArea, getAllAreaIds, getDefaultAreaId } from '@game/data/areas/registry';
 import type { AreaDefinition } from '@game/data/areas/types';
+import { renderMap } from './mapRenderer';
 
 type ViewName = 'map' | 'dialogue' | 'flow';
 
@@ -52,12 +53,9 @@ function renderActiveView(): void {
   const container = document.getElementById(`view-${activeView}`);
   if (!container) return;
 
-  // Clear previous content
-  container.innerHTML = '';
-
   switch (activeView) {
     case 'map':
-      container.textContent = `Map view — ${activeArea.name} (${activeArea.mapCols}×${activeArea.mapRows})`;
+      renderMap(container, activeArea);
       break;
     case 'dialogue':
       container.textContent = `Dialogue view — ${Object.keys(activeArea.dialogues).length} scripts`;
