@@ -15,15 +15,15 @@ Match existing editor dark theme — navy backgrounds (#1a1a2e / #16213e), monos
 ### Done-when (observable)
 
 #### US-28 — Rename visualizer to editor
-- [ ] `tools/editor/` directory exists; `tools/visualizer/` does not exist [US-28]
-- [ ] `tools/editor/package.json` name field is `emberpath-editor` (was `emberpath-visualizer` or similar) [US-28]
-- [ ] `tools/editor/index.html` title contains "Editor" (not "Visualizer") [US-28]
-- [ ] `tools/editor/vite.config.ts` path alias `@game` still resolves to `../../src` [US-28]
-- [ ] `npx tsc --noEmit` passes inside `tools/editor/` [US-28]
-- [ ] `npm run dev` inside `tools/editor/` starts the Vite dev server and loads all existing tabs (map, dialogue, flow) without errors [US-28]
-- [ ] No remaining references to "visualizer" in file contents under `tools/editor/src/` (case-insensitive grep returns 0 matches) [US-28]
-- [ ] No references to "visualizer" in any .gitignore, CI workflow files (.github/), or root-level scripts/configs [US-28]
-- [ ] AGENTS.md directory layout and running instructions reference `tools/editor/` instead of `tools/visualizer/` [US-28]
+- [x] `tools/editor/` directory exists; `tools/visualizer/` does not exist [US-28]
+- [x] `tools/editor/package.json` name field is `emberpath-editor` (was `emberpath-visualizer` or similar) [US-28]
+- [x] `tools/editor/index.html` title contains "Editor" (not "Visualizer") [US-28]
+- [x] `tools/editor/vite.config.ts` path alias `@game` still resolves to `../../src` [US-28]
+- [x] `npx tsc --noEmit` passes inside `tools/editor/` [US-28]
+- [x] `npm run dev` inside `tools/editor/` starts the Vite dev server and loads all existing tabs (map, dialogue, flow) without errors [US-28]
+- [x] No remaining references to "visualizer" in file contents under `tools/editor/src/` (case-insensitive grep returns 0 matches) [US-28]
+- [x] No references to "visualizer" in any .gitignore, CI workflow files (.github/), or root-level scripts/configs [US-28]
+- [x] AGENTS.md directory layout and running instructions reference `tools/editor/` instead of `tools/visualizer/` [US-28]
 
 #### US-29 — Rig editor tab with Phaser preview
 - [ ] A "Rig" tab button appears in the editor toolbar alongside Map, Dialogue, and Flow tabs [US-29]
