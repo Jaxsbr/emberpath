@@ -22,23 +22,23 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: character-rig
-  phase_complete: true
+  phase: rig-editor
+  phase_complete: false
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
+  task_number: 1
   next_task: null
   last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
-  review_stage: review_posted
-  review_complete: true
-  pr_number: 6
+  review_stage: null
+  review_complete: false
+  pr_number: null
 
   # --- Retrospective (owner: retro) ---
-  retro_complete: true
+  retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-23, US-24, US-25, US-26, US-27]
+  completed_stories: []
