@@ -51,7 +51,7 @@ export class WalkRunController implements AnimationController {
     } else {
       // Stopped — reset hold timer and run state
       if (this.wasMoving && this.decelerationPhase === 0) {
-        // Just stopped — start deceleration
+        // Just stopped — capture speed before isRunning resets (order matters: line below clears isRunning)
         this.lastSpeed = this.isRunning ? PLAYER_SPEED * this.params.runMultiplier : PLAYER_SPEED;
         this.settlePhase = this.phase;
         this.decelerationPhase = 0.001; // start decel

@@ -59,6 +59,8 @@ export class IdleController implements AnimationController {
       this.isSitting = false;
       this.leftEarFlickTimer = 0;
       this.rightEarFlickTimer = 0;
+      this.leftEarFlickProgress = 0;
+      this.rightEarFlickProgress = 0;
       return;
     }
 
