@@ -13,3 +13,9 @@ entries:
     description: "Scaffolded tools/visualizer/ — package.json (vite+ts), vite.config.ts (@game alias), tsconfig.json (shared types), index.html, style.css (dark theme, debug overlay colors as CSS vars), main.ts (area selector dropdown, 3 tab buttons, view switching, detail panel). Added getAllAreaIds() to registry. Both game and visualizer tsc+build pass. ✓ US-19 complete"
     result: pass
     tokens: ~12000
+  - task: 3
+    type: investigate
+    story: US-20
+    description: "US-19 complete. US-20 needs a canvas-based map renderer: tile grid using area's floorColor/wallColor, NPC labeled circles, trigger zone colored rectangles (matching debug overlay colors), exit zone orange rectangles with dest labels, click detection for detail panel, player spawn marker, axis labels. Separate module in tools/visualizer/src/mapRenderer.ts. Queued implement."
+    result: pass
+    tokens: ~3000
