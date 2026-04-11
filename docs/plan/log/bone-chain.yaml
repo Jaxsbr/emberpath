@@ -103,3 +103,9 @@ entries:
     description: "Phase Completion Gate passed. All done-when criteria verified: US-32 (tree-walk resolver, inheritScale/inheritRotation fields, flat sprites), US-33 (migration script, parent-relative fox profiles), US-34 (manual propagation removed from walkRun and idle), US-35 (editor uses applyProfiles tree walk, save/load/export parent-relative). Structural criteria met (no rig constant duplication, depth map unchanged, AGENTS.md updated)."
     result: pass
     tokens: ~10000
+  - task: 18
+    type: investigate
+    story: phase
+    description: "Review stage initiated. PR #8 created from build/bone-chain to main: 'feat: bone-chain — parent-relative hierarchical transforms'. PR body includes phase summary, all 4 stories shipped (US-32/33/34/35), and done-when evidence for each criterion. Review queued."
+    result: pass
+    tokens: ~5000
