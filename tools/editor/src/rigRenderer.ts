@@ -60,10 +60,28 @@ function getPartProfile(partName: string): PartProfile | null {
 }
 
 // --- Phaser scene ---
+// Depth constants for editor canvas layers
+const DEPTH_GRID = 0;
+const DEPTH_CONNECTION_LINES = 2;   // above grid, below sprites (fox profile depths start at 4)
+const DEPTH_PROPAGATION_HIGHLIGHTS = 3;  // above connections, below sprites
+const DEPTH_SELECTION_HIGHLIGHT = 1000;  // above everything
+
+// Connection line style
+const CONNECTION_LINE_COLOR = 0x4ecdc4;
+const CONNECTION_LINE_ALPHA = 0.65;
+const CONNECTION_LINE_WIDTH = 1;
+
+// Propagation highlight style (amber, distinct from selection red)
+const PROPAGATION_HIGHLIGHT_COLOR = 0xf7d794;
+const PROPAGATION_HIGHLIGHT_ALPHA = 0.7;
+const PROPAGATION_HIGHLIGHT_WIDTH = 2;
+
 class RigPreviewScene extends Phaser.Scene {
   private rig: CharacterRig | null = null;
   private definition: RigDefinition = AVAILABLE_RIGS[activeRigIndex];
   private highlightGraphics: Phaser.GameObjects.Graphics | null = null;
+  private connectionLinesGraphics: Phaser.GameObjects.Graphics | null = null;
+  private propagationHighlightGraphics: Phaser.GameObjects.Graphics | null = null;
   private gridGraphics: Phaser.GameObjects.Graphics | null = null;
 
   constructor() {
@@ -110,14 +128,32 @@ class RigPreviewScene extends Phaser.Scene {
       this.rig.destroy();
       this.rig = null;
     }
+    if (this.connectionLinesGraphics) {
+      this.connectionLinesGraphics.destroy();
+      this.connectionLinesGraphics = null;
+    }
+    if (this.propagationHighlightGraphics) {
+      this.propagationHighlightGraphics.destroy();
+      this.propagationHighlightGraphics = null;
+    }
+    if (this.highlightGraphics) {
+      this.highlightGraphics.destroy();
+      this.highlightGraphics = null;
+    }
 
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
     this.rig = new CharacterRig(this, this.definition, cx, cy);
     this.rig.container.setScale(3);
 
+    this.connectionLinesGraphics = this.add.graphics();
+    this.connectionLinesGraphics.setDepth(DEPTH_CONNECTION_LINES);
+
+    this.propagationHighlightGraphics = this.add.graphics();
+    this.propagationHighlightGraphics.setDepth(DEPTH_PROPAGATION_HIGHLIGHTS);
+
     this.highlightGraphics = this.add.graphics();
-    this.highlightGraphics.setDepth(1000);
+    this.highlightGraphics.setDepth(DEPTH_SELECTION_HIGHLIGHT);
 
     // Apply editor profiles if they exist
     if (editorProfiles) {
@@ -184,6 +220,56 @@ class RigPreviewScene extends Phaser.Scene {
     }
   }
 
+  /** Draw lines connecting parent bones to children on the canvas. Edit mode only. */
+  updateConnectionLines(): void {
+    if (!this.connectionLinesGraphics || !this.rig) return;
+    this.connectionLinesGraphics.clear();
+
+    if (animationMode !== 'edit') return;
+
+    const container = this.rig.container;
+    const sprites = container.list as Phaser.GameObjects.Sprite[];
+
+    // Build a map from frame name → sprite for quick lookup
+    const spriteMap = new Map<string, Phaser.GameObjects.Sprite>();
+    for (const sprite of sprites) {
+      spriteMap.set(sprite.frame.name, sprite);
+    }
+
+    // Walk the bone hierarchy and draw a line from parent → each child
+    const drawConnections = (bone: BoneDefinition): void => {
+      const parentSprite = spriteMap.get(bone.name);
+      if (!bone.children) return;
+
+      for (const child of bone.children) {
+        const childSprite = spriteMap.get(child.name);
+
+        // Only draw if both parent and child sprites are visible
+        if (parentSprite?.visible && childSprite?.visible) {
+          // Convert container-local positions to world (canvas) positions
+          const px = container.x + parentSprite.x * container.scaleX;
+          const py = container.y + parentSprite.y * container.scaleY;
+          const cx2 = container.x + childSprite.x * container.scaleX;
+          const cy2 = container.y + childSprite.y * container.scaleY;
+
+          this.connectionLinesGraphics!.lineStyle(
+            CONNECTION_LINE_WIDTH,
+            CONNECTION_LINE_COLOR,
+            CONNECTION_LINE_ALPHA,
+          );
+          this.connectionLinesGraphics!.beginPath();
+          this.connectionLinesGraphics!.moveTo(px, py);
+          this.connectionLinesGraphics!.lineTo(cx2, cy2);
+          this.connectionLinesGraphics!.strokePath();
+        }
+
+        drawConnections(child);
+      }
+    };
+
+    drawConnections(this.definition.skeleton);
+  }
+
   setDirection(dir: Direction): void {
     currentDirection = dir;
     this.rig?.setDirection(dir);
@@ -192,6 +278,7 @@ class RigPreviewScene extends Phaser.Scene {
       this.applyEditorProfiles();
     }
     this.updateHighlight();
+    this.updateConnectionLines();
     onDirectionChanged?.(dir);
   }
 
@@ -200,6 +287,8 @@ class RigPreviewScene extends Phaser.Scene {
     if (!this.rig || !editorProfiles) return;
     this.rig.applyProfiles(editorProfiles, currentDirection);
     this.updateHighlight();
+    this.updateConnectionLines();
+    this.updatePropagationHighlights();
   }
 
   /** Update a single part's property and re-render it. */
@@ -214,11 +303,20 @@ class RigPreviewScene extends Phaser.Scene {
     this.applyEditorProfiles();
   }
 
+  /** Update propagation highlights (amber outline on descendant bones). Edit mode only. */
+  updatePropagationHighlights(): void {
+    if (!this.propagationHighlightGraphics || !this.rig) return;
+    this.propagationHighlightGraphics.clear();
+    // US-38: implemented in a later task
+  }
+
   /** Phaser update loop — drives animation controllers when not in edit mode. */
   update(_time: number, delta: number): void {
     if (animationMode === 'edit' || !this.rig) return;
     this.rig.update(delta);
     this.updateHighlight();
+    // Connection lines and propagation highlights are cleared in animation modes
+    // (they are only redrawn via applyEditorProfiles which is not called during animation)
   }
 
   /** Attach animation controllers and set velocity for the given mode. */
