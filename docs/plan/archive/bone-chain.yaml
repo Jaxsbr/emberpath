@@ -6,7 +6,7 @@ reconciliation_status:
   r2: done
   r3: done
   r4: done
-  r5: pending
+  r5: done
 entries:
   - task: 1
     type: investigate
