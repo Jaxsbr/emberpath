@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
-  next_task: "[US-32] Investigate: review CharacterRig.ts setDirection() and update() methods, plan the shared tree-walk resolver method signature and implementation approach. Confirm current flat loop can be replaced with recursive tree walk that uses parent-relative profiles."
+  task_number: 9
+  next_task: "[US-32] Implement shared resolvePositions tree-walk method in CharacterRig. Refactor setDirection() and update() to both use it. Method walks skeleton tree depth-first, resolving world positions from parent-relative profiles + optional bone states. Handle inheritRotation/inheritScale. Keep sprites as flat Container siblings."
   last_result: pass
   consecutive_fails: 0
 
