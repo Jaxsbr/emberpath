@@ -38,4 +38,12 @@ entries:
     description: "US-41 complete. No rig imports remain in src/ or tools/ (grep confirms). Safe to delete src/rig/ directory. Queued US-39 deletion."
     result: pass
     tokens: ~1000
+  - task: 6
+    time: "2026-04-11T22:47:00Z"
+    type: implement
+    story: US-39
+    description: "Deleted src/rig/ directory (5 files: CharacterRig.ts, types.ts, characters/fox.ts, animations/walkRun.ts, animations/idle.ts — 1264 lines total). Game tsc + build pass. Editor tsc + build pass (tsconfig.json no longer includes src/rig). No imports remain anywhere. US-39 complete."
+    result: pass
+    notes: US-39 complete
+    tokens: ~2000
 # Each entry: {task, time, story, description, result, notes, tokens}
