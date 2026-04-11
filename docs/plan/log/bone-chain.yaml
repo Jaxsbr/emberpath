@@ -13,3 +13,9 @@ entries:
     description: "Confirmed type check passes (0 errors). BoneDefinition used in types.ts, CharacterRig.ts, editor/rigRenderer.ts. Fox profiles absolute — tree-walk + conversion must be atomic. Implementation order: 1) add inheritScale/inheritRotation to BoneDefinition, 2) implement tree-walk + convert fox profiles together, 3) verify visual equivalence. Queued type-only change as first implement task."
     result: pass
     tokens: ~5000
+  - task: 3
+    type: implement
+    story: US-32
+    description: "Added inheritScale and inheritRotation optional boolean fields (default false) to BoneDefinition in rig/types.ts. Type-only change, no behavior change. Verify passes. US-32 criterion 1/8 met."
+    result: pass
+    tokens: ~3000

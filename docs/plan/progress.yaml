@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-32] Add inheritScale and inheritRotation optional boolean fields (default false) to BoneDefinition in rig/types.ts"
+  task_number: 4
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
