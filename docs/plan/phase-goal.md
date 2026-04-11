@@ -10,13 +10,13 @@ Add visual editing layers to the rig editor canvas: bone connection lines that m
 ### Done-when (observable)
 
 #### US-36 — Visual bone connections
-- [ ] In Edit mode, lines are drawn on the canvas from each parent bone's position to each child bone's position for the current direction [US-36]
-- [ ] Connection lines update when a bone is repositioned via the property panel [US-36]
-- [ ] Connection lines update when the direction is changed [US-36]
-- [ ] Lines render above the grid background but below bone sprites (depth between grid and lowest bone depth) [US-36]
-- [ ] Lines are not shown in animation preview modes (Idle/Walk/Run) [US-36]
-- [ ] Lines mirror correctly for W/SW/NW directions [US-36]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-36]
+- [x] In Edit mode, lines are drawn on the canvas from each parent bone's position to each child bone's position for the current direction [US-36]
+- [x] Connection lines update when a bone is repositioned via the property panel [US-36]
+- [x] Connection lines update when the direction is changed [US-36]
+- [x] Lines render above the grid background but below bone sprites (depth between grid and lowest bone depth) [US-36]
+- [x] Lines are not shown in animation preview modes (Idle/Walk/Run) [US-36]
+- [x] Lines mirror correctly for W/SW/NW directions [US-36]
+- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-36]
 
 #### US-37 — Canvas drag interaction
 - [ ] Clicking and dragging a bone sprite on the canvas changes its position [US-37]
