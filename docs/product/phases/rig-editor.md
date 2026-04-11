@@ -1,6 +1,6 @@
 # Phase: rig-editor
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
