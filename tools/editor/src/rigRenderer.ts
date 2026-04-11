@@ -374,11 +374,73 @@ class RigPreviewScene extends Phaser.Scene {
     this.applyEditorProfiles();
   }
 
+  /** Collect all descendant bone names of targetName (not including the target itself). */
+  private collectDescendants(bone: BoneDefinition, targetName: string, result: Set<string>): boolean {
+    if (bone.name === targetName) {
+      // Found the target — collect all children and their descendants
+      if (bone.children) {
+        for (const child of bone.children) {
+          this.collectAllBoneNames(child, result);
+        }
+      }
+      return true;
+    }
+    if (bone.children) {
+      for (const child of bone.children) {
+        if (this.collectDescendants(child, targetName, result)) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Collect all bone names under a bone (inclusive). */
+  private collectAllBoneNames(bone: BoneDefinition, result: Set<string>): void {
+    result.add(bone.name);
+    if (bone.children) {
+      for (const child of bone.children) {
+        this.collectAllBoneNames(child, result);
+      }
+    }
+  }
+
   /** Update propagation highlights (amber outline on descendant bones). Edit mode only. */
   updatePropagationHighlights(): void {
     if (!this.propagationHighlightGraphics || !this.rig) return;
     this.propagationHighlightGraphics.clear();
-    // US-38: implemented in a later task
+
+    if (animationMode !== 'edit') return;
+    if (!selectedPartName) return;
+
+    // Collect descendant bone names
+    const descendants = new Set<string>();
+    this.collectDescendants(this.definition.skeleton, selectedPartName, descendants);
+
+    if (descendants.size === 0) return; // leaf bone — no highlights
+
+    const container = this.rig.container;
+    const sprites = container.list as Phaser.GameObjects.Sprite[];
+
+    for (const sprite of sprites) {
+      if (!sprite.visible) continue;
+      if (!descendants.has(sprite.frame.name)) continue;
+
+      const worldX = container.x + sprite.x * container.scaleX;
+      const worldY = container.y + sprite.y * container.scaleY;
+      const hw = sprite.displayWidth * 0.5 * Math.abs(container.scaleX) + 2;
+      const hh = sprite.displayHeight * 0.5 * Math.abs(container.scaleY) + 2;
+
+      this.propagationHighlightGraphics!.lineStyle(
+        PROPAGATION_HIGHLIGHT_WIDTH,
+        PROPAGATION_HIGHLIGHT_COLOR,
+        PROPAGATION_HIGHLIGHT_ALPHA,
+      );
+      this.propagationHighlightGraphics!.strokeRect(
+        worldX - hw,
+        worldY - hh,
+        hw * 2,
+        hh * 2,
+      );
+    }
   }
 
   /** Phaser update loop — drives animation controllers when not in edit mode. */
@@ -429,6 +491,7 @@ class RigPreviewScene extends Phaser.Scene {
   selectPart(name: string | null): void {
     selectedPartName = name;
     this.updateHighlight();
+    this.updatePropagationHighlights();
   }
 
   getRig(): CharacterRig | null {
