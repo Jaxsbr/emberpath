@@ -74,4 +74,11 @@ entries:
     description: "review_stage=review_posted — scheduled handle-pr-review task."
     result: pass
     tokens: ~500
+  - task: 11
+    time: "2026-04-11T23:00:00Z"
+    type: review
+    story: phase
+    description: "handle-pr-review completed for PR #10. 1 fixed (PRD rig-teardown row updated from Draft to Shipped; phase spec story headings tagged [Shipped]). 1 skipped/resolved (retro-gate CI informational — retro_complete: false is by design, thread resolved). Both review threads resolved. Verify passes (tsc + build). Phase review complete summary posted to PR. review_complete: true."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
