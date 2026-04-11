@@ -1,6 +1,13 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 5
+    time: "2026-04-11T11:13:12Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. US-36/37/38 all criteria met. Structural: no editor logic leaked to src/ (grep confirms). AGENTS.md structural criterion not yet met — queued update task. Phase classified CSS/JS-only. Structural done-when criteria: only AGENTS.md update remains."
+    result: pass
+    tokens: ~3000
   - task: 4
     time: "2026-04-11T11:12:41Z"
     type: implement
