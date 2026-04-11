@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-32] Investigate: confirm current test count, identify all files affected by parent-relative coordinate model (CharacterRig.update, setDirection, BoneDefinition, fox profiles), and determine implementation order for the tree-walk resolver"
   last_result: pass
   consecutive_fails: 0
 

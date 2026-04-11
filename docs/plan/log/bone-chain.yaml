@@ -1,3 +1,9 @@
 phase: bone-chain
 started: 2026-04-11T09:25:10Z
-entries: []
+entries:
+  - task: 1
+    type: investigate
+    story: phase
+    description: "Phase start investigation. Verify passes. Cross-cutting phase — investigate-first mandate applies. BoneDefinition has no inheritScale/inheritRotation. CharacterRig uses flat loops for update() and setDirection(). Fox profiles use absolute coordinates. walkRun.ts manually propagates body bob to neck/head/shoulders. idle.ts manually propagates sit-down and head-turn. Story order: US-32→US-33→US-34→US-35. Queued US-32 investigation."
+    result: pass
+    tokens: ~15000
