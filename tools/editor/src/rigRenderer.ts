@@ -257,11 +257,8 @@ class RigPreviewScene extends Phaser.Scene {
     });
 
     this.input.on('pointerup', () => {
-      if (isDragging && dragBoneName) {
-        // Drag ended — keep the bone selected
-        isDragging = false;
-      }
       dragBoneName = null;
+      isDragging = false;
     });
   }
 
@@ -307,6 +304,13 @@ class RigPreviewScene extends Phaser.Scene {
       spriteMap.set(sprite.frame.name, sprite);
     }
 
+    // Set line style once before the recursive walk — same style for all edges
+    this.connectionLinesGraphics.lineStyle(
+      CONNECTION_LINE_WIDTH,
+      CONNECTION_LINE_COLOR,
+      CONNECTION_LINE_ALPHA,
+    );
+
     // Walk the bone hierarchy and draw a line from parent → each child
     const drawConnections = (bone: BoneDefinition): void => {
       const parentSprite = spriteMap.get(bone.name);
@@ -323,11 +327,6 @@ class RigPreviewScene extends Phaser.Scene {
           const cx2 = container.x + childSprite.x * container.scaleX;
           const cy2 = container.y + childSprite.y * container.scaleY;
 
-          this.connectionLinesGraphics!.lineStyle(
-            CONNECTION_LINE_WIDTH,
-            CONNECTION_LINE_COLOR,
-            CONNECTION_LINE_ALPHA,
-          );
           this.connectionLinesGraphics!.beginPath();
           this.connectionLinesGraphics!.moveTo(px, py);
           this.connectionLinesGraphics!.lineTo(cx2, cy2);
