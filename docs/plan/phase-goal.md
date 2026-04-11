@@ -10,14 +10,14 @@ Remove the experimental skeletal rig system (CharacterRig, fox definition, anima
 ### Done-when (observable)
 
 #### US-39 — Remove rig engine and fox definition from game codebase
-- [ ] `src/rig/` directory does not exist in the repository [US-39]
-- [ ] `src/rig/CharacterRig.ts` is deleted [US-39]
-- [ ] `src/rig/types.ts` is deleted [US-39]
-- [ ] `src/rig/characters/fox.ts` is deleted [US-39]
-- [ ] `src/rig/animations/walkRun.ts` is deleted [US-39]
-- [ ] `src/rig/animations/idle.ts` is deleted [US-39]
-- [ ] No file in `src/` imports from `../rig/`, `./rig/`, or `@game/rig/` (grep confirms zero matches) [US-39]
-- [ ] `npx tsc --noEmit && npm run build` passes with no rig-related type errors [US-39]
+- [x] `src/rig/` directory does not exist in the repository [US-39]
+- [x] `src/rig/CharacterRig.ts` is deleted [US-39]
+- [x] `src/rig/types.ts` is deleted [US-39]
+- [x] `src/rig/characters/fox.ts` is deleted [US-39]
+- [x] `src/rig/animations/walkRun.ts` is deleted [US-39]
+- [x] `src/rig/animations/idle.ts` is deleted [US-39]
+- [x] No file in `src/` imports from `../rig/`, `./rig/`, or `@game/rig/` (grep confirms zero matches) [US-39]
+- [x] `npx tsc --noEmit && npm run build` passes with no rig-related type errors [US-39]
 
 #### US-40 — Replace fox player with static sprite placeholder
 - [x] `GameScene.ts` declares `player` as `Phaser.GameObjects.Sprite` (or `Phaser.GameObjects.Rectangle`), not `CharacterRig` [US-40]
