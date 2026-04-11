@@ -16,4 +16,11 @@ entries:
     result: pass
     notes: US-40 complete
     tokens: ~8000
+  - task: 3
+    time: "2026-04-11T22:38:00Z"
+    type: investigate
+    story: US-41
+    description: "Branch B investigation. US-40 complete. Next: US-41 before US-39 — rigRenderer.ts imports @game/rig/ so editor tsconfig includes src/rig. Must remove editor rig references before deleting src/rig/ to keep editor build green. editor/tsconfig.json includes ../../src/rig in include array — also needs removal. Queued US-41 implementation."
+    result: pass
+    tokens: ~2000
 # Each entry: {task, time, story, description, result, notes, tokens}
