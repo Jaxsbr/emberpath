@@ -1,0 +1,77 @@
+phase: "editor-ux"
+started: "2026-04-11T11:04:28Z"
+entries:
+  - task: 10
+    time: "2026-04-11T11:21:44Z"
+    type: implement
+    story: phase
+    description: "handle-pr-review completed for PR #9. Fixed 2 concerns: (1) hoisted lineStyle() before recursive walk in updateConnectionLines() — avoids redundant state-set per edge; (2) simplified pointerup handler — removed misleading isDragging/dragBoneName guard, unconditional reset. Both resolved. Pushed. Summary posted. review_complete=true."
+    result: pass
+    tokens: ~5000
+  - task: 9
+    time: "2026-04-11T11:19:33Z"
+    type: implement
+    story: phase
+    description: "review-pr completed for PR #9. 0 critical. 2 concerns: (1) lineStyle() called inside loop — should be hoisted; (2) pointerup guard `if (isDragging && dragBoneName)` is misleading — dragBoneName always nulled. CI retro-gate expected (retro not yet run). handle-pr-review queued."
+    result: pass
+    tokens: ~5000
+  - task: 8
+    time: "2026-04-11T11:16:34Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #9 from build/editor-ux to main: 'feat: editor-ux — bone connections, canvas drag, propagation highlights'. PR body includes phase summary, all 3 stories (US-36/37/38), done-when evidence, and scope confirmation. review-pr queued."
+    result: pass
+    tokens: ~3000
+  - task: 7
+    time: "2026-04-11T11:15:32Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All done-when criteria verified: US-36 (connection lines drawn depth 2, teal, edit-mode only, mirrors correctly), US-37 (drag repositions parent-relative X/Y, propagates via tree-walk, disabled for mirrored dirs, lines update during drag), US-38 (amber descendant highlights depth 3, leaf bones excluded, clears on animation modes). Structural: AGENTS.md updated, no game src/ leakage (grep confirms 0 matches). AGENTS.md consistency: DEPTH_ constants used, applyProfiles() used for all rendering. Phase complete."
+    result: pass
+    tokens: ~5000
+  - task: 6
+    time: "2026-04-11T11:14:42Z"
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: rigRenderer.ts file ownership updated with canvas overlays (bone connections, propagation highlights, drag), added Editor canvas depth map section (GRID=0, CONN_LINES=2, PROP_HIGHLIGHTS=3, SPRITES=4-12+, SELECTION=1000), added 3 behavior rules for editor bone connections, canvas drag, and propagation highlighting. Structural criterion met. No game src/ files modified."
+    result: pass
+    tokens: ~4000
+  - task: 5
+    time: "2026-04-11T11:13:12Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. US-36/37/38 all criteria met. Structural: no editor logic leaked to src/ (grep confirms). AGENTS.md structural criterion not yet met — queued update task. Phase classified CSS/JS-only. Structural done-when criteria: only AGENTS.md update remains."
+    result: pass
+    tokens: ~3000
+  - task: 4
+    time: "2026-04-11T11:12:41Z"
+    type: implement
+    story: US-38
+    description: "Added updatePropagationHighlights() to RigPreviewScene. Uses collectDescendants() (depth-first search returning Set<string>) and collectAllBoneNames() helpers. Draws amber (#f7d794, 70% alpha, 2px stroke) rect around each visible descendant sprite in edit mode. Called from applyEditorProfiles() and selectPart(). Leaf bones (no descendants) show nothing. US-38 complete."
+    result: pass
+    notes: US-38 complete
+    tokens: ~5000
+  - task: 3
+    time: "2026-04-11T11:10:29Z"
+    type: implement
+    story: US-37
+    description: "Replaced setupPointerSelection() with setupPointerInteraction() that handles both click-to-select and drag-to-reposition. Drag threshold 3px. pointermove updates editorProfiles[uniqueDir].parts[boneName].x/y with container-local delta, calls applyEditorProfiles() for tree-walk propagation, triggers onPartSelected for property panel refresh. Drag disabled for mirrored directions. US-37 complete."
+    result: pass
+    notes: US-37 complete
+    tokens: ~6000
+  - task: 2
+    time: "2026-04-11T11:08:33Z"
+    type: implement
+    story: US-36
+    description: "Added DEPTH_ constants (GRID=0, CONNECTION_LINES=2, PROPAGATION_HIGHLIGHTS=3, SELECTION_HIGHLIGHT=1000). Added connectionLinesGraphics (depth 2) and propagationHighlightGraphics (depth 3) to RigPreviewScene. Added updateConnectionLines() that walks bone hierarchy depth-first, draws teal (#4ecdc4, 65% alpha) lines between visible parent/child sprites in edit mode only. Added stub updatePropagationHighlights() for US-38. applyEditorProfiles() and setDirection() now call updateConnectionLines(). US-36 complete."
+    result: pass
+    notes: US-36 complete
+    tokens: ~8000
+  - task: 1
+    time: "2026-04-11T11:06:24Z"
+    type: investigate
+    story: phase
+    description: "Phase start investigation. Verify passes for both game and editor. CSS/JS-only phase (no server/rig-engine changes) — all work in tools/editor/. rigRenderer.ts fully read: RigPreviewScene has grid (depth 0), highlightGraphics (depth 1000), sprites (depth from fox profiles, 4–12+). CharacterRig.applyProfiles() resolves positions. Story order: US-36 (connections) → US-37 (drag) → US-38 (propagation highlights). Queued US-36 implementation."
+    result: pass
+    tokens: ~20000
+# Each entry: {task, time, story, description, result, notes, tokens}

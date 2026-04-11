@@ -22,23 +22,23 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: bone-chain
+  phase: editor-ux
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 21
+  task_number: 10
   next_task: null
   last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
-  review_stage: null
+  review_stage: review_posted
   review_complete: true
-  pr_number: 8
+  pr_number: 9
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-32, US-33, US-34, US-35]
+  completed_stories: [US-36, US-37, US-38]

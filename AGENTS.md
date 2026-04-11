@@ -108,17 +108,17 @@ tools/
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
-| `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
-| `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update |
+| `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition (`inheritScale?: boolean`, `inheritRotation?: boolean`), AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
+| `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update, parent-relative tree-walk resolver (`resolvePositions()` depth-first), public `applyProfiles(profiles, direction)` for editor integration |
 | `rig/characters/fox.ts` | Fox (Pip) rig definition — 46 named parts (body, neck, head, snout, eyes, nose, ears, shoulders, hips, 4 legs with upper/lower/ankle/paw/4 toes, 3 tail segments), 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
-| `rig/animations/walkRun.ts` | Walk/run animation controller — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
-| `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn after 3s, sit-down after 6s, all reset on movement |
+| `rig/animations/walkRun.ts` | Walk/run animation controller — body bob on `body` only (tree-walk propagates to descendants), alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
+| `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn on `neck` after 3s (tree-walk propagates to head), sit-down on `body`/`hips` after 6s (tree-walk propagates to all descendants), all reset on movement |
 | `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies |
 | `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation, view dispatch, detail panel |
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
 | `tools/editor/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
-| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction), Save JSON/Load JSON/Export TS persistence toolbar |
+| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction — all parent-relative), Save JSON/Load JSON/Export TS persistence toolbar; uses `rig.applyProfiles()` for tree-walk-correct preview; canvas overlays: teal bone connection lines (depth 2), amber propagation highlight outlines (depth 3), red selection box (depth 1000); canvas drag to reposition bones by modifying parent-relative X/Y (drag disabled for mirrored directions W/SW/NW) |
 
 ## Depth map
 
@@ -135,6 +135,20 @@ Explicit rendering order for visual layers (Learning #57):
 | Dialogue | 200 | ui | Dialogue box, speaker name, choice buttons |
 
 New visual elements must reference this map. Ad-hoc depth values are prohibited.
+
+## Editor canvas depth map
+
+Explicit rendering order for the rig editor's Phaser scene (`tools/editor/`):
+
+| Layer | Depth | Description |
+|---|---|---|
+| Checkerboard grid | 0 | Editor background grid (16px cells) |
+| Bone connection lines | 2 | Teal lines (#4ecdc4, 65% alpha) connecting parent bones to children |
+| Propagation highlights | 3 | Amber outlines (#f7d794, 70% alpha) on descendant bones of selected bone |
+| Bone sprites | 4–12+ | CharacterRig sprites (depth from fox profile `depth` field) |
+| Selection highlight | 1000 | Red box (#e94560) around the selected bone |
+
+All editor canvas elements must use these depth constants (`DEPTH_*` in `rigRenderer.ts`). Ad-hoc depth values are prohibited.
 
 ## Behavior rules
 
@@ -160,6 +174,9 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Rig coordinate model (bone-chain):** `BoneDefinition` supports optional `inheritScale?: boolean` and `inheritRotation?: boolean` fields (both default `false`). Fox profiles store parent-relative coordinates — each bone's offset is relative to its parent's world position. `CharacterRig.update()` and `setDirection()` both resolve world positions via a shared depth-first tree-walk (`resolvePositions()`): world position = parent world position + local profile offset + local state offset. When `inheritRotation` is `true`, the local offset vector is rotated by the parent's world rotation before adding. When `inheritScale` is `true`, the local offset and sprite scale are multiplied by the parent's world scale. Animation controllers benefit from automatic propagation — a body bob `offsetY` applied to the `body` bone automatically moves all descendants (neck, head, shoulders, etc.) without manual per-bone writes. Sprites remain flat siblings in the root Phaser Container — no nested Containers are used.
 - **Walk/run speed:** `WalkRunController` is the source of truth for player movement speed. Walk speed = PLAYER_SPEED (160). After holding a direction for 0.8s, speed transitions to PLAYER_SPEED × runMultiplier (1.8). Releasing and re-pressing resets the timer. GameScene queries `walkRunController.getCurrentSpeed()` each frame.
 - **Idle progression:** At velocity 0: breathing + tail sway start immediately. After 3s: random head turn. After 6s: sit-down with eased leg tuck and body lower. Random ear flicks throughout. Any movement resets all idle state.
+- **Editor bone connections:** In Edit mode, `RigPreviewScene` draws teal connection lines (depth 2) between each parent and child bone sprite on the canvas. Lines are redrawn after every `applyEditorProfiles()` and direction change. Lines are absent in animation preview modes (Idle/Walk/Run). Lines mirror correctly for W/SW/NW directions because sprite positions are already resolved by the tree-walk resolver.
+- **Editor canvas drag:** Clicking and dragging a bone sprite in Edit mode updates the bone's parent-relative X/Y in `editorProfiles` and calls `applyEditorProfiles()` for live preview. Drag delta in world space is divided by `container.scaleX/Y` to produce the container-local delta, which equals the parent-relative delta. Only the dragged bone's X/Y is modified; descendants update visually via tree-walk propagation. Drag is disabled for mirrored directions (W/SW/NW).
+- **Editor propagation highlighting:** When a bone is selected in Edit mode, `updatePropagationHighlights()` draws amber outlines (depth 3, #f7d794, 70% alpha) around all visible descendant sprites. Uses `collectDescendants()` for depth-first skeleton search. Leaf bones (no descendants) show no highlights. Highlights are cleared when animation preview is active.
 
 ## Scaling tuning guide
 
