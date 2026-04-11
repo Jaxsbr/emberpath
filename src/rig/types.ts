@@ -10,6 +10,10 @@ export interface BoneDefinition {
   name: string;
   /** Child bones attached to this bone. */
   children?: BoneDefinition[];
+  /** When true, this bone's local offset is scaled by its parent's world scale. Defaults to false. */
+  inheritScale?: boolean;
+  /** When true, this bone's local offset is rotated by its parent's world rotation. Defaults to false. */
+  inheritRotation?: boolean;
 }
 
 /** Per-part configuration within a direction profile. */

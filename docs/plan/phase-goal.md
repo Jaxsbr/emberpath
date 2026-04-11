@@ -1,77 +1,63 @@
 ## Phase goal
 
-Rename the visualizer tool to "editor" and build a visual rig authoring tab. The editor's new rig tab embeds a Phaser scene for real-time character rig preview, provides a direction picker for all 8 directions, displays the skeleton hierarchy, and lets the designer edit every part property (position, scale, rotation, depth, visibility, alpha) per direction with instant visual feedback. Rig configurations save to JSON and export to TypeScript for game integration. This phase focuses on direction profile editing (the idle/base pose) — state-specific profiles (walk, run) are deferred.
+Convert the rig engine (`CharacterRig`, `BoneDefinition`, animation controller contract) from flat absolute positioning to parent-relative hierarchical transforms using manual tree-walk position resolution — no Phaser nested Containers. Each bone's profile coordinates become relative to its parent bone. `CharacterRig.update()` resolves world positions via depth-first tree walk each frame. Animation controllers gain automatic propagation (body bob moves all descendants) without manual per-bone duplication. The editor displays and edits parent-relative coordinates, with visual hierarchy following automatically.
 
-### Design direction
-
-Match existing editor dark theme — navy backgrounds (#1a1a2e / #16213e), monospace typography (JetBrains Mono / Fira Code), accent red (#e94560), muted text (#8899aa). Property panels and controls follow the established detail-panel pattern. The Phaser scene background should use a neutral checkerboard or grid pattern (common in sprite editors) to make rig parts visible against any color.
+**Approach:** Option C from Sage RES-7 research — parent-relative profiles + manual tree-walk resolver. Avoids Phaser nested Container overhead and version-stability risk. `inheritScale` and `inheritRotation` default to `false` (opt-in per bone). Migration preserves current absolute positions exactly via automated conversion.
 
 ### Stories in scope
-- US-28 — Rename visualizer to editor
-- US-29 — Rig editor tab with Phaser preview
-- US-30 — Interactive direction profile editor
-- US-31 — Rig configuration persistence and export
+- US-32 — Parent-relative coordinate model in CharacterRig
+- US-33 — Profile migration tooling
+- US-34 — Animation controller cleanup
+- US-35 — Editor chain-aware editing
 
 ### Done-when (observable)
 
-#### US-28 — Rename visualizer to editor
-- [x] `tools/editor/` directory exists; `tools/visualizer/` does not exist [US-28]
-- [x] `tools/editor/package.json` name field is `emberpath-editor` (was `emberpath-visualizer` or similar) [US-28]
-- [x] `tools/editor/index.html` title contains "Editor" (not "Visualizer") [US-28]
-- [x] `tools/editor/vite.config.ts` path alias `@game` still resolves to `../../src` [US-28]
-- [x] `npx tsc --noEmit` passes inside `tools/editor/` [US-28]
-- [x] `npm run dev` inside `tools/editor/` starts the Vite dev server and loads all existing tabs (map, dialogue, flow) without errors [US-28]
-- [x] No remaining references to "visualizer" in file contents under `tools/editor/src/` (case-insensitive grep returns 0 matches) [US-28]
-- [x] No references to "visualizer" in any .gitignore, CI workflow files (.github/), or root-level scripts/configs [US-28]
-- [x] AGENTS.md directory layout and running instructions reference `tools/editor/` instead of `tools/visualizer/` [US-28]
+#### US-32 — Parent-relative coordinate model
+- [x] `BoneDefinition` in `rig/types.ts` includes `inheritScale: boolean` and `inheritRotation: boolean` fields, both defaulting to `false` [US-32]
+- [x] `CharacterRig.update()` resolves world positions via depth-first tree walk of the bone hierarchy: each bone's world position = parent world position + local profile offset + local state offset [US-32]
+- [x] When `inheritRotation` is `true` on a bone, the local offset is rotated around the parent's pivot by the parent's world rotation [US-32]
+- [x] When `inheritScale` is `true` on a bone, the local offset and sprite scale are multiplied by the parent's world scale [US-32]
+- [x] `setDirection()` resolves world positions from parent-relative profile data using the same tree-walk logic (not a separate flat loop) [US-32]
+- [x] Sprites remain flat siblings in the root Phaser Container — no nested Containers are introduced [US-32]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [US-32]
+- [x] Fox renders identically to pre-change state when using migrated parent-relative profiles (visual equivalence — same sprite positions on screen for all 5 direction profiles + 3 mirrored) [US-32]
 
-#### US-29 — Rig editor tab with Phaser preview
-- [x] A "Rig" tab button appears in the editor toolbar alongside Map, Dialogue, and Flow tabs [US-29]
-- [x] Clicking the Rig tab displays an embedded Phaser scene that renders a character rig using the game's `CharacterRig` class and texture atlas [US-29]
-- [x] A rig selector dropdown lists available rig definitions; selecting "fox" loads and renders the fox rig [US-29]
-- [x] A direction picker with 8 clickable direction buttons (N, NE, E, SE, S, SW, W, NW) updates the rig's facing direction in the Phaser scene within the same frame [US-29]
-- [x] A skeleton hierarchy panel displays all parts from the rig's bone tree in a collapsible tree structure (body → head → snout, etc.) [US-29]
-- [x] Clicking a part name in the hierarchy visually highlights that part in the Phaser scene (e.g., tint change or outline) [US-29]
-- [x] The Phaser scene background uses a grid or checkerboard pattern (not solid color) so rig parts are visible regardless of their color [US-29]
-- [x] The Phaser scene renders at the correct atlas resolution — fox parts are sharp, not blurry or scaled incorrectly [US-29]
-- [x] `npx tsc --noEmit && npm run build` passes inside `tools/editor/` with the rig tab included [US-29]
-- [x] Switching rig selection in the dropdown resets all animation controller state — no visual artifacts carry over from the previous rig [US-29]
-- [x] Clicking the Rig tab multiple times rapidly does not create duplicate Phaser scenes or duplicate hierarchy panels [US-29]
-- [x] Rig preview scene uses explicit depth values: grid/checkerboard at depth 0, rig parts at their profile depth values, selection highlight at depth above all parts [US-29]
-- [x] Rig tab UI elements use the editor's dark theme palette: navy backgrounds (#1a1a2e or #16213e), accent red (#e94560), muted text (#8899aa), monospace font [US-29]
-- [x] Rig editor modules import all rig types (RigDefinition, DirectionProfile, BoneDefinition) from @game/rig/types — no local type re-declarations [US-29]
+#### US-33 — Profile migration tooling
+- [x] A migration script or editor feature exists that reads absolute fox.ts profiles and outputs parent-relative profiles [US-33]
+- [x] Migration walks the bone hierarchy per direction, subtracting each bone's parent absolute position to derive the local offset [US-33]
+- [x] Migration output covers all 5 unique direction profiles (S, N, E, SE, NE) — mirrored directions (W, SW, NW) are derived, not migrated separately [US-33]
+- [x] Migration output is written to `rig/characters/fox.ts` replacing the absolute profile data [US-33]
+- [x] After migration, the fox renders at identical screen positions as before migration for all 8 directions (verified by running the game and checking each direction) [US-33]
+- [x] `npx tsc --noEmit && npm run build` passes after migration [US-33]
 
-#### US-30 — Interactive direction profile editor
-- [x] Selecting a part (from hierarchy click or Phaser scene click) opens a property editor panel showing that part's current values for the selected direction [US-30]
-- [x] The property editor displays editable fields for: x, y, scaleX, scaleY, rotation, depth, visible, alpha [US-30]
-- [x] Changing any numeric field (x, y, scaleX, scaleY, rotation, depth, alpha) via input updates the Phaser scene in real time (no save/refresh required) [US-30]
-- [x] Toggling the `visible` checkbox hides/shows the part in the Phaser scene immediately [US-30]
-- [x] Switching direction via the direction picker loads that direction's profile values into the property editor — values differ between S and E profiles [US-30]
-- [x] Edits to a direction profile persist in editor state when switching between directions (edit S profile → switch to E → switch back to S → edits are retained) [US-30]
-- [x] Only the 5 unique directions (S, N, E, SE, NE) are directly editable; selecting a mirrored direction (W, SW, NW) shows the source direction's values with a "mirrored from E/SE/NE" indicator [US-30]
-- [x] All 46 fox parts are individually selectable and editable [US-30]
-- [x] Part selection in the Phaser scene (click on a rendered sprite) selects that part in the hierarchy panel and opens its properties [US-30]
-- [x] Clicking on HTML property editor controls does not trigger Phaser scene pointer events (no accidental part selection when editing numeric fields) [US-30]
-- [x] Rapidly alternating between hierarchy click and Phaser scene click on different parts always converges to the last-clicked part — no stale or split selection state [US-30]
+#### US-34 — Animation controller cleanup
+- [x] `walkRun.ts` body bob is applied only to the `body` bone — manual propagation lines for neck, head, shoulders are removed [US-34]
+- [x] `idle.ts` sit-down offset is applied only to `body` and `hips` — manual propagation lines for shoulders, neck, head, and foot parts are removed [US-34]
+- [x] `idle.ts` head turn is applied only to `neck` — manual propagation to head and snout is removed [US-34]
+- [x] Walk/run animation: body bob oscillates on Y axis, legs alternate swing, tail segments have non-zero rotation deltas — verified by running the game and observing walk cycle in all 8 directions [US-34]
+- [x] Idle animation: breathing applies scaleY oscillation to body, sit-down lowers body offsetY after 6s stationary, head turn applies rotation to neck after 3s — verified by running the game and waiting through the idle sequence [US-34]
+- [x] Net line count of `walkRun.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
+- [x] Net line count of `idle.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
+- [x] `BoneState` interface in `rig/types.ts` is unchanged — controllers still write local deltas in the same format [US-34]
+- [x] `npx tsc --noEmit && npm run build` passes [US-34]
 
-#### US-31 — Rig configuration persistence and export
-- [x] A "Save" button in the rig tab toolbar downloads a JSON file containing all direction profiles for the current rig (5 unique directions × all parts × all properties) [US-31]
-- [x] A "Load" button accepts a JSON file upload and restores all direction profiles into the editor, updating the Phaser preview [US-31]
-- [x] An "Export TS" button generates TypeScript code matching the `profiles: Record<UniqueDirection, DirectionProfile>` format used in `src/rig/characters/fox.ts` [US-31]
-- [x] The exported TypeScript is valid — pasting it into a rig definition file and running `npx tsc --noEmit` produces no type errors [US-31]
-- [x] Loading a JSON file that references parts not in the current rig's skeleton shows a warning listing the mismatched part names [US-31]
-- [x] Save/load round-trips without data loss — save, reload editor, load the saved file, all values match the pre-save state [US-31]
-- [x] Exported TypeScript pasted into fox.ts and loaded in the game (npm run dev) renders the fox rig identically to the editor preview [US-31]
+#### US-35 — Editor chain-aware editing
+- [x] Rig editor property panel shows parent-relative coordinates (matching the profile data model) for the selected part [US-35]
+- [x] Editing a parent bone's local offset in the property panel updates the visual positions of all descendant bones in the editor preview [US-35]
+- [x] Editor Save JSON exports parent-relative profile data (not absolute positions) [US-35]
+- [x] Editor Load JSON correctly imports parent-relative profile data [US-35]
+- [x] Editor Export TS outputs parent-relative profile data compatible with `rig/characters/fox.ts` format [US-35]
+- [x] `npx tsc --noEmit && npm run build` passes for both game and editor (`cd tools/editor && npx tsc --noEmit && npm run build`) [US-35]
 
-#### Structural
-- [x] AGENTS.md directory layout includes `tools/editor/` tree with updated descriptions reflecting the rig tab addition [phase]
-- [x] AGENTS.md file ownership table includes entries for new rig editor modules (rig renderer, property editor, persistence) [phase]
-- [x] AGENTS.md running instructions reference `tools/editor/` path and port [phase]
-- [x] `docs/rig-system-guide.md` updated to reference the editor's rig tab for visual profile authoring [phase]
+#### Structural / cross-cutting
+- [x] No constants or logic from `rig/` modules are duplicated in scene files — shared values remain in their canonical modules (`maps/constants.ts`, `rig/types.ts`) [phase]
+- [x] Depth map in AGENTS.md is unchanged — bone-chain changes do not affect rendering depth assignments [phase]
+- [x] AGENTS.md reflects new `inheritScale`/`inheritRotation` fields in the rig system description and any behavior rule changes introduced in this phase [phase]
 
 ### Golden principles (phase-relevant)
-- **Depth map adherence** (AGENTS.md) — rig preview renders parts at their profile depth values; the editor visualizes depth ordering
-- **Systems-module architecture** — rig editor components (renderer, property editor, persistence) are separate modules, not monolithic
-- **Responsive scaling** (AGENTS.md) — editor layout works at common desktop viewport sizes (the editor is a dev tool, not mobile-targeted)
-- **Parameterized systems** (AGENTS.md) — rig editor receives rig definitions as data, no hardcoded fox-specific logic in editor components
-- **Frame-based delta-time** (AGENTS.md) — Phaser preview scene uses delta time for any animation preview
+- Movement: Frame-based smooth movement (delta-time), not tile-snapping. Axis-independent collision allows sliding along walls and NPCs.
+- Character rig (fox): Player is a CharacterRig (Phaser Container at Entities depth 5) with fox rig definition. Direction derived from velocity via 8-sector atan2 mapping. Collision bounding box is PLAYER_SIZE (24px).
+- Walk/run speed: WalkRunController is the source of truth for player movement speed.
+- Idle progression: At velocity 0: breathing + tail sway start immediately. After 3s: random head turn. After 6s: sit-down with eased leg tuck and body lower.
+- Responsive scaling: Phaser Scale.RESIZE mode — canvas adapts to container/viewport size.
+- File ownership: Each module owns its specific domain (see AGENTS.md File ownership table). Scene code must call system-module functions, not duplicate them.

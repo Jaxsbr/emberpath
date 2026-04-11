@@ -1,0 +1,123 @@
+phase: bone-chain
+started: 2026-04-11T09:25:10Z
+entries:
+  - task: 1
+    type: investigate
+    story: phase
+    description: "Phase start investigation. Verify passes. Cross-cutting phase — investigate-first mandate applies. BoneDefinition has no inheritScale/inheritRotation. CharacterRig uses flat loops for update() and setDirection(). Fox profiles use absolute coordinates. walkRun.ts manually propagates body bob to neck/head/shoulders. idle.ts manually propagates sit-down and head-turn. Story order: US-32→US-33→US-34→US-35. Queued US-32 investigation."
+    result: pass
+    tokens: ~15000
+  - task: 2
+    type: investigate
+    story: US-32
+    description: "Confirmed type check passes (0 errors). BoneDefinition used in types.ts, CharacterRig.ts, editor/rigRenderer.ts. Fox profiles absolute — tree-walk + conversion must be atomic. Implementation order: 1) add inheritScale/inheritRotation to BoneDefinition, 2) implement tree-walk + convert fox profiles together, 3) verify visual equivalence. Queued type-only change as first implement task."
+    result: pass
+    tokens: ~5000
+  - task: 3
+    type: implement
+    story: US-32
+    description: "Added inheritScale and inheritRotation optional boolean fields (default false) to BoneDefinition in rig/types.ts. Type-only change, no behavior change. Verify passes. US-32 criterion 1/8 met."
+    result: pass
+    tokens: ~3000
+  - task: 4
+    type: investigate
+    story: US-32
+    description: "Branch B investigation. 0/28 done-when criteria met. Phase classified as cross-cutting (investigate-first mandatory). US-32+US-33 tightly coupled — tree walk needs migrated profiles. Plan: create migration script first (US-33), convert fox profiles, then implement tree-walk resolver (US-32). Queued US-33 investigation."
+    result: pass
+    tokens: ~10000
+  - task: 5
+    type: investigate
+    story: US-33
+    description: "Verified migration math on S and E profiles. body→neck→head and body→shoulders→front-left chains both produce correct parent-relative values via subtraction. Tree-walk resolution reproduces original absolute positions exactly. Script plan: tools/migrate-to-relative.ts, imports fox definition, walks skeleton per direction, computes relative = child_abs - parent_abs for x/y. Queued implementation."
+    result: pass
+    tokens: ~8000
+  - task: 6
+    type: implement
+    story: US-33
+    description: "Created tools/migrate-to-relative.ts migration script. Script imports fox definition, walks skeleton hierarchy per direction, computes relative = child_abs - parent_abs for x/y. Built-in verification confirms all relative profiles resolve back to original absolute positions. Ran migration to update fox.ts. Both game and editor build pass. US-33 criteria 1-4,6 met; criterion 5 (visual equivalence) awaits US-32 tree-walk."
+    result: pass
+    tokens: ~12000
+  - task: 7
+    type: investigate
+    story: US-32
+    description: "Branch B. US-32 criteria: 1/8 met (types). US-33 criteria: 5/6 met (script done, visual equiv awaits tree walk). Remaining US-32 work: implement tree-walk resolver for setDirection() and update(). Queued investigation to plan method signature and approach."
+    result: pass
+    tokens: ~3000
+  - task: 8
+    type: investigate
+    story: US-32
+    description: "Reviewed setDirection() and update() methods. Both use flat loops. Designed shared resolvePositions(bone, profile, boneStates, parentWorldX/Y/Rot/ScaleX/ScaleY, flipX) method: depth-first tree walk, computes world pos = parent world + local (profile + state), handles inheritRotation/inheritScale, sets sprite properties. setDirection() calls with null boneStates, update() with real states. Queued implementation."
+    result: pass
+    tokens: ~5000
+  - task: 9
+    type: implement
+    story: US-32
+    description: "Implemented shared resolvePositions() tree-walk method in CharacterRig. Walks skeleton depth-first, resolves world positions from parent-relative profiles + bone state offsets. Handles inheritRotation (offset rotation) and inheritScale (offset + sprite scale multiplication). setDirection() and update() both call resolvePositions(). Sprites remain flat Container siblings. Fixed rotation accumulation to respect inheritRotation flag (false=independent, true=accumulated). Build passes. US-32 complete. US-33 complete."
+    result: pass
+    tokens: ~15000
+  - task: 10
+    type: investigate
+    story: US-34
+    description: "Branch B. US-32 and US-33 complete. US-34 criteria: 0/9 met. Need to identify manual propagation in walkRun.ts and idle.ts made redundant by tree walk. Queued investigation."
+    result: pass
+    tokens: ~3000
+  - task: 11
+    type: investigate
+    story: US-34
+    description: "Confirmed tree walk propagates position (offsetY) automatically to all descendants — body bob flows to neck/head/shoulders without explicit writes. walkRun.ts: remove neck.offsetY/rotation (lines 108-110), head.offsetY (114-115), shoulders.offsetY (118-120). idle.ts: remove shoulders.offsetY (148-149), neck.offsetY (150-151), head.offsetY (153-155) from sit-down; remove head.rotation (121) from head-turn. Keep all intentional local deltas (legs, tail, ears, eyes). Queued implementation."
+    result: pass
+    tokens: ~8000
+  - task: 12
+    type: implement
+    story: US-34
+    description: "Removed manual propagation from walkRun.ts (neck.offsetY/rotation, head.offsetY, shoulders.offsetY) and idle.ts (shoulders/neck/head offsetY from sit-down, head.rotation from head-turn). walkRun.ts: 196→180 lines (-16). idle.ts: 268→253 lines (-15). BoneState unchanged. Build passes. US-34 complete."
+    result: pass
+    tokens: ~10000
+  - task: 13
+    type: investigate
+    story: US-35
+    description: "Branch B. US-32/33/34 complete. US-35 criteria: 0/6 met (editor chain-aware editing). Queued investigation of rigRenderer.ts."
+    result: pass
+    tokens: ~3000
+  - task: 14
+    type: investigate
+    story: US-35
+    description: "Read rigRenderer.ts. Editor's applyEditorProfiles() uses flat loop (line 199) — doesn't use tree walk, so editing parent bone doesn't update descendants. Fix: add public applyProfiles(profiles, direction) to CharacterRig, update editor to call it. Property panel already shows parent-relative coords (profiles are parent-relative). Save/Load/Export already use parent-relative data. Queued implementation."
+    result: pass
+    tokens: ~12000
+  - task: 15
+    type: implement
+    story: US-35
+    description: "Added public applyProfiles(profiles, direction) method to CharacterRig using tree-walk resolver. Updated editor rigRenderer.ts applyEditorProfiles() to call rig.applyProfiles() instead of flat sprite loop. Both game and editor builds pass. US-35 criteria 1-2 met (property panel already shows parent-relative coords; editing parent bone now updates descendants via tree walk)."
+    result: pass
+    tokens: ~8000
+  - task: 16
+    type: implement
+    story: phase
+    description: "Resolved structural/cross-cutting criteria: moved PLAYER_SIZE to maps/constants.ts import, verified depth map unchanged, updated AGENTS.md with inheritScale/inheritRotation fields and tree-walk resolver description. All phase criteria now met."
+    result: pass
+    tokens: ~8000
+  - task: 17
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate passed. All done-when criteria verified: US-32 (tree-walk resolver, inheritScale/inheritRotation fields, flat sprites), US-33 (migration script, parent-relative fox profiles), US-34 (manual propagation removed from walkRun and idle), US-35 (editor uses applyProfiles tree walk, save/load/export parent-relative). Structural criteria met (no rig constant duplication, depth map unchanged, AGENTS.md updated)."
+    result: pass
+    tokens: ~10000
+  - task: 18
+    type: investigate
+    story: phase
+    description: "Review stage initiated. PR #8 created from build/bone-chain to main: 'feat: bone-chain — parent-relative hierarchical transforms'. PR body includes phase summary, all 4 stories shipped (US-32/33/34/35), and done-when evidence for each criterion. Review queued."
+    result: pass
+    tokens: ~5000
+  - task: 19
+    type: implement
+    story: phase
+    description: "review-pr completed for PR #8. Posted 2 concerns (hidden-bone semantics in tree walk, misleading rotation-propagation comment in idle.ts), 0 critical. Review event: COMMENT."
+    result: pass
+    tokens: ~8000
+  - task: 20
+    type: implement
+    story: phase
+    description: "handle-pr-review completed for PR #8. Addressed 2 concerns: added clarifying comment for hidden-bone transparent-skip semantics in tree walk, fixed misleading rotation-propagation comment in idle.ts. Both fixes are documentation-only (comments). Verify passes."
+    result: pass
+    tokens: ~8000

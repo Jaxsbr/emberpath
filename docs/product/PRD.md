@@ -42,3 +42,5 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | story-visualizer | Shipped | US-19, US-20, US-21, US-22 | [phases/story-visualizer.md](phases/story-visualizer.md) |
 | character-rig | Shipped | US-23, US-24, US-25, US-26, US-27 | [phases/character-rig.md](phases/character-rig.md) |
 | rig-editor | Shipped | US-28, US-29, US-30, US-31 | [phases/rig-editor.md](phases/rig-editor.md) |
+| bone-chain | Shipped | US-32, US-33, US-34, US-35 | [phases/bone-chain.md](phases/bone-chain.md) |
+| editor-ux | Draft | US-36, US-37, US-38 | [phases/editor-ux.md](phases/editor-ux.md) |

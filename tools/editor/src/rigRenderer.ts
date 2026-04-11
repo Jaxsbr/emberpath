@@ -195,31 +195,10 @@ class RigPreviewScene extends Phaser.Scene {
     onDirectionChanged?.(dir);
   }
 
-  /** Apply editor profiles to all sprites (after direction change or property edit). */
+  /** Apply editor profiles via tree-walk resolver — editing a parent visually moves all descendants. */
   applyEditorProfiles(): void {
     if (!this.rig || !editorProfiles) return;
-
-    const uniqueDir = getUniqueDirection(currentDirection);
-    const profile = editorProfiles[uniqueDir];
-    const mirrored = isMirrored(currentDirection);
-    const flipX = mirrored ? -1 : 1;
-
-    const container = this.rig.container;
-    const children = container.list as Phaser.GameObjects.Sprite[];
-    for (const sprite of children) {
-      const pp = profile.parts[sprite.frame.name];
-      if (!pp) {
-        sprite.setVisible(false);
-        continue;
-      }
-      sprite.setVisible(pp.visible);
-      sprite.setPosition(pp.x * flipX, pp.y);
-      sprite.setScale(pp.scaleX * flipX, pp.scaleY);
-      sprite.setRotation(pp.rotation * flipX);
-      sprite.setDepth(pp.depth);
-      sprite.setAlpha(pp.alpha ?? 1);
-    }
-    container.sort('depth');
+    this.rig.applyProfiles(editorProfiles, currentDirection);
     this.updateHighlight();
   }
 

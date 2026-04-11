@@ -1,99 +1,145 @@
-# Phase: bone-chain — Parent-relative bone transforms
+# Phase: bone-chain
 
-Status: draft
+Status: Shipped
 
 ## Summary
 
-Convert the rig system from flat absolute positioning (all parts offset from container center) to parent-relative transforms (each part positioned relative to its parent bone). This enables hierarchical movement — moving a parent bone automatically moves all descendants, matching how real skeletal animation systems work.
+Convert the rig engine (`CharacterRig`, `BoneDefinition`, animation controller contract) from flat absolute positioning to parent-relative hierarchical transforms using manual tree-walk position resolution — no Phaser nested Containers. Each bone's profile coordinates become relative to its parent bone. `CharacterRig.update()` resolves world positions via depth-first tree walk each frame. Animation controllers gain automatic propagation (body bob moves all descendants) without manual per-bone duplication. The editor displays and edits parent-relative coordinates, with visual hierarchy following automatically.
 
-## Motivation
+**Approach:** Option C from Sage RES-7 research — parent-relative profiles + manual tree-walk resolver. Avoids Phaser nested Container overhead and version-stability risk. `inheritScale` and `inheritRotation` default to `false` (opt-in per bone). Migration preserves current absolute positions exactly via automated conversion.
 
-The current rig system positions all 46 fox parts as independent offsets from the container center. The `BoneDefinition` hierarchy (body > neck > head > snout, etc.) is used for display organization only — it has no effect on positioning. This means:
+## Stories
 
-- Moving the neck in the editor does not move the head, snout, or ears
-- Animation controllers must manually propagate offsets to every descendant (walkRun.ts lines 107-115 manually apply body bob to neck, head, shoulders separately)
-- Adding new body parts requires updating every animation controller that touches ancestor bones
-- The coordinate model diverges from designer expectations (spine/skeleton tools universally use parent-relative transforms)
+### US-32 — Parent-relative coordinate model in CharacterRig
 
-## Current architecture (what changes)
+As a rig system consumer, I want bone positions resolved through a parent-relative hierarchy, so that moving a parent bone automatically moves all descendants without manual propagation.
 
-```
-Container (flat)
-  ├── body    (x: 0, y: 0)      ← absolute from center
-  ├── neck    (x: 0, y: -8)     ← absolute from center
-  ├── head    (x: 0, y: -14)    ← absolute from center
-  ├── snout   (x: 0, y: -12)    ← absolute from center
-  └── ...46 sprites, all siblings
-```
+**Acceptance criteria:**
+- `BoneDefinition` includes `inheritScale` and `inheritRotation` boolean fields, both defaulting to `false`
+- `CharacterRig.update()` resolves world positions via depth-first tree walk: world position = parent world position + local profile offset + local state offset
+- When `inheritRotation` is `true`, local offset is rotated around parent's pivot by parent's world rotation
+- When `inheritScale` is `true`, local offset and sprite scale are multiplied by parent's world scale
+- `setDirection()` uses the same tree-walk resolution (shared with `update()`, not a separate implementation)
+- Sprites remain flat siblings in the root Phaser Container — no nested Containers introduced
+- Fox renders identically to pre-change state with migrated profiles
 
-**After:**
-```
-Container
-  └── body (x: 0, y: 0)
-        ├── neck (x: 0, y: -8)      ← relative to body
-        │     └── head (x: 0, y: -6) ← relative to neck
-        │           └── snout (x: 0, y: 2) ← relative to head
-        ├── tail-1 (x: -10, y: 2)   ← relative to body
-        │     └── tail-2 ...
-        └── ...
-```
+**User guidance:** N/A — internal engine change, no player-facing behavior change.
 
-## Scope
-
-### Stories
-
-- US-32 — Parent-relative coordinate model in CharacterRig
-- US-33 — Profile migration tooling (convert absolute to parent-relative coordinates)
-- US-34 — Animation controller refactor (remove manual propagation)
-- US-35 — Editor chain-aware editing (move parent = move children)
-
-### US-32 — Parent-relative coordinate model
-
-Change `CharacterRig` from a flat container of sprites to nested containers (or manual transform chain math). Each sprite's `x/y` in `PartProfile` becomes relative to its parent bone's position, not the container center.
-
-Key decisions:
-- **Nested Phaser Containers** vs **manual matrix math**: Nested containers are simpler but add overhead per bone. Manual math is more performant but harder to debug. For 46 parts, nested containers should be fine.
-- **Rotation inheritance**: When a parent rotates, children orbit around the parent's origin. This is standard skeletal behavior. The `BoneState.rotation` delta from animation controllers would automatically propagate.
-- **Scale inheritance**: Parent scale affects child size and position. This may need a flag per bone (some children should inherit scale, some shouldn't — e.g., eyes shouldn't shrink when body breathes).
+**Design rationale:** Manual tree-walk over nested Phaser Containers avoids documented per-frame tree traversal overhead in Phaser 3.80 and removes dependency on Phaser's historically unstable Container nesting support. The rig already knows the bone hierarchy; it simply doesn't use it for positioning yet.
 
 ### US-33 — Profile migration tooling
 
-The existing fox.ts profiles use absolute coordinates. A migration tool (editor feature or script) must:
-1. Read current absolute profiles
-2. Walk the bone hierarchy
-3. For each part, subtract the parent's absolute position to derive the relative offset
-4. Output new profiles in parent-relative format
+As a rig author, I want an automated tool to convert absolute profile coordinates to parent-relative coordinates, so that existing rig definitions work with the new coordinate model without manual recalculation.
 
-This must be verifiable: the fox should render identically before and after migration.
+**Acceptance criteria:**
+- A migration script or editor feature converts absolute profiles to parent-relative
+- Migration walks the bone hierarchy per direction, subtracting parent absolute position to derive local offset
+- All 5 unique direction profiles are converted (mirrored directions are derived, not migrated separately)
+- After migration, the fox renders at identical screen positions as before for all 8 directions
 
-### US-34 — Animation controller refactor
+**User guidance:** N/A — developer tooling for rig authoring.
 
-With parent-relative transforms, animation controllers simplify dramatically:
-- `walkRun.ts`: Body bob on `body` automatically moves neck, head, ears, shoulders. Remove ~30 lines of manual propagation.
-- `idle.ts`: Sit-down on `body` automatically lowers everything. Head turn on `neck` automatically rotates head and snout. Remove ~20 lines of manual propagation.
-- `BoneState` offsets become truly local — offsetY on `body` no longer needs to be duplicated on `neck`, `head`, etc.
+**Design rationale:** Automated conversion over manual re-authoring — preserves current positions exactly. Re-authoring can happen incrementally in the editor after the system is in place. Conflating migration correctness with artistic quality would make the migration unverifiable.
+
+### US-34 — Animation controller cleanup
+
+As a rig system maintainer, I want animation controllers to set deltas on parent bones only and trust the tree walk to propagate, so that controllers are simpler and adding new body parts doesn't require updating every controller.
+
+**Acceptance criteria:**
+- `walkRun.ts` body bob applied only to `body` — manual propagation to neck, head, shoulders removed
+- `idle.ts` sit-down applied only to `body` and `hips` — manual propagation to shoulders, neck, head, foot parts removed
+- `idle.ts` head turn applied only to `neck` — manual propagation to head and snout removed
+- Walk/run and idle animations remain functionally correct after cleanup
+- `BoneState` interface is unchanged — controllers still write local deltas in the same format
+- Net line count of both controllers decreases
+
+**User guidance:** N/A — internal refactor, no player-facing behavior change.
+
+**Design rationale:** The tree walk makes manual propagation redundant. Removing it first (after the tree walk is in place) and then re-tuning amplitudes if needed is safer than trying to rewrite controllers and change the coordinate model simultaneously.
 
 ### US-35 — Editor chain-aware editing
 
-The rig editor's property panel should:
-- Show parent-relative coordinates (matching the new data model)
-- Moving a parent in the editor visually moves all children (automatic with nested containers)
-- Optionally show world-space (absolute) coordinates as read-only reference
-- Drag interaction (future) would naturally work with the hierarchy
+As a rig author, I want the editor to display and edit parent-relative coordinates with visual hierarchy, so that positioning body parts is intuitive and moving a parent visually moves all children.
 
-## Dependencies
+**Acceptance criteria:**
+- Property panel shows parent-relative coordinates for the selected part
+- Editing a parent bone's offset updates visual positions of all descendants in the preview
+- Save JSON exports parent-relative profile data
+- Load JSON imports parent-relative profile data
+- Export TS outputs parent-relative data compatible with `rig/characters/fox.ts` format
+- Both game and editor type-check and build cleanly
 
-- **rig-editor** phase must be complete (this phase builds on the editor)
+**User guidance:** N/A — developer tool, not player-facing.
 
-## Risks
+**Design rationale:** The editor's embedded Phaser scene already renders the actual CharacterRig (which now does the tree walk), so visual hierarchy follows automatically. The property panel needs to show local coordinates matching the data model, not world-space coordinates.
 
-- **Fox profile recalculation**: All 5 directions x 46 parts = 230 profile entries need conversion. Automated migration (US-33) mitigates this, but visual verification is essential.
-- **Animation behavior change**: Parent-relative transforms compound differently. A body bob of 2px currently adds 2px to body, then animation manually adds 1.4px to neck, 1px to head. With parent-relative, body bob of 2px automatically moves neck by 2px (plus neck's own offset). Animation amplitudes will need retuning.
-- **Performance**: Nested containers add Phaser overhead. Profile with 46 nested containers to verify frame budget stays under 16ms on mobile.
+## Done-when (observable)
 
-## Non-goals
+### US-32 — Parent-relative coordinate model
 
-- Inverse kinematics (IK) — out of scope for POC
-- Runtime bone length constraints — out of scope
-- Bone rotation limits / joint constraints — out of scope
-- Physics-based secondary motion (jiggle, cloth) — out of scope
+- [ ] `BoneDefinition` in `rig/types.ts` includes `inheritScale: boolean` and `inheritRotation: boolean` fields, both defaulting to `false` [US-32]
+- [ ] `CharacterRig.update()` resolves world positions via depth-first tree walk of the bone hierarchy: each bone's world position = parent world position + local profile offset + local state offset [US-32]
+- [ ] When `inheritRotation` is `true` on a bone, the local offset is rotated around the parent's pivot by the parent's world rotation [US-32]
+- [ ] When `inheritScale` is `true` on a bone, the local offset and sprite scale are multiplied by the parent's world scale [US-32]
+- [ ] `setDirection()` resolves world positions from parent-relative profile data using the same tree-walk logic (not a separate flat loop) [US-32]
+- [ ] Sprites remain flat siblings in the root Phaser Container — no nested Containers are introduced [US-32]
+- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [US-32]
+- [ ] Fox renders identically to pre-change state when using migrated parent-relative profiles (visual equivalence — same sprite positions on screen for all 5 direction profiles + 3 mirrored) [US-32]
+
+### US-33 — Profile migration tooling
+
+- [ ] A migration script or editor feature exists that reads absolute fox.ts profiles and outputs parent-relative profiles [US-33]
+- [ ] Migration walks the bone hierarchy per direction, subtracting each bone's parent absolute position to derive the local offset [US-33]
+- [ ] Migration output covers all 5 unique direction profiles (S, N, E, SE, NE) — mirrored directions (W, SW, NW) are derived, not migrated separately [US-33]
+- [ ] Migration output is written to `rig/characters/fox.ts` replacing the absolute profile data [US-33]
+- [ ] After migration, the fox renders at identical screen positions as before migration for all 8 directions (verified by running the game and checking each direction) [US-33]
+- [ ] `npx tsc --noEmit && npm run build` passes after migration [US-33]
+
+### US-34 — Animation controller cleanup
+
+- [ ] `walkRun.ts` body bob is applied only to the `body` bone — manual propagation lines for neck, head, shoulders are removed [US-34]
+- [ ] `idle.ts` sit-down offset is applied only to `body` and `hips` — manual propagation lines for shoulders, neck, head, and foot parts are removed [US-34]
+- [ ] `idle.ts` head turn is applied only to `neck` — manual propagation to head and snout is removed [US-34]
+- [ ] Walk/run animation: body bob oscillates on Y axis, legs alternate swing, tail segments have non-zero rotation deltas — verified by running the game and observing walk cycle in all 8 directions [US-34]
+- [ ] Idle animation: breathing applies scaleY oscillation to body, sit-down lowers body offsetY after 6s stationary, head turn applies rotation to neck after 3s — verified by running the game and waiting through the idle sequence [US-34]
+- [ ] Net line count of `walkRun.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
+- [ ] Net line count of `idle.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
+- [ ] `BoneState` interface in `rig/types.ts` is unchanged — controllers still write local deltas in the same format [US-34]
+- [ ] `npx tsc --noEmit && npm run build` passes [US-34]
+
+### US-35 — Editor chain-aware editing
+
+- [ ] Rig editor property panel shows parent-relative coordinates (matching the profile data model) for the selected part [US-35]
+- [ ] Editing a parent bone's local offset in the property panel updates the visual positions of all descendant bones in the editor preview [US-35]
+- [ ] Editor Save JSON exports parent-relative profile data (not absolute positions) [US-35]
+- [ ] Editor Load JSON correctly imports parent-relative profile data [US-35]
+- [ ] Editor Export TS outputs parent-relative profile data compatible with `rig/characters/fox.ts` format [US-35]
+- [ ] `npx tsc --noEmit && npm run build` passes for both game and editor (`cd tools/editor && npx tsc --noEmit && npm run build`) [US-35]
+
+### Structural / cross-cutting
+
+- [ ] No constants or logic from `rig/` modules are duplicated in scene files — shared values remain in their canonical modules (`maps/constants.ts`, `rig/types.ts`) [phase]
+- [ ] Depth map in AGENTS.md is unchanged — bone-chain changes do not affect rendering depth assignments [phase]
+- [ ] AGENTS.md reflects new `inheritScale`/`inheritRotation` fields in the rig system description and any behavior rule changes introduced in this phase [phase]
+
+### Safety criteria: N/A
+
+This phase introduces no API endpoints, user input fields, or query interpolation. All changes are internal engine/tooling. No safety criteria required.
+
+## AGENTS.md sections affected
+
+When this phase ships, the following AGENTS.md sections will need updates:
+- **File ownership** — `rig/CharacterRig.ts` description updated to mention parent-relative tree-walk resolution
+- **File ownership** — `rig/types.ts` description updated to include `inheritScale`/`inheritRotation` on BoneDefinition
+- **File ownership** — `rig/animations/walkRun.ts` and `idle.ts` descriptions updated to reflect simplified propagation model
+- **Behavior rules — Character rig** — Updated to describe parent-relative coordinate model and tree-walk resolution
+- **Behavior rules** — New rule for `inheritScale`/`inheritRotation` defaults and opt-in behavior
+
+## Golden principles (phase-relevant)
+
+- Movement: Frame-based smooth movement (delta-time), not tile-snapping. Axis-independent collision allows sliding along walls and NPCs.
+- Character rig (fox): Player is a CharacterRig (Phaser Container at Entities depth 5) with fox rig definition. Direction derived from velocity via 8-sector atan2 mapping. Collision bounding box is PLAYER_SIZE (24px).
+- Walk/run speed: WalkRunController is the source of truth for player movement speed.
+- Idle progression: At velocity 0: breathing + tail sway start immediately. After 3s: random head turn. After 6s: sit-down with eased leg tuck and body lower.
+- Responsive scaling: Phaser Scale.RESIZE mode — canvas adapts to container/viewport size.
+- File ownership: Each module owns its specific domain (see AGENTS.md File ownership table). Scene code must call system-module functions, not duplicate them (Learning #70).

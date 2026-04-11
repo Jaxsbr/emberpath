@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, NPC_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { AreaDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -17,7 +17,6 @@ import { Direction } from '../rig/types';
 import { WalkRunController } from '../rig/animations/walkRun';
 import { IdleController } from '../rig/animations/idle';
 
-const PLAYER_SIZE = 24;
 const TARGET_VISIBLE_TILES = 10;
 const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
