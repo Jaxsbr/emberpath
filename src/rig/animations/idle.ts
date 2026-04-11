@@ -113,7 +113,11 @@ export class IdleController implements AnimationController {
       const turnAmount = this.headTurnProgress < 0.5
         ? this.headTurnProgress * 2 // 0 to 1 (turning)
         : (1 - this.headTurnProgress) * 2; // 1 to 0 (returning)
-      // Neck drives the turn — tree walk propagates to head and snout
+      // Neck drives the turn. No fox bone has inheritRotation: true, so rotation does NOT
+      // propagate to head/snout via tree walk — only position offsets propagate. This is
+      // intentional: the neck rotates, head/snout follow positionally (their anchor moves
+      // with the neck) but do not inherit the neck's rotation angle. The result is a
+      // natural head-turn where the neck angles and the head translates with it.
       if (boneStates['neck']) {
         boneStates['neck'].rotation = turnAmount * this.params.headTurnAngle * this.headTurnDirection;
       }

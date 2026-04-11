@@ -112,7 +112,12 @@ export class CharacterRig {
     const partProfile = profile.parts[bone.name];
     if (!partProfile) {
       sprite.setVisible(false);
-      // Still recurse — children may have profiles even if parent doesn't
+      // Transparent-skip: this bone is absent from the profile for this direction.
+      // Children still recurse using the grandparent's world position as their anchor —
+      // the missing bone contributes nothing to the chain. This is intentional: a bone
+      // omitted from a profile is treated as structurally absent for that direction,
+      // not merely hidden. If a bone should anchor children while invisible, add it to
+      // the profile with visible: false instead of omitting it entirely.
       if (bone.children) {
         for (const child of bone.children) {
           this.resolvePositions(child, profile, boneStates, parentWorldX, parentWorldY, parentWorldRot, parentWorldScaleX, parentWorldScaleY, flipX);
