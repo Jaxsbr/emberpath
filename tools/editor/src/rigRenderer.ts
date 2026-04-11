@@ -261,6 +261,9 @@ class RigPreviewScene extends Phaser.Scene {
     this.rig.addAnimationController(walkRun);
     this.rig.addAnimationController(idle);
 
+    // Re-apply current direction (createRig resets to S)
+    this.rig.setDirection(currentDirection);
+
     // Set velocity to trigger the correct animation state
     const velocity = mode === 'idle' ? 0 : PLAYER_SPEED;
     this.rig.setVelocity(velocity);
