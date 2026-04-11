@@ -19,13 +19,13 @@ Add visual editing layers to the rig editor canvas: bone connection lines that m
 - [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-36]
 
 #### US-37 — Canvas drag interaction
-- [ ] Clicking and dragging a bone sprite on the canvas changes its position [US-37]
-- [ ] During drag, the property panel X/Y values update in real-time [US-37]
-- [ ] Dragging a parent bone visually moves all descendant bones (tree-walk propagation) [US-37]
-- [ ] Drag modifies only the dragged bone's parent-relative X/Y offset (other bones' profile values unchanged) [US-37]
-- [ ] Drag is disabled (no-op) for mirrored directions (W/SW/NW) [US-37]
-- [ ] Connection lines (from US-36) update in real-time during drag [US-37]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-37]
+- [x] Clicking and dragging a bone sprite on the canvas changes its position [US-37]
+- [x] During drag, the property panel X/Y values update in real-time [US-37]
+- [x] Dragging a parent bone visually moves all descendant bones (tree-walk propagation) [US-37]
+- [x] Drag modifies only the dragged bone's parent-relative X/Y offset (other bones' profile values unchanged) [US-37]
+- [x] Drag is disabled (no-op) for mirrored directions (W/SW/NW) [US-37]
+- [x] Connection lines (from US-36) update in real-time during drag [US-37]
+- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-37]
 
 #### US-38 — Propagation highlighting
 - [ ] When a bone is selected in Edit mode, all its descendant bones have a visible highlight indicator on the canvas [US-38]
