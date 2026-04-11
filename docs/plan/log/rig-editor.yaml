@@ -61,3 +61,15 @@ entries:
     description: "Added rigRenderer.ts to AGENTS.md directory layout, added file ownership entry for rigRenderer.ts with full description, updated fox.ts directory entry (16→46 parts), added editor rig tab reference paragraph to docs/rig-system-guide.md. Running instructions already correct from US-28. All 4 structural criteria met. Verify passes."
     result: pass
     tokens: ~5000
+  - task: 11
+    type: review
+    story: phase
+    description: "Created PR #7 from build/rig-editor to main. Queued review-pr."
+    result: pass
+    tokens: ~1000
+  - task: 12
+    type: review
+    story: phase
+    description: "review-pr completed. 0 critical, 2 concern (module-level mutable state singleton pattern, bounding-box hit detection overlap). Both low priority with mitigations noted. Review posted as COMMENT."
+    result: pass
+    tokens: ~8000
