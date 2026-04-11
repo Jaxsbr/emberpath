@@ -73,3 +73,9 @@ entries:
     description: "Removed manual propagation from walkRun.ts (neck.offsetY/rotation, head.offsetY, shoulders.offsetY) and idle.ts (shoulders/neck/head offsetY from sit-down, head.rotation from head-turn). walkRun.ts: 196→180 lines (-16). idle.ts: 268→253 lines (-15). BoneState unchanged. Build passes. US-34 complete."
     result: pass
     tokens: ~10000
+  - task: 13
+    type: investigate
+    story: US-35
+    description: "Branch B. US-32/33/34 complete. US-35 criteria: 0/6 met (editor chain-aware editing). Queued investigation of rigRenderer.ts."
+    result: pass
+    tokens: ~3000

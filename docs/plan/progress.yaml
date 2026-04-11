@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 13
-  next_task: null
+  task_number: 14
+  next_task: "[US-35] Investigate: read tools/editor/src/rigRenderer.ts to understand current editor property panel, profile editing, and persistence. Determine what changes are needed for parent-relative coordinate display and chain-aware visual updates."
   last_result: pass
   consecutive_fails: 0
 
