@@ -31,3 +31,9 @@ entries:
     description: "US-29 complete. US-30 needs: property editor panel (right sidebar) showing x, y, scaleX, scaleY, rotation, depth, visible, alpha for selected part + direction. Edits must update Phaser scene in real time. Direction profiles stored as editor state (mutable copy from definition). Mirror indicator for W/SW/NW. DOM event isolation to prevent Phaser clicks when editing inputs. Queued implementation."
     result: pass
     tokens: ~2000
+  - task: 6
+    type: implement
+    story: US-30
+    description: "Added property editor panel (right sidebar) to rig tab. Mutable editor profiles (deep clone from rig definition) store per-direction per-part state. Numeric inputs for x/y/scaleX/scaleY/rotation/depth/alpha + visible checkbox with real-time Phaser preview via applyEditorProfiles. Direction switch loads correct profile values. Mirror indicator + disabled inputs for W/SW/NW. DOM event isolation (stopPropagation on pointer events). Consistent selection from hierarchy or scene click. Verify passes. ✓ US-30 complete"
+    result: pass
+    tokens: ~25000
