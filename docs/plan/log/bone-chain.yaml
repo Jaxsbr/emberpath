@@ -67,3 +67,9 @@ entries:
     description: "Confirmed tree walk propagates position (offsetY) automatically to all descendants — body bob flows to neck/head/shoulders without explicit writes. walkRun.ts: remove neck.offsetY/rotation (lines 108-110), head.offsetY (114-115), shoulders.offsetY (118-120). idle.ts: remove shoulders.offsetY (148-149), neck.offsetY (150-151), head.offsetY (153-155) from sit-down; remove head.rotation (121) from head-turn. Keep all intentional local deltas (legs, tail, ears, eyes). Queued implementation."
     result: pass
     tokens: ~8000
+  - task: 12
+    type: implement
+    story: US-34
+    description: "Removed manual propagation from walkRun.ts (neck.offsetY/rotation, head.offsetY, shoulders.offsetY) and idle.ts (shoulders/neck/head offsetY from sit-down, head.rotation from head-turn). walkRun.ts: 196→180 lines (-16). idle.ts: 268→253 lines (-15). BoneState unchanged. Build passes. US-34 complete."
+    result: pass
+    tokens: ~10000
