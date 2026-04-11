@@ -1,6 +1,13 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 7
+    time: "2026-04-11T11:15:32Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All done-when criteria verified: US-36 (connection lines drawn depth 2, teal, edit-mode only, mirrors correctly), US-37 (drag repositions parent-relative X/Y, propagates via tree-walk, disabled for mirrored dirs, lines update during drag), US-38 (amber descendant highlights depth 3, leaf bones excluded, clears on animation modes). Structural: AGENTS.md updated, no game src/ leakage (grep confirms 0 matches). AGENTS.md consistency: DEPTH_ constants used, applyProfiles() used for all rendering. Phase complete."
+    result: pass
+    tokens: ~5000
   - task: 6
     time: "2026-04-11T11:14:42Z"
     type: implement

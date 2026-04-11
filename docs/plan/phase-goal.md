@@ -36,8 +36,8 @@ Add visual editing layers to the rig editor canvas: bone connection lines that m
 - [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-38]
 
 #### Structural / cross-cutting
-- [ ] AGENTS.md reflects new editor interaction features (bone connections, drag, propagation highlights) introduced in this phase [phase]
-- [ ] No editor-specific logic leaks into game `src/rig/` modules — all changes are confined to `tools/editor/` [phase]
+- [x] AGENTS.md reflects new editor interaction features (bone connections, drag, propagation highlights) introduced in this phase [phase]
+- [x] No editor-specific logic leaks into game `src/rig/` modules — all changes are confined to `tools/editor/` [phase]
 
 ### Golden principles (phase-relevant)
 - Responsive scaling: Phaser Scale.RESIZE mode — canvas adapts to container/viewport size. No fixed dimensions.

@@ -23,7 +23,7 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: editor-ux
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
