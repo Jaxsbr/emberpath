@@ -1,6 +1,14 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 2
+    time: "2026-04-11T11:08:33Z"
+    type: implement
+    story: US-36
+    description: "Added DEPTH_ constants (GRID=0, CONNECTION_LINES=2, PROPAGATION_HIGHLIGHTS=3, SELECTION_HIGHLIGHT=1000). Added connectionLinesGraphics (depth 2) and propagationHighlightGraphics (depth 3) to RigPreviewScene. Added updateConnectionLines() that walks bone hierarchy depth-first, draws teal (#4ecdc4, 65% alpha) lines between visible parent/child sprites in edit mode only. Added stub updatePropagationHighlights() for US-38. applyEditorProfiles() and setDirection() now call updateConnectionLines(). US-36 complete."
+    result: pass
+    notes: US-36 complete
+    tokens: ~8000
   - task: 1
     time: "2026-04-11T11:06:24Z"
     type: investigate
