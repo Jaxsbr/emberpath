@@ -1,6 +1,13 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 8
+    time: "2026-04-11T11:16:34Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #9 from build/editor-ux to main: 'feat: editor-ux — bone connections, canvas drag, propagation highlights'. PR body includes phase summary, all 3 stories (US-36/37/38), done-when evidence, and scope confirmation. review-pr queued."
+    result: pass
+    tokens: ~3000
   - task: 7
     time: "2026-04-11T11:15:32Z"
     type: investigate
