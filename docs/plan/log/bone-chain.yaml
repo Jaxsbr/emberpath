@@ -97,3 +97,9 @@ entries:
     description: "Resolved structural/cross-cutting criteria: moved PLAYER_SIZE to maps/constants.ts import, verified depth map unchanged, updated AGENTS.md with inheritScale/inheritRotation fields and tree-walk resolver description. All phase criteria now met."
     result: pass
     tokens: ~8000
+  - task: 17
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate passed. All done-when criteria verified: US-32 (tree-walk resolver, inheritScale/inheritRotation fields, flat sprites), US-33 (migration script, parent-relative fox profiles), US-34 (manual propagation removed from walkRun and idle), US-35 (editor uses applyProfiles tree walk, save/load/export parent-relative). Structural criteria met (no rig constant duplication, depth map unchanged, AGENTS.md updated)."
+    result: pass
+    tokens: ~10000

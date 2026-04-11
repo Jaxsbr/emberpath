@@ -23,12 +23,12 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: bone-chain
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 17
-  next_task: "[phase] Phase completion gate — all done-when criteria met"
+  task_number: 18
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
