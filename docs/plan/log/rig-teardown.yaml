@@ -60,4 +60,11 @@ entries:
     description: "Review stage initiated. Created PR #10 from build/rig-teardown to main: 'feat: rig-teardown — remove skeletal rig system, replace with sprite placeholder'. PR body includes phase summary, all 3 stories (US-39/40/41), done-when evidence. review-pr queued."
     result: pass
     tokens: ~2000
+  - task: 9
+    time: "2026-04-11T22:55:00Z"
+    type: implement
+    story: phase
+    description: "review-pr completed for PR #10. 0 critical. 2 concerns: (1) retro-gate CI failure is expected (retro_complete: false, by design); (2) rig-teardown PRD row still marked Draft — needs updating to Shipped (can be done in retro commit). Positives: deletion sequence correct, .container refs all replaced, atlas generator retained with comment. handle-pr-review queued."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
