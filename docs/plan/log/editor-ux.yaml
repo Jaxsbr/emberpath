@@ -1,6 +1,14 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 4
+    time: "2026-04-11T11:12:41Z"
+    type: implement
+    story: US-38
+    description: "Added updatePropagationHighlights() to RigPreviewScene. Uses collectDescendants() (depth-first search returning Set<string>) and collectAllBoneNames() helpers. Draws amber (#f7d794, 70% alpha, 2px stroke) rect around each visible descendant sprite in edit mode. Called from applyEditorProfiles() and selectPart(). Leaf bones (no descendants) show nothing. US-38 complete."
+    result: pass
+    notes: US-38 complete
+    tokens: ~5000
   - task: 3
     time: "2026-04-11T11:10:29Z"
     type: implement
