@@ -81,26 +81,96 @@ export class CharacterRig {
     const isMirrored = MIRRORED_DIRECTIONS.has(dir);
     const uniqueDir = (isMirrored ? MIRROR_MAP[dir] : dir) as UniqueDirection;
     const profile: DirectionProfile = this.definition.profiles[uniqueDir];
+    const flipX = isMirrored ? -1 : 1;
 
-    for (const [name, sprite] of this.parts) {
-      const partProfile: PartProfile | undefined = profile.parts[name];
-      if (!partProfile) {
-        sprite.setVisible(false);
-        continue;
-      }
-
-      sprite.setVisible(partProfile.visible);
-      // Mirror: flip X position and scaleX
-      const flipX = isMirrored ? -1 : 1;
-      sprite.setPosition(partProfile.x * flipX, partProfile.y);
-      sprite.setScale(partProfile.scaleX * flipX, partProfile.scaleY);
-      sprite.setRotation(partProfile.rotation * flipX);
-      sprite.setDepth(partProfile.depth);
-      sprite.setAlpha(partProfile.alpha ?? 1);
-    }
+    // Resolve world positions via tree walk (no bone state offsets)
+    this.resolvePositions(this.definition.skeleton, profile, null, 0, 0, 0, 1, 1, flipX);
 
     // Container renders children in list order — sort by depth so profiles control layering
     this.container.sort('depth');
+  }
+
+  /**
+   * Depth-first tree walk resolver — shared by setDirection() and update().
+   * Resolves world positions from parent-relative profile data + optional bone state offsets.
+   * Sprites remain flat siblings in the Container — no nested Containers.
+   */
+  private resolvePositions(
+    bone: BoneDefinition,
+    profile: DirectionProfile,
+    boneStates: Record<string, BoneState> | null,
+    parentWorldX: number,
+    parentWorldY: number,
+    parentWorldRot: number,
+    parentWorldScaleX: number,
+    parentWorldScaleY: number,
+    flipX: number,
+  ): void {
+    const sprite = this.parts.get(bone.name);
+    if (!sprite) return;
+
+    const partProfile = profile.parts[bone.name];
+    if (!partProfile) {
+      sprite.setVisible(false);
+      // Still recurse — children may have profiles even if parent doesn't
+      if (bone.children) {
+        for (const child of bone.children) {
+          this.resolvePositions(child, profile, boneStates, parentWorldX, parentWorldY, parentWorldRot, parentWorldScaleX, parentWorldScaleY, flipX);
+        }
+      }
+      return;
+    }
+
+    sprite.setVisible(partProfile.visible);
+    sprite.setDepth(partProfile.depth);
+    sprite.setAlpha(partProfile.alpha ?? 1);
+
+    // Local offset = profile position + animation state offset
+    const state = boneStates?.[bone.name];
+    let localX = partProfile.x + (state?.offsetX ?? 0);
+    let localY = partProfile.y + (state?.offsetY ?? 0);
+
+    // Inherit rotation: rotate local offset around parent's pivot
+    if (bone.inheritRotation && parentWorldRot !== 0) {
+      const cos = Math.cos(parentWorldRot);
+      const sin = Math.sin(parentWorldRot);
+      const rx = localX * cos - localY * sin;
+      const ry = localX * sin + localY * cos;
+      localX = rx;
+      localY = ry;
+    }
+
+    // Inherit scale: scale local offset by parent's world scale
+    if (bone.inheritScale) {
+      localX *= parentWorldScaleX;
+      localY *= parentWorldScaleY;
+    }
+
+    // World position = parent world position + local offset (with mirroring)
+    const worldX = parentWorldX + localX * flipX;
+    const worldY = parentWorldY + localY;
+
+    // World rotation and scale for this bone
+    // inheritRotation: false (default) → bone rotates independently (matches flat behavior)
+    // inheritRotation: true → bone accumulates parent's rotation
+    const localRot = partProfile.rotation + (state?.rotation ?? 0);
+    const worldRot = bone.inheritRotation ? parentWorldRot + localRot : localRot;
+    const localScaleX = partProfile.scaleX * (state?.scaleX ?? 1);
+    const localScaleY = partProfile.scaleY * (state?.scaleY ?? 1);
+    const worldScaleX = bone.inheritScale ? parentWorldScaleX * localScaleX : localScaleX;
+    const worldScaleY = bone.inheritScale ? parentWorldScaleY * localScaleY : localScaleY;
+
+    // Apply to sprite
+    sprite.setPosition(worldX, worldY);
+    sprite.setScale(worldScaleX * flipX, worldScaleY);
+    sprite.setRotation(worldRot * flipX);
+
+    // Recurse into children with this bone's world state as parent
+    if (bone.children) {
+      for (const child of bone.children) {
+        this.resolvePositions(child, profile, boneStates, worldX, worldY, worldRot, worldScaleX, worldScaleY, flipX);
+      }
+    }
   }
 
   /** Set the current movement velocity magnitude (used by animation controllers). */
@@ -143,27 +213,13 @@ export class CharacterRig {
       controller.update(delta, this.boneStates, context);
     }
 
-    // Apply bone states on top of the current direction profile
+    // Resolve world positions via tree walk (with bone state offsets)
     const isMirrored = MIRRORED_DIRECTIONS.has(this.currentDirection);
     const uniqueDir = (isMirrored ? MIRROR_MAP[this.currentDirection] : this.currentDirection) as UniqueDirection;
     const profile = this.definition.profiles[uniqueDir];
     const flipX = isMirrored ? -1 : 1;
 
-    for (const [name, sprite] of this.parts) {
-      const partProfile = profile.parts[name];
-      if (!partProfile || !partProfile.visible) continue;
-
-      const state = this.boneStates[name];
-      sprite.setPosition(
-        (partProfile.x + state.offsetX) * flipX,
-        partProfile.y + state.offsetY,
-      );
-      sprite.setScale(
-        partProfile.scaleX * state.scaleX * flipX,
-        partProfile.scaleY * state.scaleY,
-      );
-      sprite.setRotation((partProfile.rotation + state.rotation) * flipX);
-    }
+    this.resolvePositions(this.definition.skeleton, profile, this.boneStates, 0, 0, 0, 1, 1, flipX);
   }
 
   /** Get the current direction. */
