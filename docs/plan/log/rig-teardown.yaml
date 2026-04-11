@@ -23,4 +23,12 @@ entries:
     description: "Branch B investigation. US-40 complete. Next: US-41 before US-39 — rigRenderer.ts imports @game/rig/ so editor tsconfig includes src/rig. Must remove editor rig references before deleting src/rig/ to keep editor build green. editor/tsconfig.json includes ../../src/rig in include array — also needs removal. Queued US-41 implementation."
     result: pass
     tokens: ~2000
+  - task: 4
+    time: "2026-04-11T22:42:00Z"
+    type: implement
+    story: US-41
+    description: "Deleted tools/editor/src/rigRenderer.ts (1458 lines). Rewrote main.ts: removed renderRig/destroyRig imports, ViewName narrowed to 'map'|'dialogue'|'flow', renderActiveView() has no rig branch, destroyRig() call removed. Removed Rig tab button and view-rig div from index.html. Removed ../../src/rig from editor tsconfig include. Editor tsc + build pass. US-41 complete."
+    result: pass
+    notes: US-41 complete
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
