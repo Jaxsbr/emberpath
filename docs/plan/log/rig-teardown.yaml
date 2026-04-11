@@ -67,4 +67,11 @@ entries:
     description: "review-pr completed for PR #10. 0 critical. 2 concerns: (1) retro-gate CI failure is expected (retro_complete: false, by design); (2) rig-teardown PRD row still marked Draft — needs updating to Shipped (can be done in retro commit). Positives: deletion sequence correct, .container refs all replaced, atlas generator retained with comment. handle-pr-review queued."
     result: pass
     tokens: ~3000
+  - task: 10
+    time: "2026-04-11T22:57:00Z"
+    type: investigate
+    story: phase
+    description: "review_stage=review_posted — scheduled handle-pr-review task."
+    result: pass
+    tokens: ~500
 # Each entry: {task, time, story, description, result, notes, tokens}
