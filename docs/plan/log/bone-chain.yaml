@@ -79,3 +79,9 @@ entries:
     description: "Branch B. US-32/33/34 complete. US-35 criteria: 0/6 met (editor chain-aware editing). Queued investigation of rigRenderer.ts."
     result: pass
     tokens: ~3000
+  - task: 14
+    type: investigate
+    story: US-35
+    description: "Read rigRenderer.ts. Editor's applyEditorProfiles() uses flat loop (line 199) — doesn't use tree walk, so editing parent bone doesn't update descendants. Fix: add public applyProfiles(profiles, direction) to CharacterRig, update editor to call it. Property panel already shows parent-relative coords (profiles are parent-relative). Save/Load/Export already use parent-relative data. Queued implementation."
+    result: pass
+    tokens: ~12000

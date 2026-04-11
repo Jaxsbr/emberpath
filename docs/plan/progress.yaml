@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 14
-  next_task: "[US-35] Investigate: read tools/editor/src/rigRenderer.ts to understand current editor property panel, profile editing, and persistence. Determine what changes are needed for parent-relative coordinate display and chain-aware visual updates."
+  task_number: 15
+  next_task: "[US-35] Add public applyProfiles(profiles, direction) method to CharacterRig that uses tree-walk resolver with external profiles. Update editor rigRenderer.ts applyEditorProfiles() to call rig.applyProfiles() instead of flat sprite loop."
   last_result: pass
   consecutive_fails: 0
 
