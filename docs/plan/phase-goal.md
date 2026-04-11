@@ -34,15 +34,15 @@ Remove the experimental skeletal rig system (CharacterRig, fox definition, anima
 - [x] `npx tsc --noEmit && npm run build` passes [US-40]
 
 #### US-41 — Remove rig tab from editor
-- [ ] `tools/editor/src/rigRenderer.ts` is deleted [US-41]
-- [ ] `tools/editor/src/main.ts` has zero imports from `rigRenderer` [US-41]
-- [ ] The `ViewName` type in `main.ts` no longer includes `'rig'` [US-41]
-- [ ] The Rig tab button is absent from `tools/editor/index.html` (no `data-view="rig"` button) [US-41]
-- [ ] The `view-rig` div is absent from `tools/editor/index.html` [US-41]
-- [ ] `renderActiveView()` in `main.ts` has no `'rig'` branch [US-41]
-- [ ] `destroyRig()` call is removed from `main.ts` [US-41]
-- [ ] The editor still builds and runs: Map, Dialogue, and Flow tabs work (verified by build passing) [US-41]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes with no rig-related import errors [US-41]
+- [x] `tools/editor/src/rigRenderer.ts` is deleted [US-41]
+- [x] `tools/editor/src/main.ts` has zero imports from `rigRenderer` [US-41]
+- [x] The `ViewName` type in `main.ts` no longer includes `'rig'` [US-41]
+- [x] The Rig tab button is absent from `tools/editor/index.html` (no `data-view="rig"` button) [US-41]
+- [x] The `view-rig` div is absent from `tools/editor/index.html` [US-41]
+- [x] `renderActiveView()` in `main.ts` has no `'rig'` branch [US-41]
+- [x] `destroyRig()` call is removed from `main.ts` [US-41]
+- [x] The editor still builds and runs: Map, Dialogue, and Flow tabs work (verified by build passing) [US-41]
+- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes with no rig-related import errors [US-41]
 
 #### Structural / cross-cutting
 - [ ] `tools/generate-fox-atlas.mjs` is either retained as-is (atlas still used by placeholder sprite) or deleted — whichever is consistent with the chosen placeholder strategy; the decision is documented in a code comment in `GameScene.ts` [phase]
