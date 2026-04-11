@@ -1,0 +1,84 @@
+phase: "rig-teardown"
+started: "2026-04-11T22:29:10Z"
+entries:
+  - task: 1
+    time: "2026-04-11T22:30:00Z"
+    type: investigate
+    story: US-40
+    description: "Phase start investigation. Verify passes (tsc + build). GameScene uses CharacterRig with 4 rig imports (CharacterRig, foxRigDefinition, Direction, WalkRunController, IdleController). All .container references identified. editor/main.ts has renderRig/destroyRig imports and rig view branch. Story order: US-40 (replace player) → US-39 (delete rig dir) → US-41 (remove editor tab). Queued US-40 implementation."
+    result: pass
+    tokens: ~5000
+  - task: 2
+    time: "2026-04-11T22:35:00Z"
+    type: implement
+    story: US-40
+    description: "Rewrote GameScene.ts to use Phaser.GameObjects.Sprite instead of CharacterRig. Removed all rig imports (CharacterRig, foxRigDefinition, Direction, WalkRunController, IdleController). Uses FOX_ATLAS_KEY/FOX_FRAME constants for atlas load. Movement uses PLAYER_SPEED fixed constant (no walkRunController). All .container refs replaced with .x/.y. cam.startFollow(this.player), uiCam.ignore includes sprite, cleanupResize calls this.player?.destroy(). Verify passes (tsc + build). Bundle 26KB smaller. US-40 complete."
+    result: pass
+    notes: US-40 complete
+    tokens: ~8000
+  - task: 3
+    time: "2026-04-11T22:38:00Z"
+    type: investigate
+    story: US-41
+    description: "Branch B investigation. US-40 complete. Next: US-41 before US-39 — rigRenderer.ts imports @game/rig/ so editor tsconfig includes src/rig. Must remove editor rig references before deleting src/rig/ to keep editor build green. editor/tsconfig.json includes ../../src/rig in include array — also needs removal. Queued US-41 implementation."
+    result: pass
+    tokens: ~2000
+  - task: 4
+    time: "2026-04-11T22:42:00Z"
+    type: implement
+    story: US-41
+    description: "Deleted tools/editor/src/rigRenderer.ts (1458 lines). Rewrote main.ts: removed renderRig/destroyRig imports, ViewName narrowed to 'map'|'dialogue'|'flow', renderActiveView() has no rig branch, destroyRig() call removed. Removed Rig tab button and view-rig div from index.html. Removed ../../src/rig from editor tsconfig include. Editor tsc + build pass. US-41 complete."
+    result: pass
+    notes: US-41 complete
+    tokens: ~5000
+  - task: 5
+    time: "2026-04-11T22:44:00Z"
+    type: investigate
+    story: US-39
+    description: "US-41 complete. No rig imports remain in src/ or tools/ (grep confirms). Safe to delete src/rig/ directory. Queued US-39 deletion."
+    result: pass
+    tokens: ~1000
+  - task: 6
+    time: "2026-04-11T22:47:00Z"
+    type: implement
+    story: US-39
+    description: "Deleted src/rig/ directory (5 files: CharacterRig.ts, types.ts, characters/fox.ts, animations/walkRun.ts, animations/idle.ts — 1264 lines total). Game tsc + build pass. Editor tsc + build pass (tsconfig.json no longer includes src/rig). No imports remain anywhere. US-39 complete."
+    result: pass
+    notes: US-39 complete
+    tokens: ~2000
+  - task: 7
+    time: "2026-04-11T22:50:00Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All done-when criteria verified: US-39 (src/rig/ deleted, no rig imports in src/ via grep, tsc+build pass), US-40 (GameScene uses Phaser.GameObjects.Sprite at depth 5, PLAYER_SIZE halfSize, PLAYER_SPEED fixed, startFollow(player), no .container refs, cleanupResize calls destroy()), US-41 (rigRenderer.ts deleted, ViewName='map'|'dialogue'|'flow', no rig tab in HTML, editor tsc+build pass). Structural: generate-fox-atlas.mjs retained (atlas used by placeholder), decision documented in GameScene comment. Both verifies pass. Phase complete."
+    result: pass
+    tokens: ~3000
+  - task: 8
+    time: "2026-04-11T22:52:00Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #10 from build/rig-teardown to main: 'feat: rig-teardown — remove skeletal rig system, replace with sprite placeholder'. PR body includes phase summary, all 3 stories (US-39/40/41), done-when evidence. review-pr queued."
+    result: pass
+    tokens: ~2000
+  - task: 9
+    time: "2026-04-11T22:55:00Z"
+    type: implement
+    story: phase
+    description: "review-pr completed for PR #10. 0 critical. 2 concerns: (1) retro-gate CI failure is expected (retro_complete: false, by design); (2) rig-teardown PRD row still marked Draft — needs updating to Shipped (can be done in retro commit). Positives: deletion sequence correct, .container refs all replaced, atlas generator retained with comment. handle-pr-review queued."
+    result: pass
+    tokens: ~3000
+  - task: 10
+    time: "2026-04-11T22:57:00Z"
+    type: investigate
+    story: phase
+    description: "review_stage=review_posted — scheduled handle-pr-review task."
+    result: pass
+    tokens: ~500
+  - task: 11
+    time: "2026-04-11T23:00:00Z"
+    type: review
+    story: phase
+    description: "handle-pr-review completed for PR #10. 1 fixed (PRD rig-teardown row updated from Draft to Shipped; phase spec story headings tagged [Shipped]). 1 skipped/resolved (retro-gate CI informational — retro_complete: false is by design, thread resolved). Both review threads resolved. Verify passes (tsc + build). Phase review complete summary posted to PR. review_complete: true."
+    result: pass
+    tokens: ~3000
+# Each entry: {task, time, story, description, result, notes, tokens}

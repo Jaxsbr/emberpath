@@ -14,5 +14,5 @@
       "@game/*": ["../../src/*"]
     }
   },
-  "include": ["src", "../../src/data/areas", "../../src/maps/constants.ts", "../../src/rig"]
+  "include": ["src", "../../src/data/areas", "../../src/maps/constants.ts"]
 }

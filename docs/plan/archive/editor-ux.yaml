@@ -74,4 +74,11 @@ entries:
     description: "Phase start investigation. Verify passes for both game and editor. CSS/JS-only phase (no server/rig-engine changes) — all work in tools/editor/. rigRenderer.ts fully read: RigPreviewScene has grid (depth 0), highlightGraphics (depth 1000), sprites (depth from fox profiles, 4–12+). CharacterRig.applyProfiles() resolves positions. Story order: US-36 (connections) → US-37 (drag) → US-38 (propagation highlights). Queued US-36 implementation."
     result: pass
     tokens: ~20000
+reconciliation_status:
+  r0: done
+  r1: done
+  r2: done
+  r3: done
+  r4: done
+  r5: done
 # Each entry: {task, time, story, description, result, notes, tokens}
