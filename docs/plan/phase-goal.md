@@ -42,17 +42,17 @@ Match existing editor dark theme — navy backgrounds (#1a1a2e / #16213e), monos
 - [x] Rig editor modules import all rig types (RigDefinition, DirectionProfile, BoneDefinition) from @game/rig/types — no local type re-declarations [US-29]
 
 #### US-30 — Interactive direction profile editor
-- [ ] Selecting a part (from hierarchy click or Phaser scene click) opens a property editor panel showing that part's current values for the selected direction [US-30]
-- [ ] The property editor displays editable fields for: x, y, scaleX, scaleY, rotation, depth, visible, alpha [US-30]
-- [ ] Changing any numeric field (x, y, scaleX, scaleY, rotation, depth, alpha) via input updates the Phaser scene in real time (no save/refresh required) [US-30]
-- [ ] Toggling the `visible` checkbox hides/shows the part in the Phaser scene immediately [US-30]
-- [ ] Switching direction via the direction picker loads that direction's profile values into the property editor — values differ between S and E profiles [US-30]
-- [ ] Edits to a direction profile persist in editor state when switching between directions (edit S profile → switch to E → switch back to S → edits are retained) [US-30]
-- [ ] Only the 5 unique directions (S, N, E, SE, NE) are directly editable; selecting a mirrored direction (W, SW, NW) shows the source direction's values with a "mirrored from E/SE/NE" indicator [US-30]
-- [ ] All 46 fox parts are individually selectable and editable [US-30]
-- [ ] Part selection in the Phaser scene (click on a rendered sprite) selects that part in the hierarchy panel and opens its properties [US-30]
-- [ ] Clicking on HTML property editor controls does not trigger Phaser scene pointer events (no accidental part selection when editing numeric fields) [US-30]
-- [ ] Rapidly alternating between hierarchy click and Phaser scene click on different parts always converges to the last-clicked part — no stale or split selection state [US-30]
+- [x] Selecting a part (from hierarchy click or Phaser scene click) opens a property editor panel showing that part's current values for the selected direction [US-30]
+- [x] The property editor displays editable fields for: x, y, scaleX, scaleY, rotation, depth, visible, alpha [US-30]
+- [x] Changing any numeric field (x, y, scaleX, scaleY, rotation, depth, alpha) via input updates the Phaser scene in real time (no save/refresh required) [US-30]
+- [x] Toggling the `visible` checkbox hides/shows the part in the Phaser scene immediately [US-30]
+- [x] Switching direction via the direction picker loads that direction's profile values into the property editor — values differ between S and E profiles [US-30]
+- [x] Edits to a direction profile persist in editor state when switching between directions (edit S profile → switch to E → switch back to S → edits are retained) [US-30]
+- [x] Only the 5 unique directions (S, N, E, SE, NE) are directly editable; selecting a mirrored direction (W, SW, NW) shows the source direction's values with a "mirrored from E/SE/NE" indicator [US-30]
+- [x] All 46 fox parts are individually selectable and editable [US-30]
+- [x] Part selection in the Phaser scene (click on a rendered sprite) selects that part in the hierarchy panel and opens its properties [US-30]
+- [x] Clicking on HTML property editor controls does not trigger Phaser scene pointer events (no accidental part selection when editing numeric fields) [US-30]
+- [x] Rapidly alternating between hierarchy click and Phaser scene click on different parts always converges to the last-clicked part — no stale or split selection state [US-30]
 
 #### US-31 — Rig configuration persistence and export
 - [ ] A "Save" button in the rig tab toolbar downloads a JSON file containing all direction profiles for the current rig (5 unique directions × all parts × all properties) [US-31]
