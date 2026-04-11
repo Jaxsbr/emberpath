@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: null
+  task_number: 5
+  next_task: "[US-33] Investigate: verify the absolute-to-parent-relative math using the fox skeleton hierarchy (body→neck→head chain, body→shoulders→front-left chain) across S and E profiles. Determine migration script location and output format."
   last_result: pass
   consecutive_fails: 0
 

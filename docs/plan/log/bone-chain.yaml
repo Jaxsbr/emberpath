@@ -19,3 +19,9 @@ entries:
     description: "Added inheritScale and inheritRotation optional boolean fields (default false) to BoneDefinition in rig/types.ts. Type-only change, no behavior change. Verify passes. US-32 criterion 1/8 met."
     result: pass
     tokens: ~3000
+  - task: 4
+    type: investigate
+    story: US-32
+    description: "Branch B investigation. 0/28 done-when criteria met. Phase classified as cross-cutting (investigate-first mandatory). US-32+US-33 tightly coupled — tree walk needs migrated profiles. Plan: create migration script first (US-33), convert fox profiles, then implement tree-walk resolver (US-32). Queued US-33 investigation."
+    result: pass
+    tokens: ~10000
