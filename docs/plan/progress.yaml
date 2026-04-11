@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: null
+  task_number: 8
+  next_task: "[US-32] Investigate: review CharacterRig.ts setDirection() and update() methods, plan the shared tree-walk resolver method signature and implementation approach. Confirm current flat loop can be replaced with recursive tree walk that uses parent-relative profiles."
   last_result: pass
   consecutive_fails: 0
 

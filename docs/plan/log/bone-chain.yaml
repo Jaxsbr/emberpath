@@ -37,3 +37,9 @@ entries:
     description: "Created tools/migrate-to-relative.ts migration script. Script imports fox definition, walks skeleton hierarchy per direction, computes relative = child_abs - parent_abs for x/y. Built-in verification confirms all relative profiles resolve back to original absolute positions. Ran migration to update fox.ts. Both game and editor build pass. US-33 criteria 1-4,6 met; criterion 5 (visual equivalence) awaits US-32 tree-walk."
     result: pass
     tokens: ~12000
+  - task: 7
+    type: investigate
+    story: US-32
+    description: "Branch B. US-32 criteria: 1/8 met (types). US-33 criteria: 5/6 met (script done, visual equiv awaits tree walk). Remaining US-32 work: implement tree-walk resolver for setDirection() and update(). Queued investigation to plan method signature and approach."
+    result: pass
+    tokens: ~3000
