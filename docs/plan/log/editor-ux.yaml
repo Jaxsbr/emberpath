@@ -1,6 +1,13 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 9
+    time: "2026-04-11T11:19:33Z"
+    type: implement
+    story: phase
+    description: "review-pr completed for PR #9. 0 critical. 2 concerns: (1) lineStyle() called inside loop — should be hoisted; (2) pointerup guard `if (isDragging && dragBoneName)` is misleading — dragBoneName always nulled. CI retro-gate expected (retro not yet run). handle-pr-review queued."
+    result: pass
+    tokens: ~5000
   - task: 8
     time: "2026-04-11T11:16:34Z"
     type: investigate
