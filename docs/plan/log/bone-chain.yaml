@@ -49,3 +49,9 @@ entries:
     description: "Reviewed setDirection() and update() methods. Both use flat loops. Designed shared resolvePositions(bone, profile, boneStates, parentWorldX/Y/Rot/ScaleX/ScaleY, flipX) method: depth-first tree walk, computes world pos = parent world + local (profile + state), handles inheritRotation/inheritScale, sets sprite properties. setDirection() calls with null boneStates, update() with real states. Queued implementation."
     result: pass
     tokens: ~5000
+  - task: 9
+    type: implement
+    story: US-32
+    description: "Implemented shared resolvePositions() tree-walk method in CharacterRig. Walks skeleton depth-first, resolves world positions from parent-relative profiles + bone state offsets. Handles inheritRotation (offset rotation) and inheritScale (offset + sprite scale multiplication). setDirection() and update() both call resolvePositions(). Sprites remain flat Container siblings. Fixed rotation accumulation to respect inheritRotation flag (false=independent, true=accumulated). Build passes. US-32 complete. US-33 complete."
+    result: pass
+    tokens: ~15000
