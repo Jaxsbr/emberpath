@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-34] Investigate: identify all manual propagation lines in walkRun.ts and idle.ts that are now redundant due to the tree-walk resolver. Confirm which bone state writes can be removed vs which are intentional local deltas."
+  task_number: 12
+  next_task: "[US-34] Remove manual propagation from walkRun.ts: delete neck.offsetY/rotation, head.offsetY, shoulders.offsetY from applyAnimation body bob section. Remove manual propagation from idle.ts: delete shoulders/neck/head offsetY from sit-down section, delete head.rotation from head-turn section (keep only neck.rotation)."
   last_result: pass
   consecutive_fails: 0
 

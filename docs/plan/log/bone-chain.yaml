@@ -61,3 +61,9 @@ entries:
     description: "Branch B. US-32 and US-33 complete. US-34 criteria: 0/9 met. Need to identify manual propagation in walkRun.ts and idle.ts made redundant by tree walk. Queued investigation."
     result: pass
     tokens: ~3000
+  - task: 11
+    type: investigate
+    story: US-34
+    description: "Confirmed tree walk propagates position (offsetY) automatically to all descendants — body bob flows to neck/head/shoulders without explicit writes. walkRun.ts: remove neck.offsetY/rotation (lines 108-110), head.offsetY (114-115), shoulders.offsetY (118-120). idle.ts: remove shoulders.offsetY (148-149), neck.offsetY (150-151), head.offsetY (153-155) from sit-down; remove head.rotation (121) from head-turn. Keep all intentional local deltas (legs, tail, ears, eyes). Queued implementation."
+    result: pass
+    tokens: ~8000
