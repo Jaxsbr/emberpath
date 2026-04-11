@@ -173,6 +173,21 @@ export class CharacterRig {
     }
   }
 
+  /**
+   * Apply external profiles (e.g., from the editor) using the tree-walk resolver.
+   * This resolves parent-relative coordinates to world positions, so editing a
+   * parent bone's offset visually updates all descendants.
+   */
+  applyProfiles(profiles: Record<UniqueDirection, DirectionProfile>, direction: Direction): void {
+    this.currentDirection = direction;
+    const mirrored = MIRRORED_DIRECTIONS.has(direction);
+    const uniqueDir = (mirrored ? MIRROR_MAP[direction] : direction) as UniqueDirection;
+    const profile = profiles[uniqueDir];
+    const flipX = mirrored ? -1 : 1;
+    this.resolvePositions(this.definition.skeleton, profile, null, 0, 0, 0, 1, 1, flipX);
+    this.container.sort('depth');
+  }
+
   /** Set the current movement velocity magnitude (used by animation controllers). */
   setVelocity(v: number): void {
     this.velocity = v;
