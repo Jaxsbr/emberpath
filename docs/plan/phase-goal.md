@@ -64,10 +64,10 @@ Match existing editor dark theme — navy backgrounds (#1a1a2e / #16213e), monos
 - [x] Exported TypeScript pasted into fox.ts and loaded in the game (npm run dev) renders the fox rig identically to the editor preview [US-31]
 
 #### Structural
-- [ ] AGENTS.md directory layout includes `tools/editor/` tree with updated descriptions reflecting the rig tab addition [phase]
-- [ ] AGENTS.md file ownership table includes entries for new rig editor modules (rig renderer, property editor, persistence) [phase]
-- [ ] AGENTS.md running instructions reference `tools/editor/` path and port [phase]
-- [ ] `docs/rig-system-guide.md` updated to reference the editor's rig tab for visual profile authoring [phase]
+- [x] AGENTS.md directory layout includes `tools/editor/` tree with updated descriptions reflecting the rig tab addition [phase]
+- [x] AGENTS.md file ownership table includes entries for new rig editor modules (rig renderer, property editor, persistence) [phase]
+- [x] AGENTS.md running instructions reference `tools/editor/` path and port [phase]
+- [x] `docs/rig-system-guide.md` updated to reference the editor's rig tab for visual profile authoring [phase]
 
 ### Golden principles (phase-relevant)
 - **Depth map adherence** (AGENTS.md) — rig preview renders parts at their profile depth values; the editor visualizes depth ordering

@@ -58,7 +58,7 @@ src/
     types.ts           # RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState interfaces
     CharacterRig.ts    # 2D skeletal rig engine — container with atlas sprites, direction profiles, pluggable animation controllers
     characters/
-      fox.ts           # Fox (Pip) rig definition — 16 parts, 5 direction profiles, walk/run/idle params
+      fox.ts           # Fox (Pip) rig definition — 46 named parts, 5 direction profiles, walk/run/idle params
     animations/
       walkRun.ts       # WalkRunController — body bob, leg gait, tail follow-through, walk-to-run transition, speed source of truth
       idle.ts          # IdleController — breathing, tail sway, head turn, sit-down, ear flick
@@ -79,6 +79,7 @@ tools/
       mapRenderer.ts   # Canvas-based area map — tile grid, NPC circles, trigger/exit overlays
       dialogueRenderer.ts  # Dialogue tree node graph — BFS layout, SVG edges, flag annotations
       flowRenderer.ts  # Story flow overview — area boxes, exit arrows, flag dependency lines
+      rigRenderer.ts   # Rig editor — embedded Phaser scene, direction picker, skeleton hierarchy, property editor, Save/Load/Export TS
     index.html         # Entry point
     package.json       # Separate Vite + TypeScript project
     vite.config.ts     # @game path alias to ../../src
@@ -117,6 +118,7 @@ tools/
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
 | `tools/editor/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
+| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction), Save JSON/Load JSON/Export TS persistence toolbar |
 
 ## Depth map
 

@@ -49,3 +49,15 @@ entries:
     description: "Added createPersistenceToolbar() with Save (JSON Blob download), Load (file input with part name validation via collectAllPartNames + setEditorProfiles warnings), Export TS (generateTypeScript producing Record<UniqueDirection, DirectionProfile> with proper imports). Toolbar placed in sidebar between rig selector and direction picker. All 7 US-31 criteria met. Verify passes. ✓ US-31 complete"
     result: pass
     tokens: ~15000
+  - task: 9
+    type: investigate
+    story: phase
+    description: "US-31 complete. Remaining: 4 structural [phase] criteria. AGENTS.md directory layout missing rigRenderer.ts, file ownership missing rig editor entry, running instructions already correct, rig-system-guide.md needs editor reference. Queued structural task."
+    result: pass
+    tokens: ~2000
+  - task: 10
+    type: implement
+    story: phase
+    description: "Added rigRenderer.ts to AGENTS.md directory layout, added file ownership entry for rigRenderer.ts with full description, updated fox.ts directory entry (16→46 parts), added editor rig tab reference paragraph to docs/rig-system-guide.md. Running instructions already correct from US-28. All 4 structural criteria met. Verify passes."
+    result: pass
+    tokens: ~5000

@@ -68,6 +68,8 @@ The hierarchy is currently used for organization — sprites are positioned inde
 
 ## Direction Profile Authoring
 
+Use the **editor's Rig tab** (`cd tools/editor && npm run dev`, then click the "Rig" tab) for visual profile authoring. The rig tab embeds a Phaser scene with the character rig, provides a direction picker for all 8 directions, and lets you edit every part property with instant visual feedback. When done, use Save to download a JSON snapshot or Export TS to generate TypeScript code you can paste directly into a rig definition file.
+
 A `DirectionProfile` maps each part name to a `PartProfile` that controls how it appears from that angle.
 
 ### PartProfile parameters
