@@ -1,10 +1,10 @@
 # Phase: rig-teardown
 
-Status: Draft
+Status: Shipped
 
 ## Stories
 
-### US-39 — Remove rig engine and fox definition from game codebase
+### US-39 — Remove rig engine and fox definition from game codebase [Shipped]
 
 As a developer, I want the `src/rig/` directory and all its contents removed from the repository, so that the codebase carries no dead skeletal animation code after the rig system is retired.
 
@@ -19,7 +19,7 @@ As a developer, I want the `src/rig/` directory and all its contents removed fro
 
 ---
 
-### US-40 — Replace fox player with static sprite placeholder
+### US-40 — Replace fox player with static sprite placeholder [Shipped]
 
 As a developer, I want `GameScene.ts` to use a plain `Phaser.GameObjects.Sprite` for the player (using the existing fox atlas frame), so that the game still runs with movement, collision, and camera intact while the rig system is absent.
 
@@ -42,7 +42,7 @@ As a developer, I want `GameScene.ts` to use a plain `Phaser.GameObjects.Sprite`
 
 ---
 
-### US-41 — Remove rig tab from editor
+### US-41 — Remove rig tab from editor [Shipped]
 
 As a developer, I want the Rig tab removed from the dev editor tool, so that the editor reflects only the active toolset after the rig system is retired.
 
@@ -66,46 +66,46 @@ As a developer, I want the Rig tab removed from the dev editor tool, so that the
 ## Done-when (observable)
 
 ### US-39 — Remove rig engine and fox definition from game codebase
-- [ ] `src/rig/` directory does not exist in the repository [US-39]
-- [ ] `src/rig/CharacterRig.ts` is deleted [US-39]
-- [ ] `src/rig/types.ts` is deleted [US-39]
-- [ ] `src/rig/characters/fox.ts` is deleted [US-39]
-- [ ] `src/rig/animations/walkRun.ts` is deleted [US-39]
-- [ ] `src/rig/animations/idle.ts` is deleted [US-39]
-- [ ] No file in `src/` imports from `../rig/`, `./rig/`, or `@game/rig/` (grep confirms zero matches) [US-39]
-- [ ] `npx tsc --noEmit && npm run build` passes with no rig-related type errors [US-39]
+- [x] `src/rig/` directory does not exist in the repository [US-39]
+- [x] `src/rig/CharacterRig.ts` is deleted [US-39]
+- [x] `src/rig/types.ts` is deleted [US-39]
+- [x] `src/rig/characters/fox.ts` is deleted [US-39]
+- [x] `src/rig/animations/walkRun.ts` is deleted [US-39]
+- [x] `src/rig/animations/idle.ts` is deleted [US-39]
+- [x] No file in `src/` imports from `../rig/`, `./rig/`, or `@game/rig/` (grep confirms zero matches) [US-39]
+- [x] `npx tsc --noEmit && npm run build` passes with no rig-related type errors [US-39]
 
 ### US-40 — Replace fox player with static sprite placeholder
-- [ ] `GameScene.ts` declares `player` as `Phaser.GameObjects.Sprite` (or `Phaser.GameObjects.Rectangle`), not `CharacterRig` [US-40]
-- [ ] `GameScene.ts` has zero imports from `src/rig/` [US-40]
-- [ ] The player sprite is positioned at the spawn point with correct pixel coordinates matching prior behavior (`spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2`, `spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2`) [US-40]
-- [ ] The player is rendered at depth 5 (Entities layer per depth map) [US-40]
-- [ ] The player moves with WASD / joystick using the same `moveWithCollision` path as before (no changes to `systems/movement.ts`) [US-40]
-- [ ] Collision bounding box is PLAYER_SIZE (24px) — `moveWithCollision` call uses the same halfSize math as before [US-40]
-- [ ] Camera `startFollow` targets the player sprite [US-40]
-- [ ] `walkRunController.getCurrentSpeed()` is no longer called — movement speed is a fixed constant (`PLAYER_SPEED`) derived from input velocity [US-40]
-- [ ] No reference to `.container` on `this.player` exists anywhere in `GameScene.ts` — all position reads use `this.player.x` / `this.player.y` directly (grep confirms zero `.container` references on `player`) [US-40]
-- [ ] `uiCam.ignore([..., this.player, ...])` uses the sprite directly (not `this.player.container`) [US-40]
-- [ ] `cleanupResize` calls `this.player?.destroy()` without referencing `.container` — Sprite's `destroy()` is called correctly [US-40]
-- [ ] `npx tsc --noEmit && npm run build` passes [US-40]
+- [x] `GameScene.ts` declares `player` as `Phaser.GameObjects.Sprite` (or `Phaser.GameObjects.Rectangle`), not `CharacterRig` [US-40]
+- [x] `GameScene.ts` has zero imports from `src/rig/` [US-40]
+- [x] The player sprite is positioned at the spawn point with correct pixel coordinates matching prior behavior (`spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2`, `spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2`) [US-40]
+- [x] The player is rendered at depth 5 (Entities layer per depth map) [US-40]
+- [x] The player moves with WASD / joystick using the same `moveWithCollision` path as before (no changes to `systems/movement.ts`) [US-40]
+- [x] Collision bounding box is PLAYER_SIZE (24px) — `moveWithCollision` call uses the same halfSize math as before [US-40]
+- [x] Camera `startFollow` targets the player sprite [US-40]
+- [x] `walkRunController.getCurrentSpeed()` is no longer called — movement speed is a fixed constant (`PLAYER_SPEED`) derived from input velocity [US-40]
+- [x] No reference to `.container` on `this.player` exists anywhere in `GameScene.ts` — all position reads use `this.player.x` / `this.player.y` directly (grep confirms zero `.container` references on `player`) [US-40]
+- [x] `uiCam.ignore([..., this.player, ...])` uses the sprite directly (not `this.player.container`) [US-40]
+- [x] `cleanupResize` calls `this.player?.destroy()` without referencing `.container` — Sprite's `destroy()` is called correctly [US-40]
+- [x] `npx tsc --noEmit && npm run build` passes [US-40]
 
 ### US-41 — Remove rig tab from editor
-- [ ] `tools/editor/src/rigRenderer.ts` is deleted [US-41]
-- [ ] `tools/editor/src/main.ts` has zero imports from `rigRenderer` [US-41]
-- [ ] The `ViewName` type in `main.ts` no longer includes `'rig'` [US-41]
-- [ ] The Rig tab button is absent from `tools/editor/index.html` (no `data-view="rig"` button) [US-41]
-- [ ] The `view-rig` div is absent from `tools/editor/index.html` [US-41]
-- [ ] `renderActiveView()` in `main.ts` has no `'rig'` branch [US-41]
-- [ ] `destroyRig()` call is removed from `main.ts` [US-41]
-- [ ] The editor still builds and runs: Map, Dialogue, and Flow tabs work (verified by build passing) [US-41]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes with no rig-related import errors [US-41]
+- [x] `tools/editor/src/rigRenderer.ts` is deleted [US-41]
+- [x] `tools/editor/src/main.ts` has zero imports from `rigRenderer` [US-41]
+- [x] The `ViewName` type in `main.ts` no longer includes `'rig'` [US-41]
+- [x] The Rig tab button is absent from `tools/editor/index.html` (no `data-view="rig"` button) [US-41]
+- [x] The `view-rig` div is absent from `tools/editor/index.html` [US-41]
+- [x] `renderActiveView()` in `main.ts` has no `'rig'` branch [US-41]
+- [x] `destroyRig()` call is removed from `main.ts` [US-41]
+- [x] The editor still builds and runs: Map, Dialogue, and Flow tabs work (verified by build passing) [US-41]
+- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes with no rig-related import errors [US-41]
 
 ### Structural / cross-cutting
-- [ ] `tools/generate-fox-atlas.mjs` is either retained as-is (atlas still used by placeholder sprite) or deleted — whichever is consistent with the chosen placeholder strategy; the decision is documented in a code comment in `GameScene.ts` [phase]
-- [ ] No file in `tools/editor/src/` imports from `@game/rig/` or any rig path [phase]
-- [ ] `npx tsc --noEmit && npm run build` passes (game root verify) [phase]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes (editor verify) [phase]
-- [ ] AGENTS.md does not require update in this phase (per task constraints — spec notes impact only) [phase]
+- [x] `tools/generate-fox-atlas.mjs` is either retained as-is (atlas still used by placeholder sprite) or deleted — whichever is consistent with the chosen placeholder strategy; the decision is documented in a code comment in `GameScene.ts` [phase]
+- [x] No file in `tools/editor/src/` imports from `@game/rig/` or any rig path [phase]
+- [x] `npx tsc --noEmit && npm run build` passes (game root verify) [phase]
+- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes (editor verify) [phase]
+- [x] AGENTS.md does not require update in this phase (per task constraints — spec notes impact only) [phase]
 
 Safety criteria: N/A — this phase introduces no API endpoints, user input fields, or query interpolation. It is a code deletion and simplification pass.
 
