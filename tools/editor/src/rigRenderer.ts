@@ -187,8 +187,10 @@ class RigPreviewScene extends Phaser.Scene {
   setDirection(dir: Direction): void {
     currentDirection = dir;
     this.rig?.setDirection(dir);
-    // Re-apply editor profiles for the new direction
-    if (editorProfiles) this.applyEditorProfiles();
+    // Only apply editor profiles in edit mode — animation mode uses its own update loop
+    if (animationMode === 'edit' && editorProfiles) {
+      this.applyEditorProfiles();
+    }
     this.updateHighlight();
     onDirectionChanged?.(dir);
   }
@@ -246,7 +248,15 @@ class RigPreviewScene extends Phaser.Scene {
     this.stopAnimation();
 
     const def = this.definition;
-    const walkRun = new WalkRunController(def.walkRunParams);
+
+    // Override walkToRunDelay to prevent unwanted transitions:
+    // walk mode: never transition to run (infinite delay)
+    // run mode: start running immediately (zero delay)
+    const walkRunParams = { ...def.walkRunParams };
+    if (mode === 'walk') walkRunParams.walkToRunDelay = Infinity;
+    if (mode === 'run') walkRunParams.walkToRunDelay = 0;
+
+    const walkRun = new WalkRunController(walkRunParams);
     const idle = new IdleController(def.idleParams);
     this.rig.addAnimationController(walkRun);
     this.rig.addAnimationController(idle);
