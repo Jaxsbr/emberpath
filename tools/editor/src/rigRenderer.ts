@@ -99,7 +99,7 @@ class RigPreviewScene extends Phaser.Scene {
   create(): void {
     this.drawGrid();
     this.createRig();
-    this.setupPointerSelection();
+    this.setupPointerInteraction();
   }
 
   private drawGrid(): void {
@@ -161,9 +161,18 @@ class RigPreviewScene extends Phaser.Scene {
     }
   }
 
-  private setupPointerSelection(): void {
+  private setupPointerInteraction(): void {
+    // Drag state
+    let dragBoneName: string | null = null;
+    let dragLastWorldX = 0;
+    let dragLastWorldY = 0;
+    let isDragging = false;
+    const DRAG_THRESHOLD = 3; // pixels in world space before drag activates
+
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.rig) return;
+      // Drag only available in edit mode and non-mirrored directions
+      if (animationMode !== 'edit') return;
 
       const container = this.rig.container;
       const localX = (pointer.worldX - container.x) / container.scaleX;
@@ -188,9 +197,71 @@ class RigPreviewScene extends Phaser.Scene {
         }
       }
 
-      selectedPartName = bestPart;
-      this.updateHighlight();
-      onPartSelected?.(selectedPartName);
+      if (bestPart) {
+        // Prepare for potential drag
+        dragBoneName = bestPart;
+        dragLastWorldX = pointer.worldX;
+        dragLastWorldY = pointer.worldY;
+        isDragging = false;
+
+        // Select the bone immediately
+        selectedPartName = bestPart;
+        this.updateHighlight();
+        this.updatePropagationHighlights();
+        onPartSelected?.(selectedPartName);
+      } else {
+        // Clicked on empty space — deselect
+        dragBoneName = null;
+        selectedPartName = null;
+        this.updateHighlight();
+        this.updatePropagationHighlights();
+        onPartSelected?.(null);
+      }
+    });
+
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!pointer.isDown || !dragBoneName || !this.rig || !editorProfiles) return;
+      // Drag disabled for mirrored directions
+      if (isMirrored(currentDirection)) return;
+      if (animationMode !== 'edit') return;
+
+      const dx = pointer.worldX - dragLastWorldX;
+      const dy = pointer.worldY - dragLastWorldY;
+
+      // Activate drag once threshold exceeded
+      if (!isDragging) {
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+        isDragging = true;
+      }
+
+      const container = this.rig.container;
+      // Convert world delta to container-local delta (same as parent-relative delta since
+      // world positions are: container.x + bone.x * scaleX, so bone.x delta = worldDelta / scaleX)
+      const localDx = dx / container.scaleX;
+      const localDy = dy / container.scaleY;
+
+      const uniqueDir = getUniqueDirection(currentDirection);
+      const partProfile = editorProfiles[uniqueDir]?.parts[dragBoneName];
+      if (!partProfile) return;
+
+      partProfile.x += localDx;
+      partProfile.y += localDy;
+
+      dragLastWorldX = pointer.worldX;
+      dragLastWorldY = pointer.worldY;
+
+      // Re-render with updated profile (also updates connection lines and propagation highlights)
+      this.applyEditorProfiles();
+      // Refresh property panel with new X/Y values
+      onPartSelected?.(dragBoneName);
+    });
+
+    this.input.on('pointerup', () => {
+      if (isDragging && dragBoneName) {
+        // Drag ended — keep the bone selected
+        isDragging = false;
+      }
+      dragBoneName = null;
     });
   }
 
