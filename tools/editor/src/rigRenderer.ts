@@ -1,10 +1,22 @@
 import Phaser from 'phaser';
 import { CharacterRig } from '@game/rig/CharacterRig';
 import { foxRigDefinition } from '@game/rig/characters/fox';
-import type { RigDefinition, Direction, BoneDefinition } from '@game/rig/types';
+import type {
+  RigDefinition,
+  Direction,
+  UniqueDirection,
+  BoneDefinition,
+  DirectionProfile,
+  PartProfile,
+} from '@game/rig/types';
 
 // --- Available rigs (add new rigs here) ---
 const AVAILABLE_RIGS: RigDefinition[] = [foxRigDefinition];
+
+// --- Mirror map (matches CharacterRig logic) ---
+const MIRROR_MAP: Record<string, UniqueDirection> = { W: 'E', SW: 'SE', NW: 'NE' };
+const MIRRORED_DIRECTIONS = new Set<Direction>(['W', 'SW', 'NW']);
+const UNIQUE_DIRECTIONS: UniqueDirection[] = ['S', 'N', 'E', 'SE', 'NE'];
 
 // --- Module state ---
 let game: Phaser.Game | null = null;
@@ -12,9 +24,32 @@ let previewScene: RigPreviewScene | null = null;
 let rendered = false;
 let activeRigIndex = 0;
 
-// Selection state shared between DOM and Phaser
+// Selection & direction state
 let selectedPartName: string | null = null;
+let currentDirection: Direction = 'S';
 let onPartSelected: ((name: string | null) => void) | null = null;
+let onDirectionChanged: ((dir: Direction) => void) | null = null;
+
+// Editor profiles — mutable working copy
+let editorProfiles: Record<UniqueDirection, DirectionProfile> | null = null;
+
+function getUniqueDirection(dir: Direction): UniqueDirection {
+  return (MIRRORED_DIRECTIONS.has(dir) ? MIRROR_MAP[dir] : dir) as UniqueDirection;
+}
+
+function isMirrored(dir: Direction): boolean {
+  return MIRRORED_DIRECTIONS.has(dir);
+}
+
+function deepCloneProfiles(def: RigDefinition): Record<UniqueDirection, DirectionProfile> {
+  return JSON.parse(JSON.stringify(def.profiles));
+}
+
+function getPartProfile(partName: string): PartProfile | null {
+  if (!editorProfiles) return null;
+  const uniqueDir = getUniqueDirection(currentDirection);
+  return editorProfiles[uniqueDir]?.parts[partName] ?? null;
+}
 
 // --- Phaser scene ---
 class RigPreviewScene extends Phaser.Scene {
@@ -28,7 +63,6 @@ class RigPreviewScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Load the atlas for the current rig definition
     this.load.atlas(
       this.definition.atlasKey,
       `characters/fox.png`,
@@ -76,6 +110,11 @@ class RigPreviewScene extends Phaser.Scene {
 
     this.highlightGraphics = this.add.graphics();
     this.highlightGraphics.setDepth(1000);
+
+    // Apply editor profiles if they exist
+    if (editorProfiles) {
+      this.applyEditorProfiles();
+    }
   }
 
   private setupPointerSelection(): void {
@@ -83,11 +122,9 @@ class RigPreviewScene extends Phaser.Scene {
       if (!this.rig) return;
 
       const container = this.rig.container;
-      // Transform pointer to container-local coordinates
       const localX = (pointer.worldX - container.x) / container.scaleX;
       const localY = (pointer.worldY - container.y) / container.scaleY;
 
-      // Find the topmost visible sprite under the pointer
       let bestPart: string | null = null;
       let bestDepth = -Infinity;
 
@@ -96,9 +133,10 @@ class RigPreviewScene extends Phaser.Scene {
         if (!sprite.visible) continue;
         const hw = (sprite.displayWidth / Math.abs(sprite.scaleX)) * 0.5;
         const hh = (sprite.displayHeight / Math.abs(sprite.scaleY)) * 0.5;
-        const sx = sprite.x;
-        const sy = sprite.y;
-        if (localX >= sx - hw && localX <= sx + hw && localY >= sy - hh && localY <= sy + hh) {
+        if (
+          localX >= sprite.x - hw && localX <= sprite.x + hw &&
+          localY >= sprite.y - hh && localY <= sprite.y + hh
+        ) {
           if (sprite.depth > bestDepth) {
             bestDepth = sprite.depth;
             bestPart = sprite.frame.name;
@@ -124,7 +162,6 @@ class RigPreviewScene extends Phaser.Scene {
       if (sprite.frame.name === selectedPartName && sprite.visible) {
         const hw = (sprite.displayWidth / Math.abs(sprite.scaleX)) * 0.5;
         const hh = (sprite.displayHeight / Math.abs(sprite.scaleY)) * 0.5;
-        // Draw highlight at world coordinates
         const worldX = container.x + sprite.x * container.scaleX;
         const worldY = container.y + sprite.y * container.scaleY;
         this.highlightGraphics.lineStyle(2, 0xe94560, 0.9);
@@ -140,14 +177,52 @@ class RigPreviewScene extends Phaser.Scene {
   }
 
   setDirection(dir: Direction): void {
+    currentDirection = dir;
     this.rig?.setDirection(dir);
+    // Re-apply editor profiles for the new direction
+    if (editorProfiles) this.applyEditorProfiles();
+    this.updateHighlight();
+    onDirectionChanged?.(dir);
+  }
+
+  /** Apply editor profiles to all sprites (after direction change or property edit). */
+  applyEditorProfiles(): void {
+    if (!this.rig || !editorProfiles) return;
+
+    const uniqueDir = getUniqueDirection(currentDirection);
+    const profile = editorProfiles[uniqueDir];
+    const mirrored = isMirrored(currentDirection);
+    const flipX = mirrored ? -1 : 1;
+
+    const container = this.rig.container;
+    const children = container.list as Phaser.GameObjects.Sprite[];
+    for (const sprite of children) {
+      const pp = profile.parts[sprite.frame.name];
+      if (!pp) {
+        sprite.setVisible(false);
+        continue;
+      }
+      sprite.setVisible(pp.visible);
+      sprite.setPosition(pp.x * flipX, pp.y);
+      sprite.setScale(pp.scaleX * flipX, pp.scaleY);
+      sprite.setRotation(pp.rotation * flipX);
+      sprite.setDepth(pp.depth);
+      sprite.setAlpha(pp.alpha ?? 1);
+    }
+    container.sort('depth');
     this.updateHighlight();
   }
 
-  setRigDefinition(def: RigDefinition): void {
-    this.definition = def;
-    // Reload the scene to load the new atlas and recreate the rig
-    this.scene.restart();
+  /** Update a single part's property and re-render it. */
+  updatePartProperty(partName: string, prop: keyof PartProfile, value: number | boolean): void {
+    if (!editorProfiles) return;
+    const uniqueDir = getUniqueDirection(currentDirection);
+    const pp = editorProfiles[uniqueDir].parts[partName];
+    if (!pp) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pp as any)[prop] = value;
+    this.applyEditorProfiles();
   }
 
   selectPart(name: string | null): void {
@@ -165,7 +240,7 @@ class RigPreviewScene extends Phaser.Scene {
 }
 
 // --- Direction picker ---
-const DIRECTIONS: (Direction | null)[][] = [
+const DIRECTION_GRID: (Direction | null)[][] = [
   ['NW', 'N', 'NE'],
   ['W', null, 'E'],
   ['SW', 'S', 'SE'],
@@ -175,9 +250,7 @@ function createDirectionPicker(onDirection: (dir: Direction) => void): HTMLEleme
   const picker = document.createElement('div');
   picker.className = 'rig-direction-picker';
 
-  let currentDir: Direction = 'S';
-
-  for (const row of DIRECTIONS) {
+  for (const row of DIRECTION_GRID) {
     const rowEl = document.createElement('div');
     rowEl.className = 'dir-row';
     for (const dir of row) {
@@ -186,15 +259,14 @@ function createDirectionPicker(onDirection: (dir: Direction) => void): HTMLEleme
       if (dir) {
         btn.textContent = dir;
         btn.dataset.dir = dir;
-        if (dir === currentDir) btn.classList.add('active');
+        if (dir === currentDirection) btn.classList.add('active');
         btn.addEventListener('click', () => {
-          currentDir = dir;
           picker.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           onDirection(dir);
         });
       } else {
-        btn.textContent = '•';
+        btn.textContent = '\u2022';
         btn.disabled = true;
         btn.classList.add('dir-center');
       }
@@ -242,17 +314,10 @@ function createBoneNode(
 
   const hasChildren = bone.children && bone.children.length > 0;
 
-  if (hasChildren) {
-    const toggle = document.createElement('span');
-    toggle.className = 'bone-toggle';
-    toggle.textContent = '▾';
-    label.appendChild(toggle);
-  } else {
-    const spacer = document.createElement('span');
-    spacer.className = 'bone-toggle';
-    spacer.textContent = ' ';
-    label.appendChild(spacer);
-  }
+  const toggle = document.createElement('span');
+  toggle.className = 'bone-toggle';
+  toggle.textContent = hasChildren ? '\u25BE' : ' ';
+  label.appendChild(toggle);
 
   const nameSpan = document.createElement('span');
   nameSpan.className = 'bone-name';
@@ -261,7 +326,6 @@ function createBoneNode(
 
   label.addEventListener('click', (e) => {
     e.stopPropagation();
-    // Handle selection
     const tree = node.closest('.hierarchy-tree');
     tree?.querySelectorAll('.bone-label.selected').forEach(el => el.classList.remove('selected'));
     label.classList.add('selected');
@@ -278,12 +342,10 @@ function createBoneNode(
     }
     node.appendChild(childContainer);
 
-    // Toggle collapse
     label.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      const toggle = label.querySelector('.bone-toggle');
       const isCollapsed = childContainer.classList.toggle('collapsed');
-      if (toggle) toggle.textContent = isCollapsed ? '▸' : '▾';
+      toggle.textContent = isCollapsed ? '\u25B8' : '\u25BE';
     });
   }
 
@@ -318,6 +380,137 @@ function createRigSelector(
   wrap.appendChild(select);
 
   return wrap;
+}
+
+// --- Property editor panel ---
+const NUMERIC_PROPS: { key: keyof PartProfile; label: string; step: number }[] = [
+  { key: 'x', label: 'X', step: 1 },
+  { key: 'y', label: 'Y', step: 1 },
+  { key: 'scaleX', label: 'Scale X', step: 0.05 },
+  { key: 'scaleY', label: 'Scale Y', step: 0.05 },
+  { key: 'rotation', label: 'Rotation', step: 0.05 },
+  { key: 'depth', label: 'Depth', step: 1 },
+  { key: 'alpha', label: 'Alpha', step: 0.05 },
+];
+
+function createPropertyPanel(): {
+  element: HTMLElement;
+  update: (partName: string | null, dir: Direction) => void;
+} {
+  const panel = document.createElement('div');
+  panel.className = 'rig-property-panel';
+
+  // Prevent pointer events from reaching Phaser
+  panel.addEventListener('pointerdown', (e) => e.stopPropagation());
+  panel.addEventListener('pointerup', (e) => e.stopPropagation());
+  panel.addEventListener('click', (e) => e.stopPropagation());
+
+  const title = document.createElement('div');
+  title.className = 'prop-title';
+  title.textContent = 'Properties';
+  panel.appendChild(title);
+
+  const content = document.createElement('div');
+  content.className = 'prop-content';
+  panel.appendChild(content);
+
+  const mirrorIndicator = document.createElement('div');
+  mirrorIndicator.className = 'prop-mirror-indicator';
+  mirrorIndicator.style.display = 'none';
+
+  const partLabel = document.createElement('div');
+  partLabel.className = 'prop-part-label';
+
+  const inputs: Map<string, HTMLInputElement> = new Map();
+  let visibleCheckbox: HTMLInputElement | null = null;
+
+  function rebuild(partName: string | null, dir: Direction): void {
+    content.innerHTML = '';
+    inputs.clear();
+    visibleCheckbox = null;
+
+    if (!partName) {
+      const hint = document.createElement('div');
+      hint.className = 'prop-hint';
+      hint.textContent = 'Select a part to edit its properties.';
+      content.appendChild(hint);
+      return;
+    }
+
+    // Part name label
+    partLabel.textContent = partName;
+    content.appendChild(partLabel);
+
+    // Mirror indicator
+    const mirrored = isMirrored(dir);
+    const sourceDir = mirrored ? MIRROR_MAP[dir] : null;
+    mirrorIndicator.textContent = mirrored ? `Mirrored from ${sourceDir}` : '';
+    mirrorIndicator.style.display = mirrored ? 'block' : 'none';
+    content.appendChild(mirrorIndicator);
+
+    const pp = getPartProfile(partName);
+    if (!pp) {
+      const noProfile = document.createElement('div');
+      noProfile.className = 'prop-hint';
+      noProfile.textContent = 'No profile for this part in current direction.';
+      content.appendChild(noProfile);
+      return;
+    }
+
+    // Visible checkbox
+    const visRow = document.createElement('div');
+    visRow.className = 'prop-row';
+    const visLabel = document.createElement('label');
+    visLabel.className = 'prop-label';
+    visLabel.textContent = 'Visible';
+    visRow.appendChild(visLabel);
+    visibleCheckbox = document.createElement('input');
+    visibleCheckbox.type = 'checkbox';
+    visibleCheckbox.className = 'prop-checkbox';
+    visibleCheckbox.checked = pp.visible;
+    visibleCheckbox.disabled = mirrored;
+    visibleCheckbox.addEventListener('change', () => {
+      if (!visibleCheckbox || mirrored) return;
+      previewScene?.updatePartProperty(partName, 'visible', visibleCheckbox.checked);
+    });
+    visRow.appendChild(visibleCheckbox);
+    content.appendChild(visRow);
+
+    // Numeric properties
+    for (const { key, label, step } of NUMERIC_PROPS) {
+      const row = document.createElement('div');
+      row.className = 'prop-row';
+
+      const lbl = document.createElement('label');
+      lbl.className = 'prop-label';
+      lbl.textContent = label;
+      row.appendChild(lbl);
+
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.className = 'prop-input';
+      input.step = String(step);
+      input.value = String(pp[key] ?? (key === 'alpha' ? 1 : 0));
+      input.disabled = mirrored;
+      inputs.set(key, input);
+
+      input.addEventListener('input', () => {
+        if (mirrored) return;
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) {
+          previewScene?.updatePartProperty(partName, key, val);
+        }
+      });
+
+      row.appendChild(input);
+      content.appendChild(row);
+    }
+  }
+
+  return {
+    element: panel,
+    update: rebuild,
+  };
 }
 
 // --- CSS injection ---
@@ -451,48 +644,140 @@ function injectRigStyles(): void {
     .rig-scene-container canvas {
       display: block;
     }
+    /* Property panel */
+    .rig-property-panel {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .prop-title {
+      padding: 8px 12px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .prop-content {
+      padding: 8px 12px;
+    }
+    .prop-hint {
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 8px 0;
+    }
+    .prop-part-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .prop-mirror-indicator {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 8px;
+      padding: 4px 8px;
+      background: var(--bg);
+      border-radius: 3px;
+    }
+    .prop-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .prop-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      width: 70px;
+    }
+    .prop-input {
+      width: 100px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 3px 6px;
+      font-family: inherit;
+      font-size: 12px;
+      text-align: right;
+    }
+    .prop-input:focus {
+      outline: 1px solid var(--accent);
+      border-color: var(--accent);
+    }
+    .prop-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .prop-checkbox {
+      accent-color: var(--accent);
+    }
+    .prop-checkbox:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   `;
   document.head.appendChild(style);
 }
 
 // --- Public API ---
 export function renderRig(container: HTMLElement): void {
-  if (rendered && game) return; // prevent duplicate creation
+  if (rendered && game) return;
 
   injectRigStyles();
   container.innerHTML = '';
 
-  // Sidebar
+  const currentDef = AVAILABLE_RIGS[activeRigIndex];
+
+  // Initialize editor profiles (deep clone)
+  if (!editorProfiles) {
+    editorProfiles = deepCloneProfiles(currentDef);
+  }
+
+  // Sidebar (left)
   const sidebar = document.createElement('div');
   sidebar.className = 'rig-sidebar';
 
-  // Rig selector
   sidebar.appendChild(createRigSelector(AVAILABLE_RIGS, (def) => {
     activeRigIndex = AVAILABLE_RIGS.indexOf(def);
+    editorProfiles = deepCloneProfiles(def);
+    currentDirection = 'S';
+    selectedPartName = null;
     destroyRig();
     renderRig(container);
   }));
 
-  // Direction picker
   sidebar.appendChild(createDirectionPicker((dir) => {
     previewScene?.setDirection(dir);
   }));
 
-  // Hierarchy panel
-  const currentDef = previewScene?.getDefinition() ?? AVAILABLE_RIGS[0];
   const hierarchy = createHierarchyPanel(currentDef.skeleton, (name) => {
     selectedPartName = name;
     previewScene?.selectPart(name);
     onPartSelected?.(name);
+    propertyPanel.update(name, currentDirection);
   });
   sidebar.appendChild(hierarchy);
 
   container.appendChild(sidebar);
 
-  // Scene container
+  // Scene container (center)
   const sceneContainer = document.createElement('div');
   sceneContainer.className = 'rig-scene-container';
   container.appendChild(sceneContainer);
+
+  // Property panel (right)
+  const propertyPanel = createPropertyPanel();
+  container.appendChild(propertyPanel.element);
 
   // Create Phaser game
   previewScene = new RigPreviewScene();
@@ -513,13 +798,18 @@ export function renderRig(container: HTMLElement): void {
     },
   });
 
-  // Wire up part selection callback to highlight hierarchy
+  // Wire up callbacks
   onPartSelected = (name) => {
     hierarchy.querySelectorAll('.bone-label.selected').forEach(el => el.classList.remove('selected'));
     if (name) {
       const label = hierarchy.querySelector(`.bone-label[data-part="${name}"]`);
       label?.classList.add('selected');
     }
+    propertyPanel.update(name, currentDirection);
+  };
+
+  onDirectionChanged = (dir) => {
+    propertyPanel.update(selectedPartName, dir);
   };
 
   rendered = true;
@@ -534,4 +824,45 @@ export function destroyRig(): void {
   rendered = false;
   selectedPartName = null;
   onPartSelected = null;
+  onDirectionChanged = null;
+}
+
+/** Get the current editor profiles (for save/export). */
+export function getEditorProfiles(): Record<UniqueDirection, DirectionProfile> | null {
+  return editorProfiles;
+}
+
+/** Set editor profiles (for load). */
+export function setEditorProfiles(
+  profiles: Record<UniqueDirection, DirectionProfile>,
+  definition: RigDefinition,
+): string[] {
+  const warnings: string[] = [];
+  const allParts = collectAllPartNames(definition.skeleton);
+  const partSet = new Set(allParts);
+
+  // Check for mismatches
+  for (const dir of UNIQUE_DIRECTIONS) {
+    const loaded = profiles[dir];
+    if (!loaded) continue;
+    for (const partName of Object.keys(loaded.parts)) {
+      if (!partSet.has(partName)) {
+        warnings.push(partName);
+      }
+    }
+  }
+
+  editorProfiles = profiles;
+  previewScene?.applyEditorProfiles();
+  return [...new Set(warnings)];
+}
+
+function collectAllPartNames(bone: BoneDefinition): string[] {
+  const names = [bone.name];
+  if (bone.children) {
+    for (const child of bone.children) {
+      names.push(...collectAllPartNames(child));
+    }
+  }
+  return names;
 }
