@@ -109,3 +109,15 @@ entries:
     description: "Review stage initiated. PR #8 created from build/bone-chain to main: 'feat: bone-chain — parent-relative hierarchical transforms'. PR body includes phase summary, all 4 stories shipped (US-32/33/34/35), and done-when evidence for each criterion. Review queued."
     result: pass
     tokens: ~5000
+  - task: 19
+    type: implement
+    story: phase
+    description: "review-pr completed for PR #8. Posted 2 concerns (hidden-bone semantics in tree walk, misleading rotation-propagation comment in idle.ts), 0 critical. Review event: COMMENT."
+    result: pass
+    tokens: ~8000
+  - task: 20
+    type: implement
+    story: phase
+    description: "handle-pr-review completed for PR #8. Addressed 2 concerns: added clarifying comment for hidden-bone transparent-skip semantics in tree walk, fixed misleading rotation-propagation comment in idle.ts. Both fixes are documentation-only (comments). Verify passes."
+    result: pass
+    tokens: ~8000

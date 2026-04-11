@@ -27,14 +27,14 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 19
-  next_task: "[review] review-pr pr=8 auto=true"
+  task_number: 21
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
-  review_stage: pr_created
-  review_complete: false
+  review_stage: null
+  review_complete: true
   pr_number: 8
 
   # --- Retrospective (owner: retro) ---
