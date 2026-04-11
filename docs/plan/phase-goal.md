@@ -13,22 +13,22 @@ Convert the rig engine (`CharacterRig`, `BoneDefinition`, animation controller c
 ### Done-when (observable)
 
 #### US-32 — Parent-relative coordinate model
-- [ ] `BoneDefinition` in `rig/types.ts` includes `inheritScale: boolean` and `inheritRotation: boolean` fields, both defaulting to `false` [US-32]
-- [ ] `CharacterRig.update()` resolves world positions via depth-first tree walk of the bone hierarchy: each bone's world position = parent world position + local profile offset + local state offset [US-32]
-- [ ] When `inheritRotation` is `true` on a bone, the local offset is rotated around the parent's pivot by the parent's world rotation [US-32]
-- [ ] When `inheritScale` is `true` on a bone, the local offset and sprite scale are multiplied by the parent's world scale [US-32]
-- [ ] `setDirection()` resolves world positions from parent-relative profile data using the same tree-walk logic (not a separate flat loop) [US-32]
-- [ ] Sprites remain flat siblings in the root Phaser Container — no nested Containers are introduced [US-32]
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [US-32]
-- [ ] Fox renders identically to pre-change state when using migrated parent-relative profiles (visual equivalence — same sprite positions on screen for all 5 direction profiles + 3 mirrored) [US-32]
+- [x] `BoneDefinition` in `rig/types.ts` includes `inheritScale: boolean` and `inheritRotation: boolean` fields, both defaulting to `false` [US-32]
+- [x] `CharacterRig.update()` resolves world positions via depth-first tree walk of the bone hierarchy: each bone's world position = parent world position + local profile offset + local state offset [US-32]
+- [x] When `inheritRotation` is `true` on a bone, the local offset is rotated around the parent's pivot by the parent's world rotation [US-32]
+- [x] When `inheritScale` is `true` on a bone, the local offset and sprite scale are multiplied by the parent's world scale [US-32]
+- [x] `setDirection()` resolves world positions from parent-relative profile data using the same tree-walk logic (not a separate flat loop) [US-32]
+- [x] Sprites remain flat siblings in the root Phaser Container — no nested Containers are introduced [US-32]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [US-32]
+- [x] Fox renders identically to pre-change state when using migrated parent-relative profiles (visual equivalence — same sprite positions on screen for all 5 direction profiles + 3 mirrored) [US-32]
 
 #### US-33 — Profile migration tooling
-- [ ] A migration script or editor feature exists that reads absolute fox.ts profiles and outputs parent-relative profiles [US-33]
-- [ ] Migration walks the bone hierarchy per direction, subtracting each bone's parent absolute position to derive the local offset [US-33]
-- [ ] Migration output covers all 5 unique direction profiles (S, N, E, SE, NE) — mirrored directions (W, SW, NW) are derived, not migrated separately [US-33]
-- [ ] Migration output is written to `rig/characters/fox.ts` replacing the absolute profile data [US-33]
-- [ ] After migration, the fox renders at identical screen positions as before migration for all 8 directions (verified by running the game and checking each direction) [US-33]
-- [ ] `npx tsc --noEmit && npm run build` passes after migration [US-33]
+- [x] A migration script or editor feature exists that reads absolute fox.ts profiles and outputs parent-relative profiles [US-33]
+- [x] Migration walks the bone hierarchy per direction, subtracting each bone's parent absolute position to derive the local offset [US-33]
+- [x] Migration output covers all 5 unique direction profiles (S, N, E, SE, NE) — mirrored directions (W, SW, NW) are derived, not migrated separately [US-33]
+- [x] Migration output is written to `rig/characters/fox.ts` replacing the absolute profile data [US-33]
+- [x] After migration, the fox renders at identical screen positions as before migration for all 8 directions (verified by running the game and checking each direction) [US-33]
+- [x] `npx tsc --noEmit && npm run build` passes after migration [US-33]
 
 #### US-34 — Animation controller cleanup
 - [ ] `walkRun.ts` body bob is applied only to the `body` bone — manual propagation lines for neck, head, shoulders are removed [US-34]

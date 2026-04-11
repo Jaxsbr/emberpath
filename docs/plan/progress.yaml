@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: "[US-32] Implement shared resolvePositions tree-walk method in CharacterRig. Refactor setDirection() and update() to both use it. Method walks skeleton tree depth-first, resolving world positions from parent-relative profiles + optional bone states. Handle inheritRotation/inheritScale. Keep sprites as flat Container siblings."
+  task_number: 10
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: []
+  completed_stories: [US-32, US-33]
