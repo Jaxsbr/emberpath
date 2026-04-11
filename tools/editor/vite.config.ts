@@ -3,6 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   base: './',
+  publicDir: path.resolve(__dirname, '../../assets'),
   server: {
     port: 5174,
   },

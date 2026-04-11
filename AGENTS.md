@@ -13,13 +13,13 @@ npm run dev      # Vite dev server at localhost:5173
 npm run build    # Production build to dist/
 ```
 
-### Visualizer (dev tool)
+### Editor (dev tool)
 
 ```bash
-cd tools/visualizer
+cd tools/editor
 npm install
 npm run dev      # Vite dev server at localhost:5174
-npm run build    # Production build to tools/visualizer/dist/
+npm run build    # Production build to tools/editor/dist/
 ```
 
 ## Controls
@@ -58,7 +58,7 @@ src/
     types.ts           # RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState interfaces
     CharacterRig.ts    # 2D skeletal rig engine — container with atlas sprites, direction profiles, pluggable animation controllers
     characters/
-      fox.ts           # Fox (Pip) rig definition — 16 parts, 5 direction profiles, walk/run/idle params
+      fox.ts           # Fox (Pip) rig definition — 46 named parts, 5 direction profiles, walk/run/idle params
     animations/
       walkRun.ts       # WalkRunController — body bob, leg gait, tail follow-through, walk-to-run transition, speed source of truth
       idle.ts          # IdleController — breathing, tail sway, head turn, sit-down, ear flick
@@ -72,17 +72,18 @@ assets/
     fox.json           # Phaser JSON Hash atlas — frame coordinates for fox body parts
 tools/
   generate-fox-atlas.mjs  # Atlas generator script — creates fox.png + fox.json from code (no dependencies)
-  visualizer/          # Standalone Vite dev tool — area map, dialogue tree, and story flow visualizer
+  editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow, and rig editor
     src/
       main.ts          # App shell — area selector, tab navigation, detail panel
       style.css        # Dark theme CSS with debug overlay color variables
       mapRenderer.ts   # Canvas-based area map — tile grid, NPC circles, trigger/exit overlays
       dialogueRenderer.ts  # Dialogue tree node graph — BFS layout, SVG edges, flag annotations
       flowRenderer.ts  # Story flow overview — area boxes, exit arrows, flag dependency lines
+      rigRenderer.ts   # Rig editor — embedded Phaser scene, direction picker, skeleton hierarchy, property editor, Save/Load/Export TS
     index.html         # Entry point
     package.json       # Separate Vite + TypeScript project
     vite.config.ts     # @game path alias to ../../src
-    tsconfig.json      # Compiles visualizer + shared game types
+    tsconfig.json      # Compiles editor + shared game types
 ```
 
 ## File ownership
@@ -109,14 +110,15 @@ tools/
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
 | `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
 | `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update |
-| `rig/characters/fox.ts` | Fox (Pip) rig definition — 16 named parts, 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
+| `rig/characters/fox.ts` | Fox (Pip) rig definition — 46 named parts (body, neck, head, snout, eyes, nose, ears, shoulders, hips, 4 legs with upper/lower/ankle/paw/4 toes, 3 tail segments), 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
 | `rig/animations/walkRun.ts` | Walk/run animation controller — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
 | `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn after 3s, sit-down after 6s, all reset on movement |
 | `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies |
-| `tools/visualizer/src/main.ts` | Visualizer app shell — area selector, tab navigation, view dispatch, detail panel |
-| `tools/visualizer/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
-| `tools/visualizer/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
-| `tools/visualizer/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
+| `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation, view dispatch, detail panel |
+| `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
+| `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
+| `tools/editor/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
+| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction), Save JSON/Load JSON/Export TS persistence toolbar |
 
 ## Depth map
 

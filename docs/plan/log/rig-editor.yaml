@@ -1,0 +1,81 @@
+phase: rig-editor
+started: 2026-04-10T23:42:29Z
+entries:
+  - task: 1
+    type: investigate
+    story: US-28
+    description: "Investigated codebase for phase start. tools/visualizer/ has 5 source files, package.json name=emberpath-visualizer. Verify passes. Phase is CSS/JS-only. Queued US-28 rename task."
+    result: pass
+    tokens: ~8000
+  - task: 2
+    type: implement
+    story: US-28
+    description: "Renamed tools/visualizer/ to tools/editor/ via git mv. Updated package.json name to emberpath-editor, index.html title to EmberPath Editor, mapRenderer.ts comment, package-lock.json. Updated AGENTS.md running instructions, directory layout, file ownership. Zero visualizer references remain in editor/src/ or AGENTS.md. Verify passes. ✓ US-28 complete"
+    result: pass
+    tokens: ~10000
+  - task: 3
+    type: investigate
+    story: US-29
+    description: "US-28 complete. US-29 needs: Phaser dependency in editor, rig tab in toolbar, embedded Phaser scene with CharacterRig + fox atlas, direction picker (8 buttons), skeleton hierarchy panel, checkerboard grid, selection highlighting, dark theme. Editor currently has vite+ts only, imports game types via @game. tsconfig needs to include rig types. Queued full US-29 implementation."
+    result: pass
+    tokens: ~3000
+  - task: 4
+    type: implement
+    story: US-29
+    description: "Added Phaser 3 dependency to editor, updated tsconfig to include rig types, added publicDir for game assets. Created rigRenderer.ts with embedded RigPreviewScene (CharacterRig + checkerboard grid at depth 0 + selection highlight at depth 1000), rig selector dropdown, 8-direction compass picker, collapsible skeleton hierarchy panel with click-to-select. Updated index.html with Rig tab, main.ts with rig view routing and destroy lifecycle. All 14 US-29 criteria met. Verify passes. ✓ US-29 complete"
+    result: pass
+    tokens: ~20000
+  - task: 5
+    type: investigate
+    story: US-30
+    description: "US-29 complete. US-30 needs: property editor panel (right sidebar) showing x, y, scaleX, scaleY, rotation, depth, visible, alpha for selected part + direction. Edits must update Phaser scene in real time. Direction profiles stored as editor state (mutable copy from definition). Mirror indicator for W/SW/NW. DOM event isolation to prevent Phaser clicks when editing inputs. Queued implementation."
+    result: pass
+    tokens: ~2000
+  - task: 6
+    type: implement
+    story: US-30
+    description: "Added property editor panel (right sidebar) to rig tab. Mutable editor profiles (deep clone from rig definition) store per-direction per-part state. Numeric inputs for x/y/scaleX/scaleY/rotation/depth/alpha + visible checkbox with real-time Phaser preview via applyEditorProfiles. Direction switch loads correct profile values. Mirror indicator + disabled inputs for W/SW/NW. DOM event isolation (stopPropagation on pointer events). Consistent selection from hierarchy or scene click. Verify passes. ✓ US-30 complete"
+    result: pass
+    tokens: ~25000
+  - task: 7
+    type: investigate
+    story: US-31
+    description: "US-30 complete. US-31 needs: Save button downloads JSON of all direction profiles, Load button reads JSON and restores profiles with part name validation (warn on mismatches), Export TS generates TypeScript matching Record<UniqueDirection, DirectionProfile>. Buttons go in a toolbar row at top of rig tab or sidebar. getEditorProfiles() already exports state. setEditorProfiles() handles load with warnings. Queued implementation."
+    result: pass
+    tokens: ~1000
+  - task: 8
+    type: implement
+    story: US-31
+    description: "Added createPersistenceToolbar() with Save (JSON Blob download), Load (file input with part name validation via collectAllPartNames + setEditorProfiles warnings), Export TS (generateTypeScript producing Record<UniqueDirection, DirectionProfile> with proper imports). Toolbar placed in sidebar between rig selector and direction picker. All 7 US-31 criteria met. Verify passes. ✓ US-31 complete"
+    result: pass
+    tokens: ~15000
+  - task: 9
+    type: investigate
+    story: phase
+    description: "US-31 complete. Remaining: 4 structural [phase] criteria. AGENTS.md directory layout missing rigRenderer.ts, file ownership missing rig editor entry, running instructions already correct, rig-system-guide.md needs editor reference. Queued structural task."
+    result: pass
+    tokens: ~2000
+  - task: 10
+    type: implement
+    story: phase
+    description: "Added rigRenderer.ts to AGENTS.md directory layout, added file ownership entry for rigRenderer.ts with full description, updated fox.ts directory entry (16→46 parts), added editor rig tab reference paragraph to docs/rig-system-guide.md. Running instructions already correct from US-28. All 4 structural criteria met. Verify passes."
+    result: pass
+    tokens: ~5000
+  - task: 11
+    type: review
+    story: phase
+    description: "Created PR #7 from build/rig-editor to main. Queued review-pr."
+    result: pass
+    tokens: ~1000
+  - task: 12
+    type: review
+    story: phase
+    description: "review-pr completed. 0 critical, 2 concern (module-level mutable state singleton pattern, bounding-box hit detection overlap). Both low priority with mitigations noted. Review posted as COMMENT."
+    result: pass
+    tokens: ~8000
+  - task: 13
+    type: review
+    story: phase
+    description: "handle-pr-review completed. 2 unresolved threads (both self-authored low-priority concerns) — skipped, both resolved. No code changes needed. Quality checks pass. Summary posted to PR #7."
+    result: pass
+    tokens: ~5000

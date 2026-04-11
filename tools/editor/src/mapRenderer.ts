@@ -2,7 +2,7 @@ import { TileType } from '@game/maps/constants';
 import type { AreaDefinition } from '@game/data/areas/types';
 import { showDetail } from './main';
 
-const CELL = 16; // pixels per tile in the visualizer
+const CELL = 16; // pixels per tile in the editor
 const LABEL_MARGIN = 24; // space for axis labels
 const TRIGGER_ALPHA = 0.35;
 

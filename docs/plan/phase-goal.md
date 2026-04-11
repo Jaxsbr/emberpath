@@ -1,78 +1,77 @@
 ## Phase goal
 
-Build a reusable 2D skeletal rig system with procedural animation, and implement Pip (fox kit) as the first character. The rig system uses bone hierarchies, 8-direction profiles, and texture atlas body parts — designed so that any character can be defined as a data-driven rig and animated without per-frame sprite art. Pip replaces the colored square in GameScene with a paper-puppet aesthetic fox that trots, runs, and idles with personality. Documentation is a first-class deliverable so future developers and artists can create new characters and swap art.
+Rename the visualizer tool to "editor" and build a visual rig authoring tab. The editor's new rig tab embeds a Phaser scene for real-time character rig preview, provides a direction picker for all 8 directions, displays the skeleton hierarchy, and lets the designer edit every part property (position, scale, rotation, depth, visibility, alpha) per direction with instant visual feedback. Rig configurations save to JSON and export to TypeScript for game integration. This phase focuses on direction profile editing (the idle/base pose) — state-specific profiles (walk, run) are deferred.
 
 ### Design direction
 
-Paper-puppet storybook aesthetic. Body parts are warm-colored organic shapes (oranges, russets, creams, browns) with soft edges, evoking cut-out illustrations from a children's book. The fox should look deliberate — a style choice, not programmer placeholder. Think paper theater puppets or Eric Carle-style layered shapes. No flat geometric programmer art (pure rectangles, neon colors, hard pixel edges).
+Match existing editor dark theme — navy backgrounds (#1a1a2e / #16213e), monospace typography (JetBrains Mono / Fira Code), accent red (#e94560), muted text (#8899aa). Property panels and controls follow the established detail-panel pattern. The Phaser scene background should use a neutral checkerboard or grid pattern (common in sprite editors) to make rig parts visible against any color.
 
 ### Stories in scope
-- US-23 — Reusable skeletal rig engine
-- US-24 — Fox character rig (Pip)
-- US-25 — Walk and run procedural animations
-- US-26 — Idle animation suite
-- US-27 — Rig system implementor guide
+- US-28 — Rename visualizer to editor
+- US-29 — Rig editor tab with Phaser preview
+- US-30 — Interactive direction profile editor
+- US-31 — Rig configuration persistence and export
 
 ### Done-when (observable)
-- [x] `src/rig/CharacterRig.ts` exists and exports a `CharacterRig` class [US-23]
-- [x] `src/rig/types.ts` exists and exports `RigDefinition`, `DirectionProfile`, `BoneDefinition`, and `AnimationController` interfaces [US-23]
-- [x] `CharacterRig` constructor accepts a `RigDefinition` and a Phaser Scene, creates a Phaser Container with child Sprite objects sourced from a texture atlas [US-23]
-- [x] `CharacterRig.setDirection(dir)` accepts 8 directions (N, NE, E, SE, S, SW, W, NW) and updates per-part visibility, position, scale, rotation, and depth order per the direction's profile [US-23]
-- [x] Direction profiles for W, SW, NW are derived by mirroring E, SE, NE (container or part scaleX flip) — the fox rig definition contains only 5 unique direction profiles [US-23]
-- [x] `CharacterRig.update(delta)` calls all registered animation controllers, passing delta time and current bone state [US-23]
-- [x] Animation controllers are added via `addAnimationController()` or equivalent registration method — `CharacterRig` contains no animation logic itself [US-23]
-- [x] `RigDefinition` and `DirectionProfile` are plain data objects (object literals / interfaces), not class instances [US-23]
-- [x] `npx tsc --noEmit && npm run build` passes with the new rig module included [US-23]
-- [x] `src/rig/characters/fox.ts` exists and exports a fox rig definition conforming to `RigDefinition` [US-24]
-- [x] Fox rig defines minimum 16 named parts: body, head, snout, left-ear, right-ear, tail-1, tail-2, tail-3, front-left-upper-leg, front-left-lower-leg, front-right-upper-leg, front-right-lower-leg, back-left-upper-leg, back-left-lower-leg, back-right-upper-leg, back-right-lower-leg [US-24]
-- [x] 5 unique direction profiles exist (S, N, E, SE, NE) with per-part position, scale, rotation, depth, and visibility configs [US-24]
-- [x] S profile: face visible (eyes/snout detail), body wide and short (foreshortened), 2 front legs visible, back legs hidden, tail hidden or peeking [US-24]
-- [x] E profile: full body profile (long oval), 4 legs visible (near pair at higher alpha/depth than far pair), 1 ear visible, full tail chain trailing [US-24]
-- [x] N profile: back of head, tail prominent above/behind body, back legs visible, no face detail [US-24]
-- [x] `assets/characters/fox.png` and `assets/characters/fox.json` exist as a valid Phaser texture atlas with named frames matching all fox body parts [US-24]
-- [x] Placeholder PNGs use warm-palette colors (oranges, russets, creams, browns) with organic shapes — paper-puppet storybook aesthetic, not geometric programmer art (aspirational — visual verification required) [US-24]
-- [x] Fox character reads as a fox from S and E facing directions — identifiable pointed ears, snout, and bushy multi-segment tail (aspirational — visual verification required) [US-24]
-- [x] `GameScene.createPlayer()` creates a `CharacterRig` with the fox definition instead of `this.add.rectangle()` [US-24]
-- [x] Fox rig container is positioned at the same coordinates as the previous rectangle and uses `setDepth(5)` per the depth map (Entities layer) [US-24]
-- [x] Camera follows the fox rig container center — panning and zoom behavior unchanged from the rectangle player [US-24]
-- [x] Collision bounding box derived from the fox rig matches PLAYER_SIZE (24px) — `moveWithCollision`, `NpcInteractionSystem`, `TriggerZoneSystem`, and `checkExitZones` all function without changes to their input dimensions [US-24]
-- [x] Area transitions (fade-out → scene restart → fade-in) work with the fox rig — no visual glitches or position errors on area change [US-24]
-- [x] `src/rig/animations/walkRun.ts` exists and exports a walk/run animation controller conforming to `AnimationController` [US-25]
-- [x] When velocity > 0 at walk speed: body oscillates vertically (visible bob), legs rotate in alternating gait (front-left pairs with back-right), tail segments follow with progressive phase offset, ears sway [US-25]
-- [x] When velocity > 0 at run speed: animation cycle is faster, bob amplitude is larger, body rotation tilts forward, tail segments stream behind with less sway [US-25]
-- [x] Walk-to-run speed transition occurs after holding a direction continuously for a configurable delay (default ~0.8s) — player speed increases from PLAYER_SPEED to PLAYER_SPEED x run multiplier [US-25]
-- [x] Releasing and re-pressing a direction resets the walk-to-run timer — brief taps stay at walk speed [US-25]
-- [x] Direction changes call `CharacterRig.setDirection()` — animation continues at the current phase (no restart from frame 0) [US-25]
-- [x] Stopping movement (velocity returns to 0) plays a brief deceleration — bob settles, legs return to neutral, tail swings to rest — before idle begins [US-25]
-- [x] Walk/run parameters (bob height, leg swing amplitude, tail amplitude, run multiplier, walk-to-run delay) are read from the rig definition, not hardcoded in the controller [US-25]
-- [x] The walk/run animation controller is the source of truth for current movement speed — GameScene queries the controller's current speed and applies it to the velocity calculation, replacing the hardcoded PLAYER_SPEED used in `InputSystem.getVelocity()` for the player character [US-25]
-- [x] `npx tsc --noEmit && npm run build` passes [US-25]
-- [x] `src/rig/animations/idle.ts` exists and exports an idle animation controller conforming to `AnimationController` [US-26]
-- [x] At velocity 0: breathing plays immediately — body scaleX/scaleY oscillates gently (period >= 2 seconds) [US-26]
-- [x] At velocity 0: tail sway plays immediately — tail segments oscillate at a slower frequency and smaller amplitude than the walk tail motion [US-26]
-- [x] After ~3 seconds idle (configurable): head rotation plays — head turns left or right (direction randomized), then returns to center [US-26]
-- [x] After ~6 seconds idle (configurable): sit animation plays — legs tuck or fold, body Y position lowers, tail curls to the side or around the body [US-26]
-- [x] Ear flick triggers at random intervals on individual ears — small rotation spike that returns to baseline (not synchronized with breathing or tail) [US-26]
-- [x] Any movement input (velocity > 0) resets idle timer to 0, cancels sit/head-turn in progress, returns rig to standing neutral pose [US-26]
-- [x] Breathing, tail sway, and ear flick all play simultaneously (composable, not mutually exclusive) [US-26]
-- [x] Idle timing parameters (head-turn delay, sit delay, ear-flick interval range, breathing period) are defined in the rig definition [US-26]
-- [x] Idle controller cleans up any internal timers or state on scene shutdown/destroy — no lingering references after scene teardown [US-26]
-- [x] `docs/rig-system-guide.md` exists with sections: Architecture Overview, Bone Hierarchy Model, Direction Profile Authoring, Animation Controller API, Art Replacement Workflow, Creating a New Character [US-27]
-- [x] Architecture section contains an ASCII or Mermaid diagram showing: RigDefinition -> CharacterRig -> Container(Sprites), DirectionProfile -> setDirection(), AnimationController -> update() [US-27]
-- [x] Direction Profile section includes a parameter table (field, description, type, example value) and annotated before/after layouts for S (front-facing) and E (side-facing) directions [US-27]
-- [x] Animation Controller section includes a parameter table for the sine-wave model (parameter name, what it controls, default value, sensible range for tuning) [US-27]
-- [x] Art Replacement section provides numbered steps: (1) atlas file locations, (2) naming convention for part PNGs, (3) recommended dimensions/resolution, (4) how to generate the atlas JSON, (5) how to verify the replacement in-game [US-27]
-- [x] New Character section walks through "adding the Keeper — a white heron" as a concrete example: define RigDefinition, create direction profiles, create placeholder atlas, register with GameScene, verify [US-27]
-- [x] All file paths and type names in the guide match actual codebase locations (e.g., `src/rig/types.ts`, `CharacterRig`, `RigDefinition`) [US-27]
-- [x] AGENTS.md directory layout includes `src/rig/` tree with descriptions: `CharacterRig.ts`, `types.ts`, `characters/`, `animations/` [phase]
-- [x] AGENTS.md file ownership table includes entries for all rig modules (`CharacterRig.ts`, `types.ts`, `characters/fox.ts`, `animations/walkRun.ts`, `animations/idle.ts`) [phase]
-- [x] AGENTS.md depth map remains unchanged — fox rig renders at Entities depth (5), no new depth layers introduced [phase]
-- [x] Fox rig texture atlas loaded in Phaser's preload — atlas key is documented in AGENTS.md behavior rules or file ownership [phase]
+
+#### US-28 — Rename visualizer to editor
+- [x] `tools/editor/` directory exists; `tools/visualizer/` does not exist [US-28]
+- [x] `tools/editor/package.json` name field is `emberpath-editor` (was `emberpath-visualizer` or similar) [US-28]
+- [x] `tools/editor/index.html` title contains "Editor" (not "Visualizer") [US-28]
+- [x] `tools/editor/vite.config.ts` path alias `@game` still resolves to `../../src` [US-28]
+- [x] `npx tsc --noEmit` passes inside `tools/editor/` [US-28]
+- [x] `npm run dev` inside `tools/editor/` starts the Vite dev server and loads all existing tabs (map, dialogue, flow) without errors [US-28]
+- [x] No remaining references to "visualizer" in file contents under `tools/editor/src/` (case-insensitive grep returns 0 matches) [US-28]
+- [x] No references to "visualizer" in any .gitignore, CI workflow files (.github/), or root-level scripts/configs [US-28]
+- [x] AGENTS.md directory layout and running instructions reference `tools/editor/` instead of `tools/visualizer/` [US-28]
+
+#### US-29 — Rig editor tab with Phaser preview
+- [x] A "Rig" tab button appears in the editor toolbar alongside Map, Dialogue, and Flow tabs [US-29]
+- [x] Clicking the Rig tab displays an embedded Phaser scene that renders a character rig using the game's `CharacterRig` class and texture atlas [US-29]
+- [x] A rig selector dropdown lists available rig definitions; selecting "fox" loads and renders the fox rig [US-29]
+- [x] A direction picker with 8 clickable direction buttons (N, NE, E, SE, S, SW, W, NW) updates the rig's facing direction in the Phaser scene within the same frame [US-29]
+- [x] A skeleton hierarchy panel displays all parts from the rig's bone tree in a collapsible tree structure (body → head → snout, etc.) [US-29]
+- [x] Clicking a part name in the hierarchy visually highlights that part in the Phaser scene (e.g., tint change or outline) [US-29]
+- [x] The Phaser scene background uses a grid or checkerboard pattern (not solid color) so rig parts are visible regardless of their color [US-29]
+- [x] The Phaser scene renders at the correct atlas resolution — fox parts are sharp, not blurry or scaled incorrectly [US-29]
+- [x] `npx tsc --noEmit && npm run build` passes inside `tools/editor/` with the rig tab included [US-29]
+- [x] Switching rig selection in the dropdown resets all animation controller state — no visual artifacts carry over from the previous rig [US-29]
+- [x] Clicking the Rig tab multiple times rapidly does not create duplicate Phaser scenes or duplicate hierarchy panels [US-29]
+- [x] Rig preview scene uses explicit depth values: grid/checkerboard at depth 0, rig parts at their profile depth values, selection highlight at depth above all parts [US-29]
+- [x] Rig tab UI elements use the editor's dark theme palette: navy backgrounds (#1a1a2e or #16213e), accent red (#e94560), muted text (#8899aa), monospace font [US-29]
+- [x] Rig editor modules import all rig types (RigDefinition, DirectionProfile, BoneDefinition) from @game/rig/types — no local type re-declarations [US-29]
+
+#### US-30 — Interactive direction profile editor
+- [x] Selecting a part (from hierarchy click or Phaser scene click) opens a property editor panel showing that part's current values for the selected direction [US-30]
+- [x] The property editor displays editable fields for: x, y, scaleX, scaleY, rotation, depth, visible, alpha [US-30]
+- [x] Changing any numeric field (x, y, scaleX, scaleY, rotation, depth, alpha) via input updates the Phaser scene in real time (no save/refresh required) [US-30]
+- [x] Toggling the `visible` checkbox hides/shows the part in the Phaser scene immediately [US-30]
+- [x] Switching direction via the direction picker loads that direction's profile values into the property editor — values differ between S and E profiles [US-30]
+- [x] Edits to a direction profile persist in editor state when switching between directions (edit S profile → switch to E → switch back to S → edits are retained) [US-30]
+- [x] Only the 5 unique directions (S, N, E, SE, NE) are directly editable; selecting a mirrored direction (W, SW, NW) shows the source direction's values with a "mirrored from E/SE/NE" indicator [US-30]
+- [x] All 46 fox parts are individually selectable and editable [US-30]
+- [x] Part selection in the Phaser scene (click on a rendered sprite) selects that part in the hierarchy panel and opens its properties [US-30]
+- [x] Clicking on HTML property editor controls does not trigger Phaser scene pointer events (no accidental part selection when editing numeric fields) [US-30]
+- [x] Rapidly alternating between hierarchy click and Phaser scene click on different parts always converges to the last-clicked part — no stale or split selection state [US-30]
+
+#### US-31 — Rig configuration persistence and export
+- [x] A "Save" button in the rig tab toolbar downloads a JSON file containing all direction profiles for the current rig (5 unique directions × all parts × all properties) [US-31]
+- [x] A "Load" button accepts a JSON file upload and restores all direction profiles into the editor, updating the Phaser preview [US-31]
+- [x] An "Export TS" button generates TypeScript code matching the `profiles: Record<UniqueDirection, DirectionProfile>` format used in `src/rig/characters/fox.ts` [US-31]
+- [x] The exported TypeScript is valid — pasting it into a rig definition file and running `npx tsc --noEmit` produces no type errors [US-31]
+- [x] Loading a JSON file that references parts not in the current rig's skeleton shows a warning listing the mismatched part names [US-31]
+- [x] Save/load round-trips without data loss — save, reload editor, load the saved file, all values match the pre-save state [US-31]
+- [x] Exported TypeScript pasted into fox.ts and loaded in the game (npm run dev) renders the fox rig identically to the editor preview [US-31]
+
+#### Structural
+- [x] AGENTS.md directory layout includes `tools/editor/` tree with updated descriptions reflecting the rig tab addition [phase]
+- [x] AGENTS.md file ownership table includes entries for new rig editor modules (rig renderer, property editor, persistence) [phase]
+- [x] AGENTS.md running instructions reference `tools/editor/` path and port [phase]
+- [x] `docs/rig-system-guide.md` updated to reference the editor's rig tab for visual profile authoring [phase]
 
 ### Golden principles (phase-relevant)
-- **Depth map adherence** (AGENTS.md) — fox rig renders at depth 5 (Entities layer); no ad-hoc depth values
-- **Systems-module architecture** — rig engine, character definitions, and animation controllers are separate modules, not monolithic
-- **Zone-level mutual exclusion** (AGENTS.md, Learning #56) — rig animations must not interfere with dialogue/story input capture; idle state is the natural result of velocity = 0 during dialogue
-- **Responsive scaling** (AGENTS.md) — rig must render correctly across viewport sizes; camera zoom affects the rig container like any other world-space object
-- **Frame-based delta-time movement** (AGENTS.md) — all animation uses delta time, no fixed-frame assumptions
-- **Parameterized systems** (AGENTS.md, area-system pattern) — rig receives definition data via constructor/parameters, no global imports of character-specific data
+- **Depth map adherence** (AGENTS.md) — rig preview renders parts at their profile depth values; the editor visualizes depth ordering
+- **Systems-module architecture** — rig editor components (renderer, property editor, persistence) are separate modules, not monolithic
+- **Responsive scaling** (AGENTS.md) — editor layout works at common desktop viewport sizes (the editor is a dev tool, not mobile-targeted)
+- **Parameterized systems** (AGENTS.md) — rig editor receives rig definitions as data, no hardcoded fox-specific logic in editor components
+- **Frame-based delta-time** (AGENTS.md) — Phaser preview scene uses delta time for any animation preview
