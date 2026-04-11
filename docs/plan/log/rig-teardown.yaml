@@ -1,0 +1,4 @@
+phase: "rig-teardown"
+started: "2026-04-11T22:29:10Z"
+entries: []
+# Each entry: {task, time, story, description, result, notes, tokens}

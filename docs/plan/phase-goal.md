@@ -1,51 +1,60 @@
 ## Phase goal
 
-Add visual editing layers to the rig editor canvas: bone connection lines that make the skeleton hierarchy visible, direct-manipulation drag to reposition bones, and propagation highlighting that shows which bones will move before the artist acts. All three features operate exclusively in Edit mode and are confined to `tools/editor/` — no changes to game `src/rig/` modules.
+Remove the experimental skeletal rig system (CharacterRig, fox definition, animation controllers, rig editor tab, fox atlas generator) from the codebase. Replace the fox CharacterRig player in GameScene with a plain Phaser Sprite using the existing fox atlas frame. The game must remain fully playable — movement, collision, camera, and area transitions all intact — using the simplified sprite placeholder.
 
 ### Stories in scope
-- US-36 — Visual bone connections
-- US-37 — Canvas drag interaction
-- US-38 — Propagation highlighting
+- US-39 — Remove rig engine and fox definition from game codebase
+- US-40 — Replace fox player with static sprite placeholder
+- US-41 — Remove rig tab from editor
 
 ### Done-when (observable)
 
-#### US-36 — Visual bone connections
-- [x] In Edit mode, lines are drawn on the canvas from each parent bone's position to each child bone's position for the current direction [US-36]
-- [x] Connection lines update when a bone is repositioned via the property panel [US-36]
-- [x] Connection lines update when the direction is changed [US-36]
-- [x] Lines render above the grid background but below bone sprites (depth between grid and lowest bone depth) [US-36]
-- [x] Lines are not shown in animation preview modes (Idle/Walk/Run) [US-36]
-- [x] Lines mirror correctly for W/SW/NW directions [US-36]
-- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-36]
+#### US-39 — Remove rig engine and fox definition from game codebase
+- [ ] `src/rig/` directory does not exist in the repository [US-39]
+- [ ] `src/rig/CharacterRig.ts` is deleted [US-39]
+- [ ] `src/rig/types.ts` is deleted [US-39]
+- [ ] `src/rig/characters/fox.ts` is deleted [US-39]
+- [ ] `src/rig/animations/walkRun.ts` is deleted [US-39]
+- [ ] `src/rig/animations/idle.ts` is deleted [US-39]
+- [ ] No file in `src/` imports from `../rig/`, `./rig/`, or `@game/rig/` (grep confirms zero matches) [US-39]
+- [ ] `npx tsc --noEmit && npm run build` passes with no rig-related type errors [US-39]
 
-#### US-37 — Canvas drag interaction
-- [x] Clicking and dragging a bone sprite on the canvas changes its position [US-37]
-- [x] During drag, the property panel X/Y values update in real-time [US-37]
-- [x] Dragging a parent bone visually moves all descendant bones (tree-walk propagation) [US-37]
-- [x] Drag modifies only the dragged bone's parent-relative X/Y offset (other bones' profile values unchanged) [US-37]
-- [x] Drag is disabled (no-op) for mirrored directions (W/SW/NW) [US-37]
-- [x] Connection lines (from US-36) update in real-time during drag [US-37]
-- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-37]
+#### US-40 — Replace fox player with static sprite placeholder
+- [ ] `GameScene.ts` declares `player` as `Phaser.GameObjects.Sprite` (or `Phaser.GameObjects.Rectangle`), not `CharacterRig` [US-40]
+- [ ] `GameScene.ts` has zero imports from `src/rig/` [US-40]
+- [ ] The player sprite is positioned at the spawn point with correct pixel coordinates matching prior behavior (`spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2`, `spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2`) [US-40]
+- [ ] The player is rendered at depth 5 (Entities layer per depth map) [US-40]
+- [ ] The player moves with WASD / joystick using the same `moveWithCollision` path as before (no changes to `systems/movement.ts`) [US-40]
+- [ ] Collision bounding box is PLAYER_SIZE (24px) — `moveWithCollision` call uses the same halfSize math as before [US-40]
+- [ ] Camera `startFollow` targets the player sprite [US-40]
+- [ ] `walkRunController.getCurrentSpeed()` is no longer called — movement speed is a fixed constant (`PLAYER_SPEED`) derived from input velocity [US-40]
+- [ ] No reference to `.container` on `this.player` exists anywhere in `GameScene.ts` — all position reads use `this.player.x` / `this.player.y` directly (grep confirms zero `.container` references on `player`) [US-40]
+- [ ] `uiCam.ignore([..., this.player, ...])` uses the sprite directly (not `this.player.container`) [US-40]
+- [ ] `cleanupResize` calls `this.player?.destroy()` without referencing `.container` — Sprite's `destroy()` is called correctly [US-40]
+- [ ] `npx tsc --noEmit && npm run build` passes [US-40]
 
-#### US-38 — Propagation highlighting
-- [x] When a bone is selected in Edit mode, all its descendant bones have a visible highlight indicator on the canvas [US-38]
-- [x] The descendant highlight is visually distinct from the selected bone's red bounding box (different color or style) [US-38]
-- [x] Selecting a leaf bone (no children) shows no descendant highlights [US-38]
-- [x] Selecting a different bone immediately updates which bones are highlighted [US-38]
-- [x] Descendant highlights are only shown in Edit mode [US-38]
-- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-38]
+#### US-41 — Remove rig tab from editor
+- [ ] `tools/editor/src/rigRenderer.ts` is deleted [US-41]
+- [ ] `tools/editor/src/main.ts` has zero imports from `rigRenderer` [US-41]
+- [ ] The `ViewName` type in `main.ts` no longer includes `'rig'` [US-41]
+- [ ] The Rig tab button is absent from `tools/editor/index.html` (no `data-view="rig"` button) [US-41]
+- [ ] The `view-rig` div is absent from `tools/editor/index.html` [US-41]
+- [ ] `renderActiveView()` in `main.ts` has no `'rig'` branch [US-41]
+- [ ] `destroyRig()` call is removed from `main.ts` [US-41]
+- [ ] The editor still builds and runs: Map, Dialogue, and Flow tabs work (verified by build passing) [US-41]
+- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes with no rig-related import errors [US-41]
 
 #### Structural / cross-cutting
-- [x] AGENTS.md reflects new editor interaction features (bone connections, drag, propagation highlights) introduced in this phase [phase]
-- [x] No editor-specific logic leaks into game `src/rig/` modules — all changes are confined to `tools/editor/` [phase]
+- [ ] `tools/generate-fox-atlas.mjs` is either retained as-is (atlas still used by placeholder sprite) or deleted — whichever is consistent with the chosen placeholder strategy; the decision is documented in a code comment in `GameScene.ts` [phase]
+- [ ] No file in `tools/editor/src/` imports from `@game/rig/` or any rig path [phase]
+- [ ] `npx tsc --noEmit && npm run build` passes (game root verify) [phase]
+- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes (editor verify) [phase]
+- [ ] AGENTS.md does not require update in this phase (per task constraints — spec notes impact only) [phase]
 
 ### Golden principles (phase-relevant)
-- Responsive scaling: Phaser Scale.RESIZE mode — canvas adapts to container/viewport size. No fixed dimensions.
-- Parameterized systems architecture: Rig editor receives rig definitions as immutable data; no hardcoded fox-specific logic.
-- Frame-based delta-time: Phaser preview scene uses delta time for animation preview.
-- Rig coordinate model: Parent-relative coordinates with depth-first tree-walk resolution. Editor must use `rig.applyProfiles()` for rendering — never set sprite positions directly.
-- Depth map: All new visual elements must use the depth map in AGENTS.md. Ad-hoc depth values are prohibited.
-- File ownership: All canvas interaction code belongs in `tools/editor/src/rigRenderer.ts` — do not add editor-specific logic to `src/rig/` modules.
-
-### Design direction
-High-contrast on dark canvas. Bone connections use semi-bright teal (#4ecdc4) at 60-70% alpha — visible but not overpowering. Descendant propagation highlights use amber outline or glow (#f7d794) — distinct from the red selection box (#e94560). Visual language: professional rigging-tool overlays against dark navy (#1a1a2e) background, not debug wireframes.
+- Depth map is non-negotiable: the placeholder player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.
+- PLAYER_SIZE (24px) is the collision bounding box constant — do not change it during teardown.
+- Camera: `cam.startFollow(player)` must target the replacement sprite (not a container). Dual-camera `uiCam.ignore()` call must be updated to reference the new sprite.
+- Area transitions: the transitionInProgress guard, cleanupResize, and fade logic all reference `this.player` — ensure these still compile and work after the rig → sprite swap.
+- No silent breaking changes: all systems that previously read `this.player.container.x / .y` must read `this.player.x / .y` (Phaser Sprite, not Container).
+- Axis-independent movement and wall-sliding behavior must be preserved unchanged — moveWithCollision is not touched.
