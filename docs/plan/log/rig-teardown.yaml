@@ -8,4 +8,12 @@ entries:
     description: "Phase start investigation. Verify passes (tsc + build). GameScene uses CharacterRig with 4 rig imports (CharacterRig, foxRigDefinition, Direction, WalkRunController, IdleController). All .container references identified. editor/main.ts has renderRig/destroyRig imports and rig view branch. Story order: US-40 (replace player) → US-39 (delete rig dir) → US-41 (remove editor tab). Queued US-40 implementation."
     result: pass
     tokens: ~5000
+  - task: 2
+    time: "2026-04-11T22:35:00Z"
+    type: implement
+    story: US-40
+    description: "Rewrote GameScene.ts to use Phaser.GameObjects.Sprite instead of CharacterRig. Removed all rig imports (CharacterRig, foxRigDefinition, Direction, WalkRunController, IdleController). Uses FOX_ATLAS_KEY/FOX_FRAME constants for atlas load. Movement uses PLAYER_SPEED fixed constant (no walkRunController). All .container refs replaced with .x/.y. cam.startFollow(this.player), uiCam.ignore includes sprite, cleanupResize calls this.player?.destroy(). Verify passes (tsc + build). Bundle 26KB smaller. US-40 complete."
+    result: pass
+    notes: US-40 complete
+    tokens: ~8000
 # Each entry: {task, time, story, description, result, notes, tokens}

@@ -27,9 +27,9 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: "[US-40] Replace CharacterRig with Phaser Sprite in GameScene — remove all rig imports, use PLAYER_SPEED fixed constant for movement, update camera/collision/update loop to use sprite directly"
-  last_result: null
+  task_number: 2
+  next_task: null
+  last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
