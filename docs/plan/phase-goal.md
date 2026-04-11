@@ -28,12 +28,12 @@ Add visual editing layers to the rig editor canvas: bone connection lines that m
 - [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-37]
 
 #### US-38 — Propagation highlighting
-- [ ] When a bone is selected in Edit mode, all its descendant bones have a visible highlight indicator on the canvas [US-38]
-- [ ] The descendant highlight is visually distinct from the selected bone's red bounding box (different color or style) [US-38]
-- [ ] Selecting a leaf bone (no children) shows no descendant highlights [US-38]
-- [ ] Selecting a different bone immediately updates which bones are highlighted [US-38]
-- [ ] Descendant highlights are only shown in Edit mode [US-38]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-38]
+- [x] When a bone is selected in Edit mode, all its descendant bones have a visible highlight indicator on the canvas [US-38]
+- [x] The descendant highlight is visually distinct from the selected bone's red bounding box (different color or style) [US-38]
+- [x] Selecting a leaf bone (no children) shows no descendant highlights [US-38]
+- [x] Selecting a different bone immediately updates which bones are highlighted [US-38]
+- [x] Descendant highlights are only shown in Edit mode [US-38]
+- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes [US-38]
 
 #### Structural / cross-cutting
 - [ ] AGENTS.md reflects new editor interaction features (bone connections, drag, propagation highlights) introduced in this phase [phase]
