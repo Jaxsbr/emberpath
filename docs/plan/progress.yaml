@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: "[US-33] Create migration script at tools/migrate-to-relative.ts that imports fox rig definition, walks skeleton hierarchy per direction, computes parent-relative offsets (child_abs - parent_abs for x/y only, other properties unchanged), and writes updated fox.ts with relative profiles"
+  task_number: 7
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
