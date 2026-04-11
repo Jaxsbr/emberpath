@@ -65,8 +65,8 @@ class RigPreviewScene extends Phaser.Scene {
   preload(): void {
     this.load.atlas(
       this.definition.atlasKey,
-      `characters/fox.png`,
-      `characters/fox.json`,
+      `characters/${this.definition.name}.png`,
+      `characters/${this.definition.name}.json`,
     );
   }
 
