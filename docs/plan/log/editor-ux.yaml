@@ -1,4 +1,11 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-11T11:06:24Z"
+    type: investigate
+    story: phase
+    description: "Phase start investigation. Verify passes for both game and editor. CSS/JS-only phase (no server/rig-engine changes) — all work in tools/editor/. rigRenderer.ts fully read: RigPreviewScene has grid (depth 0), highlightGraphics (depth 1000), sprites (depth from fox profiles, 4–12+). CharacterRig.applyProfiles() resolves positions. Story order: US-36 (connections) → US-37 (drag) → US-38 (propagation highlights). Queued US-36 implementation."
+    result: pass
+    tokens: ~20000
 # Each entry: {task, time, story, description, result, notes, tokens}

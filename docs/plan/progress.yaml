@@ -27,9 +27,9 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
-  last_result: null
+  task_number: 2
+  next_task: "[US-36] Implement bone connection lines on canvas"
+  last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
