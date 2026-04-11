@@ -1,6 +1,14 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 3
+    time: "2026-04-11T11:10:29Z"
+    type: implement
+    story: US-37
+    description: "Replaced setupPointerSelection() with setupPointerInteraction() that handles both click-to-select and drag-to-reposition. Drag threshold 3px. pointermove updates editorProfiles[uniqueDir].parts[boneName].x/y with container-local delta, calls applyEditorProfiles() for tree-walk propagation, triggers onPartSelected for property panel refresh. Drag disabled for mirrored directions. US-37 complete."
+    result: pass
+    notes: US-37 complete
+    tokens: ~6000
   - task: 2
     time: "2026-04-11T11:08:33Z"
     type: implement
