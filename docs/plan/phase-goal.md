@@ -42,12 +42,12 @@ Convert the rig engine (`CharacterRig`, `BoneDefinition`, animation controller c
 - [x] `npx tsc --noEmit && npm run build` passes [US-34]
 
 #### US-35 — Editor chain-aware editing
-- [ ] Rig editor property panel shows parent-relative coordinates (matching the profile data model) for the selected part [US-35]
-- [ ] Editing a parent bone's local offset in the property panel updates the visual positions of all descendant bones in the editor preview [US-35]
-- [ ] Editor Save JSON exports parent-relative profile data (not absolute positions) [US-35]
-- [ ] Editor Load JSON correctly imports parent-relative profile data [US-35]
-- [ ] Editor Export TS outputs parent-relative profile data compatible with `rig/characters/fox.ts` format [US-35]
-- [ ] `npx tsc --noEmit && npm run build` passes for both game and editor (`cd tools/editor && npx tsc --noEmit && npm run build`) [US-35]
+- [x] Rig editor property panel shows parent-relative coordinates (matching the profile data model) for the selected part [US-35]
+- [x] Editing a parent bone's local offset in the property panel updates the visual positions of all descendant bones in the editor preview [US-35]
+- [x] Editor Save JSON exports parent-relative profile data (not absolute positions) [US-35]
+- [x] Editor Load JSON correctly imports parent-relative profile data [US-35]
+- [x] Editor Export TS outputs parent-relative profile data compatible with `rig/characters/fox.ts` format [US-35]
+- [x] `npx tsc --noEmit && npm run build` passes for both game and editor (`cd tools/editor && npx tsc --noEmit && npm run build`) [US-35]
 
 #### Structural / cross-cutting
 - [ ] No constants or logic from `rig/` modules are duplicated in scene files — shared values remain in their canonical modules (`maps/constants.ts`, `rig/types.ts`) [phase]

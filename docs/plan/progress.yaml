@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 16
-  next_task: null
+  next_task: "[structural] Investigate and resolve 3 structural/cross-cutting criteria: (1) PLAYER_SIZE duplicated in GameScene.ts line 20 — move to maps/constants.ts and import; (2) AGENTS.md depth map unchanged check — verify no bone-chain changes affected depth assignments; (3) AGENTS.md needs inheritScale/inheritRotation fields and tree-walk behavior documented in rig system description."
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-32, US-33, US-34]
+  completed_stories: [US-32, US-33, US-34, US-35]
