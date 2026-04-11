@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 12
-  next_task: "[US-34] Remove manual propagation from walkRun.ts: delete neck.offsetY/rotation, head.offsetY, shoulders.offsetY from applyAnimation body bob section. Remove manual propagation from idle.ts: delete shoulders/neck/head offsetY from sit-down section, delete head.rotation from head-turn section (keep only neck.rotation)."
+  task_number: 13
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-32, US-33]
+  completed_stories: [US-32, US-33, US-34]

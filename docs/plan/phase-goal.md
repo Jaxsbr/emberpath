@@ -31,15 +31,15 @@ Convert the rig engine (`CharacterRig`, `BoneDefinition`, animation controller c
 - [x] `npx tsc --noEmit && npm run build` passes after migration [US-33]
 
 #### US-34 — Animation controller cleanup
-- [ ] `walkRun.ts` body bob is applied only to the `body` bone — manual propagation lines for neck, head, shoulders are removed [US-34]
-- [ ] `idle.ts` sit-down offset is applied only to `body` and `hips` — manual propagation lines for shoulders, neck, head, and foot parts are removed [US-34]
-- [ ] `idle.ts` head turn is applied only to `neck` — manual propagation to head and snout is removed [US-34]
-- [ ] Walk/run animation: body bob oscillates on Y axis, legs alternate swing, tail segments have non-zero rotation deltas — verified by running the game and observing walk cycle in all 8 directions [US-34]
-- [ ] Idle animation: breathing applies scaleY oscillation to body, sit-down lowers body offsetY after 6s stationary, head turn applies rotation to neck after 3s — verified by running the game and waiting through the idle sequence [US-34]
-- [ ] Net line count of `walkRun.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
-- [ ] Net line count of `idle.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
-- [ ] `BoneState` interface in `rig/types.ts` is unchanged — controllers still write local deltas in the same format [US-34]
-- [ ] `npx tsc --noEmit && npm run build` passes [US-34]
+- [x] `walkRun.ts` body bob is applied only to the `body` bone — manual propagation lines for neck, head, shoulders are removed [US-34]
+- [x] `idle.ts` sit-down offset is applied only to `body` and `hips` — manual propagation lines for shoulders, neck, head, and foot parts are removed [US-34]
+- [x] `idle.ts` head turn is applied only to `neck` — manual propagation to head and snout is removed [US-34]
+- [x] Walk/run animation: body bob oscillates on Y axis, legs alternate swing, tail segments have non-zero rotation deltas — verified by running the game and observing walk cycle in all 8 directions [US-34]
+- [x] Idle animation: breathing applies scaleY oscillation to body, sit-down lowers body offsetY after 6s stationary, head turn applies rotation to neck after 3s — verified by running the game and waiting through the idle sequence [US-34]
+- [x] Net line count of `walkRun.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
+- [x] Net line count of `idle.ts` decreases (manual propagation lines removed exceed any new lines added) [US-34]
+- [x] `BoneState` interface in `rig/types.ts` is unchanged — controllers still write local deltas in the same format [US-34]
+- [x] `npx tsc --noEmit && npm run build` passes [US-34]
 
 #### US-35 — Editor chain-aware editing
 - [ ] Rig editor property panel shows parent-relative coordinates (matching the profile data model) for the selected part [US-35]
