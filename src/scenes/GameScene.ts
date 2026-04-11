@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType } from '../maps/constants';
 import { AreaDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -11,15 +11,16 @@ import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { evaluateCondition } from '../systems/conditions';
 import { setFlag } from '../triggers/flags';
-import { CharacterRig } from '../rig/CharacterRig';
-import { foxRigDefinition } from '../rig/characters/fox';
-import { Direction } from '../rig/types';
-import { WalkRunController } from '../rig/animations/walkRun';
-import { IdleController } from '../rig/animations/idle';
 
 const TARGET_VISIBLE_TILES = 10;
 const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
+
+// Fox atlas still exists at assets/characters/fox.png + fox.json and is used for the
+// static sprite placeholder. generate-fox-atlas.mjs can regenerate it if needed.
+// This atlas will be replaced when sprite-sheet integration begins.
+const FOX_ATLAS_KEY = 'fox';
+const FOX_FRAME = 'body'; // first visible frame from the fox atlas
 
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
@@ -29,8 +30,7 @@ export class GameScene extends Phaser.Scene {
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
   private debugOverlay!: DebugOverlaySystem;
-  private player!: CharacterRig;
-  private walkRunController!: WalkRunController;
+  private player!: Phaser.GameObjects.Sprite;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
   private boundWindowResize: (() => void) | null = null;
@@ -41,11 +41,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.atlas(
-      foxRigDefinition.atlasKey,
-      'characters/fox.png',
-      'characters/fox.json',
-    );
+    this.load.atlas(FOX_ATLAS_KEY, 'characters/fox.png', 'characters/fox.json');
   }
 
   create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {
@@ -114,7 +110,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
-      this.thoughtBubble.update(this.player.container.x, this.player.container.y);
+      this.thoughtBubble.update(this.player.x, this.player.y);
       this.debugOverlay.update();
       return;
     }
@@ -124,29 +120,21 @@ export class GameScene extends Phaser.Scene {
     const inputSpeed = Math.sqrt(inputVelocity.x * inputVelocity.x + inputVelocity.y * inputVelocity.y);
     const hasInput = inputSpeed > 0;
 
-    // Update rig direction and animation state
-    if (hasInput) {
-      this.player.setDirection(velocityToDirection(inputVelocity.x, inputVelocity.y));
-    }
-    this.player.setVelocity(inputSpeed);
-    this.player.update(delta);
-
-    // Walk/run controller is the source of truth for movement speed
-    const actualSpeed = hasInput ? this.walkRunController.getCurrentSpeed() : 0;
+    // Movement speed is a fixed constant — no walk/run controller
     let moveVx = 0;
     let moveVy = 0;
-    if (hasInput && actualSpeed > 0) {
+    if (hasInput) {
       const dirX = inputVelocity.x / inputSpeed;
       const dirY = inputVelocity.y / inputSpeed;
-      moveVx = dirX * actualSpeed;
-      moveVy = dirY * actualSpeed;
+      moveVx = dirX * PLAYER_SPEED;
+      moveVy = dirY * PLAYER_SPEED;
     }
 
     const halfSize = PLAYER_SIZE / 2;
     const newPos = moveWithCollision(
       {
-        x: this.player.container.x - halfSize,
-        y: this.player.container.y - halfSize,
+        x: this.player.x - halfSize,
+        y: this.player.y - halfSize,
         width: PLAYER_SIZE,
         height: PLAYER_SIZE,
       },
@@ -154,14 +142,14 @@ export class GameScene extends Phaser.Scene {
       delta,
       { map: this.area.map, npcs: this.area.npcs },
     );
-    this.player.container.setPosition(newPos.x + halfSize, newPos.y + halfSize);
+    this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
 
-    this.npcInteraction.update(this.player.container.x, this.player.container.y);
-    this.thoughtBubble.update(this.player.container.x, this.player.container.y);
+    this.npcInteraction.update(this.player.x, this.player.y);
+    this.thoughtBubble.update(this.player.x, this.player.y);
 
     // Collision bounds for trigger/exit zone checks
-    const boundsX = this.player.container.x - halfSize;
-    const boundsY = this.player.container.y - halfSize;
+    const boundsX = this.player.x - halfSize;
+    const boundsY = this.player.y - halfSize;
     this.triggerZone.update(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.checkExitZones(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.debugOverlay.update();
@@ -218,13 +206,13 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     cam.setZoom(this.calculateZoom());
     cam.setBounds(0, 0, mapWidth, mapHeight);
-    cam.startFollow(this.player.container);
+    cam.startFollow(this.player);
 
     // UI camera — no zoom/scroll, renders dialogue/joystick/thought bubbles at screen coords
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([this.tileGraphics, this.player.container, ...this.npcRects]);
+    uiCam.ignore([this.tileGraphics, this.player, ...this.npcRects]);
 
     this.scale.on('resize', this.handleResize, this);
 
@@ -260,7 +248,7 @@ export class GameScene extends Phaser.Scene {
     cam.setZoom(this.calculateZoom());
     cam.setBounds(0, 0, mapWidth, mapHeight);
     // Snap camera to player after dimension/zoom change (prevents stale scroll on rotation)
-    cam.centerOn(this.player.container.x, this.player.container.y);
+    cam.centerOn(this.player.x, this.player.y);
 
     const uiCam = this.cameras.getCamera('ui');
     if (uiCam) {
@@ -314,7 +302,7 @@ export class GameScene extends Phaser.Scene {
     }
     // Clean up any in-progress fade tweens to prevent orphaned callbacks
     this.cameras?.main?.removeAllListeners('camerafadeoutcomplete');
-    // Clean up rig and its animation controllers
+    // Clean up player sprite
     this.player?.destroy();
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
@@ -341,26 +329,8 @@ export class GameScene extends Phaser.Scene {
     const x = spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
     const y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
 
-    this.player = new CharacterRig(this, foxRigDefinition, x, y);
-    this.player.container.setDepth(5); // entities at depth 5 per depth map
-    this.walkRunController = new WalkRunController(foxRigDefinition.walkRunParams);
-    this.player.addAnimationController(this.walkRunController);
-    this.player.addAnimationController(new IdleController(foxRigDefinition.idleParams));
+    this.player = this.add.sprite(x, y, FOX_ATLAS_KEY, FOX_FRAME);
+    this.player.setDepth(5); // Entities layer — depth 5 per depth map
+    this.player.setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
   }
-}
-
-/** Convert velocity vector to 8-direction compass (Phaser: +Y = down). */
-function velocityToDirection(vx: number, vy: number): Direction {
-  const angle = Math.atan2(vy, vx);
-  const sector = Math.round(angle / (Math.PI / 4));
-  // sector: 0=E, 1=SE, 2=S, 3=SW, ±4=W, -3=NW, -2=N, -1=NE
-  if (sector === 0) return 'E';
-  if (sector === 1) return 'SE';
-  if (sector === 2) return 'S';
-  if (sector === 3) return 'SW';
-  if (sector === 4 || sector === -4) return 'W';
-  if (sector === -3) return 'NW';
-  if (sector === -2) return 'N';
-  if (sector === -1) return 'NE';
-  return 'S';
 }
