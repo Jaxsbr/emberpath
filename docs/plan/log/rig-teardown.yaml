@@ -53,4 +53,11 @@ entries:
     description: "Phase Completion Gate. All done-when criteria verified: US-39 (src/rig/ deleted, no rig imports in src/ via grep, tsc+build pass), US-40 (GameScene uses Phaser.GameObjects.Sprite at depth 5, PLAYER_SIZE halfSize, PLAYER_SPEED fixed, startFollow(player), no .container refs, cleanupResize calls destroy()), US-41 (rigRenderer.ts deleted, ViewName='map'|'dialogue'|'flow', no rig tab in HTML, editor tsc+build pass). Structural: generate-fox-atlas.mjs retained (atlas used by placeholder), decision documented in GameScene comment. Both verifies pass. Phase complete."
     result: pass
     tokens: ~3000
+  - task: 8
+    time: "2026-04-11T22:52:00Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #10 from build/rig-teardown to main: 'feat: rig-teardown — remove skeletal rig system, replace with sprite placeholder'. PR body includes phase summary, all 3 stories (US-39/40/41), done-when evidence. review-pr queued."
+    result: pass
+    tokens: ~2000
 # Each entry: {task, time, story, description, result, notes, tokens}
