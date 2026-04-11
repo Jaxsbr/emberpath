@@ -91,3 +91,9 @@ entries:
     description: "Added public applyProfiles(profiles, direction) method to CharacterRig using tree-walk resolver. Updated editor rigRenderer.ts applyEditorProfiles() to call rig.applyProfiles() instead of flat sprite loop. Both game and editor builds pass. US-35 criteria 1-2 met (property panel already shows parent-relative coords; editing parent bone now updates descendants via tree walk)."
     result: pass
     tokens: ~8000
+  - task: 16
+    type: implement
+    story: phase
+    description: "Resolved structural/cross-cutting criteria: moved PLAYER_SIZE to maps/constants.ts import, verified depth map unchanged, updated AGENTS.md with inheritScale/inheritRotation fields and tree-walk resolver description. All phase criteria now met."
+    result: pass
+    tokens: ~8000

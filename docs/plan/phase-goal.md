@@ -50,9 +50,9 @@ Convert the rig engine (`CharacterRig`, `BoneDefinition`, animation controller c
 - [x] `npx tsc --noEmit && npm run build` passes for both game and editor (`cd tools/editor && npx tsc --noEmit && npm run build`) [US-35]
 
 #### Structural / cross-cutting
-- [ ] No constants or logic from `rig/` modules are duplicated in scene files — shared values remain in their canonical modules (`maps/constants.ts`, `rig/types.ts`) [phase]
-- [ ] Depth map in AGENTS.md is unchanged — bone-chain changes do not affect rendering depth assignments [phase]
-- [ ] AGENTS.md reflects new `inheritScale`/`inheritRotation` fields in the rig system description and any behavior rule changes introduced in this phase [phase]
+- [x] No constants or logic from `rig/` modules are duplicated in scene files — shared values remain in their canonical modules (`maps/constants.ts`, `rig/types.ts`) [phase]
+- [x] Depth map in AGENTS.md is unchanged — bone-chain changes do not affect rendering depth assignments [phase]
+- [x] AGENTS.md reflects new `inheritScale`/`inheritRotation` fields in the rig system description and any behavior rule changes introduced in this phase [phase]
 
 ### Golden principles (phase-relevant)
 - Movement: Frame-based smooth movement (delta-time), not tile-snapping. Axis-independent collision allows sliding along walls and NPCs.
