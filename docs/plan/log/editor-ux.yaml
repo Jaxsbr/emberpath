@@ -1,6 +1,13 @@
 phase: "editor-ux"
 started: "2026-04-11T11:04:28Z"
 entries:
+  - task: 6
+    time: "2026-04-11T11:14:42Z"
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: rigRenderer.ts file ownership updated with canvas overlays (bone connections, propagation highlights, drag), added Editor canvas depth map section (GRID=0, CONN_LINES=2, PROP_HIGHLIGHTS=3, SPRITES=4-12+, SELECTION=1000), added 3 behavior rules for editor bone connections, canvas drag, and propagation highlighting. Structural criterion met. No game src/ files modified."
+    result: pass
+    tokens: ~4000
   - task: 5
     time: "2026-04-11T11:13:12Z"
     type: investigate
