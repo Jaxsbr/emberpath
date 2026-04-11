@@ -3,9 +3,8 @@ import type { AreaDefinition } from '@game/data/areas/types';
 import { renderMap } from './mapRenderer';
 import { renderDialogue } from './dialogueRenderer';
 import { renderFlow } from './flowRenderer';
-import { renderRig, destroyRig } from './rigRenderer';
 
-type ViewName = 'map' | 'dialogue' | 'flow' | 'rig';
+type ViewName = 'map' | 'dialogue' | 'flow';
 
 let activeAreaId: string = getDefaultAreaId();
 let activeArea: AreaDefinition | undefined;
@@ -52,17 +51,6 @@ function loadArea(areaId: string): void {
 }
 
 function renderActiveView(): void {
-  // Destroy rig scene when switching away from rig tab
-  if (activeView !== 'rig') {
-    destroyRig();
-  }
-
-  if (activeView === 'rig') {
-    const container = document.getElementById('view-rig');
-    if (container) renderRig(container);
-    return;
-  }
-
   if (!activeArea) return;
   const container = document.getElementById(`view-${activeView}`);
   if (!container) return;
