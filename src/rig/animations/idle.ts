@@ -113,12 +113,9 @@ export class IdleController implements AnimationController {
       const turnAmount = this.headTurnProgress < 0.5
         ? this.headTurnProgress * 2 // 0 to 1 (turning)
         : (1 - this.headTurnProgress) * 2; // 1 to 0 (returning)
-      // Neck leads the turn (half angle), head follows full angle
+      // Neck drives the turn — tree walk propagates to head and snout
       if (boneStates['neck']) {
-        boneStates['neck'].rotation = turnAmount * this.params.headTurnAngle * 0.5 * this.headTurnDirection;
-      }
-      if (boneStates['head']) {
-        boneStates['head'].rotation = turnAmount * this.params.headTurnAngle * this.headTurnDirection;
+        boneStates['neck'].rotation = turnAmount * this.params.headTurnAngle * this.headTurnDirection;
       }
     }
 
@@ -134,25 +131,13 @@ export class IdleController implements AnimationController {
       }
       const sitEase = easeInOutQuad(this.sitProgress);
 
-      // Body lowers
+      // Body lowers — tree walk propagates to all descendants
       if (boneStates['body']) {
         boneStates['body'].offsetY += this.params.sitLowerAmount * sitEase;
       }
-      // Hips drop with body (rear lowers more in a sit)
+      // Hips drop extra (rear lowers more in a sit)
       if (boneStates['hips']) {
         boneStates['hips'].offsetY += this.params.sitLowerAmount * 1.2 * sitEase;
-      }
-      // Shoulders stay higher (front legs prop up the front)
-      if (boneStates['shoulders']) {
-        boneStates['shoulders'].offsetY += this.params.sitLowerAmount * 0.3 * sitEase;
-      }
-      // Neck follows body down slightly
-      if (boneStates['neck']) {
-        boneStates['neck'].offsetY += this.params.sitLowerAmount * 0.4 * sitEase;
-      }
-      // Head follows body down (less)
-      if (boneStates['head']) {
-        boneStates['head'].offsetY += this.params.sitLowerAmount * 0.5 * sitEase;
       }
 
       // Front legs tuck (with foot subtree following)
