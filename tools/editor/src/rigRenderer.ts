@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { CharacterRig } from '@game/rig/CharacterRig';
+import { WalkRunController } from '@game/rig/animations/walkRun';
+import { IdleController } from '@game/rig/animations/idle';
 import { foxRigDefinition } from '@game/rig/characters/fox';
+import { PLAYER_SPEED } from '@game/maps/constants';
 import type {
   RigDefinition,
   Direction,
@@ -32,6 +35,11 @@ let onDirectionChanged: ((dir: Direction) => void) | null = null;
 
 // Editor profiles — mutable working copy
 let editorProfiles: Record<UniqueDirection, DirectionProfile> | null = null;
+
+// Animation preview state
+type AnimationMode = 'edit' | 'idle' | 'walk' | 'run';
+let animationMode: AnimationMode = 'edit';
+let onAnimationModeChanged: ((mode: AnimationMode) => void) | null = null;
 
 function getUniqueDirection(dir: Direction): UniqueDirection {
   return (MIRRORED_DIRECTIONS.has(dir) ? MIRROR_MAP[dir] : dir) as UniqueDirection;
@@ -225,6 +233,38 @@ class RigPreviewScene extends Phaser.Scene {
     this.applyEditorProfiles();
   }
 
+  /** Phaser update loop — drives animation controllers when not in edit mode. */
+  update(_time: number, delta: number): void {
+    if (animationMode === 'edit' || !this.rig) return;
+    this.rig.update(delta);
+    this.updateHighlight();
+  }
+
+  /** Attach animation controllers and set velocity for the given mode. */
+  startAnimation(mode: 'idle' | 'walk' | 'run'): void {
+    if (!this.rig) return;
+    this.stopAnimation();
+
+    const def = this.definition;
+    const walkRun = new WalkRunController(def.walkRunParams);
+    const idle = new IdleController(def.idleParams);
+    this.rig.addAnimationController(walkRun);
+    this.rig.addAnimationController(idle);
+
+    // Set velocity to trigger the correct animation state
+    const velocity = mode === 'idle' ? 0 : PLAYER_SPEED;
+    this.rig.setVelocity(velocity);
+  }
+
+  /** Remove all animation controllers and reapply static editor profiles. */
+  stopAnimation(): void {
+    if (!this.rig) return;
+    // Remove controllers by recreating the rig's controller list
+    // CharacterRig doesn't expose a clearControllers(), so we destroy and recreate
+    // the rig to get a clean state, then reapply editor profiles.
+    this.createRig();
+  }
+
   selectPart(name: string | null): void {
     selectedPartName = name;
     this.updateHighlight();
@@ -350,6 +390,44 @@ function createBoneNode(
   }
 
   return node;
+}
+
+// --- Animation mode picker ---
+const ANIMATION_MODES: { mode: AnimationMode; label: string }[] = [
+  { mode: 'edit', label: 'Edit' },
+  { mode: 'idle', label: 'Idle' },
+  { mode: 'walk', label: 'Walk' },
+  { mode: 'run', label: 'Run' },
+];
+
+function createAnimationModePicker(onMode: (mode: AnimationMode) => void): HTMLElement {
+  const picker = document.createElement('div');
+  picker.className = 'rig-animation-picker';
+
+  const label = document.createElement('div');
+  label.className = 'animation-picker-label';
+  label.textContent = 'Preview';
+  picker.appendChild(label);
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'animation-btn-row';
+
+  for (const { mode, label: text } of ANIMATION_MODES) {
+    const btn = document.createElement('button');
+    btn.className = 'animation-mode-btn';
+    btn.textContent = text;
+    btn.dataset.mode = mode;
+    if (mode === animationMode) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      btnRow.querySelectorAll('.animation-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      onMode(mode);
+    });
+    btnRow.appendChild(btn);
+  }
+
+  picker.appendChild(btnRow);
+  return picker;
 }
 
 // --- Rig selector ---
@@ -535,7 +613,9 @@ function createPropertyPanel(): {
     if (!partName) {
       const hint = document.createElement('div');
       hint.className = 'prop-hint';
-      hint.textContent = 'Select a part to edit its properties.';
+      hint.textContent = animationMode !== 'edit'
+        ? 'Switch to Edit mode to modify properties.'
+        : 'Select a part to edit its properties.';
       content.appendChild(hint);
       return;
     }
@@ -543,6 +623,14 @@ function createPropertyPanel(): {
     // Part name label
     partLabel.textContent = partName;
     content.appendChild(partLabel);
+
+    // Animation mode indicator
+    if (animationMode !== 'edit') {
+      const animHint = document.createElement('div');
+      animHint.className = 'prop-mirror-indicator';
+      animHint.textContent = `Playing: ${animationMode} — switch to Edit to modify`;
+      content.appendChild(animHint);
+    }
 
     // Mirror indicator
     const mirrored = isMirrored(dir);
@@ -570,10 +658,11 @@ function createPropertyPanel(): {
     visibleCheckbox = document.createElement('input');
     visibleCheckbox.type = 'checkbox';
     visibleCheckbox.className = 'prop-checkbox';
+    const inputsDisabled = mirrored || animationMode !== 'edit';
     visibleCheckbox.checked = pp.visible;
-    visibleCheckbox.disabled = mirrored;
+    visibleCheckbox.disabled = inputsDisabled;
     visibleCheckbox.addEventListener('change', () => {
-      if (!visibleCheckbox || mirrored) return;
+      if (!visibleCheckbox || inputsDisabled) return;
       previewScene?.updatePartProperty(partName, 'visible', visibleCheckbox.checked);
     });
     visRow.appendChild(visibleCheckbox);
@@ -594,11 +683,11 @@ function createPropertyPanel(): {
       input.className = 'prop-input';
       input.step = String(step);
       input.value = String(pp[key] ?? (key === 'alpha' ? 1 : 0));
-      input.disabled = mirrored;
+      input.disabled = inputsDisabled;
       inputs.set(key, input);
 
       input.addEventListener('input', () => {
-        if (mirrored) return;
+        if (inputsDisabled) return;
         const val = parseFloat(input.value);
         if (!isNaN(val)) {
           previewScene?.updatePartProperty(partName, key, val);
@@ -694,6 +783,43 @@ function injectRigStyles(): void {
       border-color: transparent;
       color: var(--text-muted);
       cursor: default;
+    }
+    /* Animation mode picker */
+    .rig-animation-picker {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .animation-picker-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .animation-btn-row {
+      display: flex;
+      gap: 3px;
+    }
+    .animation-mode-btn {
+      flex: 1;
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 5px 4px;
+      font-family: inherit;
+      font-size: 10px;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .animation-mode-btn:hover {
+      background: var(--bg-panel);
+      color: var(--text);
+    }
+    .animation-mode-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
     }
     .rig-hierarchy {
       flex: 1;
@@ -878,6 +1004,7 @@ export function renderRig(container: HTMLElement): void {
     editorProfiles = deepCloneProfiles(def);
     currentDirection = 'S';
     selectedPartName = null;
+    animationMode = 'edit';
     destroyRig();
     renderRig(container);
   }));
@@ -887,6 +1014,17 @@ export function renderRig(container: HTMLElement): void {
 
   sidebar.appendChild(createDirectionPicker((dir) => {
     previewScene?.setDirection(dir);
+  }));
+
+  // Animation mode picker
+  sidebar.appendChild(createAnimationModePicker((mode) => {
+    animationMode = mode;
+    if (mode === 'edit') {
+      previewScene?.stopAnimation();
+    } else {
+      previewScene?.startAnimation(mode);
+    }
+    onAnimationModeChanged?.(mode);
   }));
 
   const hierarchy = createHierarchyPanel(currentDef.skeleton, (name) => {
@@ -941,6 +1079,11 @@ export function renderRig(container: HTMLElement): void {
     propertyPanel.update(selectedPartName, dir);
   };
 
+  onAnimationModeChanged = (mode) => {
+    // Refresh property panel — it shows a disabled hint during animation
+    propertyPanel.update(selectedPartName, currentDirection);
+  };
+
   rendered = true;
 }
 
@@ -952,8 +1095,10 @@ export function destroyRig(): void {
   previewScene = null;
   rendered = false;
   selectedPartName = null;
+  animationMode = 'edit';
   onPartSelected = null;
   onDirectionChanged = null;
+  onAnimationModeChanged = null;
 }
 
 /** Get the current editor profiles (for save/export). */
