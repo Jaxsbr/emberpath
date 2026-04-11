@@ -37,3 +37,9 @@ entries:
     description: "Added property editor panel (right sidebar) to rig tab. Mutable editor profiles (deep clone from rig definition) store per-direction per-part state. Numeric inputs for x/y/scaleX/scaleY/rotation/depth/alpha + visible checkbox with real-time Phaser preview via applyEditorProfiles. Direction switch loads correct profile values. Mirror indicator + disabled inputs for W/SW/NW. DOM event isolation (stopPropagation on pointer events). Consistent selection from hierarchy or scene click. Verify passes. ✓ US-30 complete"
     result: pass
     tokens: ~25000
+  - task: 7
+    type: investigate
+    story: US-31
+    description: "US-30 complete. US-31 needs: Save button downloads JSON of all direction profiles, Load button reads JSON and restores profiles with part name validation (warn on mismatches), Export TS generates TypeScript matching Record<UniqueDirection, DirectionProfile>. Buttons go in a toolbar row at top of rig tab or sidebar. getEditorProfiles() already exports state. setEditorProfiles() handles load with warnings. Queued implementation."
+    result: pass
+    tokens: ~1000
