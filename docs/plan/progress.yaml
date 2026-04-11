@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 15
-  next_task: "[US-35] Add public applyProfiles(profiles, direction) method to CharacterRig that uses tree-walk resolver with external profiles. Update editor rigRenderer.ts applyEditorProfiles() to call rig.applyProfiles() instead of flat sprite loop."
+  task_number: 16
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
