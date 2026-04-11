@@ -43,3 +43,9 @@ entries:
     description: "US-30 complete. US-31 needs: Save button downloads JSON of all direction profiles, Load button reads JSON and restores profiles with part name validation (warn on mismatches), Export TS generates TypeScript matching Record<UniqueDirection, DirectionProfile>. Buttons go in a toolbar row at top of rig tab or sidebar. getEditorProfiles() already exports state. setEditorProfiles() handles load with warnings. Queued implementation."
     result: pass
     tokens: ~1000
+  - task: 8
+    type: implement
+    story: US-31
+    description: "Added createPersistenceToolbar() with Save (JSON Blob download), Load (file input with part name validation via collectAllPartNames + setEditorProfiles warnings), Export TS (generateTypeScript producing Record<UniqueDirection, DirectionProfile> with proper imports). Toolbar placed in sidebar between rig selector and direction picker. All 7 US-31 criteria met. Verify passes. ✓ US-31 complete"
+    result: pass
+    tokens: ~15000

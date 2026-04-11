@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: "[US-31] Add Save/Load/Export TS buttons to rig tab — JSON download of editor profiles, JSON upload with part name validation and warning, TypeScript export matching profiles Record<UniqueDirection, DirectionProfile> format"
+  task_number: 8
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-28, US-29, US-30]
+  completed_stories: [US-28, US-29, US-30, US-31]

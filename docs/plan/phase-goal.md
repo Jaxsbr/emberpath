@@ -55,13 +55,13 @@ Match existing editor dark theme — navy backgrounds (#1a1a2e / #16213e), monos
 - [x] Rapidly alternating between hierarchy click and Phaser scene click on different parts always converges to the last-clicked part — no stale or split selection state [US-30]
 
 #### US-31 — Rig configuration persistence and export
-- [ ] A "Save" button in the rig tab toolbar downloads a JSON file containing all direction profiles for the current rig (5 unique directions × all parts × all properties) [US-31]
-- [ ] A "Load" button accepts a JSON file upload and restores all direction profiles into the editor, updating the Phaser preview [US-31]
-- [ ] An "Export TS" button generates TypeScript code matching the `profiles: Record<UniqueDirection, DirectionProfile>` format used in `src/rig/characters/fox.ts` [US-31]
-- [ ] The exported TypeScript is valid — pasting it into a rig definition file and running `npx tsc --noEmit` produces no type errors [US-31]
-- [ ] Loading a JSON file that references parts not in the current rig's skeleton shows a warning listing the mismatched part names [US-31]
-- [ ] Save/load round-trips without data loss — save, reload editor, load the saved file, all values match the pre-save state [US-31]
-- [ ] Exported TypeScript pasted into fox.ts and loaded in the game (npm run dev) renders the fox rig identically to the editor preview [US-31]
+- [x] A "Save" button in the rig tab toolbar downloads a JSON file containing all direction profiles for the current rig (5 unique directions × all parts × all properties) [US-31]
+- [x] A "Load" button accepts a JSON file upload and restores all direction profiles into the editor, updating the Phaser preview [US-31]
+- [x] An "Export TS" button generates TypeScript code matching the `profiles: Record<UniqueDirection, DirectionProfile>` format used in `src/rig/characters/fox.ts` [US-31]
+- [x] The exported TypeScript is valid — pasting it into a rig definition file and running `npx tsc --noEmit` produces no type errors [US-31]
+- [x] Loading a JSON file that references parts not in the current rig's skeleton shows a warning listing the mismatched part names [US-31]
+- [x] Save/load round-trips without data loss — save, reload editor, load the saved file, all values match the pre-save state [US-31]
+- [x] Exported TypeScript pasted into fox.ts and loaded in the game (npm run dev) renders the fox rig identically to the editor preview [US-31]
 
 #### Structural
 - [ ] AGENTS.md directory layout includes `tools/editor/` tree with updated descriptions reflecting the rig tab addition [phase]
