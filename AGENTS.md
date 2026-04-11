@@ -108,17 +108,17 @@ tools/
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
-| `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
-| `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update |
+| `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition (`inheritScale?: boolean`, `inheritRotation?: boolean`), AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
+| `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update, parent-relative tree-walk resolver (`resolvePositions()` depth-first), public `applyProfiles(profiles, direction)` for editor integration |
 | `rig/characters/fox.ts` | Fox (Pip) rig definition — 46 named parts (body, neck, head, snout, eyes, nose, ears, shoulders, hips, 4 legs with upper/lower/ankle/paw/4 toes, 3 tail segments), 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
-| `rig/animations/walkRun.ts` | Walk/run animation controller — body bob, alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
-| `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn after 3s, sit-down after 6s, all reset on movement |
+| `rig/animations/walkRun.ts` | Walk/run animation controller — body bob on `body` only (tree-walk propagates to descendants), alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
+| `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn on `neck` after 3s (tree-walk propagates to head), sit-down on `body`/`hips` after 6s (tree-walk propagates to all descendants), all reset on movement |
 | `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies |
 | `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation, view dispatch, detail panel |
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
 | `tools/editor/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
-| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction), Save JSON/Load JSON/Export TS persistence toolbar |
+| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction — all parent-relative), Save JSON/Load JSON/Export TS persistence toolbar; uses `rig.applyProfiles()` for tree-walk-correct preview |
 
 ## Depth map
 
