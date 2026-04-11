@@ -55,3 +55,9 @@ entries:
     description: "Implemented shared resolvePositions() tree-walk method in CharacterRig. Walks skeleton depth-first, resolves world positions from parent-relative profiles + bone state offsets. Handles inheritRotation (offset rotation) and inheritScale (offset + sprite scale multiplication). setDirection() and update() both call resolvePositions(). Sprites remain flat Container siblings. Fixed rotation accumulation to respect inheritRotation flag (false=independent, true=accumulated). Build passes. US-32 complete. US-33 complete."
     result: pass
     tokens: ~15000
+  - task: 10
+    type: investigate
+    story: US-34
+    description: "Branch B. US-32 and US-33 complete. US-34 criteria: 0/9 met. Need to identify manual propagation in walkRun.ts and idle.ts made redundant by tree walk. Queued investigation."
+    result: pass
+    tokens: ~3000

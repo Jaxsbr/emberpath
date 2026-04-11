@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 10
-  next_task: null
+  task_number: 11
+  next_task: "[US-34] Investigate: identify all manual propagation lines in walkRun.ts and idle.ts that are now redundant due to the tree-walk resolver. Confirm which bone state writes can be removed vs which are intentional local deltas."
   last_result: pass
   consecutive_fails: 0
 
