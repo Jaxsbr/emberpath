@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-33] Investigate: verify the absolute-to-parent-relative math using the fox skeleton hierarchy (body→neck→head chain, body→shoulders→front-left chain) across S and E profiles. Determine migration script location and output format."
+  task_number: 6
+  next_task: "[US-33] Create migration script at tools/migrate-to-relative.ts that imports fox rig definition, walks skeleton hierarchy per direction, computes parent-relative offsets (child_abs - parent_abs for x/y only, other properties unchanged), and writes updated fox.ts with relative profiles"
   last_result: pass
   consecutive_fails: 0
 

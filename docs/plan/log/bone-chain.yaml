@@ -25,3 +25,9 @@ entries:
     description: "Branch B investigation. 0/28 done-when criteria met. Phase classified as cross-cutting (investigate-first mandatory). US-32+US-33 tightly coupled — tree walk needs migrated profiles. Plan: create migration script first (US-33), convert fox profiles, then implement tree-walk resolver (US-32). Queued US-33 investigation."
     result: pass
     tokens: ~10000
+  - task: 5
+    type: investigate
+    story: US-33
+    description: "Verified migration math on S and E profiles. body→neck→head and body→shoulders→front-left chains both produce correct parent-relative values via subtraction. Tree-walk resolution reproduces original absolute positions exactly. Script plan: tools/migrate-to-relative.ts, imports fox definition, walks skeleton per direction, computes relative = child_abs - parent_abs for x/y. Queued implementation."
+    result: pass
+    tokens: ~8000
