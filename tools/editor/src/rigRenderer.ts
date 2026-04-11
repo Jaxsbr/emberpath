@@ -382,6 +382,109 @@ function createRigSelector(
   return wrap;
 }
 
+// --- Persistence toolbar ---
+function createPersistenceToolbar(getDefinition: () => RigDefinition): HTMLElement {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'rig-persistence-toolbar';
+
+  // Save button
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'rig-toolbar-btn';
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', () => {
+    const profiles = getEditorProfiles();
+    if (!profiles) return;
+    const json = JSON.stringify(profiles, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${getDefinition().name}-profiles.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  toolbar.appendChild(saveBtn);
+
+  // Load button
+  const loadBtn = document.createElement('button');
+  loadBtn.className = 'rig-toolbar-btn';
+  loadBtn.textContent = 'Load';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.json';
+  fileInput.style.display = 'none';
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const profiles = JSON.parse(reader.result as string) as Record<UniqueDirection, DirectionProfile>;
+        const warnings = setEditorProfiles(profiles, getDefinition());
+        if (warnings.length > 0) {
+          alert(`Warning: these parts are not in the current rig skeleton:\n${warnings.join(', ')}`);
+        }
+        // Refresh property panel
+        onPartSelected?.(selectedPartName);
+      } catch (err) {
+        alert(`Failed to load profiles: ${(err as Error).message}`);
+      }
+      // Reset file input so re-selecting the same file triggers change
+      fileInput.value = '';
+    };
+    reader.readAsText(file);
+  });
+  loadBtn.addEventListener('click', () => fileInput.click());
+  toolbar.appendChild(loadBtn);
+  toolbar.appendChild(fileInput);
+
+  // Export TS button
+  const exportBtn = document.createElement('button');
+  exportBtn.className = 'rig-toolbar-btn';
+  exportBtn.textContent = 'Export TS';
+  exportBtn.addEventListener('click', () => {
+    const profiles = getEditorProfiles();
+    if (!profiles) return;
+    const ts = generateTypeScript(profiles);
+    const blob = new Blob([ts], { type: 'text/typescript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${getDefinition().name}-profiles.ts`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  toolbar.appendChild(exportBtn);
+
+  return toolbar;
+}
+
+function generateTypeScript(profiles: Record<UniqueDirection, DirectionProfile>): string {
+  const lines: string[] = [];
+  lines.push("import type { UniqueDirection, DirectionProfile } from '../types';");
+  lines.push('');
+  lines.push('export const profiles: Record<UniqueDirection, DirectionProfile> = {');
+
+  for (const dir of UNIQUE_DIRECTIONS) {
+    const profile = profiles[dir];
+    if (!profile) continue;
+    lines.push(`  ${dir}: {`);
+    lines.push('    parts: {');
+    for (const [partName, pp] of Object.entries(profile.parts)) {
+      const alpha = pp.alpha !== undefined ? `, alpha: ${pp.alpha}` : '';
+      lines.push(
+        `      '${partName}': { x: ${pp.x}, y: ${pp.y}, scaleX: ${pp.scaleX}, scaleY: ${pp.scaleY}, rotation: ${pp.rotation}, depth: ${pp.depth}, visible: ${pp.visible}${alpha} },`,
+      );
+    }
+    lines.push('    },');
+    lines.push('  },');
+  }
+
+  lines.push('};');
+  lines.push('');
+  return lines.join('\n');
+}
+
 // --- Property editor panel ---
 const NUMERIC_PROPS: { key: keyof PartProfile; label: string; step: number }[] = [
   { key: 'x', label: 'X', step: 1 },
@@ -644,6 +747,29 @@ function injectRigStyles(): void {
     .rig-scene-container canvas {
       display: block;
     }
+    /* Persistence toolbar */
+    .rig-persistence-toolbar {
+      display: flex;
+      gap: 4px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .rig-toolbar-btn {
+      flex: 1;
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 5px 8px;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .rig-toolbar-btn:hover {
+      background: var(--bg-panel);
+      color: var(--text);
+    }
     /* Property panel */
     .rig-property-panel {
       width: 240px;
@@ -755,6 +881,9 @@ export function renderRig(container: HTMLElement): void {
     destroyRig();
     renderRig(container);
   }));
+
+  // Persistence toolbar
+  sidebar.appendChild(createPersistenceToolbar(() => currentDef));
 
   sidebar.appendChild(createDirectionPicker((dir) => {
     previewScene?.setDirection(dir);
