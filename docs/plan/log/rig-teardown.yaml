@@ -1,4 +1,11 @@
 phase: "rig-teardown"
 started: "2026-04-11T22:29:10Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-11T22:30:00Z"
+    type: investigate
+    story: US-40
+    description: "Phase start investigation. Verify passes (tsc + build). GameScene uses CharacterRig with 4 rig imports (CharacterRig, foxRigDefinition, Direction, WalkRunController, IdleController). All .container references identified. editor/main.ts has renderRig/destroyRig imports and rig view branch. Story order: US-40 (replace player) → US-39 (delete rig dir) → US-41 (remove editor tab). Queued US-40 implementation."
+    result: pass
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
