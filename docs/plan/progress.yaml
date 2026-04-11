@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 3
-  next_task: null
+  next_task: "[US-39] Delete src/rig/ directory and all contents (CharacterRig.ts, types.ts, characters/fox.ts, animations/walkRun.ts, animations/idle.ts)"
   last_result: pass
   consecutive_fails: 0
 

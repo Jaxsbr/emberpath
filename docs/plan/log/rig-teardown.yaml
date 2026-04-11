@@ -31,4 +31,11 @@ entries:
     result: pass
     notes: US-41 complete
     tokens: ~5000
+  - task: 5
+    time: "2026-04-11T22:44:00Z"
+    type: investigate
+    story: US-39
+    description: "US-41 complete. No rig imports remain in src/ or tools/ (grep confirms). Safe to delete src/rig/ directory. Queued US-39 deletion."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
