@@ -52,4 +52,12 @@ entries:
     description: "Branch B investigation. US-43 complete. US-44 walk criteria mostly met by AnimationSystem — walk plays in correct direction, frameRate 8, speed PLAYER_SPEED. Missing: diagonal suppression (zero lesser axis, comment as temporary, equal-magnitude stability for movement). Queued diagonal suppression implementation."
     result: pass
     tokens: ~1000
+  - task: 8
+    time: "2026-04-12T00:45:18Z"
+    type: implement
+    story: US-44
+    description: "Added diagonal input suppression to GameScene update. Zeroes lesser-magnitude axis when both have input. On equal magnitude, maintains facing direction via animationSystem.getFacingDirection(). Comment marks as temporary until diagonal sprites. All 5 US-44 criteria met. Verify passes. US-44 complete."
+    result: pass
+    notes: US-44 complete
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
