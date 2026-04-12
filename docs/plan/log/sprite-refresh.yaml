@@ -1,0 +1,98 @@
+phase: "sprite-refresh"
+started: "2026-04-12T10:16:42Z"
+entries:
+  - task: 1
+    time: "2026-04-12T10:17:53Z"
+    type: investigate
+    story: US-46
+    description: "Phase start investigation. Verify passes (tsc + build). fox-child-final/idle: 8 dirs (north, north-east, east, south-east, south, south-west, west, north-west) × 4 frames = 32 PNGs. fox-child-final/walk: 8 dirs × 8 frames = 64 PNGs. Current assets/characters/fox-pip: old set (idle/walk/run × 4 dirs × 8 frames). Need to replace with new 8-dir set, remove run/, update preload (per-type frame counts), register 16 animations. animation.ts has 4-dir, 3-state (idle/walk/run), moveElapsedMs — needs full 8-dir 2-state overhaul. constants.ts has RUN_MULTIPLIER=1.8, RUN_THRESHOLD_MS=2000 — both to remove. GameScene has diagonal suppression (suppressedVx/suppressedVy) — to remove. Queued US-46 asset copy task."
+    result: pass
+    tokens: ~5000
+  - task: 2
+    time: "2026-04-12T10:19:00Z"
+    type: implement
+    story: US-46
+    description: "Removed assets/characters/fox-pip/{idle,walk,run} (old 4-dir set). Copied pixellab-research/fox-child-final/idle (8 dirs × 4 frames = 32 PNGs) and walk (8 dirs × 8 frames = 64 PNGs) into assets/characters/fox-pip/. run/ directory removed. 96 PNGs total confirmed. 3 asset criteria met. Code changes (preload, registerAnimations) remain. Verify passes."
+    result: pass
+    tokens: ~2000
+  - task: 3
+    time: "2026-04-12T10:20:00Z"
+    type: investigate
+    story: US-46
+    description: "Branch B investigation. Asset copy complete (3/10 US-46 criteria). Remaining US-46: preload (must use per-type frame counts idle:4 walk:8, 8 dirs, no run), registerAnimations (16 anims), createPlayer setScale. US-47: AnimationSystem 8-dir 2-state overhaul, constants cleanup (remove RUN_MULTIPLIER/RUN_THRESHOLD_MS), GameScene diagonal suppression removal. Two code tasks queued in series: (1) GameScene updates for US-46, (2) AnimationSystem+constants for US-47. Both cross-cutting — full GameScene/animation.ts/constants.ts audit done in task 1."
+    result: pass
+    tokens: ~1000
+  - task: 4
+    time: "2026-04-12T10:21:00Z"
+    type: implement
+    story: US-46
+    description: "Rewrote GameScene animation constants: ANIM_TYPES=['idle','walk'] (no run), DIRECTIONS extended to 8 directions, FRAME_COUNTS={idle:4,walk:8} replaces uniform FRAME_COUNT. Updated preload() to use per-type frameCount. Updated registerAnimations() to use 16 animations (8 dirs × 2 states). Updated createPlayer(): added native resolution comment (68×68px, scale 1.0). No fox-pip-run-* in src/ (grep confirmed). Verify passes. US-46 complete."
+    result: pass
+    notes: US-46 complete
+    tokens: ~4000
+  - task: 5
+    time: "2026-04-12T10:22:00Z"
+    type: investigate
+    story: US-47
+    description: "Branch B investigation. US-46 complete. US-47: AnimationSystem needs 8-dir Direction type, 2-state AnimState (idle/walk), octant velocityToDirection, remove moveElapsedMs/run-state. constants.ts needs RUN_MULTIPLIER/RUN_THRESHOLD_MS removed. GameScene.update() needs diagonal suppression block (suppressedVx/suppressedVy) removed, movement passes raw inputVelocity to AnimationSystem and normalizes directly. All affected callers: GameScene only. Queued combined US-47 implement task."
+    result: pass
+    tokens: ~1000
+  - task: 6
+    time: "2026-04-12T10:24:00Z"
+    type: implement
+    story: US-47
+    description: "Rewrote animation.ts: Direction type now 8-way, AnimState='idle'|'walk', removed moveElapsedMs/run state, velocityToDirection uses octant mapping (atan2 quantized to 8 sectors), getCurrentSpeed always returns PLAYER_SPEED, removed getFacingDirection(). Removed RUN_MULTIPLIER/RUN_THRESHOLD_MS from constants.ts. Removed diagonal suppression block from GameScene.update (no suppressedVx/suppressedVy); raw inputVelocity passed to animationSystem.update. Verify passes. US-47 complete."
+    result: pass
+    notes: US-47 complete
+    tokens: ~5000
+  - task: 7
+    time: "2026-04-12T10:25:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. Both stories complete. 2 phase-level criteria: verify (passes), AGENTS.md update (reflects 8-dir 2-state animation, variable frame counts, no run, no diagonal suppression). AGENTS.md currently shows: fox-pip assets idle/walk/run × 4 dirs, 12 animations, animation state machine (3-state), diagonal suppression, walk-to-run transition. Queued AGENTS.md update."
+    result: pass
+    tokens: ~1000
+  - task: 8
+    time: "2026-04-12T10:26:00Z"
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: directory layout (fox-pip idle:8dirs×4frames, walk:8dirs×8frames, removed run/); file ownership (GameScene: 16 animations 8-dir, animation.ts: 8-dir 2-state octant mapping, constants.ts: no RUN_MULTIPLIER/RUN_THRESHOLD_MS); behavior rules (player sprite: 96 PNGs 8-dir 2-state, native 68px scale, FRAME_COUNTS; animation state machine: 2-state idle/walk, octant velocityToDirection, no run acceleration; removed diagonal suppression and walk-to-run transition entries). Verify passes."
+    result: pass
+    tokens: ~3000
+  - task: 9
+    time: "2026-04-12T10:27:00Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All 23 done-when criteria verified. US-46: 32 idle PNGs (8 dirs × 4f), 64 walk PNGs (8 dirs × 8f), no run/ directory, preload uses FRAME_COUNTS per type, 16 animations registered, no fox-pip-run-* in src/, player at depth 5 with native 68px scale and native resolution comment. US-47: AnimState='idle'|'walk', Direction 8-way, velocityToDirection octant, no RUN_MULTIPLIER/RUN_THRESHOLD_MS in animation.ts or constants.ts, no moveElapsedMs, getCurrentSpeed returns PLAYER_SPEED, no suppressedVx/suppressedVy, idle-south on spawn. Structural: verify passes, AGENTS.md updated. AGENTS.md consistency: depth 5, startFollow(player), PLAYER_SIZE collision. Phase complete."
+    result: pass
+    tokens: ~3000
+  - task: 10
+    time: "2026-04-12T10:28:00Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #12 from build/sprite-refresh to main. PR body includes phase summary (8-dir bipedal fox child, 2-state animation, no run/diagonal suppression), 2 shipped stories (US-46/47), done-when evidence. review-pr queued."
+    result: pass
+    tokens: ~1000
+  - task: 11
+    time: "2026-04-12T10:31:00Z"
+    type: review
+    story: phase
+    description: "review-pr for PR #12. 0 critical. 1 concern: FRAME_COUNTS typed as Record<string,number> loses type safety vs ANIM_TYPES tuple (Record<typeof ANIM_TYPES[number],number> would be better). 1 nit: velocityToDirection comment block has redundant derivation notes alongside the correct sector-index approach. Positives: clean diagonal suppression removal, correct octant mapping, TypeScript compiles, AGENTS.md in sync. Review posted as COMMENT."
+    result: pass
+    tokens: ~4000
+  - task: 12
+    time: "2026-04-12T10:32:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B: review_stage=review_posted. Queued handle-pr-review pr=12 auto=true."
+    result: pass
+    tokens: ~200
+  - task: 13
+    time: "2026-04-12T10:36:00Z"
+    type: review
+    story: phase
+    description: "handle-pr-review pr=12 auto=true. Fetched 2 unresolved threads. Thread 1: FRAME_COUNTS Record<string,number> → Record<typeof ANIM_TYPES[number],number> for type safety. Thread 2: trimmed verbose velocityToDirection comment block to concise canonical form. Applied both fixes, verify passes (tsc + build zero errors). Committed fix, pushed to origin. Resolved both threads via GraphQL. Posted post-review summary comment. review_complete=true."
+    result: pass
+    notes: phase review complete — PR #12 ready for human review and merge
+    tokens: ~3000
+# Each entry: {task, time, story, description, result, notes, tokens}

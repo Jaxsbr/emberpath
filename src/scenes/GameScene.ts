@@ -18,9 +18,10 @@ const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
 
 // Fox-pip sprite animation constants
-const ANIM_TYPES = ['idle', 'walk', 'run'] as const;
-const DIRECTIONS = ['north', 'east', 'south', 'west'] as const;
-const FRAME_COUNT = 8;
+// Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
+const ANIM_TYPES = ['idle', 'walk'] as const;
+const DIRECTIONS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'] as const;
+const FRAME_COUNTS: Record<typeof ANIM_TYPES[number], number> = { idle: 4, walk: 8 };
 const ANIM_FRAME_RATE = 8;
 
 export class GameScene extends Phaser.Scene {
@@ -43,10 +44,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Load all 96 fox-pip animation frames (3 types × 4 directions × 8 frames)
+    // Load all 96 fox-pip animation frames (2 types × 8 directions, idle:4 frames, walk:8 frames)
     for (const anim of ANIM_TYPES) {
+      const frameCount = FRAME_COUNTS[anim];
       for (const dir of DIRECTIONS) {
-        for (let i = 0; i < FRAME_COUNT; i++) {
+        for (let i = 0; i < frameCount; i++) {
           const key = `fox-pip-${anim}-${dir}-${i}`;
           const path = `characters/fox-pip/${anim}/${dir}/frame_00${i}.png`;
           this.load.image(key, path);
@@ -130,44 +132,18 @@ export class GameScene extends Phaser.Scene {
     this.inputSystem.update();
     const inputVelocity = this.inputSystem.getVelocity();
 
-    // TEMPORARY: Diagonal suppression — only 4 cardinal directions available.
-    // When both axes have input, zero the lesser-magnitude axis so movement
-    // is single-axis only. On equal magnitude (keyboard), maintain current
-    // facing direction to prevent flip-flopping. Remove this when NE/NW/SE/SW
-    // sprites arrive and 8-direction movement is supported.
-    let suppressedVx = inputVelocity.x;
-    let suppressedVy = inputVelocity.y;
-    const absX = Math.abs(inputVelocity.x);
-    const absY = Math.abs(inputVelocity.y);
-    if (absX > 0 && absY > 0) {
-      if (absX > absY) {
-        suppressedVy = 0;
-      } else if (absY > absX) {
-        suppressedVx = 0;
-      } else {
-        // Equal magnitude — maintain current facing direction axis
-        const facing = this.animationSystem.getFacingDirection();
-        if (facing === 'north' || facing === 'south') {
-          suppressedVx = 0;
-        } else {
-          suppressedVy = 0;
-        }
-      }
-    }
-
-    const inputSpeed = Math.sqrt(suppressedVx * suppressedVx + suppressedVy * suppressedVy);
+    const inputSpeed = Math.sqrt(inputVelocity.x * inputVelocity.x + inputVelocity.y * inputVelocity.y);
     const hasInput = inputSpeed > 0;
 
-    // Update animation state BEFORE computing movement speed — the animation
-    // system tracks the walk-to-run timer and determines the current speed.
-    this.animationSystem.update(suppressedVx, suppressedVy, delta);
+    // Update animation state with raw velocity — 8-direction sprites support diagonal movement
+    this.animationSystem.update(inputVelocity.x, inputVelocity.y);
     const currentSpeed = this.animationSystem.getCurrentSpeed();
 
     let moveVx = 0;
     let moveVy = 0;
     if (hasInput) {
-      const dirX = suppressedVx / inputSpeed;
-      const dirY = suppressedVy / inputSpeed;
+      const dirX = inputVelocity.x / inputSpeed;
+      const dirY = inputVelocity.y / inputSpeed;
       moveVx = dirX * currentSpeed;
       moveVy = dirY * currentSpeed;
     }
@@ -365,12 +341,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private registerAnimations(): void {
-    // Register 12 Phaser animations: fox-pip-{idle,walk,run}-{north,east,south,west}
+    // Register 16 Phaser animations: fox-pip-{idle,walk}-{8 directions}
+    // idle: 4 frames per direction; walk: 8 frames per direction
     for (const anim of ANIM_TYPES) {
+      const frameCount = FRAME_COUNTS[anim];
       for (const dir of DIRECTIONS) {
         const key = `fox-pip-${anim}-${dir}`;
         const frames: { key: string }[] = [];
-        for (let i = 0; i < FRAME_COUNT; i++) {
+        for (let i = 0; i < frameCount; i++) {
           frames.push({ key: `fox-pip-${anim}-${dir}-${i}` });
         }
         this.anims.create({
@@ -392,7 +370,9 @@ export class GameScene extends Phaser.Scene {
 
     this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
-    this.player.setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
+    // Native PNG resolution: 68×68px. Scale 1.0 renders at native size.
+    // Collision bounding box uses PLAYER_SIZE (24px) in math directly — display size is independent.
+    this.player.setScale(1);
     this.animationSystem = new AnimationSystem(this.player);
   }
 }
