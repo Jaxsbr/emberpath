@@ -30,4 +30,11 @@ entries:
     result: pass
     notes: US-42 complete
     tokens: ~5000
+  - task: 5
+    time: "2026-04-12T00:41:29Z"
+    type: investigate
+    story: US-43
+    description: "Branch B investigation. US-42 complete. Next: US-43 direction-aware idle. Player currently plays fox-pip-idle-south on spawn but no facing direction tracking or idle-on-stop logic. Golden principle mandates extracting animation state to system module. Queued systems/animation.ts creation + GameScene integration."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
