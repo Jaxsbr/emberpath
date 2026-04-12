@@ -46,4 +46,4 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | editor-ux | Shipped | US-36, US-37, US-38 | [phases/editor-ux.md](phases/editor-ux.md) |
 | rig-teardown | Shipped | US-39, US-40, US-41 | [phases/rig-teardown.md](phases/rig-teardown.md) |
 | sprite-animation | Shipped | US-42, US-43, US-44, US-45 | [phases/sprite-animation.md](phases/sprite-animation.md) |
-| sprite-refresh | Draft | US-46, US-47 | [phases/sprite-refresh.md](phases/sprite-refresh.md) |
+| sprite-refresh | Shipped | US-46, US-47 | [phases/sprite-refresh.md](phases/sprite-refresh.md) |
