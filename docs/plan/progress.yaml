@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-43] Create systems/animation.ts with AnimationSystem class that tracks facing direction (default south), plays direction-aware idle when stationary, and provides the interface for walk/run transitions (US-44/45). Integrate into GameScene update loop."
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

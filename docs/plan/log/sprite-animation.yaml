@@ -37,4 +37,12 @@ entries:
     description: "Branch B investigation. US-42 complete. Next: US-43 direction-aware idle. Player currently plays fox-pip-idle-south on spawn but no facing direction tracking or idle-on-stop logic. Golden principle mandates extracting animation state to system module. Queued systems/animation.ts creation + GameScene integration."
     result: pass
     tokens: ~1000
+  - task: 6
+    time: "2026-04-12T00:43:11Z"
+    type: implement
+    story: US-43
+    description: "Created systems/animation.ts with AnimationSystem class. Tracks facing direction (default south), plays idle when stationary and walk when moving, 4-direction velocity mapping with equal-magnitude stability. Integrated into GameScene: imported, created after player, update called with moveVx/moveVy after position update. Verify passes. US-43 complete."
+    result: pass
+    notes: US-43 complete
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
