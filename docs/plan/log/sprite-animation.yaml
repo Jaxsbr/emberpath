@@ -15,4 +15,11 @@ entries:
     description: "Copied 96 PixelLab animation PNGs from pixellab-research/dog-animations/ to assets/characters/fox-pip/{idle,walk,run}/{north,east,south,west}/frame_00{0-7}.png. Source mapping: animation-b456e6de→idle, walking-87ced120→walk, running-387f57ef→run. Verify passes."
     result: pass
     tokens: ~3000
+  - task: 3
+    time: "2026-04-12T00:39:02Z"
+    type: investigate
+    story: US-42
+    description: "Branch B investigation. US-42 asset copy done (3/7 criteria met). Remaining: preload 96 frames, register 12 animations, remove FOX_ATLAS_KEY/FOX_FRAME/old atlas, update createPlayer to use animation sprite. Queued combined US-42 code task."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
