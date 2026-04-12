@@ -47,6 +47,7 @@ src/
     thoughtBubble.ts   # ThoughtBubbleSystem — floating text near player, auto-dismiss, sequential queue
     triggerZone.ts     # TriggerZoneSystem — zone overlap detection, type dispatch
     conditions.ts      # evaluateCondition — shared flag-based condition parsing (AND logic, comparison operators)
+    animation.ts       # AnimationSystem — direction-aware sprite animation state machine (idle/walk/run)
     debugOverlay.ts    # DebugOverlaySystem — F3 toggleable overlay showing trigger zones, exit zones, NPC radii
   data/
     areas/
@@ -57,14 +58,18 @@ src/
   triggers/
     flags.ts           # Flag store — getFlag, setFlag, incrementFlag, resetAllFlags, localStorage persistence
   maps/
-    constants.ts       # TILE_SIZE, PLAYER_SPEED, TileType
+    constants.ts       # TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, RUN_MULTIPLIER, RUN_THRESHOLD_MS, NPC_SIZE, TileType
 assets/
   characters/
-    fox.png            # Fox texture atlas spritesheet (256x64, 16 body parts)
-    fox.json           # Phaser JSON Hash atlas — frame coordinates for fox body parts
+    fox-pip/           # PixelLab-generated fox animation frames (96 PNGs)
+      idle/            # 4 directions × 8 frames
+        north/east/south/west/  frame_000..007.png
+      walk/            # 4 directions × 8 frames
+        north/east/south/west/  frame_000..007.png
+      run/             # 4 directions × 8 frames
+        north/east/south/west/  frame_000..007.png
 tools/
-  generate-fox-atlas.mjs  # Atlas generator script — creates fox.png + fox.json from code (no dependencies)
-  editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow, and rig editor
+  editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
     src/
       main.ts          # App shell — area selector, tab navigation, detail panel
       style.css        # Dark theme CSS with debug overlay color variables
@@ -82,7 +87,7 @@ tools/
 | Module | Owns |
 |---|---|
 | `scenes/TitleScene.ts` | Title screen UI, scene transition to GameScene, flag reset |
-| `scenes/GameScene.ts` | Area loading, tile rendering, player sprite (Phaser.GameObjects.Sprite with fox atlas placeholder), camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
+| `scenes/GameScene.ts` | Area loading, tile rendering, fox-pip animated player sprite (preloads 96 frames, registers 12 animations), diagonal input suppression, camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
 | `scenes/StoryScene.ts` | Full-screen story scenes — beat display, fade transitions, GameScene pause/resume |
 | `systems/input.ts` | All input handling — keyboard keys, touch joystick lifecycle |
 | `systems/movement.ts` | Position updates with collision checking — accepts area collision data (map + NPCs) |
@@ -92,14 +97,14 @@ tools/
 | `systems/thoughtBubble.ts` | Thought bubble display, auto-dismiss, sequential queue |
 | `systems/triggerZone.ts` | Trigger zone evaluation, type dispatch — accepts triggers via constructor |
 | `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
+| `systems/animation.ts` | AnimationSystem — direction-aware fox-pip sprite animation, walk-to-run timer, facing direction tracking, current speed provider |
 | `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radii in world space |
 | `data/areas/types.ts` | All shared types — AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
 | `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions, getAllAreaIds() for enumeration |
 | `data/areas/ashen-isle.ts` | Ashen Isle area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
-| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
-| `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies. Retained as atlas placeholder until sprite-animation phase replaces with PixelLab frames. |
+| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, RUN_MULTIPLIER, RUN_THRESHOLD_MS, NPC_SIZE, TileType enum |
 | `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation (map, dialogue, flow), view dispatch, detail panel |
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
@@ -141,7 +146,10 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Area transitions:** GameScene accepts `{ areaId, entryPoint }` via scene data. All systems (collision, movement, triggers, NPC interaction, dialogue, story scenes) are parameterized — they receive area data via constructor or method parameters, no global imports. During transition: movement, NPC interaction, triggers, and dialogue are suppressed (transitionInProgress guard).
 - **Debug overlay:** F3 toggles visibility (off by default). Shows trigger zones as color-coded semi-transparent rectangles (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID/type/condition, exit destination labels, NPC interaction radii as yellow circles. World-space at depth 50. Toggle is guarded during dialogue.
 - **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Flags work cross-area — set in one area, readable in another. Reset available from TitleScene.
-- **Player sprite (placeholder):** Player is a `Phaser.GameObjects.Sprite` at Entities depth 5, using the fox atlas (`characters/fox.png` / `characters/fox.json`) as a static placeholder. Atlas preloaded in `GameScene.preload()`. Movement uses PLAYER_SPEED constant directly — no animation controller. Collision bounding box is PLAYER_SIZE (24px). Vite serves assets from `assets/` (`publicDir: 'assets'` in vite.config.ts).
+- **Player sprite (fox-pip):** Player is a `Phaser.GameObjects.Sprite` at Entities depth 5, using PixelLab-generated fox-pip animation frames (96 PNGs across idle/walk/run × 4 directions × 8 frames). Frames preloaded individually in `GameScene.preload()`. 12 Phaser animations registered as `fox-pip-{idle,walk,run}-{north,east,south,west}` at 8 FPS with `repeat: -1`. Collision bounding box is PLAYER_SIZE (24px). Display size set to PLAYER_SIZE. Vite serves assets from `assets/` (`publicDir: 'assets'` in vite.config.ts).
+- **Animation state machine (`systems/animation.ts`):** `AnimationSystem` manages sprite animation state. Three states: idle (stationary), walk (moving), run (moving ≥ RUN_THRESHOLD_MS). Tracks `facingDirection` (default south on spawn), plays direction-aware animation. `velocityToDirection()` maps velocity to N/E/S/W via dominant axis; equal magnitude maintains current facing to prevent flip-flopping. `getCurrentSpeed()` returns PLAYER_SPEED for walk, PLAYER_SPEED × RUN_MULTIPLIER for run — GameScene uses this for movement.
+- **Diagonal suppression (temporary):** When both input axes have non-zero values, the lesser-magnitude axis is zeroed so movement is single-axis only (4-direction). On equal magnitude (keyboard diagonal), the current facing direction determines which axis is kept. Marked with code comment as temporary — remove when NE/NW/SE/SW diagonal sprites arrive.
+- **Walk-to-run transition:** After holding continuous movement input for RUN_THRESHOLD_MS (2000ms), animation transitions from walk to run and speed increases from PLAYER_SPEED to PLAYER_SPEED × RUN_MULTIPLIER (1.8). Releasing all movement input resets the elapsed timer to 0 and transitions to idle. Constants defined in `maps/constants.ts`.
 
 ## Scaling tuning guide
 
