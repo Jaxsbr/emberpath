@@ -67,4 +67,12 @@ entries:
     description: "Branch B investigation. US-44 complete. Last story: US-45 walk-to-run transition. Needs: RUN_MULTIPLIER + RUN_THRESHOLD_MS constants, walk-to-run timer in AnimationSystem, GameScene uses animation system speed. Queued combined implementation."
     result: pass
     tokens: ~1000
+  - task: 10
+    time: "2026-04-12T00:48:01Z"
+    type: implement
+    story: US-45
+    description: "Added RUN_MULTIPLIER=1.8 and RUN_THRESHOLD_MS=2000 to constants.ts. AnimationSystem tracks moveElapsedMs, transitions walk→run after threshold, resets on input release. getCurrentSpeed() returns PLAYER_SPEED or PLAYER_SPEED×RUN_MULTIPLIER. GameScene uses getCurrentSpeed() instead of fixed PLAYER_SPEED. Removed unused PLAYER_SPEED import from GameScene. Verify passes. US-45 complete."
+    result: pass
+    notes: US-45 complete
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

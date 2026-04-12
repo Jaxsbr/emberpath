@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: "[US-45] Implement walk-to-run transition: add RUN_MULTIPLIER and RUN_THRESHOLD_MS to constants.ts, add walk-to-run timer to AnimationSystem (track elapsed time, transition to run after threshold, reset on input release), update GameScene to use AnimationSystem's current speed for movement."
+  task_number: 10
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
