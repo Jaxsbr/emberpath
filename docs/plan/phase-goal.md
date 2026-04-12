@@ -37,8 +37,8 @@ Replace the 4-direction fox sprite set with a new bipedal fox child character su
 - [x] Moving diagonally (W+D keys or diagonal joystick) produces diagonal movement and plays the corresponding diagonal direction animation [US-47]
 
 #### Structural [phase]
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [ ] AGENTS.md reflects updated animation system: 2-state (idle/walk), 8-direction, variable frame counts (idle: 4, walk: 8), no run, no diagonal suppression [phase]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [x] AGENTS.md reflects updated animation system: 2-state (idle/walk), 8-direction, variable frame counts (idle: 4, walk: 8), no run, no diagonal suppression [phase]
 
 ### Golden principles (phase-relevant)
 - Depth map is non-negotiable: the player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.

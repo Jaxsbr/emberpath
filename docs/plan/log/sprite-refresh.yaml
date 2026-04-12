@@ -59,4 +59,11 @@ entries:
     description: "Updated AGENTS.md: directory layout (fox-pip idle:8dirs×4frames, walk:8dirs×8frames, removed run/); file ownership (GameScene: 16 animations 8-dir, animation.ts: 8-dir 2-state octant mapping, constants.ts: no RUN_MULTIPLIER/RUN_THRESHOLD_MS); behavior rules (player sprite: 96 PNGs 8-dir 2-state, native 68px scale, FRAME_COUNTS; animation state machine: 2-state idle/walk, octant velocityToDirection, no run acceleration; removed diagonal suppression and walk-to-run transition entries). Verify passes."
     result: pass
     tokens: ~3000
+  - task: 9
+    time: "2026-04-12T10:27:00Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All 23 done-when criteria verified. US-46: 32 idle PNGs (8 dirs × 4f), 64 walk PNGs (8 dirs × 8f), no run/ directory, preload uses FRAME_COUNTS per type, 16 animations registered, no fox-pip-run-* in src/, player at depth 5 with native 68px scale and native resolution comment. US-47: AnimState='idle'|'walk', Direction 8-way, velocityToDirection octant, no RUN_MULTIPLIER/RUN_THRESHOLD_MS in animation.ts or constants.ts, no moveElapsedMs, getCurrentSpeed returns PLAYER_SPEED, no suppressedVx/suppressedVy, idle-south on spawn. Structural: verify passes, AGENTS.md updated. AGENTS.md consistency: depth 5, startFollow(player), PLAYER_SIZE collision. Phase complete."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
