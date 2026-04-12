@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fox Child — Animation Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Courier New', monospace;
+      padding: 24px;
+    }
+
+    h1 {
+      color: #f0a040;
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 32px;
+      background: #12122a;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid #2a2a4a;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label {
+      color: #f0a040;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="range"] {
+      width: 120px;
+      accent-color: #f0a040;
+    }
+
+    .value-badge {
+      background: #2a2a4a;
+      color: #f0a040;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    section {
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      color: #f0a040;
+      font-size: 1.15rem;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #2a2a4a;
+      padding-bottom: 6px;
+    }
+
+    .section-meta {
+      color: #666;
+      font-size: 0.78rem;
+      margin-bottom: 16px;
+    }
+
+    .direction-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .direction-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dir-label {
+      color: #aaa;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    canvas {
+      background: #2a2a4a;
+      border: 1px solid #3a3a6a;
+      border-radius: 4px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .frame-counter {
+      color: #555;
+      font-size: 0.65rem;
+    }
+
+    .static-section {
+      margin-bottom: 40px;
+    }
+
+    .static-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .static-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .static-img {
+      background: #2a2a4a;
+      border: 1px solid #3a3a6a;
+      border-radius: 4px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      width: 136px;
+      height: 136px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Fox Child — Animation Preview</h1>
+<p class="subtitle">Character ID: 6a4a3591-ac4c-4596-86dd-fbb96b4af49f &nbsp;|&nbsp; 68×68px canvas &nbsp;|&nbsp; 8 directions</p>
+
+<div class="controls">
+  <div class="control-group">
+    <label for="fpsRange">FPS</label>
+    <input type="range" id="fpsRange" min="1" max="24" value="8" step="1">
+    <span class="value-badge" id="fpsVal">8</span>
+  </div>
+  <div class="control-group">
+    <label for="scaleRange">Scale</label>
+    <input type="range" id="scaleRange" min="1" max="8" value="2" step="1">
+    <span class="value-badge" id="scaleVal">2×</span>
+  </div>
+</div>
+
+<!-- Static views -->
+<section class="static-section">
+  <h2>Static Views</h2>
+  <p class="section-meta">8 directional rotations — base character sprite</p>
+  <div class="static-row" id="staticRow"></div>
+</section>
+
+<!-- Breathing Idle -->
+<section>
+  <h2>Breathing Idle</h2>
+  <p class="section-meta">4 frames &times; 8 directions — breathing-idle template</p>
+  <div class="direction-row" id="idleRow"></div>
+</section>
+
+<!-- Walking 8 Frames -->
+<section>
+  <h2>Walking (8 Frames)</h2>
+  <p class="section-meta">8 frames &times; 8 directions — walking-8-frames template</p>
+  <div class="direction-row" id="walkRow"></div>
+</section>
+
+<script>
+  const SPRITE_SIZE = 68;
+  const DIRECTIONS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
+  const BASE = 'fox-child-final';
+
+  let fps = 8;
+  let scale = 2;
+
+  // Controls
+  const fpsRange = document.getElementById('fpsRange');
+  const fpsVal = document.getElementById('fpsVal');
+  const scaleRange = document.getElementById('scaleRange');
+  const scaleVal = document.getElementById('scaleVal');
+
+  fpsRange.addEventListener('input', () => {
+    fps = parseInt(fpsRange.value);
+    fpsVal.textContent = fps;
+    updateAllCanvasSizes();
+  });
+
+  scaleRange.addEventListener('input', () => {
+    scale = parseInt(scaleRange.value);
+    scaleVal.textContent = scale + '×';
+    updateAllCanvasSizes();
+  });
+
+  // ── Static images ──────────────────────────────────────────────
+  const staticRow = document.getElementById('staticRow');
+  DIRECTIONS.forEach(dir => {
+    const cell = document.createElement('div');
+    cell.className = 'static-cell';
+
+    const label = document.createElement('div');
+    label.className = 'dir-label';
+    label.textContent = dir;
+
+    const img = document.createElement('img');
+    img.className = 'static-img';
+    img.src = `${BASE}/static/${dir}.png`;
+    img.alt = dir;
+    img.id = `static-img-${dir}`;
+
+    cell.appendChild(label);
+    cell.appendChild(img);
+    staticRow.appendChild(cell);
+  });
+
+  // ── Animation canvases ─────────────────────────────────────────
+  function makeAnimSection(containerId, animPath, frameCount) {
+    const container = document.getElementById(containerId);
+    const animators = [];
+
+    DIRECTIONS.forEach(dir => {
+      const cell = document.createElement('div');
+      cell.className = 'direction-cell';
+
+      const label = document.createElement('div');
+      label.className = 'dir-label';
+      label.textContent = dir;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = SPRITE_SIZE * scale;
+      canvas.height = SPRITE_SIZE * scale;
+      canvas.dataset.dir = dir;
+      canvas.dataset.section = containerId;
+
+      const frameCounter = document.createElement('div');
+      frameCounter.className = 'frame-counter';
+      frameCounter.textContent = `0/${frameCount - 1}`;
+
+      cell.appendChild(label);
+      cell.appendChild(canvas);
+      cell.appendChild(frameCounter);
+      container.appendChild(cell);
+
+      // Pre-load frames
+      const frames = [];
+      for (let i = 0; i < frameCount; i++) {
+        const img = new Image();
+        const idx = String(i).padStart(3, '0');
+        img.src = `${BASE}/${animPath}/${dir}/frame_${idx}.png`;
+        frames.push(img);
+      }
+
+      animators.push({ canvas, frames, frameCounter, frameCount, currentFrame: 0 });
+    });
+
+    return animators;
+  }
+
+  const idleAnimators = makeAnimSection('idleRow', 'idle', 4);
+  const walkAnimators = makeAnimSection('walkRow', 'walk', 8);
+  const allAnimators = [...idleAnimators, ...walkAnimators];
+
+  function updateAllCanvasSizes() {
+    // Update static images
+    document.querySelectorAll('.static-img').forEach(img => {
+      img.style.width = (SPRITE_SIZE * scale) + 'px';
+      img.style.height = (SPRITE_SIZE * scale) + 'px';
+    });
+
+    // Update canvases
+    allAnimators.forEach(a => {
+      a.canvas.width = SPRITE_SIZE * scale;
+      a.canvas.height = SPRITE_SIZE * scale;
+    });
+  }
+
+  // Update static image sizes on load
+  function applyStaticScale() {
+    document.querySelectorAll('.static-img').forEach(img => {
+      img.style.width = (SPRITE_SIZE * scale) + 'px';
+      img.style.height = (SPRITE_SIZE * scale) + 'px';
+    });
+  }
+  applyStaticScale();
+
+  // ── Animation loop ─────────────────────────────────────────────
+  let lastTick = 0;
+  let frameIndexIdle = 0;
+  let frameIndexWalk = 0;
+
+  function tick(timestamp) {
+    const interval = 1000 / fps;
+
+    if (timestamp - lastTick >= interval) {
+      lastTick = timestamp;
+
+      frameIndexIdle = (frameIndexIdle + 1) % 4;
+      frameIndexWalk = (frameIndexWalk + 1) % 8;
+
+      idleAnimators.forEach(a => {
+        const fi = frameIndexIdle % a.frameCount;
+        const ctx = a.canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        if (a.frames[fi].complete && a.frames[fi].naturalWidth > 0) {
+          ctx.clearRect(0, 0, a.canvas.width, a.canvas.height);
+          ctx.drawImage(a.frames[fi], 0, 0, SPRITE_SIZE * scale, SPRITE_SIZE * scale);
+        }
+        a.frameCounter.textContent = `${fi}/${a.frameCount - 1}`;
+      });
+
+      walkAnimators.forEach(a => {
+        const fi = frameIndexWalk % a.frameCount;
+        const ctx = a.canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        if (a.frames[fi].complete && a.frames[fi].naturalWidth > 0) {
+          ctx.clearRect(0, 0, a.canvas.width, a.canvas.height);
+          ctx.drawImage(a.frames[fi], 0, 0, SPRITE_SIZE * scale, SPRITE_SIZE * scale);
+        }
+        a.frameCounter.textContent = `${fi}/${a.frameCount - 1}`;
+      });
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>

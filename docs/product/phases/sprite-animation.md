@@ -1,6 +1,6 @@
 # Phase: sprite-animation
 
-Status: draft
+Status: shipped
 
 ## Stories
 
@@ -81,30 +81,30 @@ As a player, I want Pip to transition from walking to running when I hold a dire
 
 ## Done-when (observable)
 
-- [ ] `assets/characters/fox-pip/idle/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
-- [ ] `assets/characters/fox-pip/walk/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
-- [ ] `assets/characters/fox-pip/run/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
-- [ ] GameScene.preload() loads all 96 fox-pip frames and does not load the old fox atlas [US-42]
-- [ ] 12 Phaser animations registered with keys `fox-pip-{idle,walk,run}-{north,east,south,west}` [US-42]
-- [ ] No references to `FOX_ATLAS_KEY`, `FOX_FRAME`, `characters/fox.png`, or `characters/fox.json` remain in `src/` (grep confirms zero matches) [US-42]
-- [ ] Player sprite created using `fox-pip` animation, displayed at PLAYER_SIZE (24px) [US-42]
-- [ ] On spawn with no movement input, player sprite plays `fox-pip-idle-south` animation [US-43]
-- [ ] After moving east then stopping, player sprite plays `fox-pip-idle-east` [US-43]
-- [ ] Idle animations have `repeat: -1` (continuous loop) [US-43]
-- [ ] Idle animation frameRate is 8 [US-43]
-- [ ] Pressing W plays `fox-pip-walk-north`; D plays `fox-pip-walk-east`; S plays `fox-pip-walk-south`; A plays `fox-pip-walk-west` [US-44]
-- [ ] Diagonal input (e.g., W+D) zeroes the lesser-magnitude axis — movement is single-axis only; a code comment marks diagonal suppression as temporary until diagonal sprites arrive [US-44]
-- [ ] Equal-magnitude diagonal input (keyboard W+D) maintains current facing direction rather than flip-flopping [US-44]
-- [ ] Walk animation frameRate is 8 [US-44]
-- [ ] Movement speed during walk is PLAYER_SPEED (160 px/s) [US-44]
-- [ ] After holding continuous movement input for ≥2s, animation switches from `fox-pip-walk-{dir}` to `fox-pip-run-{dir}` [US-45]
-- [ ] `RUN_MULTIPLIER` constant exists in `src/maps/constants.ts`; run speed = PLAYER_SPEED × RUN_MULTIPLIER [US-45]
-- [ ] `RUN_THRESHOLD_MS` constant exists in `src/maps/constants.ts`; walk-to-run timer uses this value [US-45]
-- [ ] Releasing all movement input resets walk-to-run timer to 0 [US-45]
-- [ ] Transitioning from movement (walk or run) to stationary switches to `fox-pip-idle-{dir}` — not a freeze frame [US-45]
-- [ ] Run animation frameRate is 8 [US-45]
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [ ] AGENTS.md reflects new sprite animation system (fox-pip assets, animation state machine, diagonal suppression behavior) and removes stale rig system references [phase]
+- [x] `assets/characters/fox-pip/idle/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42] [Shipped]
+- [x] `assets/characters/fox-pip/walk/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42] [Shipped]
+- [x] `assets/characters/fox-pip/run/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42] [Shipped]
+- [x] GameScene.preload() loads all 96 fox-pip frames and does not load the old fox atlas [US-42] [Shipped]
+- [x] 12 Phaser animations registered with keys `fox-pip-{idle,walk,run}-{north,east,south,west}` [US-42] [Shipped]
+- [x] No references to `FOX_ATLAS_KEY`, `FOX_FRAME`, `characters/fox.png`, or `characters/fox.json` remain in `src/` (grep confirms zero matches) [US-42] [Shipped]
+- [x] Player sprite created using `fox-pip` animation, displayed at PLAYER_SIZE (24px) [US-42] [Shipped]
+- [x] On spawn with no movement input, player sprite plays `fox-pip-idle-south` animation [US-43] [Shipped]
+- [x] After moving east then stopping, player sprite plays `fox-pip-idle-east` [US-43] [Shipped]
+- [x] Idle animations have `repeat: -1` (continuous loop) [US-43] [Shipped]
+- [x] Idle animation frameRate is 8 [US-43] [Shipped]
+- [x] Pressing W plays `fox-pip-walk-north`; D plays `fox-pip-walk-east`; S plays `fox-pip-walk-south`; A plays `fox-pip-walk-west` [US-44] [Shipped]
+- [x] Diagonal input (e.g., W+D) zeroes the lesser-magnitude axis — movement is single-axis only; a code comment marks diagonal suppression as temporary until diagonal sprites arrive [US-44] [Shipped]
+- [x] Equal-magnitude diagonal input (keyboard W+D) maintains current facing direction rather than flip-flopping [US-44] [Shipped]
+- [x] Walk animation frameRate is 8 [US-44] [Shipped]
+- [x] Movement speed during walk is PLAYER_SPEED (160 px/s) [US-44] [Shipped]
+- [x] After holding continuous movement input for ≥2s, animation switches from `fox-pip-walk-{dir}` to `fox-pip-run-{dir}` [US-45] [Shipped]
+- [x] `RUN_MULTIPLIER` constant exists in `src/maps/constants.ts`; run speed = PLAYER_SPEED × RUN_MULTIPLIER [US-45] [Shipped]
+- [x] `RUN_THRESHOLD_MS` constant exists in `src/maps/constants.ts`; walk-to-run timer uses this value [US-45] [Shipped]
+- [x] Releasing all movement input resets walk-to-run timer to 0 [US-45] [Shipped]
+- [x] Transitioning from movement (walk or run) to stationary switches to `fox-pip-idle-{dir}` — not a freeze frame [US-45] [Shipped]
+- [x] Run animation frameRate is 8 [US-45] [Shipped]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase] [Shipped]
+- [x] AGENTS.md reflects new sprite animation system (fox-pip assets, animation state machine, diagonal suppression behavior) and removes stale rig system references [phase] [Shipped]
 
 ## Golden principles (phase-relevant)
 - Depth map is non-negotiable: the player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.

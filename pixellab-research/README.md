@@ -124,18 +124,24 @@ Custom animations (`action_description` instead of `template_animation_id`) offe
 
 **Conclusion:** Free tier is sufficient for evaluating the tool and generating base sprites, but not for iterating on quality. Creative control requires paid tier (~2000 gens).
 
-## Alternative Approaches to Explore
+## Alternative Approaches — Tested
 
-1. **Aseprite manual editing** — Use PixelLab output as a starting base, manually fix problematic frames (tail position, idle posture) in Aseprite. Pixel art at 68x68 is very editable by hand.
+1. **Midjourney frame fixing — NOT VIABLE.** Reusing the same prompt and settings does not produce visually consistent frames. Each generation varies too much to assemble into a coherent sprite sheet. Midjourney is good for concept art (used for the original fox inspiration) but not for frame-by-frame animation work.
 
-2. **Midjourney frame fixing** — Use Midjourney to regenerate specific problem frames (e.g. south-facing walk with raised tail), then process the output back into sprite-compatible PNGs. Open questions:
-   - Can Midjourney produce consistent pixel art at exact canvas sizes (68x68)?
-   - How to maintain visual consistency across frames generated separately?
-   - What post-processing is needed to convert Midjourney output into clean sprites (background removal, resizing, palette matching)?
+2. **Aseprite manual editing — WORKS BUT PAINFUL.** Manually editing individual frames at pixel level is tedious even with PixelLab output as a base. Not scalable across multiple animations and directions.
 
-3. **Hybrid pipeline** — PixelLab for the bulk generation (character + east/west animations), Aseprite for south/north touch-ups, Midjourney for concept exploration of specific poses.
+3. **PixelLab paid tier — BEST STARTING POINT, NOT FINAL OUTPUT.** $12/mo unlocks ~2000 generations and custom animations with creative control. PixelLab's advantage is consistency across frames and directions — but output still has quality issues. Frame-to-frame position shifts (1-2px on x/y axis) cause visual jitter in-game. Manual correction is still required.
 
-4. **PixelLab paid tier** — Unlock custom animations and 8-direction generation. Most streamlined but costs ~$12/mo.
+## Realistic Pipeline Assessment
+
+PixelLab generates a starting point, not production-ready sprites. Even with paid tier and custom animations, expect to manually fix:
+- Frame-to-frame position shifts (1-2px jitter between animation frames)
+- Template skeleton limitations (tail position, posture)
+- South/north direction quality vs east/west
+
+**Likely pipeline:** PixelLab (base generation) → custom tooling (automated alignment/jitter fixing) → Aseprite (final manual polish)
+
+Custom tooling to explore: automated sprite alignment (anchor point normalization, bounding box stabilization across frames) to reduce the manual Aseprite work.
 
 ## Decision
 

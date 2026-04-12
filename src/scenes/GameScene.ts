@@ -392,7 +392,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
-    this.player.setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
+    this.player.setScale(1); // Render at native size (68px); collision uses PLAYER_SIZE math directly
     this.animationSystem = new AnimationSystem(this.player);
   }
 }
