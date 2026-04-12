@@ -21,7 +21,7 @@ const FADE_DURATION = 400;
 // Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
 const ANIM_TYPES = ['idle', 'walk'] as const;
 const DIRECTIONS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'] as const;
-const FRAME_COUNTS: Record<string, number> = { idle: 4, walk: 8 };
+const FRAME_COUNTS: Record<typeof ANIM_TYPES[number], number> = { idle: 4, walk: 8 };
 const ANIM_FRAME_RATE = 8;
 
 export class GameScene extends Phaser.Scene {

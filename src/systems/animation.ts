@@ -63,27 +63,21 @@ export class AnimationSystem {
    * Note: vy is positive-down in screen space (Phaser), so south = positive vy.
    */
   private velocityToDirection(vx: number, vy: number): Direction {
-    // atan2 with vy, vx gives angle from east; adjust to get angle from north clockwise
-    const angle = Math.atan2(vy, vx); // [-π, π], east=0, south=π/2
-    // Normalize to [0, 2π]: add 2π if negative
+    // Quantize atan2 angle to nearest 45° sector (8 directions).
+    // atan2(vy, vx): east=0, south=π/2, west=±π, north=-π/2
+    // Directions ordered clockwise from east, matching normalized [0, 2π] sector indices.
+    const angle = Math.atan2(vy, vx);
     const normalized = angle < 0 ? angle + 2 * Math.PI : angle;
-    // Shift by -π/2 so north (up, vy<0) is 0: north is atan2(-1,0)=-π/2 → normalized=3π/2
-    // Alternative: use the direction index approach directly
-    // Each sector is π/4 (45°). East is 0°, sectors go clockwise.
-    // Map: east(0°)=E, 45°=SE, 90°=S, 135°=SW, 180°=W, 225°=NW, 270°=N, 315°=NE
-    // atan2(vy,vx): east=0, south=π/2, west=π, north=-π/2
     const DIRECTIONS: Direction[] = [
-      'east',       //   0° (atan2≈0)
-      'south-east', //  45° (atan2≈π/4)
-      'south',      //  90° (atan2≈π/2)
-      'south-west', // 135° (atan2≈3π/4)
-      'west',       // 180° (atan2≈±π)
-      'north-west', // 225° (atan2≈-3π/4 → normalized 5π/4)
-      'north',      // 270° (atan2≈-π/2 → normalized 3π/2)
-      'north-east', // 315° (atan2≈-π/4 → normalized 7π/4)
+      'east',       //   0° sector
+      'south-east', //  45°
+      'south',      //  90°
+      'south-west', // 135°
+      'west',       // 180°
+      'north-west', // 225°
+      'north',      // 270°
+      'north-east', // 315°
     ];
-    // Divide circle into 8 equal sectors of π/4 each, with east at center of sector 0
-    // Each sector center is at k*π/4 for k=0..7; sector k spans [(k-0.5)*π/4, (k+0.5)*π/4]
     const sectorIndex = Math.round(normalized / (Math.PI / 4)) % 8;
     return DIRECTIONS[sectorIndex];
   }
