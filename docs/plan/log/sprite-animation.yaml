@@ -103,4 +103,11 @@ entries:
     description: "Review stage initiated. Created PR #11 from build/sprite-animation to main. PR body includes phase summary, 4 shipped stories (US-42/43/44/45), done-when evidence, architecture notes. review-pr queued."
     result: pass
     tokens: ~2000
+  - task: 15
+    time: "2026-04-12T00:54:00Z"
+    type: review
+    story: phase
+    description: "review-pr completed for PR #11. 0 critical. 1 concern: InputSystem.getVelocity() returns pre-multiplied velocity (API naming, not a bug — normalization handles it). Positives: clean AnimationSystem extraction, well-documented diagonal suppression, proper golden principle compliance, thorough AGENTS.md update. handle-pr-review queued."
+    result: pass
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
