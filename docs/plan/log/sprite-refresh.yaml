@@ -1,4 +1,11 @@
 phase: "sprite-refresh"
 started: "2026-04-12T10:16:42Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-12T10:17:53Z"
+    type: investigate
+    story: US-46
+    description: "Phase start investigation. Verify passes (tsc + build). fox-child-final/idle: 8 dirs (north, north-east, east, south-east, south, south-west, west, north-west) × 4 frames = 32 PNGs. fox-child-final/walk: 8 dirs × 8 frames = 64 PNGs. Current assets/characters/fox-pip: old set (idle/walk/run × 4 dirs × 8 frames). Need to replace with new 8-dir set, remove run/, update preload (per-type frame counts), register 16 animations. animation.ts has 4-dir, 3-state (idle/walk/run), moveElapsedMs — needs full 8-dir 2-state overhaul. constants.ts has RUN_MULTIPLIER=1.8, RUN_THRESHOLD_MS=2000 — both to remove. GameScene has diagonal suppression (suppressedVx/suppressedVy) — to remove. Queued US-46 asset copy task."
+    result: pass
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

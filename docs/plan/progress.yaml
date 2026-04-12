@@ -27,9 +27,9 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
-  last_result: null
+  task_number: 2
+  next_task: "[US-46] Copy fox-child-final assets to assets/characters/fox-pip replacing 4-direction with 8-direction frames, remove run/ directory"
+  last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
