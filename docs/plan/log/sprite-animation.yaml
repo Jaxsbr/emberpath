@@ -45,4 +45,11 @@ entries:
     result: pass
     notes: US-43 complete
     tokens: ~5000
+  - task: 7
+    time: "2026-04-12T00:44:00Z"
+    type: investigate
+    story: US-44
+    description: "Branch B investigation. US-43 complete. US-44 walk criteria mostly met by AnimationSystem — walk plays in correct direction, frameRate 8, speed PLAYER_SPEED. Missing: diagonal suppression (zero lesser axis, comment as temporary, equal-magnitude stability for movement). Queued diagonal suppression implementation."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
