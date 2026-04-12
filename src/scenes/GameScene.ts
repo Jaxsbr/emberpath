@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { AreaDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -9,6 +9,7 @@ import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
+import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { setFlag } from '../triggers/flags';
 
@@ -16,11 +17,11 @@ const TARGET_VISIBLE_TILES = 10;
 const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
 
-// Fox atlas still exists at assets/characters/fox.png + fox.json and is used for the
-// static sprite placeholder. generate-fox-atlas.mjs can regenerate it if needed.
-// This atlas will be replaced when sprite-sheet integration begins.
-const FOX_ATLAS_KEY = 'fox';
-const FOX_FRAME = 'body'; // first visible frame from the fox atlas
+// Fox-pip sprite animation constants
+const ANIM_TYPES = ['idle', 'walk', 'run'] as const;
+const DIRECTIONS = ['north', 'east', 'south', 'west'] as const;
+const FRAME_COUNT = 8;
+const ANIM_FRAME_RATE = 8;
 
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
@@ -30,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
   private debugOverlay!: DebugOverlaySystem;
+  private animationSystem!: AnimationSystem;
   private player!: Phaser.GameObjects.Sprite;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
@@ -41,7 +43,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.atlas(FOX_ATLAS_KEY, 'characters/fox.png', 'characters/fox.json');
+    // Load all 96 fox-pip animation frames (3 types × 4 directions × 8 frames)
+    for (const anim of ANIM_TYPES) {
+      for (const dir of DIRECTIONS) {
+        for (let i = 0; i < FRAME_COUNT; i++) {
+          const key = `fox-pip-${anim}-${dir}-${i}`;
+          const path = `characters/fox-pip/${anim}/${dir}/frame_00${i}.png`;
+          this.load.image(key, path);
+        }
+      }
+    }
   }
 
   create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {
@@ -56,6 +67,7 @@ export class GameScene extends Phaser.Scene {
 
     this.renderTileMap();
     this.renderNpcs();
+    this.registerAnimations();
     this.createPlayer(data?.entryPoint);
     this.setupCamera();
     // Fade in when entering from an area transition
@@ -117,17 +129,47 @@ export class GameScene extends Phaser.Scene {
 
     this.inputSystem.update();
     const inputVelocity = this.inputSystem.getVelocity();
-    const inputSpeed = Math.sqrt(inputVelocity.x * inputVelocity.x + inputVelocity.y * inputVelocity.y);
+
+    // TEMPORARY: Diagonal suppression — only 4 cardinal directions available.
+    // When both axes have input, zero the lesser-magnitude axis so movement
+    // is single-axis only. On equal magnitude (keyboard), maintain current
+    // facing direction to prevent flip-flopping. Remove this when NE/NW/SE/SW
+    // sprites arrive and 8-direction movement is supported.
+    let suppressedVx = inputVelocity.x;
+    let suppressedVy = inputVelocity.y;
+    const absX = Math.abs(inputVelocity.x);
+    const absY = Math.abs(inputVelocity.y);
+    if (absX > 0 && absY > 0) {
+      if (absX > absY) {
+        suppressedVy = 0;
+      } else if (absY > absX) {
+        suppressedVx = 0;
+      } else {
+        // Equal magnitude — maintain current facing direction axis
+        const facing = this.animationSystem.getFacingDirection();
+        if (facing === 'north' || facing === 'south') {
+          suppressedVx = 0;
+        } else {
+          suppressedVy = 0;
+        }
+      }
+    }
+
+    const inputSpeed = Math.sqrt(suppressedVx * suppressedVx + suppressedVy * suppressedVy);
     const hasInput = inputSpeed > 0;
 
-    // Movement speed is a fixed constant — no walk/run controller
+    // Update animation state BEFORE computing movement speed — the animation
+    // system tracks the walk-to-run timer and determines the current speed.
+    this.animationSystem.update(suppressedVx, suppressedVy, delta);
+    const currentSpeed = this.animationSystem.getCurrentSpeed();
+
     let moveVx = 0;
     let moveVy = 0;
     if (hasInput) {
-      const dirX = inputVelocity.x / inputSpeed;
-      const dirY = inputVelocity.y / inputSpeed;
-      moveVx = dirX * PLAYER_SPEED;
-      moveVy = dirY * PLAYER_SPEED;
+      const dirX = suppressedVx / inputSpeed;
+      const dirY = suppressedVy / inputSpeed;
+      moveVx = dirX * currentSpeed;
+      moveVy = dirY * currentSpeed;
     }
 
     const halfSize = PLAYER_SIZE / 2;
@@ -322,6 +364,25 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch('StoryScene', { definition });
   }
 
+  private registerAnimations(): void {
+    // Register 12 Phaser animations: fox-pip-{idle,walk,run}-{north,east,south,west}
+    for (const anim of ANIM_TYPES) {
+      for (const dir of DIRECTIONS) {
+        const key = `fox-pip-${anim}-${dir}`;
+        const frames: { key: string }[] = [];
+        for (let i = 0; i < FRAME_COUNT; i++) {
+          frames.push({ key: `fox-pip-${anim}-${dir}-${i}` });
+        }
+        this.anims.create({
+          key,
+          frames,
+          frameRate: ANIM_FRAME_RATE,
+          repeat: -1,
+        });
+      }
+    }
+  }
+
   private createPlayer(entryPoint?: { col: number; row: number }): void {
     const spawn = entryPoint ?? this.area.playerSpawn;
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
@@ -329,8 +390,9 @@ export class GameScene extends Phaser.Scene {
     const x = spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
     const y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
 
-    this.player = this.add.sprite(x, y, FOX_ATLAS_KEY, FOX_FRAME);
+    this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
     this.player.setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
+    this.animationSystem = new AnimationSystem(this.player);
   }
 }

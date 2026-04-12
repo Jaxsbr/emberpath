@@ -16,7 +16,7 @@
 
 **What was done:** All instances caught in PR review and resolved before merge. No behavioral defects shipped.
 
-**Prevention point:** During implementation task scoping, the brief should call out: "Before submitting, check for (a) setup operations that run every loop iteration but only need to run once per invocation, (b) conditional branches where both outcomes produce the same result, and (c) comments that reference behavior no longer present in the code."
+**Prevention point:** During implementation task scoping, the brief should call out: "Before submitting, check for (a) setup operations that run every loop iteration but only need to run once per invocation, (b) conditional branches where both outcomes produce the same result, (c) comments that reference behavior no longer present in the code, and (d) method or function names that imply a different return-type or contract than what the implementation provides."
 
 **Scope:** universal
 

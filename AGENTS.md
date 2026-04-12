@@ -47,6 +47,7 @@ src/
     thoughtBubble.ts   # ThoughtBubbleSystem — floating text near player, auto-dismiss, sequential queue
     triggerZone.ts     # TriggerZoneSystem — zone overlap detection, type dispatch
     conditions.ts      # evaluateCondition — shared flag-based condition parsing (AND logic, comparison operators)
+    animation.ts       # AnimationSystem — direction-aware sprite animation state machine (idle/walk/run)
     debugOverlay.ts    # DebugOverlaySystem — F3 toggleable overlay showing trigger zones, exit zones, NPC radii
   data/
     areas/
@@ -54,32 +55,27 @@ src/
       registry.ts      # Area registry — getArea(id), getAllAreaIds(), getDefaultAreaId()
       ashen-isle.ts    # Ashen Isle area definition (50x38 map, Old Man NPC, triggers, dialogues, story scene)
       fog-marsh.ts     # Fog Marsh area definition (30x24 map, Marsh Hermit NPC, triggers, dialogues, story scene)
-  rig/
-    types.ts           # RigDefinition, DirectionProfile, BoneDefinition, AnimationController, BoneState interfaces
-    CharacterRig.ts    # 2D skeletal rig engine — container with atlas sprites, direction profiles, pluggable animation controllers
-    characters/
-      fox.ts           # Fox (Pip) rig definition — 46 named parts, 5 direction profiles, walk/run/idle params
-    animations/
-      walkRun.ts       # WalkRunController — body bob, leg gait, tail follow-through, walk-to-run transition, speed source of truth
-      idle.ts          # IdleController — breathing, tail sway, head turn, sit-down, ear flick
   triggers/
     flags.ts           # Flag store — getFlag, setFlag, incrementFlag, resetAllFlags, localStorage persistence
   maps/
-    constants.ts       # TILE_SIZE, PLAYER_SPEED, TileType
+    constants.ts       # TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, RUN_MULTIPLIER, RUN_THRESHOLD_MS, NPC_SIZE, TileType
 assets/
   characters/
-    fox.png            # Fox texture atlas spritesheet (256x64, 16 body parts)
-    fox.json           # Phaser JSON Hash atlas — frame coordinates for fox body parts
+    fox-pip/           # PixelLab-generated fox animation frames (96 PNGs)
+      idle/            # 4 directions × 8 frames
+        north/east/south/west/  frame_000..007.png
+      walk/            # 4 directions × 8 frames
+        north/east/south/west/  frame_000..007.png
+      run/             # 4 directions × 8 frames
+        north/east/south/west/  frame_000..007.png
 tools/
-  generate-fox-atlas.mjs  # Atlas generator script — creates fox.png + fox.json from code (no dependencies)
-  editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow, and rig editor
+  editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
     src/
       main.ts          # App shell — area selector, tab navigation, detail panel
       style.css        # Dark theme CSS with debug overlay color variables
       mapRenderer.ts   # Canvas-based area map — tile grid, NPC circles, trigger/exit overlays
       dialogueRenderer.ts  # Dialogue tree node graph — BFS layout, SVG edges, flag annotations
       flowRenderer.ts  # Story flow overview — area boxes, exit arrows, flag dependency lines
-      rigRenderer.ts   # Rig editor — embedded Phaser scene, direction picker, skeleton hierarchy, property editor, Save/Load/Export TS
     index.html         # Entry point
     package.json       # Separate Vite + TypeScript project
     vite.config.ts     # @game path alias to ../../src
@@ -91,7 +87,7 @@ tools/
 | Module | Owns |
 |---|---|
 | `scenes/TitleScene.ts` | Title screen UI, scene transition to GameScene, flag reset |
-| `scenes/GameScene.ts` | Area loading, tile rendering, fox rig player (CharacterRig + WalkRunController + IdleController), camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
+| `scenes/GameScene.ts` | Area loading, tile rendering, fox-pip animated player sprite (preloads 96 frames, registers 12 animations), diagonal input suppression, camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
 | `scenes/StoryScene.ts` | Full-screen story scenes — beat display, fade transitions, GameScene pause/resume |
 | `systems/input.ts` | All input handling — keyboard keys, touch joystick lifecycle |
 | `systems/movement.ts` | Position updates with collision checking — accepts area collision data (map + NPCs) |
@@ -101,24 +97,18 @@ tools/
 | `systems/thoughtBubble.ts` | Thought bubble display, auto-dismiss, sequential queue |
 | `systems/triggerZone.ts` | Trigger zone evaluation, type dispatch — accepts triggers via constructor |
 | `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
+| `systems/animation.ts` | AnimationSystem — direction-aware fox-pip sprite animation, walk-to-run timer, facing direction tracking, current speed provider |
 | `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radii in world space |
 | `data/areas/types.ts` | All shared types — AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
 | `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions, getAllAreaIds() for enumeration |
 | `data/areas/ashen-isle.ts` | Ashen Isle area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
-| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
-| `rig/types.ts` | All rig type definitions — RigDefinition, DirectionProfile, BoneDefinition (`inheritScale?: boolean`, `inheritRotation?: boolean`), AnimationController, BoneState, RigContext, WalkRunParams, IdleParams |
-| `rig/CharacterRig.ts` | 2D skeletal rig engine — Phaser Container with atlas Sprites, 8-direction profiles (5 unique + 3 mirrored), pluggable animation controllers, delta-time update, parent-relative tree-walk resolver (`resolvePositions()` depth-first), public `applyProfiles(profiles, direction)` for editor integration |
-| `rig/characters/fox.ts` | Fox (Pip) rig definition — 46 named parts (body, neck, head, snout, eyes, nose, ears, shoulders, hips, 4 legs with upper/lower/ankle/paw/4 toes, 3 tail segments), 5 direction profiles, walkRun + idle animation parameters, collisionSize 24 |
-| `rig/animations/walkRun.ts` | Walk/run animation controller — body bob on `body` only (tree-walk propagates to descendants), alternating leg gait, tail follow-through, ear sway, walk-to-run transition, deceleration settle, speed source of truth |
-| `rig/animations/idle.ts` | Idle animation controller — breathing, tail sway, random ear flick, head turn on `neck` after 3s (tree-walk propagates to head), sit-down on `body`/`hips` after 6s (tree-walk propagates to all descendants), all reset on movement |
-| `tools/generate-fox-atlas.mjs` | Fox atlas generator — creates fox.png + fox.json (256×64, 16 frames) using Node.js built-in zlib, no external dependencies |
-| `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation, view dispatch, detail panel |
+| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, RUN_MULTIPLIER, RUN_THRESHOLD_MS, NPC_SIZE, TileType enum |
+| `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation (map, dialogue, flow), view dispatch, detail panel |
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
 | `tools/editor/src/flowRenderer.ts` | Story flow view — area boxes, exit arrows, flag dependency dashed lines |
-| `tools/editor/src/rigRenderer.ts` | Rig editor — embedded Phaser scene (CharacterRig + checkerboard grid), direction picker (8 directions), skeleton hierarchy panel, property editor (x/y/scale/rotation/depth/alpha/visible per part per direction — all parent-relative), Save JSON/Load JSON/Export TS persistence toolbar; uses `rig.applyProfiles()` for tree-walk-correct preview; canvas overlays: teal bone connection lines (depth 2), amber propagation highlight outlines (depth 3), red selection box (depth 1000); canvas drag to reposition bones by modifying parent-relative X/Y (drag disabled for mirrored directions W/SW/NW) |
 
 ## Depth map
 
@@ -135,20 +125,6 @@ Explicit rendering order for visual layers (Learning #57):
 | Dialogue | 200 | ui | Dialogue box, speaker name, choice buttons |
 
 New visual elements must reference this map. Ad-hoc depth values are prohibited.
-
-## Editor canvas depth map
-
-Explicit rendering order for the rig editor's Phaser scene (`tools/editor/`):
-
-| Layer | Depth | Description |
-|---|---|---|
-| Checkerboard grid | 0 | Editor background grid (16px cells) |
-| Bone connection lines | 2 | Teal lines (#4ecdc4, 65% alpha) connecting parent bones to children |
-| Propagation highlights | 3 | Amber outlines (#f7d794, 70% alpha) on descendant bones of selected bone |
-| Bone sprites | 4–12+ | CharacterRig sprites (depth from fox profile `depth` field) |
-| Selection highlight | 1000 | Red box (#e94560) around the selected bone |
-
-All editor canvas elements must use these depth constants (`DEPTH_*` in `rigRenderer.ts`). Ad-hoc depth values are prohibited.
 
 ## Behavior rules
 
@@ -170,13 +146,10 @@ All editor canvas elements must use these depth constants (`DEPTH_*` in `rigRend
 - **Area transitions:** GameScene accepts `{ areaId, entryPoint }` via scene data. All systems (collision, movement, triggers, NPC interaction, dialogue, story scenes) are parameterized — they receive area data via constructor or method parameters, no global imports. During transition: movement, NPC interaction, triggers, and dialogue are suppressed (transitionInProgress guard).
 - **Debug overlay:** F3 toggles visibility (off by default). Shows trigger zones as color-coded semi-transparent rectangles (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID/type/condition, exit destination labels, NPC interaction radii as yellow circles. World-space at depth 50. Toggle is guarded during dialogue.
 - **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Flags work cross-area — set in one area, readable in another. Reset available from TitleScene.
-- **Character rig (fox):** Player is a `CharacterRig` (Phaser Container at Entities depth 5) with fox rig definition. Atlas preloaded in `GameScene.preload()` via `this.load.atlas(foxRigDefinition.atlasKey, 'characters/fox.png', 'characters/fox.json')` — Vite serves from `assets/` (`publicDir: 'assets'` in vite.config.ts). Direction derived from velocity via 8-sector atan2 mapping. Collision bounding box is PLAYER_SIZE (24px), same as the previous rectangle player.
-- **Rig coordinate model (bone-chain):** `BoneDefinition` supports optional `inheritScale?: boolean` and `inheritRotation?: boolean` fields (both default `false`). Fox profiles store parent-relative coordinates — each bone's offset is relative to its parent's world position. `CharacterRig.update()` and `setDirection()` both resolve world positions via a shared depth-first tree-walk (`resolvePositions()`): world position = parent world position + local profile offset + local state offset. When `inheritRotation` is `true`, the local offset vector is rotated by the parent's world rotation before adding. When `inheritScale` is `true`, the local offset and sprite scale are multiplied by the parent's world scale. Animation controllers benefit from automatic propagation — a body bob `offsetY` applied to the `body` bone automatically moves all descendants (neck, head, shoulders, etc.) without manual per-bone writes. Sprites remain flat siblings in the root Phaser Container — no nested Containers are used.
-- **Walk/run speed:** `WalkRunController` is the source of truth for player movement speed. Walk speed = PLAYER_SPEED (160). After holding a direction for 0.8s, speed transitions to PLAYER_SPEED × runMultiplier (1.8). Releasing and re-pressing resets the timer. GameScene queries `walkRunController.getCurrentSpeed()` each frame.
-- **Idle progression:** At velocity 0: breathing + tail sway start immediately. After 3s: random head turn. After 6s: sit-down with eased leg tuck and body lower. Random ear flicks throughout. Any movement resets all idle state.
-- **Editor bone connections:** In Edit mode, `RigPreviewScene` draws teal connection lines (depth 2) between each parent and child bone sprite on the canvas. Lines are redrawn after every `applyEditorProfiles()` and direction change. Lines are absent in animation preview modes (Idle/Walk/Run). Lines mirror correctly for W/SW/NW directions because sprite positions are already resolved by the tree-walk resolver.
-- **Editor canvas drag:** Clicking and dragging a bone sprite in Edit mode updates the bone's parent-relative X/Y in `editorProfiles` and calls `applyEditorProfiles()` for live preview. Drag delta in world space is divided by `container.scaleX/Y` to produce the container-local delta, which equals the parent-relative delta. Only the dragged bone's X/Y is modified; descendants update visually via tree-walk propagation. Drag is disabled for mirrored directions (W/SW/NW).
-- **Editor propagation highlighting:** When a bone is selected in Edit mode, `updatePropagationHighlights()` draws amber outlines (depth 3, #f7d794, 70% alpha) around all visible descendant sprites. Uses `collectDescendants()` for depth-first skeleton search. Leaf bones (no descendants) show no highlights. Highlights are cleared when animation preview is active.
+- **Player sprite (fox-pip):** Player is a `Phaser.GameObjects.Sprite` at Entities depth 5, using PixelLab-generated fox-pip animation frames (96 PNGs across idle/walk/run × 4 directions × 8 frames). Frames preloaded individually in `GameScene.preload()`. 12 Phaser animations registered as `fox-pip-{idle,walk,run}-{north,east,south,west}` at 8 FPS with `repeat: -1`. Collision bounding box is PLAYER_SIZE (24px). Display size set to PLAYER_SIZE. Vite serves assets from `assets/` (`publicDir: 'assets'` in vite.config.ts).
+- **Animation state machine (`systems/animation.ts`):** `AnimationSystem` manages sprite animation state. Three states: idle (stationary), walk (moving), run (moving ≥ RUN_THRESHOLD_MS). Tracks `facingDirection` (default south on spawn), plays direction-aware animation. `velocityToDirection()` maps velocity to N/E/S/W via dominant axis; equal magnitude maintains current facing to prevent flip-flopping. `getCurrentSpeed()` returns PLAYER_SPEED for walk, PLAYER_SPEED × RUN_MULTIPLIER for run — GameScene uses this for movement.
+- **Diagonal suppression (temporary):** When both input axes have non-zero values, the lesser-magnitude axis is zeroed so movement is single-axis only (4-direction). On equal magnitude (keyboard diagonal), the current facing direction determines which axis is kept. Marked with code comment as temporary — remove when NE/NW/SE/SW diagonal sprites arrive.
+- **Walk-to-run transition:** After holding continuous movement input for RUN_THRESHOLD_MS (2000ms), animation transitions from walk to run and speed increases from PLAYER_SPEED to PLAYER_SPEED × RUN_MULTIPLIER (1.8). Releasing all movement input resets the elapsed timer to 0 and transitions to idle. Constants defined in `maps/constants.ts`.
 
 ## Scaling tuning guide
 

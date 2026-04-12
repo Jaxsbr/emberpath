@@ -81,4 +81,11 @@ entries:
     description: "handle-pr-review completed for PR #10. 1 fixed (PRD rig-teardown row updated from Draft to Shipped; phase spec story headings tagged [Shipped]). 1 skipped/resolved (retro-gate CI informational — retro_complete: false is by design, thread resolved). Both review threads resolved. Verify passes (tsc + build). Phase review complete summary posted to PR. review_complete: true."
     result: pass
     tokens: ~3000
+reconciliation_status:
+  r0: done
+  r1: done
+  r2: done
+  r3: done
+  r4: done
+  r5: done
 # Each entry: {task, time, story, description, result, notes, tokens}

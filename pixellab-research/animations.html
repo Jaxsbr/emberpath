@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ember Fox — Animation Preview</title>
+<style>
+  body { background: #1a1a2e; color: #eee; font-family: system-ui; margin: 2rem; }
+  h1 { text-align: center; color: #f0a040; }
+  h2 { color: #f0a040; text-align: center; margin-top: 2rem; }
+  table { margin: 1rem auto; border-collapse: collapse; }
+  th { padding: 0.5rem 1.5rem; font-size: 1rem; color: #ccc; }
+  td { padding: 0.5rem 1.5rem; text-align: center; }
+  canvas { background: #2a2a4a; border: 2px solid #333; border-radius: 4px; }
+  .dir { color: #f0a040; font-weight: bold; }
+  .controls { text-align: center; margin: 1rem; }
+  .controls label { margin: 0 1rem; color: #ccc; }
+  .controls input { width: 80px; }
+</style>
+</head>
+<body>
+<h1>Ember Fox — Animation Preview (Dog Template)</h1>
+<div class="controls">
+  <label>FPS: <input type="range" id="fps" min="2" max="24" value="8"><span id="fpsVal">8</span></label>
+  <label>Scale: <input type="range" id="scale" min="2" max="6" value="3"><span id="scaleVal">3x</span></label>
+</div>
+
+<h2>Idle</h2>
+<table><tr>
+  <th></th><th>South</th><th>East</th><th>North</th><th>West</th>
+</tr><tr>
+  <td class="dir">Idle</td>
+  <td><canvas data-anim="idle" data-dir="south"></canvas></td>
+  <td><canvas data-anim="idle" data-dir="east"></canvas></td>
+  <td><canvas data-anim="idle" data-dir="north"></canvas></td>
+  <td><canvas data-anim="idle" data-dir="west"></canvas></td>
+</tr></table>
+
+<h2>Walk</h2>
+<table><tr>
+  <th></th><th>South</th><th>East</th><th>North</th><th>West</th>
+</tr><tr>
+  <td class="dir">Walk</td>
+  <td><canvas data-anim="walk" data-dir="south"></canvas></td>
+  <td><canvas data-anim="walk" data-dir="east"></canvas></td>
+  <td><canvas data-anim="walk" data-dir="north"></canvas></td>
+  <td><canvas data-anim="walk" data-dir="west"></canvas></td>
+</tr></table>
+
+<h2>Run</h2>
+<table><tr>
+  <th></th><th>South</th><th>East</th><th>North</th><th>West</th>
+</tr><tr>
+  <td class="dir">Run</td>
+  <td><canvas data-anim="run" data-dir="south"></canvas></td>
+  <td><canvas data-anim="run" data-dir="east"></canvas></td>
+  <td><canvas data-anim="run" data-dir="north"></canvas></td>
+  <td><canvas data-anim="run" data-dir="west"></canvas></td>
+</tr></table>
+
+<script>
+const ANIM_DIRS = {
+  idle: 'dog-animations/animation-b456e6de',
+  walk: 'dog-animations/walking-87ced120',
+  run:  'dog-animations/running-387f57ef'
+};
+const FRAMES = 8;
+const SIZE = 68;
+
+let fps = 8;
+let scale = 3;
+
+const canvases = document.querySelectorAll('canvas');
+const frameImages = new Map();
+let loaded = 0;
+const totalImages = canvases.length * FRAMES;
+
+canvases.forEach(c => {
+  const anim = c.dataset.anim;
+  const dir = c.dataset.dir;
+  const key = `${anim}-${dir}`;
+  const imgs = [];
+  for (let i = 0; i < FRAMES; i++) {
+    const img = new Image();
+    img.src = `${ANIM_DIRS[anim]}/${dir}/frame_${String(i).padStart(3,'0')}.png`;
+    img.onload = () => { loaded++; if (loaded === totalImages) startAnimation(); };
+    imgs.push(img);
+  }
+  frameImages.set(key, imgs);
+});
+
+function updateSize() {
+  canvases.forEach(c => {
+    c.width = SIZE * scale;
+    c.height = SIZE * scale;
+    c.getContext('2d').imageSmoothingEnabled = false;
+  });
+}
+
+let intervalId;
+function startAnimation() {
+  updateSize();
+  let frame = 0;
+  if (intervalId) clearInterval(intervalId);
+  intervalId = setInterval(() => {
+    canvases.forEach(c => {
+      const key = `${c.dataset.anim}-${c.dataset.dir}`;
+      const imgs = frameImages.get(key);
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(imgs[frame % FRAMES], 0, 0, c.width, c.height);
+    });
+    frame++;
+  }, 1000 / fps);
+}
+
+document.getElementById('fps').addEventListener('input', e => {
+  fps = parseInt(e.target.value);
+  document.getElementById('fpsVal').textContent = fps;
+  if (loaded === totalImages) startAnimation();
+});
+
+document.getElementById('scale').addEventListener('input', e => {
+  scale = parseInt(e.target.value);
+  document.getElementById('scaleVal').textContent = scale + 'x';
+  updateSize();
+});
+</script>
+</body>
+</html>
