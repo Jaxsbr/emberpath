@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 10
-  next_task: null
+  task_number: 11
+  next_task: "[phase] Update AGENTS.md to reflect sprite animation system: add fox-pip assets to directory layout, add systems/animation.ts to file ownership, update behavior rules with animation state machine / diagonal suppression / walk-to-run, add RUN_MULTIPLIER/RUN_THRESHOLD_MS to constants, remove any remaining stale rig references."
   last_result: pass
   consecutive_fails: 0
 

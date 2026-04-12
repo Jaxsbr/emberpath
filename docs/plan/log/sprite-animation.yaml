@@ -75,4 +75,11 @@ entries:
     result: pass
     notes: US-45 complete
     tokens: ~5000
+  - task: 11
+    time: "2026-04-12T00:49:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. All 4 stories complete. 2 phase-level criteria remaining: verify (passes) and AGENTS.md update. Current AGENTS.md was partially updated during reconciliation (removed rig directory/file ownership/behavior). Still needs: fox-pip assets in directory layout, animation.ts in file ownership, animation state machine + diagonal suppression + walk-to-run in behavior rules, constants update. Queued AGENTS.md update."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
