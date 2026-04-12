@@ -16,11 +16,11 @@ const TARGET_VISIBLE_TILES = 10;
 const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
 
-// Fox atlas still exists at assets/characters/fox.png + fox.json and is used for the
-// static sprite placeholder. generate-fox-atlas.mjs can regenerate it if needed.
-// This atlas will be replaced when sprite-sheet integration begins.
-const FOX_ATLAS_KEY = 'fox';
-const FOX_FRAME = 'body'; // first visible frame from the fox atlas
+// Fox-pip sprite animation constants
+const ANIM_TYPES = ['idle', 'walk', 'run'] as const;
+const DIRECTIONS = ['north', 'east', 'south', 'west'] as const;
+const FRAME_COUNT = 8;
+const ANIM_FRAME_RATE = 8;
 
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
@@ -41,7 +41,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.atlas(FOX_ATLAS_KEY, 'characters/fox.png', 'characters/fox.json');
+    // Load all 96 fox-pip animation frames (3 types × 4 directions × 8 frames)
+    for (const anim of ANIM_TYPES) {
+      for (const dir of DIRECTIONS) {
+        for (let i = 0; i < FRAME_COUNT; i++) {
+          const key = `fox-pip-${anim}-${dir}-${i}`;
+          const path = `characters/fox-pip/${anim}/${dir}/frame_00${i}.png`;
+          this.load.image(key, path);
+        }
+      }
+    }
   }
 
   create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {
@@ -56,6 +65,7 @@ export class GameScene extends Phaser.Scene {
 
     this.renderTileMap();
     this.renderNpcs();
+    this.registerAnimations();
     this.createPlayer(data?.entryPoint);
     this.setupCamera();
     // Fade in when entering from an area transition
@@ -322,6 +332,25 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch('StoryScene', { definition });
   }
 
+  private registerAnimations(): void {
+    // Register 12 Phaser animations: fox-pip-{idle,walk,run}-{north,east,south,west}
+    for (const anim of ANIM_TYPES) {
+      for (const dir of DIRECTIONS) {
+        const key = `fox-pip-${anim}-${dir}`;
+        const frames: { key: string }[] = [];
+        for (let i = 0; i < FRAME_COUNT; i++) {
+          frames.push({ key: `fox-pip-${anim}-${dir}-${i}` });
+        }
+        this.anims.create({
+          key,
+          frames,
+          frameRate: ANIM_FRAME_RATE,
+          repeat: -1,
+        });
+      }
+    }
+  }
+
   private createPlayer(entryPoint?: { col: number; row: number }): void {
     const spawn = entryPoint ?? this.area.playerSpawn;
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
@@ -329,8 +358,9 @@ export class GameScene extends Phaser.Scene {
     const x = spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
     const y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
 
-    this.player = this.add.sprite(x, y, FOX_ATLAS_KEY, FOX_FRAME);
+    this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
     this.player.setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
+    this.player.play('fox-pip-idle-south');
   }
 }
