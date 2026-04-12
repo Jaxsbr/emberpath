@@ -80,4 +80,11 @@ entries:
     description: "review-pr for PR #12. 0 critical. 1 concern: FRAME_COUNTS typed as Record<string,number> loses type safety vs ANIM_TYPES tuple (Record<typeof ANIM_TYPES[number],number> would be better). 1 nit: velocityToDirection comment block has redundant derivation notes alongside the correct sector-index approach. Positives: clean diagonal suppression removal, correct octant mapping, TypeScript compiles, AGENTS.md in sync. Review posted as COMMENT."
     result: pass
     tokens: ~4000
+  - task: 12
+    time: "2026-04-12T10:32:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B: review_stage=review_posted. Queued handle-pr-review pr=12 auto=true."
+    result: pass
+    tokens: ~200
 # Each entry: {task, time, story, description, result, notes, tokens}
