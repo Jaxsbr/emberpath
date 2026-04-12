@@ -45,4 +45,11 @@ entries:
     result: pass
     notes: US-47 complete
     tokens: ~5000
+  - task: 7
+    time: "2026-04-12T10:25:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. Both stories complete. 2 phase-level criteria: verify (passes), AGENTS.md update (reflects 8-dir 2-state animation, variable frame counts, no run, no diagonal suppression). AGENTS.md currently shows: fox-pip assets idle/walk/run × 4 dirs, 12 animations, animation state machine (3-state), diagonal suppression, walk-to-run transition. Queued AGENTS.md update."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}

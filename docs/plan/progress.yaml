@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: null
+  task_number: 8
+  next_task: "[phase] Update AGENTS.md: reflect 8-direction 2-state animation system (idle:4f walk:8f no run no diagonal suppression)"
   last_result: pass
   consecutive_fails: 0
 
