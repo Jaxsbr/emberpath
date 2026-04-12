@@ -9,13 +9,13 @@ Integrate PixelLab-generated fox sprite animation frames into the game, replacin
 - US-45 — Walk-to-run transition
 
 ### Done-when (observable)
-- [ ] `assets/characters/fox-pip/idle/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
-- [ ] `assets/characters/fox-pip/walk/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
-- [ ] `assets/characters/fox-pip/run/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
-- [ ] GameScene.preload() loads all 96 fox-pip frames and does not load the old fox atlas [US-42]
-- [ ] 12 Phaser animations registered with keys `fox-pip-{idle,walk,run}-{north,east,south,west}` [US-42]
-- [ ] No references to `FOX_ATLAS_KEY`, `FOX_FRAME`, `characters/fox.png`, or `characters/fox.json` remain in `src/` (grep confirms zero matches) [US-42]
-- [ ] Player sprite created using `fox-pip` animation, displayed at PLAYER_SIZE (24px) [US-42]
+- [x] `assets/characters/fox-pip/idle/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
+- [x] `assets/characters/fox-pip/walk/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
+- [x] `assets/characters/fox-pip/run/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
+- [x] GameScene.preload() loads all 96 fox-pip frames and does not load the old fox atlas [US-42]
+- [x] 12 Phaser animations registered with keys `fox-pip-{idle,walk,run}-{north,east,south,west}` [US-42]
+- [x] No references to `FOX_ATLAS_KEY`, `FOX_FRAME`, `characters/fox.png`, or `characters/fox.json` remain in `src/` (grep confirms zero matches) [US-42]
+- [x] Player sprite created using `fox-pip` animation, displayed at PLAYER_SIZE (24px) [US-42]
 - [ ] On spawn with no movement input, player sprite plays `fox-pip-idle-south` animation [US-43]
 - [ ] After moving east then stopping, player sprite plays `fox-pip-idle-east` [US-43]
 - [ ] Idle animations have `repeat: -1` (continuous loop) [US-43]
