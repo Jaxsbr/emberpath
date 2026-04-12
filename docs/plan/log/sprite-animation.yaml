@@ -60,4 +60,11 @@ entries:
     result: pass
     notes: US-44 complete
     tokens: ~3000
+  - task: 9
+    time: "2026-04-12T00:46:00Z"
+    type: investigate
+    story: US-45
+    description: "Branch B investigation. US-44 complete. Last story: US-45 walk-to-run transition. Needs: RUN_MULTIPLIER + RUN_THRESHOLD_MS constants, walk-to-run timer in AnimationSystem, GameScene uses animation system speed. Queued combined implementation."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
