@@ -52,4 +52,11 @@ entries:
     description: "Branch B investigation. Both stories complete. 2 phase-level criteria: verify (passes), AGENTS.md update (reflects 8-dir 2-state animation, variable frame counts, no run, no diagonal suppression). AGENTS.md currently shows: fox-pip assets idle/walk/run × 4 dirs, 12 animations, animation state machine (3-state), diagonal suppression, walk-to-run transition. Queued AGENTS.md update."
     result: pass
     tokens: ~1000
+  - task: 8
+    time: "2026-04-12T10:26:00Z"
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: directory layout (fox-pip idle:8dirs×4frames, walk:8dirs×8frames, removed run/); file ownership (GameScene: 16 animations 8-dir, animation.ts: 8-dir 2-state octant mapping, constants.ts: no RUN_MULTIPLIER/RUN_THRESHOLD_MS); behavior rules (player sprite: 96 PNGs 8-dir 2-state, native 68px scale, FRAME_COUNTS; animation state machine: 2-state idle/walk, octant velocityToDirection, no run acceleration; removed diagonal suppression and walk-to-run transition entries). Verify passes."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
