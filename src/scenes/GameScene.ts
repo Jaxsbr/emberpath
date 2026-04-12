@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { AreaDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -158,13 +158,18 @@ export class GameScene extends Phaser.Scene {
     const inputSpeed = Math.sqrt(suppressedVx * suppressedVx + suppressedVy * suppressedVy);
     const hasInput = inputSpeed > 0;
 
+    // Update animation state BEFORE computing movement speed — the animation
+    // system tracks the walk-to-run timer and determines the current speed.
+    this.animationSystem.update(suppressedVx, suppressedVy, delta);
+    const currentSpeed = this.animationSystem.getCurrentSpeed();
+
     let moveVx = 0;
     let moveVy = 0;
     if (hasInput) {
       const dirX = suppressedVx / inputSpeed;
       const dirY = suppressedVy / inputSpeed;
-      moveVx = dirX * PLAYER_SPEED;
-      moveVy = dirY * PLAYER_SPEED;
+      moveVx = dirX * currentSpeed;
+      moveVy = dirY * currentSpeed;
     }
 
     const halfSize = PLAYER_SIZE / 2;
@@ -180,9 +185,6 @@ export class GameScene extends Phaser.Scene {
       { map: this.area.map, npcs: this.area.npcs },
     );
     this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
-
-    // Update animation state based on movement velocity
-    this.animationSystem.update(moveVx, moveVy);
 
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
