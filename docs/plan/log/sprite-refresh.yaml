@@ -66,4 +66,11 @@ entries:
     description: "Phase Completion Gate. All 23 done-when criteria verified. US-46: 32 idle PNGs (8 dirs × 4f), 64 walk PNGs (8 dirs × 8f), no run/ directory, preload uses FRAME_COUNTS per type, 16 animations registered, no fox-pip-run-* in src/, player at depth 5 with native 68px scale and native resolution comment. US-47: AnimState='idle'|'walk', Direction 8-way, velocityToDirection octant, no RUN_MULTIPLIER/RUN_THRESHOLD_MS in animation.ts or constants.ts, no moveElapsedMs, getCurrentSpeed returns PLAYER_SPEED, no suppressedVx/suppressedVy, idle-south on spawn. Structural: verify passes, AGENTS.md updated. AGENTS.md consistency: depth 5, startFollow(player), PLAYER_SIZE collision. Phase complete."
     result: pass
     tokens: ~3000
+  - task: 10
+    time: "2026-04-12T10:28:00Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #12 from build/sprite-refresh to main. PR body includes phase summary (8-dir bipedal fox child, 2-state animation, no run/diagonal suppression), 2 shipped stories (US-46/47), done-when evidence. review-pr queued."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
