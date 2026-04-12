@@ -18,9 +18,10 @@ const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
 
 // Fox-pip sprite animation constants
-const ANIM_TYPES = ['idle', 'walk', 'run'] as const;
-const DIRECTIONS = ['north', 'east', 'south', 'west'] as const;
-const FRAME_COUNT = 8;
+// Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
+const ANIM_TYPES = ['idle', 'walk'] as const;
+const DIRECTIONS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'] as const;
+const FRAME_COUNTS: Record<string, number> = { idle: 4, walk: 8 };
 const ANIM_FRAME_RATE = 8;
 
 export class GameScene extends Phaser.Scene {
@@ -43,10 +44,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Load all 96 fox-pip animation frames (3 types × 4 directions × 8 frames)
+    // Load all 96 fox-pip animation frames (2 types × 8 directions, idle:4 frames, walk:8 frames)
     for (const anim of ANIM_TYPES) {
+      const frameCount = FRAME_COUNTS[anim];
       for (const dir of DIRECTIONS) {
-        for (let i = 0; i < FRAME_COUNT; i++) {
+        for (let i = 0; i < frameCount; i++) {
           const key = `fox-pip-${anim}-${dir}-${i}`;
           const path = `characters/fox-pip/${anim}/${dir}/frame_00${i}.png`;
           this.load.image(key, path);
@@ -365,12 +367,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private registerAnimations(): void {
-    // Register 12 Phaser animations: fox-pip-{idle,walk,run}-{north,east,south,west}
+    // Register 16 Phaser animations: fox-pip-{idle,walk}-{8 directions}
+    // idle: 4 frames per direction; walk: 8 frames per direction
     for (const anim of ANIM_TYPES) {
+      const frameCount = FRAME_COUNTS[anim];
       for (const dir of DIRECTIONS) {
         const key = `fox-pip-${anim}-${dir}`;
         const frames: { key: string }[] = [];
-        for (let i = 0; i < FRAME_COUNT; i++) {
+        for (let i = 0; i < frameCount; i++) {
           frames.push({ key: `fox-pip-${anim}-${dir}-${i}` });
         }
         this.anims.create({
@@ -392,7 +396,9 @@ export class GameScene extends Phaser.Scene {
 
     this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
-    this.player.setScale(1); // Render at native size (68px); collision uses PLAYER_SIZE math directly
+    // Native PNG resolution: 68×68px. Scale 1.0 renders at native size.
+    // Collision bounding box uses PLAYER_SIZE (24px) in math directly — display size is independent.
+    this.player.setScale(1);
     this.animationSystem = new AnimationSystem(this.player);
   }
 }
