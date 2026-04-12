@@ -31,8 +31,8 @@ Integrate PixelLab-generated fox sprite animation frames into the game, replacin
 - [x] Releasing all movement input resets walk-to-run timer to 0 [US-45]
 - [x] Transitioning from movement (walk or run) to stationary switches to `fox-pip-idle-{dir}` — not a freeze frame [US-45]
 - [x] Run animation frameRate is 8 [US-45]
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [ ] AGENTS.md reflects new sprite animation system (fox-pip assets, animation state machine, diagonal suppression behavior) and removes stale rig system references [phase]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [x] AGENTS.md reflects new sprite animation system (fox-pip assets, animation state machine, diagonal suppression behavior) and removes stale rig system references [phase]
 
 ### Golden principles (phase-relevant)
 - Depth map is non-negotiable: the player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.

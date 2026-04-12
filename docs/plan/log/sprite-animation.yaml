@@ -89,4 +89,11 @@ entries:
     description: "Updated AGENTS.md: added fox-pip asset tree to directory layout, animation.ts to file ownership + directory, updated GameScene and constants.ts descriptions, removed generate-fox-atlas.mjs. Added behavior rules for animation state machine, diagonal suppression, walk-to-run transition. Removed stale rig/placeholder references. Verify passes."
     result: pass
     tokens: ~3000
+  - task: 13
+    time: "2026-04-12T00:52:00Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All 24 done-when criteria verified: US-42 (96 PNGs in fox-pip/{idle,walk,run}/{N,E,S,W}, preload loops 3×4×8 frames, 12 animations registered, zero old atlas refs, player uses fox-pip at PLAYER_SIZE). US-43 (spawn plays idle-south, facing tracked, idle repeat:-1 at 8 FPS). US-44 (WASD→walk-{dir}, diagonal suppression zeroes lesser axis with comment, equal-mag maintains facing, walk at 8 FPS and PLAYER_SPEED). US-45 (walk→run after 2s, RUN_MULTIPLIER=1.8 and RUN_THRESHOLD_MS=2000 in constants, release resets timer, movement→idle not freeze, run at 8 FPS). Phase: verify passes, AGENTS.md updated. AGENTS.md consistency: depth 5, startFollow(player), PLAYER_SIZE collision, moveWithCollision intact. Phase complete."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
