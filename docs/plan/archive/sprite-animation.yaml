@@ -1,0 +1,128 @@
+phase: "sprite-animation"
+started: "2026-04-12T00:36:02Z"
+entries:
+  - task: 1
+    time: "2026-04-12T00:37:23Z"
+    type: investigate
+    story: US-42
+    description: "Phase start investigation. Verify passes (tsc + build). 96 PixelLab PNGs confirmed in pixellab-research/dog-animations/ across 3 animations (idle=animation-b456e6de, walk=walking-87ced120, run=running-387f57ef) × 4 directions × 8 frames. No assets/characters/ directory exists yet (removed in rig-teardown). GameScene uses FOX_ATLAS_KEY/FOX_FRAME for static sprite placeholder. InputSystem returns normalized velocity×PLAYER_SPEED. constants.ts has TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE. Queued US-42 sprite copy task."
+    result: pass
+    tokens: ~8000
+  - task: 2
+    time: "2026-04-12T00:38:36Z"
+    type: implement
+    story: US-42
+    description: "Copied 96 PixelLab animation PNGs from pixellab-research/dog-animations/ to assets/characters/fox-pip/{idle,walk,run}/{north,east,south,west}/frame_00{0-7}.png. Source mapping: animation-b456e6de→idle, walking-87ced120→walk, running-387f57ef→run. Verify passes."
+    result: pass
+    tokens: ~3000
+  - task: 3
+    time: "2026-04-12T00:39:02Z"
+    type: investigate
+    story: US-42
+    description: "Branch B investigation. US-42 asset copy done (3/7 criteria met). Remaining: preload 96 frames, register 12 animations, remove FOX_ATLAS_KEY/FOX_FRAME/old atlas, update createPlayer to use animation sprite. Queued combined US-42 code task."
+    result: pass
+    tokens: ~1000
+  - task: 4
+    time: "2026-04-12T00:41:01Z"
+    type: implement
+    story: US-42
+    description: "Rewrote GameScene: preload loads 96 individual fox-pip frames, registerAnimations() creates 12 Phaser animations keyed fox-pip-{idle,walk,run}-{N,E,S,W} at 8 FPS with repeat:-1. Removed FOX_ATLAS_KEY/FOX_FRAME constants and old atlas loading. createPlayer uses fox-pip-idle-south-0 texture and plays fox-pip-idle-south. Grep confirms zero old atlas refs in src/. Verify passes. US-42 complete."
+    result: pass
+    notes: US-42 complete
+    tokens: ~5000
+  - task: 5
+    time: "2026-04-12T00:41:29Z"
+    type: investigate
+    story: US-43
+    description: "Branch B investigation. US-42 complete. Next: US-43 direction-aware idle. Player currently plays fox-pip-idle-south on spawn but no facing direction tracking or idle-on-stop logic. Golden principle mandates extracting animation state to system module. Queued systems/animation.ts creation + GameScene integration."
+    result: pass
+    tokens: ~1000
+  - task: 6
+    time: "2026-04-12T00:43:11Z"
+    type: implement
+    story: US-43
+    description: "Created systems/animation.ts with AnimationSystem class. Tracks facing direction (default south), plays idle when stationary and walk when moving, 4-direction velocity mapping with equal-magnitude stability. Integrated into GameScene: imported, created after player, update called with moveVx/moveVy after position update. Verify passes. US-43 complete."
+    result: pass
+    notes: US-43 complete
+    tokens: ~5000
+  - task: 7
+    time: "2026-04-12T00:44:00Z"
+    type: investigate
+    story: US-44
+    description: "Branch B investigation. US-43 complete. US-44 walk criteria mostly met by AnimationSystem — walk plays in correct direction, frameRate 8, speed PLAYER_SPEED. Missing: diagonal suppression (zero lesser axis, comment as temporary, equal-magnitude stability for movement). Queued diagonal suppression implementation."
+    result: pass
+    tokens: ~1000
+  - task: 8
+    time: "2026-04-12T00:45:18Z"
+    type: implement
+    story: US-44
+    description: "Added diagonal input suppression to GameScene update. Zeroes lesser-magnitude axis when both have input. On equal magnitude, maintains facing direction via animationSystem.getFacingDirection(). Comment marks as temporary until diagonal sprites. All 5 US-44 criteria met. Verify passes. US-44 complete."
+    result: pass
+    notes: US-44 complete
+    tokens: ~3000
+  - task: 9
+    time: "2026-04-12T00:46:00Z"
+    type: investigate
+    story: US-45
+    description: "Branch B investigation. US-44 complete. Last story: US-45 walk-to-run transition. Needs: RUN_MULTIPLIER + RUN_THRESHOLD_MS constants, walk-to-run timer in AnimationSystem, GameScene uses animation system speed. Queued combined implementation."
+    result: pass
+    tokens: ~1000
+  - task: 10
+    time: "2026-04-12T00:48:01Z"
+    type: implement
+    story: US-45
+    description: "Added RUN_MULTIPLIER=1.8 and RUN_THRESHOLD_MS=2000 to constants.ts. AnimationSystem tracks moveElapsedMs, transitions walk→run after threshold, resets on input release. getCurrentSpeed() returns PLAYER_SPEED or PLAYER_SPEED×RUN_MULTIPLIER. GameScene uses getCurrentSpeed() instead of fixed PLAYER_SPEED. Removed unused PLAYER_SPEED import from GameScene. Verify passes. US-45 complete."
+    result: pass
+    notes: US-45 complete
+    tokens: ~5000
+  - task: 11
+    time: "2026-04-12T00:49:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. All 4 stories complete. 2 phase-level criteria remaining: verify (passes) and AGENTS.md update. Current AGENTS.md was partially updated during reconciliation (removed rig directory/file ownership/behavior). Still needs: fox-pip assets in directory layout, animation.ts in file ownership, animation state machine + diagonal suppression + walk-to-run in behavior rules, constants update. Queued AGENTS.md update."
+    result: pass
+    tokens: ~1000
+  - task: 12
+    time: "2026-04-12T00:50:29Z"
+    type: implement
+    story: phase
+    description: "Updated AGENTS.md: added fox-pip asset tree to directory layout, animation.ts to file ownership + directory, updated GameScene and constants.ts descriptions, removed generate-fox-atlas.mjs. Added behavior rules for animation state machine, diagonal suppression, walk-to-run transition. Removed stale rig/placeholder references. Verify passes."
+    result: pass
+    tokens: ~3000
+  - task: 13
+    time: "2026-04-12T00:52:00Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. All 24 done-when criteria verified: US-42 (96 PNGs in fox-pip/{idle,walk,run}/{N,E,S,W}, preload loops 3×4×8 frames, 12 animations registered, zero old atlas refs, player uses fox-pip at PLAYER_SIZE). US-43 (spawn plays idle-south, facing tracked, idle repeat:-1 at 8 FPS). US-44 (WASD→walk-{dir}, diagonal suppression zeroes lesser axis with comment, equal-mag maintains facing, walk at 8 FPS and PLAYER_SPEED). US-45 (walk→run after 2s, RUN_MULTIPLIER=1.8 and RUN_THRESHOLD_MS=2000 in constants, release resets timer, movement→idle not freeze, run at 8 FPS). Phase: verify passes, AGENTS.md updated. AGENTS.md consistency: depth 5, startFollow(player), PLAYER_SIZE collision, moveWithCollision intact. Phase complete."
+    result: pass
+    tokens: ~3000
+  - task: 14
+    time: "2026-04-12T00:53:00Z"
+    type: investigate
+    story: phase
+    description: "Review stage initiated. Created PR #11 from build/sprite-animation to main. PR body includes phase summary, 4 shipped stories (US-42/43/44/45), done-when evidence, architecture notes. review-pr queued."
+    result: pass
+    tokens: ~2000
+  - task: 15
+    time: "2026-04-12T00:54:00Z"
+    type: review
+    story: phase
+    description: "review-pr completed for PR #11. 0 critical. 1 concern: InputSystem.getVelocity() returns pre-multiplied velocity (API naming, not a bug — normalization handles it). Positives: clean AnimationSystem extraction, well-documented diagonal suppression, proper golden principle compliance, thorough AGENTS.md update. handle-pr-review queued."
+    result: pass
+    tokens: ~5000
+  - task: 16
+    time: "2026-04-12T00:55:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. review_stage=review_posted, review_complete=false. Queued handle-pr-review pr=11 auto=true."
+    result: pass
+    tokens: ~1000
+  - task: 17
+    time: "2026-04-12T00:57:00Z"
+    type: review
+    story: phase
+    description: "handle-pr-review for PR #11. 0 critical, 1 concern (InputSystem.getVelocity() API naming — acknowledged, deferred to future cleanup). No code changes required. Posted triage summary comment. review_complete=true."
+    result: pass
+    notes: "Phase review complete. PR ready for human review."
+    tokens: ~3000
+# Each entry: {task, time, story, description, result, notes, tokens}
