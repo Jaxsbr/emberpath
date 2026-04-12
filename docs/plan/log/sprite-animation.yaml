@@ -110,4 +110,11 @@ entries:
     description: "review-pr completed for PR #11. 0 critical. 1 concern: InputSystem.getVelocity() returns pre-multiplied velocity (API naming, not a bug — normalization handles it). Positives: clean AnimationSystem extraction, well-documented diagonal suppression, proper golden principle compliance, thorough AGENTS.md update. handle-pr-review queued."
     result: pass
     tokens: ~5000
+  - task: 16
+    time: "2026-04-12T00:55:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B investigation. review_stage=review_posted, review_complete=false. Queued handle-pr-review pr=11 auto=true."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
