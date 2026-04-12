@@ -27,9 +27,9 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: "[US-42] Copy PixelLab animation frames from pixellab-research/dog-animations/ to assets/characters/fox-pip/{idle,walk,run}/{north,east,south,west}/frame_00{0-7}.png (96 files). Source mapping: animation-b456e6de→idle, walking-87ced120→walk, running-387f57ef→run."
-  last_result: null
+  task_number: 2
+  next_task: null
+  last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
