@@ -1,22 +1,32 @@
 import Phaser from 'phaser';
-import { PLAYER_SPEED, RUN_MULTIPLIER, RUN_THRESHOLD_MS } from '../maps/constants';
+import { PLAYER_SPEED } from '../maps/constants';
 
-type Direction = 'north' | 'east' | 'south' | 'west';
-type AnimState = 'idle' | 'walk' | 'run';
+type Direction =
+  | 'north'
+  | 'north-east'
+  | 'east'
+  | 'south-east'
+  | 'south'
+  | 'south-west'
+  | 'west'
+  | 'north-west';
+
+type AnimState = 'idle' | 'walk';
 
 /**
  * AnimationSystem — manages fox-pip sprite animation state.
  *
- * Tracks facing direction, animation state (idle/walk/run), walk-to-run
- * transition timer, and plays the correct directional animation on the
- * player sprite. Called from GameScene.update() each frame with current
- * velocity and delta time.
+ * Tracks facing direction, animation state (idle/walk), and plays the correct
+ * 8-directional animation on the player sprite. Called from GameScene.update()
+ * each frame with current velocity.
+ *
+ * Direction mapping uses octant boundaries (45-degree sectors):
+ * atan2(vy, vx) determines the direction, then quantized to nearest 45°.
  */
 export class AnimationSystem {
   private facingDirection: Direction = 'south';
   private currentState: AnimState = 'idle';
   private currentAnimKey: string = '';
-  private moveElapsedMs: number = 0;
 
   constructor(private sprite: Phaser.GameObjects.Sprite) {
     // Play initial idle-south animation
@@ -27,57 +37,55 @@ export class AnimationSystem {
    * Update animation state based on current velocity.
    * @param vx Horizontal velocity (negative = west, positive = east)
    * @param vy Vertical velocity (negative = north, positive = south)
-   * @param delta Frame delta time in milliseconds
    */
-  update(vx: number, vy: number, delta: number): void {
+  update(vx: number, vy: number): void {
     const isMoving = vx !== 0 || vy !== 0;
 
     if (isMoving) {
-      // Determine facing direction from velocity (4-direction mapping)
       this.facingDirection = this.velocityToDirection(vx, vy);
-
-      // Accumulate walk-to-run elapsed time
-      this.moveElapsedMs += delta;
-
-      if (this.moveElapsedMs >= RUN_THRESHOLD_MS) {
-        this.playAnim('run', this.facingDirection);
-      } else {
-        this.playAnim('walk', this.facingDirection);
-      }
+      this.playAnim('walk', this.facingDirection);
     } else {
-      // Stationary — reset walk-to-run timer and play idle
-      this.moveElapsedMs = 0;
       this.playAnim('idle', this.facingDirection);
     }
   }
 
   /**
-   * Get the current movement speed based on animation state.
-   * Walk = PLAYER_SPEED, Run = PLAYER_SPEED × RUN_MULTIPLIER, Idle = 0.
+   * Get the current movement speed.
+   * Always returns PLAYER_SPEED — no run acceleration in this sprite set.
    */
   getCurrentSpeed(): number {
-    if (this.currentState === 'run') {
-      return PLAYER_SPEED * RUN_MULTIPLIER;
-    }
     return PLAYER_SPEED;
   }
 
   /**
-   * Map velocity to a cardinal direction (N/E/S/W).
-   * Uses dominant axis — if both axes have input, the larger magnitude wins.
-   * On equal magnitude, current facing direction is maintained to prevent flip-flopping.
+   * Map velocity to one of 8 directions using octant boundaries (45-degree sectors).
+   * atan2 returns angle in [-π, π]; we normalize to [0, 2π] then quantize to 8 sectors.
+   * Note: vy is positive-down in screen space (Phaser), so south = positive vy.
    */
   private velocityToDirection(vx: number, vy: number): Direction {
-    const absX = Math.abs(vx);
-    const absY = Math.abs(vy);
-
-    if (absX > absY) {
-      return vx > 0 ? 'east' : 'west';
-    } else if (absY > absX) {
-      return vy > 0 ? 'south' : 'north';
-    }
-    // Equal magnitude — maintain current facing direction
-    return this.facingDirection;
+    // atan2 with vy, vx gives angle from east; adjust to get angle from north clockwise
+    const angle = Math.atan2(vy, vx); // [-π, π], east=0, south=π/2
+    // Normalize to [0, 2π]: add 2π if negative
+    const normalized = angle < 0 ? angle + 2 * Math.PI : angle;
+    // Shift by -π/2 so north (up, vy<0) is 0: north is atan2(-1,0)=-π/2 → normalized=3π/2
+    // Alternative: use the direction index approach directly
+    // Each sector is π/4 (45°). East is 0°, sectors go clockwise.
+    // Map: east(0°)=E, 45°=SE, 90°=S, 135°=SW, 180°=W, 225°=NW, 270°=N, 315°=NE
+    // atan2(vy,vx): east=0, south=π/2, west=π, north=-π/2
+    const DIRECTIONS: Direction[] = [
+      'east',       //   0° (atan2≈0)
+      'south-east', //  45° (atan2≈π/4)
+      'south',      //  90° (atan2≈π/2)
+      'south-west', // 135° (atan2≈3π/4)
+      'west',       // 180° (atan2≈±π)
+      'north-west', // 225° (atan2≈-3π/4 → normalized 5π/4)
+      'north',      // 270° (atan2≈-π/2 → normalized 3π/2)
+      'north-east', // 315° (atan2≈-π/4 → normalized 7π/4)
+    ];
+    // Divide circle into 8 equal sectors of π/4 each, with east at center of sector 0
+    // Each sector center is at k*π/4 for k=0..7; sector k spans [(k-0.5)*π/4, (k+0.5)*π/4]
+    const sectorIndex = Math.round(normalized / (Math.PI / 4)) % 8;
+    return DIRECTIONS[sectorIndex];
   }
 
   private playAnim(state: AnimState, direction: Direction): void {
@@ -86,11 +94,6 @@ export class AnimationSystem {
     this.currentAnimKey = key;
     this.currentState = state;
     this.sprite.play(key);
-  }
-
-  /** Get the current facing direction. */
-  getFacingDirection(): Direction {
-    return this.facingDirection;
   }
 
   /** Get the current animation state. */
