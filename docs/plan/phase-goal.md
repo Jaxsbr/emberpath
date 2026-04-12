@@ -1,60 +1,44 @@
 ## Phase goal
 
-Remove the experimental skeletal rig system (CharacterRig, fox definition, animation controllers, rig editor tab, fox atlas generator) from the codebase. Replace the fox CharacterRig player in GameScene with a plain Phaser Sprite using the existing fox atlas frame. The game must remain fully playable — movement, collision, camera, and area transitions all intact — using the simplified sprite placeholder.
+Integrate PixelLab-generated fox sprite animation frames into the game, replacing the static atlas placeholder with direction-aware animated sprites. Implement a three-state animation system (idle, walk, run) with 4-directional movement, diagonal suppression for cardinal-only sprites, and a walk-to-run transition triggered by sustained input.
 
 ### Stories in scope
-- US-39 — Remove rig engine and fox definition from game codebase
-- US-40 — Replace fox player with static sprite placeholder
-- US-41 — Remove rig tab from editor
+- US-42 — Fox sprite asset integration
+- US-43 — Direction-aware idle animation
+- US-44 — Walk animation on movement
+- US-45 — Walk-to-run transition
 
 ### Done-when (observable)
-
-#### US-39 — Remove rig engine and fox definition from game codebase
-- [x] `src/rig/` directory does not exist in the repository [US-39]
-- [x] `src/rig/CharacterRig.ts` is deleted [US-39]
-- [x] `src/rig/types.ts` is deleted [US-39]
-- [x] `src/rig/characters/fox.ts` is deleted [US-39]
-- [x] `src/rig/animations/walkRun.ts` is deleted [US-39]
-- [x] `src/rig/animations/idle.ts` is deleted [US-39]
-- [x] No file in `src/` imports from `../rig/`, `./rig/`, or `@game/rig/` (grep confirms zero matches) [US-39]
-- [x] `npx tsc --noEmit && npm run build` passes with no rig-related type errors [US-39]
-
-#### US-40 — Replace fox player with static sprite placeholder
-- [x] `GameScene.ts` declares `player` as `Phaser.GameObjects.Sprite` (or `Phaser.GameObjects.Rectangle`), not `CharacterRig` [US-40]
-- [x] `GameScene.ts` has zero imports from `src/rig/` [US-40]
-- [x] The player sprite is positioned at the spawn point with correct pixel coordinates matching prior behavior (`spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2`, `spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2`) [US-40]
-- [x] The player is rendered at depth 5 (Entities layer per depth map) [US-40]
-- [x] The player moves with WASD / joystick using the same `moveWithCollision` path as before (no changes to `systems/movement.ts`) [US-40]
-- [x] Collision bounding box is PLAYER_SIZE (24px) — `moveWithCollision` call uses the same halfSize math as before [US-40]
-- [x] Camera `startFollow` targets the player sprite [US-40]
-- [x] `walkRunController.getCurrentSpeed()` is no longer called — movement speed is a fixed constant (`PLAYER_SPEED`) derived from input velocity [US-40]
-- [x] No reference to `.container` on `this.player` exists anywhere in `GameScene.ts` — all position reads use `this.player.x` / `this.player.y` directly (grep confirms zero `.container` references on `player`) [US-40]
-- [x] `uiCam.ignore([..., this.player, ...])` uses the sprite directly (not `this.player.container`) [US-40]
-- [x] `cleanupResize` calls `this.player?.destroy()` without referencing `.container` — Sprite's `destroy()` is called correctly [US-40]
-- [x] `npx tsc --noEmit && npm run build` passes [US-40]
-
-#### US-41 — Remove rig tab from editor
-- [x] `tools/editor/src/rigRenderer.ts` is deleted [US-41]
-- [x] `tools/editor/src/main.ts` has zero imports from `rigRenderer` [US-41]
-- [x] The `ViewName` type in `main.ts` no longer includes `'rig'` [US-41]
-- [x] The Rig tab button is absent from `tools/editor/index.html` (no `data-view="rig"` button) [US-41]
-- [x] The `view-rig` div is absent from `tools/editor/index.html` [US-41]
-- [x] `renderActiveView()` in `main.ts` has no `'rig'` branch [US-41]
-- [x] `destroyRig()` call is removed from `main.ts` [US-41]
-- [x] The editor still builds and runs: Map, Dialogue, and Flow tabs work (verified by build passing) [US-41]
-- [x] `cd tools/editor && npx tsc --noEmit && npm run build` passes with no rig-related import errors [US-41]
-
-#### Structural / cross-cutting
-- [ ] `tools/generate-fox-atlas.mjs` is either retained as-is (atlas still used by placeholder sprite) or deleted — whichever is consistent with the chosen placeholder strategy; the decision is documented in a code comment in `GameScene.ts` [phase]
-- [ ] No file in `tools/editor/src/` imports from `@game/rig/` or any rig path [phase]
-- [ ] `npx tsc --noEmit && npm run build` passes (game root verify) [phase]
-- [ ] `cd tools/editor && npx tsc --noEmit && npm run build` passes (editor verify) [phase]
-- [ ] AGENTS.md does not require update in this phase (per task constraints — spec notes impact only) [phase]
+- [ ] `assets/characters/fox-pip/idle/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
+- [ ] `assets/characters/fox-pip/walk/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
+- [ ] `assets/characters/fox-pip/run/{north,east,south,west}/frame_00{0-7}.png` — 32 files present [US-42]
+- [ ] GameScene.preload() loads all 96 fox-pip frames and does not load the old fox atlas [US-42]
+- [ ] 12 Phaser animations registered with keys `fox-pip-{idle,walk,run}-{north,east,south,west}` [US-42]
+- [ ] No references to `FOX_ATLAS_KEY`, `FOX_FRAME`, `characters/fox.png`, or `characters/fox.json` remain in `src/` (grep confirms zero matches) [US-42]
+- [ ] Player sprite created using `fox-pip` animation, displayed at PLAYER_SIZE (24px) [US-42]
+- [ ] On spawn with no movement input, player sprite plays `fox-pip-idle-south` animation [US-43]
+- [ ] After moving east then stopping, player sprite plays `fox-pip-idle-east` [US-43]
+- [ ] Idle animations have `repeat: -1` (continuous loop) [US-43]
+- [ ] Idle animation frameRate is 8 [US-43]
+- [ ] Pressing W plays `fox-pip-walk-north`; D plays `fox-pip-walk-east`; S plays `fox-pip-walk-south`; A plays `fox-pip-walk-west` [US-44]
+- [ ] Diagonal input (e.g., W+D) zeroes the lesser-magnitude axis — movement is single-axis only; a code comment marks diagonal suppression as temporary until diagonal sprites arrive [US-44]
+- [ ] Equal-magnitude diagonal input (keyboard W+D) maintains current facing direction rather than flip-flopping [US-44]
+- [ ] Walk animation frameRate is 8 [US-44]
+- [ ] Movement speed during walk is PLAYER_SPEED (160 px/s) [US-44]
+- [ ] After holding continuous movement input for ≥2s, animation switches from `fox-pip-walk-{dir}` to `fox-pip-run-{dir}` [US-45]
+- [ ] `RUN_MULTIPLIER` constant exists in `src/maps/constants.ts`; run speed = PLAYER_SPEED × RUN_MULTIPLIER [US-45]
+- [ ] `RUN_THRESHOLD_MS` constant exists in `src/maps/constants.ts`; walk-to-run timer uses this value [US-45]
+- [ ] Releasing all movement input resets walk-to-run timer to 0 [US-45]
+- [ ] Transitioning from movement (walk or run) to stationary switches to `fox-pip-idle-{dir}` — not a freeze frame [US-45]
+- [ ] Run animation frameRate is 8 [US-45]
+- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
+- [ ] AGENTS.md reflects new sprite animation system (fox-pip assets, animation state machine, diagonal suppression behavior) and removes stale rig system references [phase]
 
 ### Golden principles (phase-relevant)
-- Depth map is non-negotiable: the placeholder player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.
-- PLAYER_SIZE (24px) is the collision bounding box constant — do not change it during teardown.
-- Camera: `cam.startFollow(player)` must target the replacement sprite (not a container). Dual-camera `uiCam.ignore()` call must be updated to reference the new sprite.
-- Area transitions: the transitionInProgress guard, cleanupResize, and fade logic all reference `this.player` — ensure these still compile and work after the rig → sprite swap.
-- No silent breaking changes: all systems that previously read `this.player.container.x / .y` must read `this.player.x / .y` (Phaser Sprite, not Container).
-- Axis-independent movement and wall-sliding behavior must be preserved unchanged — moveWithCollision is not touched.
+- Depth map is non-negotiable: the player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.
+- PLAYER_SIZE (24px) is the collision bounding box constant — do not change it.
+- Camera: `cam.startFollow(player)` must target the player sprite. Dual-camera `uiCam.ignore()` call must include the player sprite.
+- Movement: axis-independent collision and wall-sliding via `moveWithCollision` must be preserved unchanged. Movement speed is either PLAYER_SPEED (walk) or PLAYER_SPEED × RUN_MULTIPLIER (run).
+- No silent breaking changes: all systems that reference `this.player.x / .y` must continue to work.
+- Scene code must call systems-module functions, not duplicate them (Learning #64). If animation state logic is significant, extract to a system module rather than inlining in GameScene.
+- Before submitting, check for: (a) setup operations that run every update loop iteration but only need to run once, (b) conditional branches where both outcomes produce the same result, (c) comments referencing behavior no longer present (Learning EP-01).
