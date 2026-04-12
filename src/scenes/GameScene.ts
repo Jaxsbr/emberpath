@@ -129,15 +129,40 @@ export class GameScene extends Phaser.Scene {
 
     this.inputSystem.update();
     const inputVelocity = this.inputSystem.getVelocity();
-    const inputSpeed = Math.sqrt(inputVelocity.x * inputVelocity.x + inputVelocity.y * inputVelocity.y);
+
+    // TEMPORARY: Diagonal suppression — only 4 cardinal directions available.
+    // When both axes have input, zero the lesser-magnitude axis so movement
+    // is single-axis only. On equal magnitude (keyboard), maintain current
+    // facing direction to prevent flip-flopping. Remove this when NE/NW/SE/SW
+    // sprites arrive and 8-direction movement is supported.
+    let suppressedVx = inputVelocity.x;
+    let suppressedVy = inputVelocity.y;
+    const absX = Math.abs(inputVelocity.x);
+    const absY = Math.abs(inputVelocity.y);
+    if (absX > 0 && absY > 0) {
+      if (absX > absY) {
+        suppressedVy = 0;
+      } else if (absY > absX) {
+        suppressedVx = 0;
+      } else {
+        // Equal magnitude — maintain current facing direction axis
+        const facing = this.animationSystem.getFacingDirection();
+        if (facing === 'north' || facing === 'south') {
+          suppressedVx = 0;
+        } else {
+          suppressedVy = 0;
+        }
+      }
+    }
+
+    const inputSpeed = Math.sqrt(suppressedVx * suppressedVx + suppressedVy * suppressedVy);
     const hasInput = inputSpeed > 0;
 
-    // Movement speed is a fixed constant — no walk/run controller
     let moveVx = 0;
     let moveVy = 0;
     if (hasInput) {
-      const dirX = inputVelocity.x / inputSpeed;
-      const dirY = inputVelocity.y / inputSpeed;
+      const dirX = suppressedVx / inputSpeed;
+      const dirY = suppressedVy / inputSpeed;
       moveVx = dirX * PLAYER_SPEED;
       moveVy = dirY * PLAYER_SPEED;
     }
