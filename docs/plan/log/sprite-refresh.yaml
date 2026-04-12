@@ -37,4 +37,12 @@ entries:
     description: "Branch B investigation. US-46 complete. US-47: AnimationSystem needs 8-dir Direction type, 2-state AnimState (idle/walk), octant velocityToDirection, remove moveElapsedMs/run-state. constants.ts needs RUN_MULTIPLIER/RUN_THRESHOLD_MS removed. GameScene.update() needs diagonal suppression block (suppressedVx/suppressedVy) removed, movement passes raw inputVelocity to AnimationSystem and normalizes directly. All affected callers: GameScene only. Queued combined US-47 implement task."
     result: pass
     tokens: ~1000
+  - task: 6
+    time: "2026-04-12T10:24:00Z"
+    type: implement
+    story: US-47
+    description: "Rewrote animation.ts: Direction type now 8-way, AnimState='idle'|'walk', removed moveElapsedMs/run state, velocityToDirection uses octant mapping (atan2 quantized to 8 sectors), getCurrentSpeed always returns PLAYER_SPEED, removed getFacingDirection(). Removed RUN_MULTIPLIER/RUN_THRESHOLD_MS from constants.ts. Removed diagonal suppression block from GameScene.update (no suppressedVx/suppressedVy); raw inputVelocity passed to animationSystem.update. Verify passes. US-47 complete."
+    result: pass
+    notes: US-47 complete
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

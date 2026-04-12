@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: "[US-47] Rewrite AnimationSystem: 8-dir Direction type, 2-state AnimState (idle/walk only), octant velocityToDirection, remove moveElapsedMs/run logic; remove RUN_MULTIPLIER/RUN_THRESHOLD_MS from constants; remove diagonal suppression from GameScene"
+  task_number: 7
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-46]
+  completed_stories: [US-46, US-47]
