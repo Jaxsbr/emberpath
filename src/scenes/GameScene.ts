@@ -9,6 +9,7 @@ import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
+import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { setFlag } from '../triggers/flags';
 
@@ -30,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private thoughtBubble!: ThoughtBubbleSystem;
   private triggerZone!: TriggerZoneSystem;
   private debugOverlay!: DebugOverlaySystem;
+  private animationSystem!: AnimationSystem;
   private player!: Phaser.GameObjects.Sprite;
   private tileGraphics!: Phaser.GameObjects.Graphics;
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
@@ -153,6 +155,9 @@ export class GameScene extends Phaser.Scene {
       { map: this.area.map, npcs: this.area.npcs },
     );
     this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
+
+    // Update animation state based on movement velocity
+    this.animationSystem.update(moveVx, moveVy);
 
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
@@ -361,6 +366,6 @@ export class GameScene extends Phaser.Scene {
     this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
     this.player.setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
-    this.player.play('fox-pip-idle-south');
+    this.animationSystem = new AnimationSystem(this.player);
   }
 }
