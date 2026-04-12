@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: null
+  task_number: 4
+  next_task: "[US-46] Rewrite GameScene: update preload (8-dir, per-type frame counts idle:4 walk:8), registerAnimations (16 anims), createPlayer setScale with native resolution comment; remove run references"
   last_result: pass
   consecutive_fails: 0
 
