@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: null
+  task_number: 6
+  next_task: "[US-47] Rewrite AnimationSystem: 8-dir Direction type, 2-state AnimState (idle/walk only), octant velocityToDirection, remove moveElapsedMs/run logic; remove RUN_MULTIPLIER/RUN_THRESHOLD_MS from constants; remove diagonal suppression from GameScene"
   last_result: pass
   consecutive_fails: 0
 

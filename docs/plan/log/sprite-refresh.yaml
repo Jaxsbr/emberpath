@@ -30,4 +30,11 @@ entries:
     result: pass
     notes: US-46 complete
     tokens: ~4000
+  - task: 5
+    time: "2026-04-12T10:22:00Z"
+    type: investigate
+    story: US-47
+    description: "Branch B investigation. US-46 complete. US-47: AnimationSystem needs 8-dir Direction type, 2-state AnimState (idle/walk), octant velocityToDirection, remove moveElapsedMs/run-state. constants.ts needs RUN_MULTIPLIER/RUN_THRESHOLD_MS removed. GameScene.update() needs diagonal suppression block (suppressedVx/suppressedVy) removed, movement passes raw inputVelocity to AnimationSystem and normalizes directly. All affected callers: GameScene only. Queued combined US-47 implement task."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
