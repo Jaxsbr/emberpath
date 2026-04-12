@@ -22,4 +22,12 @@ entries:
     description: "Branch B investigation. Asset copy complete (3/10 US-46 criteria). Remaining US-46: preload (must use per-type frame counts idle:4 walk:8, 8 dirs, no run), registerAnimations (16 anims), createPlayer setScale. US-47: AnimationSystem 8-dir 2-state overhaul, constants cleanup (remove RUN_MULTIPLIER/RUN_THRESHOLD_MS), GameScene diagonal suppression removal. Two code tasks queued in series: (1) GameScene updates for US-46, (2) AnimationSystem+constants for US-47. Both cross-cutting — full GameScene/animation.ts/constants.ts audit done in task 1."
     result: pass
     tokens: ~1000
+  - task: 4
+    time: "2026-04-12T10:21:00Z"
+    type: implement
+    story: US-46
+    description: "Rewrote GameScene animation constants: ANIM_TYPES=['idle','walk'] (no run), DIRECTIONS extended to 8 directions, FRAME_COUNTS={idle:4,walk:8} replaces uniform FRAME_COUNT. Updated preload() to use per-type frameCount. Updated registerAnimations() to use 16 animations (8 dirs × 2 states). Updated createPlayer(): added native resolution comment (68×68px, scale 1.0). No fox-pip-run-* in src/ (grep confirmed). Verify passes. US-46 complete."
+    result: pass
+    notes: US-46 complete
+    tokens: ~4000
 # Each entry: {task, time, story, description, result, notes, tokens}
