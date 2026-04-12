@@ -1,4 +1,11 @@
 phase: "sprite-animation"
 started: "2026-04-12T00:36:02Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-12T00:37:23Z"
+    type: investigate
+    story: US-42
+    description: "Phase start investigation. Verify passes (tsc + build). 96 PixelLab PNGs confirmed in pixellab-research/dog-animations/ across 3 animations (idle=animation-b456e6de, walk=walking-87ced120, run=running-387f57ef) × 4 directions × 8 frames. No assets/characters/ directory exists yet (removed in rig-teardown). GameScene uses FOX_ATLAS_KEY/FOX_FRAME for static sprite placeholder. InputSystem returns normalized velocity×PLAYER_SPEED. constants.ts has TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE. Queued US-42 sprite copy task."
+    result: pass
+    tokens: ~8000
 # Each entry: {task, time, story, description, result, notes, tokens}
