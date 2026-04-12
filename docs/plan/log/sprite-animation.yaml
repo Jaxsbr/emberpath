@@ -22,4 +22,12 @@ entries:
     description: "Branch B investigation. US-42 asset copy done (3/7 criteria met). Remaining: preload 96 frames, register 12 animations, remove FOX_ATLAS_KEY/FOX_FRAME/old atlas, update createPlayer to use animation sprite. Queued combined US-42 code task."
     result: pass
     tokens: ~1000
+  - task: 4
+    time: "2026-04-12T00:41:01Z"
+    type: implement
+    story: US-42
+    description: "Rewrote GameScene: preload loads 96 individual fox-pip frames, registerAnimations() creates 12 Phaser animations keyed fox-pip-{idle,walk,run}-{N,E,S,W} at 8 FPS with repeat:-1. Removed FOX_ATLAS_KEY/FOX_FRAME constants and old atlas loading. createPlayer uses fox-pip-idle-south-0 texture and plays fox-pip-idle-south. Grep confirms zero old atlas refs in src/. Verify passes. US-42 complete."
+    result: pass
+    notes: US-42 complete
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

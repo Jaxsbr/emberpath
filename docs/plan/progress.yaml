@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-42] Rewrite GameScene preload/create to load fox-pip frames, register 12 Phaser animations (fox-pip-{idle,walk,run}-{N,E,S,W}), remove FOX_ATLAS_KEY/FOX_FRAME and old atlas loading, create player with fox-pip-idle-south animation at PLAYER_SIZE. One task for all remaining US-42 code changes."
+  task_number: 4
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
