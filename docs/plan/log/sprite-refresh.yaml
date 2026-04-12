@@ -8,4 +8,11 @@ entries:
     description: "Phase start investigation. Verify passes (tsc + build). fox-child-final/idle: 8 dirs (north, north-east, east, south-east, south, south-west, west, north-west) × 4 frames = 32 PNGs. fox-child-final/walk: 8 dirs × 8 frames = 64 PNGs. Current assets/characters/fox-pip: old set (idle/walk/run × 4 dirs × 8 frames). Need to replace with new 8-dir set, remove run/, update preload (per-type frame counts), register 16 animations. animation.ts has 4-dir, 3-state (idle/walk/run), moveElapsedMs — needs full 8-dir 2-state overhaul. constants.ts has RUN_MULTIPLIER=1.8, RUN_THRESHOLD_MS=2000 — both to remove. GameScene has diagonal suppression (suppressedVx/suppressedVy) — to remove. Queued US-46 asset copy task."
     result: pass
     tokens: ~5000
+  - task: 2
+    time: "2026-04-12T10:19:00Z"
+    type: implement
+    story: US-46
+    description: "Removed assets/characters/fox-pip/{idle,walk,run} (old 4-dir set). Copied pixellab-research/fox-child-final/idle (8 dirs × 4 frames = 32 PNGs) and walk (8 dirs × 8 frames = 64 PNGs) into assets/characters/fox-pip/. run/ directory removed. 96 PNGs total confirmed. 3 asset criteria met. Code changes (preload, registerAnimations) remain. Verify passes."
+    result: pass
+    tokens: ~2000
 # Each entry: {task, time, story, description, result, notes, tokens}
