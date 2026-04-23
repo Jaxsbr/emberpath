@@ -74,6 +74,13 @@ entries:
     result: pass
     notes: major renderer change; fox-pip and tiles now share pixelArt path
     tokens: ~10000
+  - task: 12
+    time: "2026-04-23T10:34:00Z"
+    type: investigate
+    story: US-50
+    description: "Branch B. Keystone renderer shipped. Next major chunk is US-50 props. Queued an investigate task to draft both the GameScene.renderProps() helper (with missing-frame error path per US-50 criterion) and the exact prop arrays for ashen-isle and fog-marsh with their specific frames and (col, row) positions. Constraints: props placed on FLOOR cells only, avoid NPC positions, avoid exit zones, avoid player spawn. Frames come from the tileset-frame-analysis.md shortlist."
+    result: pass
+    tokens: ~1500
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
