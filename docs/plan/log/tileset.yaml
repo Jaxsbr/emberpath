@@ -52,6 +52,13 @@ entries:
     description: "Applied AreaDefinition type + data diffs. types.ts: added PropDefinition interface {id, col, row, spriteFrame}; AreaDefinition gained required tileset: string and props: PropDefinition[]. Documented retention of visual.floorColor/wallColor for editor map-overview. ashen-isle.ts: tileset: 'tiny-town', props: []. fog-marsh.ts: tileset: 'monochrome-rpg', props: []. Verify passes (tsc + build). Criteria advanced: US-48 AreaDefinition.tileset field ✓, Ashen/Fog tileset values ✓; US-50 AreaDefinition.props field ✓, PropDefinition exported ✓. Prop populations (>=15 and >=10) pending."
     result: pass
     tokens: ~2500
+  - task: 9
+    time: "2026-04-23T10:20:00Z"
+    type: investigate
+    story: US-48
+    description: "Branch B. Queuing the GameScene rewrite investigate — this is the keystone task of the phase, touching US-48 preload/render criteria, US-49 render-time variant criteria, and US-51 exit-tile criterion. Prep questions focused on Phaser API details (spritesheet frame id types, nearest-neighbor filter application, uiCam.ignore for many sprites), tile scaling (16px -> 32px = 2x), and the graceful-fallback error path when area.tileset is unregistered. Props rendering scoped OUT so the investigate stays tractable."
+    result: pass
+    tokens: ~1500
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

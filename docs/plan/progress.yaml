@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
-  next_task: null
+  task_number: 9
+  next_task: "[US-48] Investigate: draft the GameScene rewrite plan for preload(), renderTileMap(), and cleanup. Concrete questions to resolve before code: (1) Phaser spritesheet frame API — does this.add.sprite(x, y, atlasKey, frame) accept a numeric string like '15'? If not, add Number() at the call site. Verify by checking node_modules/phaser type defs. (2) Nearest-neighbor filtering application — best applied in preload() via this.load.once on each atlas, calling textures.get(atlasKey).setFilter(Phaser.Textures.FilterMode.NEAREST). (3) uiCam.ignore() — currently ignores [tileGraphics, player, ...npcRects]; tile sprites are now many (up to mapCols*mapRows). Collect in an array and spread into uiCam.ignore(). (4) Error path — if !hasTileset(area.tileset), skip sprite path and fall back to flat-color fillRect using visual.floorColor/wallColor so scene still loads. (5) Tile size: source 16px, render at TILE_SIZE (32px) — use setScale(2) or setDisplaySize(TILE_SIZE, TILE_SIZE) on each sprite. Output: stepwise plan in progress log, draft the exact diff for GameScene.preload() and renderTileMap() and the tileGraphics / EXIT_COLOR removals. Props rendering is OUT OF SCOPE for this investigate — separate task later."
   last_result: pass
   consecutive_fails: 0
 
