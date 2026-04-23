@@ -89,6 +89,13 @@ entries:
     result: pass
     notes: renderProps added with graceful missing-frame skip; AGENTS.md depth map updated
     tokens: ~8000
+  - task: 14
+    time: "2026-04-23T10:44:00Z"
+    type: investigate
+    story: US-50
+    description: "Branch B. Read tools/editor/src/mapRenderer.ts — canvas-based renderer with draw order axis labels, tile grid, trigger zones, exit zones, spawn, NPCs; clickables array for detail-panel dispatch. Draft: add prop rendering between exits and NPCs (so props render under NPC discs). Color #c89b68 warm tan distinct from triggers (blue/magenta/green/orange) and typical NPC hues. CELL/4 radius. Clickable for detail inspection carrying spriteFrame info. Queued the implement task."
+    result: pass
+    tokens: ~2000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

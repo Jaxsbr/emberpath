@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 13
-  next_task: null
+  task_number: 14
+  next_task: "[US-50] Editor prop rendering in tools/editor/src/mapRenderer.ts. Add a prop-drawing block AFTER exit zones and BEFORE NPCs (so props render under NPC discs, matching the game's depth order Tiles<Props<Entities). For each area.props entry, draw a filled circle at (col*CELL + CELL/2, row*CELL + CELL/2) with radius CELL/4 in color #c89b68 (warm tan — distinct from trigger palette and NPC colors), with a 0.5px black stroke. Push a clickable with data { type: 'prop', id, col, row, spriteFrame } so editor detail panel shows prop metadata. Then verify tools/editor build with `cd tools/editor && npm run build`."
   last_result: pass
   consecutive_fails: 0
 
