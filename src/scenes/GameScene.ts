@@ -37,6 +37,7 @@ export class GameScene extends Phaser.Scene {
   private animationSystem!: AnimationSystem;
   private player!: Phaser.GameObjects.Sprite;
   private tileLayer: Phaser.GameObjects.GameObject[] = [];
+  private propSprites: Phaser.GameObjects.Sprite[] = [];
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
   private boundWindowResize: (() => void) | null = null;
   private transitionInProgress = false;
@@ -80,6 +81,7 @@ export class GameScene extends Phaser.Scene {
     this.area = area;
 
     this.renderTileMap();
+    this.renderProps();
     this.renderNpcs();
     this.registerAnimations();
     this.createPlayer(data?.entryPoint);
@@ -228,6 +230,32 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private renderProps(): void {
+    this.propSprites = [];
+    if (!hasTileset(this.area.tileset)) return;
+    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    const texture = this.textures.get(atlasKey);
+    for (const prop of this.area.props) {
+      if (!texture.has(prop.spriteFrame)) {
+        console.warn(
+          `[GameScene] Prop '${prop.id}' references missing frame '${prop.spriteFrame}' ` +
+            `on tileset '${this.area.tileset}'; skipping.`,
+        );
+        continue;
+      }
+      const sprite = this.add.sprite(
+        prop.col * TILE_SIZE,
+        prop.row * TILE_SIZE,
+        atlasKey,
+        prop.spriteFrame,
+      );
+      sprite.setOrigin(0, 0);
+      sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
+      sprite.setDepth(3);
+      this.propSprites.push(sprite);
+    }
+  }
+
   private renderFallbackTiles(exitTiles: Set<string>): void {
     const g = this.add.graphics();
     g.setDepth(0);
@@ -271,7 +299,7 @@ export class GameScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([...this.tileLayer, this.player, ...this.npcRects]);
+    uiCam.ignore([...this.tileLayer, ...this.propSprites, this.player, ...this.npcRects]);
 
     this.scale.on('resize', this.handleResize, this);
 

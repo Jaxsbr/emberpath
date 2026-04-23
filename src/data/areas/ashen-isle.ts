@@ -53,7 +53,28 @@ export const ashenIsle: AreaDefinition = {
   npcs: [
     { id: 'old-man', name: 'Old Man', col: 13, row: 12, color: 0x8b6914 },
   ],
-  props: [],
+  props: [
+    // Scattered decoration across open grass bands — bushes, stones, trees, flowers, signs, fences.
+    // Frames drawn from docs/plan/tileset-frame-analysis.md (tiny-town shortlist).
+    { id: 'bush-n1', col: 6, row: 1, spriteFrame: '29' },
+    { id: 'sign-n1', col: 20, row: 1, spriteFrame: '27' },
+    { id: 'flower-n1', col: 30, row: 1, spriteFrame: '26' },
+    { id: 'tree-n1', col: 40, row: 1, spriteFrame: '6' },
+    { id: 'stone-n1', col: 45, row: 1, spriteFrame: '13' },
+    { id: 'tree-m1', col: 12, row: 8, spriteFrame: '7' },
+    { id: 'flower-m1', col: 28, row: 8, spriteFrame: '11' },
+    { id: 'bush-m1', col: 35, row: 8, spriteFrame: '28' },
+    { id: 'stone-m1', col: 43, row: 8, spriteFrame: '25' },
+    { id: 'tree-c1', col: 6, row: 15, spriteFrame: '8' },
+    { id: 'bush-c1', col: 15, row: 15, spriteFrame: '29' },
+    { id: 'sign-c1', col: 25, row: 15, spriteFrame: '27' },
+    { id: 'flower-c1', col: 35, row: 15, spriteFrame: '11' },
+    { id: 'tree-s1', col: 6, row: 22, spriteFrame: '9' },
+    { id: 'stone-s1', col: 13, row: 22, spriteFrame: '13' },
+    { id: 'flower-s1', col: 28, row: 22, spriteFrame: '26' },
+    { id: 'tree-s2', col: 7, row: 29, spriteFrame: '10' },
+    { id: 'bush-s1', col: 28, row: 29, spriteFrame: '28' },
+  ],
   triggers: [
     {
       id: 'start-thought',

@@ -114,7 +114,8 @@ Explicit rendering order for visual layers (Learning #57):
 
 | Layer | Depth | Camera | Description |
 |---|---|---|---|
-| Tiles | 0 | main | Floor, wall, and exit zone tile graphics |
+| Tiles | 0 | main | Floor, wall, and exit zone tile sprites |
+| Props | 3 | main | Decorative non-blocking sprites (bushes, stones, gravestones, etc.) |
 | Entities | 5 | main | Player character and NPCs |
 | Thoughts | 8 | main | Thought bubble text and background (world-space, above player) |
 | Debug overlay | 50 | main | Trigger zone rectangles, exit labels, NPC radii (F3 toggle) |
