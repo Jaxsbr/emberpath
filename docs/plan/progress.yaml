@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 23
-  next_task: null
+  task_number: 24
+  next_task: "[review] handle-pr-review pr=13 auto=true"
   last_result: pass
   consecutive_fails: 0
 
