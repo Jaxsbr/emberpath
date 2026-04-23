@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: "[US-48/US-50] Apply AreaDefinition type + data diffs per task 7 investigation: (a) src/data/areas/types.ts — add PropDefinition interface { id: string; col: number; row: number; spriteFrame: string } and REQUIRED fields tileset: string, props: PropDefinition[] on AreaDefinition; (b) ashen-isle.ts — add tileset: 'tiny-town', props: []; (c) fog-marsh.ts — add tileset: 'monochrome-rpg', props: []. Leave visual.floorColor/wallColor untouched. Verify passes."
+  task_number: 8
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
