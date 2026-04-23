@@ -9,4 +9,12 @@ entries:
     result: pass
     notes: blocker — awaiting operator decision on atlas source
     tokens: ~8000
+  - task: 2
+    time: "2026-04-23T09:52:00Z"
+    type: implement
+    story: US-48
+    description: "Resumed phase after operator chose (a) Kenney CC0. WebFetched tiny-town and monochrome-rpg pack metadata (both real CC0, 16x16 tiles). Downloaded both zips to /tmp, extracted, copied packed spritesheets and metadata to assets/tilesets/{tiny-town,monochrome-rpg}/: tilemap.png (the atlas), tilemap.json (grid metadata + provenance), Tilesheet.txt (Kenney grid info), License.txt (CC0 attribution). Chose Monochrome variant of monochrome-rpg (pure B/W) for Fog Marsh dead-end allegory — documented in tilemap.json note. Dropped Tiles/* individual PNGs and Dot-Matrix/Default variants to keep asset footprint minimal. Verify passes (tsc + build). Satisfies 2 of 9 'Structural — assets & types' criteria."
+    result: pass
+    notes: atlas source unblocked; US-48 preload/types work still pending
+    tokens: ~4000
 # Each entry: {task, time, story, description, result, notes, tokens}
