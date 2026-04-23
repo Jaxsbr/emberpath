@@ -9,6 +9,7 @@ export const ashenIsle: AreaDefinition = {
   name: 'Ashen Isle',
   mapCols: 50,
   mapRows: 38,
+  tileset: 'tiny-town',
   map: [
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
     [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
@@ -52,6 +53,7 @@ export const ashenIsle: AreaDefinition = {
   npcs: [
     { id: 'old-man', name: 'Old Man', col: 13, row: 12, color: 0x8b6914 },
   ],
+  props: [],
   triggers: [
     {
       id: 'start-thought',

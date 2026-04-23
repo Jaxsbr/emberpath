@@ -11,6 +11,7 @@ export const fogMarsh: AreaDefinition = {
   name: 'Fog Marsh',
   mapCols: 30,
   mapRows: 24,
+  tileset: 'monochrome-rpg',
   map: [
     //0                                          29
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W], // 0
@@ -41,6 +42,7 @@ export const fogMarsh: AreaDefinition = {
   npcs: [
     { id: 'marsh-hermit', name: 'Marsh Hermit', col: 18, row: 10, color: 0x5a7a6b },
   ],
+  props: [],
   triggers: [
     // Thought trigger — entering the foggy open area
     {

@@ -65,17 +65,27 @@ export interface ExitDefinition {
   condition?: string;
 }
 
+export interface PropDefinition {
+  id: string;
+  col: number;
+  row: number;
+  spriteFrame: string;
+}
+
 export interface AreaDefinition {
   id: string;
   name: string;
   map: TileType[][];
   mapCols: number;
   mapRows: number;
+  tileset: string;
   npcs: NpcDefinition[];
+  props: PropDefinition[];
   triggers: TriggerDefinition[];
   dialogues: Record<string, DialogueScript>;
   storyScenes: Record<string, StorySceneDefinition>;
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
+  // Retained for editor's map-overview mode — the game scene now renders via tileset.
   visual: { floorColor: number; wallColor: number };
 }
