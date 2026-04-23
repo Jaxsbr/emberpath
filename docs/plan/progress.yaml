@@ -24,7 +24,8 @@ state:
   # --- Lifecycle (owner: iterator) ---
   phase: tileset
   phase_complete: false
-  status: running
+  status: paused
+  pause_reason: "Swapped monochrome-rpg WALL frames to [34,35,36] and EXIT to [17] based on operator feedback. Please re-run `npm run dev`, walk into Fog Marsh, and report: (a) can you now tell floor from wall? (b) does the exit tile read as a threshold/doorway? If still wrong, I will generate a labeled frame-preview tool (tools/editor/frames.html — atlas at 4x with every index overlaid) so we can pick frames by id instead of guessing. Ashen Isle is considered good per prior confirmation."
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 19
