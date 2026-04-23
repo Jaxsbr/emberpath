@@ -96,6 +96,14 @@ entries:
     description: "Branch B. Read tools/editor/src/mapRenderer.ts — canvas-based renderer with draw order axis labels, tile grid, trigger zones, exit zones, spawn, NPCs; clickables array for detail-panel dispatch. Draft: add prop rendering between exits and NPCs (so props render under NPC discs). Color #c89b68 warm tan distinct from triggers (blue/magenta/green/orange) and typical NPC hues. CELL/4 radius. Clickable for detail inspection carrying spriteFrame info. Queued the implement task."
     result: pass
     tokens: ~2000
+  - task: 15
+    time: "2026-04-23T10:48:00Z"
+    type: implement
+    story: US-50
+    description: "Added prop rendering block to tools/editor/src/mapRenderer.ts between exits and NPCs (matches game depth order). #c89b68 warm tan circle radius CELL/4 with 0.5px black stroke; clickable carries prop metadata including spriteFrame. Editor build `cd tools/editor && npm run build` succeeds (0 errors, 11 modules transformed). Main build also passes. US-50 structural criteria now all met (editor dots ✓ closes the editor-sync criterion). Manual verify criteria (>=15/>=10 visible, fox in front of props) require browser runtime — pending a manual pass. US-48 editor-build criterion also closed."
+    result: pass
+    notes: all US-50 non-manual-verify criteria done; editor sync closed
+    tokens: ~4000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
