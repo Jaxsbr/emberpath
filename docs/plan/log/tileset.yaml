@@ -111,6 +111,14 @@ entries:
     description: "Branch B. All source + data + editor work done. Remaining non-manual work is doc-only: AGENTS.md (directory layout, file ownership, behavior rules) and the manual-verify checklist doc. Queued as one combined task since all are docs with no cross-file coupling. Manual-verify doc scaffolds every runtime check from phase-goal so Jaco (or a future retroactive tick) has a definitive list."
     result: pass
     tokens: ~1500
+  - task: 17
+    time: "2026-04-23T10:56:00Z"
+    type: implement
+    story: phase
+    description: "Applied AGENTS.md updates: directory layout now includes assets/tilesets/ subtree (tiny-town, monochrome-rpg with atlas + json + provenance) and src/maps/tilesets.ts; file ownership table gained a maps/tilesets.ts row and expanded scenes/GameScene.ts row to describe sprite-based tile rendering + prop rendering at depth 3 + fallback; data/areas/types.ts row now mentions PropDefinition and the tileset/props required fields; maps/constants.ts row calls out EXIT=2 as render-only. Added two new behavior rules: 'Tile rendering (sprite-based)' covering spritesheet preload, deterministic variant selection, EXIT overlap detection, pixelArt nearest-neighbor, and unknown-tileset fallback; 'Decorative props (non-blocking)' covering PropDefinition, depth 3, missing-frame skip, collision-untouched invariant. Created docs/plan/tileset-manual-verify.md as the canonical checklist for all browser-runtime criteria (per-area floor/wall variants, prop counts, exit reads-as, crisp rendering, fox-in-front-of-prop). Verify passes. Phase is now structurally complete for every non-manual-verify criterion."
+    result: pass
+    notes: structural work complete; manual-verify checklist is the remaining gate
+    tokens: ~8000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

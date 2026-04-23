@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 16
-  next_task: "[phase/US-48/US-49] Doc updates. (1) AGENTS.md directory layout: add assets/tilesets/ subtree (tiny-town/, monochrome-rpg/) and src/maps/tilesets.ts entry. (2) AGENTS.md file ownership table: add row for src/maps/tilesets.ts (tileset registry + resolveFrame picker); update row for scenes/GameScene.ts to reflect sprite-based tile rendering, pixelArt config, prop rendering at depth 3; add row for data/areas/types.ts mention of PropDefinition if not present. (3) AGENTS.md behavior rules: add a new rule describing sprite-based tile rendering (per-area tileset field, spritesheet preload, nearest-neighbor via pixelArt, deterministic variant selection via resolveFrame, EXIT via tileset frame not constant, non-blocking props). (4) Create docs/plan/tileset-manual-verify.md — checklist of every manual-verify criterion from phase-goal (per-area floor variants, walls, props visible, exit reads-as dirt-path/flagstone, no console errors, fox-in-front-of-prop, crisp pixel rendering). Also note the doc's own filename matches the phase-goal reference."
+  task_number: 17
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
