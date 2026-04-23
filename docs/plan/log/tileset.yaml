@@ -17,4 +17,11 @@ entries:
     result: pass
     notes: atlas source unblocked; US-48 preload/types work still pending
     tokens: ~4000
+  - task: 3
+    time: "2026-04-23T09:58:00Z"
+    type: investigate
+    story: US-48
+    description: "Branch B investigation. Read both staged tilemaps visually via Read tool. tiny-town (12x11=132 frames): row 0 grass + trees, row 1 grass/dirt-path variants + trees, row 2 flowers/stones/plants, rows 3-5 roof tops (blue/red/brown), rows 6-9 building walls/doors/stone, row 10 fences/gates. monochrome-rpg Monochrome variant (17x8=136 frames): row 0 grass variants + bushes/trees, row 1 gravestones/mushrooms/stones, rows 2-5 buildings/walls/stairs/doors, rows 6-7 characters/hearts/items. Phase classified server/cross-cutting (modifies types, new module, GameScene renderer); investigate-first required before each implement. Queued a focused investigate task to cross-reference atlas visuals with frame indices and draft docs/plan/tileset-frame-analysis.md. That analysis feeds src/maps/tilesets.ts implementation on iteration 5."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}

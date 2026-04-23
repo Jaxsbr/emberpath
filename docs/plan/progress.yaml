@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: null
+  task_number: 3
+  next_task: "[US-48] Investigate: cross-reference tiny-town and monochrome-rpg tilemap.png frame indices against visual content; produce a per-tileset frame-index mapping for FLOOR (>=3 variants), WALL (>=2 variants), EXIT (>=1), plus candidate prop frame lists. Save mapping notes to docs/plan/tileset-frame-analysis.md for reuse by later tasks."
   last_result: pass
   consecutive_fails: 0
 
