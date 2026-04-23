@@ -38,6 +38,13 @@ entries:
     description: "Branch B. Next foundation work: adding required AreaDefinition.tileset (string) + AreaDefinition.props (PropDefinition[]) fields. Queued an investigate task to audit every AreaDefinition consumer and draft exact diffs before applying. Investigate-first per phase classification (server/cross-cutting). Consumers already partially known from prior reads: GameScene.create, registry.ts, ashen-isle.ts, fog-marsh.ts, and likely editor mapRenderer.ts / flowRenderer.ts. Keeping visual.floorColor/wallColor explicitly retained (golden principle: no silent breaking changes)."
     result: pass
     tokens: ~1500
+  - task: 7
+    time: "2026-04-23T10:13:00Z"
+    type: investigate
+    story: US-48
+    description: "Consumer audit. grep 'AreaDefinition' in src/ + tools/editor/src/ found 13 refs across 9 files. Consumers: src/scenes/GameScene.ts (reads area.map/visual/exits/npcs/triggers/dialogues/storyScenes/playerSpawn), src/systems/debugOverlay.ts (reads triggers/exits/npcs only), src/data/areas/{ashen-isle,fog-marsh}.ts (literal construction), src/data/areas/registry.ts (passthrough map), tools/editor/src/{mapRenderer,dialogueRenderer,flowRenderer,main}.ts (type imports + field reads). Adding REQUIRED tileset + props fields breaks ONLY the two area literal files (ashen-isle, fog-marsh) — editor code uses field reads which are unaffected, and GameScene already works without them (new fields just add capability). Diff drafted: types.ts adds PropDefinition interface + 2 fields; ashen-isle gets tileset: 'tiny-town' + empty props; fog-marsh gets tileset: 'monochrome-rpg' + empty props. No editor code changes needed for this task — editor prop rendering (US-50) is a separate later task. Queued the apply task."
+    result: pass
+    tokens: ~2500
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
