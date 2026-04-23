@@ -66,6 +66,14 @@ entries:
     description: "Investigate findings. (1) Phaser add.sprite frame param typed string | number | Phaser.Textures.Frame — string '15' works directly, no parseInt needed. (2) Nearest-neighbor: cleanest path is `pixelArt: true` in the Phaser game config (main.ts) — applies globally and benefits the fox-pip sprites too (also pixel art). Alternative per-texture setFilter(Phaser.Textures.FilterMode.NEAREST) would be more surgical but more boilerplate. Going global. (3) uiCam.ignore accepts an array spread; collect tileSprites and ...spread. (4) Fallback path: hasTileset() guard in renderTileMap — on miss, keep the old fillRect render so scene still loads with clear console error. (5) Tile scaling: setDisplaySize(TILE_SIZE, TILE_SIZE) resizes sprite to 32px regardless of source. (6) Current Phaser config has no pixelArt key — adding it is a new-behavior tweak that affects the existing fox-pip render. Verified fox-pip already at native 68px scale 1.0, so crisper rendering is an upgrade not a regression. Queued the implement task with concrete plan."
     result: pass
     tokens: ~4000
+  - task: 11
+    time: "2026-04-23T10:30:00Z"
+    type: implement
+    story: US-48
+    description: "GameScene rewrite — sprite-based tile rendering. main.ts: pixelArt: true for global nearest-neighbor. GameScene.ts: imported TILESETS/resolveFrame/hasTileset; removed EXIT_COLOR constant and tileGraphics field; added tileLayer: Phaser.GameObjects.GameObject[]; preload() now also loads both atlases as spritesheets at 16x16 frame size using this.load.spritesheet keyed by TILESETS[id].atlasKey; renderTileMap() rewritten: guards hasTileset(area.tileset) with descriptive error+renderFallbackTiles fallback on miss; on happy path iterates cells, determines kind (EXIT/WALL/FLOOR), calls resolveFrame, adds sprite with setDisplaySize(TILE_SIZE, TILE_SIZE) at depth 0, pushes into tileLayer. setupCamera() spreads tileLayer into uiCam.ignore. cleanupResize untouched (sprites auto-cleaned by scene restart). Verified criterion greps: tileGraphics in GameScene 0 matches, EXIT_COLOR in src/ 0 matches, no fillRect in renderTileMap method body (fallback lives in separate renderFallbackTiles). tsc + build pass. US-48 advances significantly: preload ✓, render-map sprite-based ✓, tileGraphics-removed ✓, EXIT_COLOR-removed ✓, nearest-neighbor ✓, error-path ✓. US-49 auto-advanced: variant selection happens on render ✓. US-51 advances: EXIT frame via tileset ✓. Manual verify criteria remain (browser runtime — separate task)."
+    result: pass
+    notes: major renderer change; fox-pip and tiles now share pixelArt path
+    tokens: ~10000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

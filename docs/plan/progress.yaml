@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 10
-  next_task: "[US-48/US-49/US-51] GameScene rewrite: sprite-based tile rendering. (1) main.ts — add `pixelArt: true` to Phaser.Types.Core.GameConfig (cleanest nearest-neighbor path — also benefits fox-pip, which is pixel art). (2) GameScene.ts — import TILESETS, resolveFrame, hasTileset from '../maps/tilesets'; remove EXIT_COLOR constant and tileGraphics field; in preload() load both atlases via this.load.spritesheet('tileset-tiny-town', 'tilesets/tiny-town/tilemap.png', { frameWidth: 16, frameHeight: 16 }) and same for monochrome-rpg; rewrite renderTileMap() to (a) guard via hasTileset(area.tileset) — if unknown, log descriptive error and fall back to flat-color fillRect using visual.floorColor/wallColor so scene still loads; (b) otherwise iterate cells, determine kind (EXIT when in exitTiles set, else WALL/FLOOR), resolve frame via resolveFrame, add sprite at (col*TILE_SIZE, row*TILE_SIZE), setOrigin(0,0), setDisplaySize(TILE_SIZE, TILE_SIZE), setDepth(0); collect into this.tileSprites array. (3) setupCamera() — uiCam.ignore replaces tileGraphics with ...this.tileSprites. (4) Frame strings from resolveFrame work directly (Phaser accepts string | number). (5) Remove tileGraphics cleanup in cleanupResize (sprites auto-cleaned by scene restart). Props rendering out of scope — still a later task. Verify must pass."
+  task_number: 11
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
