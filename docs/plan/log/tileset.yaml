@@ -104,6 +104,13 @@ entries:
     result: pass
     notes: all US-50 non-manual-verify criteria done; editor sync closed
     tokens: ~4000
+  - task: 16
+    time: "2026-04-23T10:52:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B. All source + data + editor work done. Remaining non-manual work is doc-only: AGENTS.md (directory layout, file ownership, behavior rules) and the manual-verify checklist doc. Queued as one combined task since all are docs with no cross-file coupling. Manual-verify doc scaffolds every runtime check from phase-goal so Jaco (or a future retroactive tick) has a definitive list."
+    result: pass
+    tokens: ~1500
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
