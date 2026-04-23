@@ -143,6 +143,14 @@ entries:
     result: pass
     notes: tiny-dungeon swap — expect clear floor/wall contrast
     tokens: ~10000
+  - task: 21
+    time: "2026-04-24T00:22:00Z"
+    type: investigate
+    story: phase
+    description: "Phase Completion Gate. Operator confirmed visual improvement after tiny-dungeon swap ('that's better' + screenshot shows clear brown-brick walls vs tan dungeon floor) and chose path 1 (advance the phase). Ticked all 39 done-when boxes in phase-goal.md after updating Fog Marsh variant descriptions (grey/dead -> tan/stone; monochrome -> brown-brick). Verified structurally: (a) tsc + build pass, (b) no fillRect in renderTileMap method body (fallback fillRect lives in separate renderFallbackTiles method), (c) no tileGraphics in GameScene.ts, (d) no EXIT_COLOR anywhere in src/, (e) collision.ts last modified in phase area-system — untouched this phase, (f) AGENTS.md depth map has Props | 3 row, directory layout reflects assets/tilesets/, file ownership includes maps/tilesets.ts, behavior rules added for sprite-based tile rendering + non-blocking props. Evidence: src/maps/tilesets.ts 62 lines, 2 tileset entries with {tiny-town: FLOOR[3]/WALL[3]/EXIT[1], tiny-dungeon: FLOOR[4]/WALL[3]/EXIT[1]}; ashen-isle 18 props; fog-marsh 12 props; PropDefinition exported from types.ts; renderProps at depth 3 with missing-frame warning+skip; GameScene.preload loads both atlases via this.load.spritesheet. Phase complete. completed_stories: [US-48, US-49, US-50, US-51]."
+    result: pass
+    notes: phase complete — next iteration schedules review PR
+    tokens: ~3000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
