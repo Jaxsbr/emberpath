@@ -119,6 +119,14 @@ entries:
     result: pass
     notes: structural work complete; manual-verify checklist is the remaining gate
     tokens: ~8000
+  - task: 18
+    time: "2026-04-23T10:58:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B phase completion check. Walked every done-when criterion in phase-goal.md. All structural criteria met: atlas staging, registry, type additions, ashen/fog tileset ids, GameScene preload/renderTileMap/renderProps, EXIT_COLOR/tileGraphics removal, pixelArt nearest-neighbor, editor prop dots, editor build succeeds, main verify passes, AGENTS.md directory layout / file ownership / behavior rules updated, manual-verify scaffold doc created. UNMET: 11 browser-runtime criteria (per-area floor/wall variants visible, prop counts visible, exit tiles read as path/doorway, no console errors for 30s, fox-in-front-of-prop depth verify, crisp pixel rendering, exit reads-as for both areas). These require human eyes on a running dev server — not autonomously satisfiable. Setting status=paused with pause_reason pointing Jaco to npm run dev + phase-goal.md box ticking + surgical frame-index fixes if anything reads wrong."
+    result: pass
+    notes: awaiting manual browser verification — see pause_reason
+    tokens: ~3000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
