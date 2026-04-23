@@ -1,5 +1,12 @@
 phase: "sprite-refresh"
 started: "2026-04-12T10:16:42Z"
+reconciliation_status:
+  r0: done  # no legacy inline PRD stories
+  r1: done  # no docs/architecture/ARCHITECTURE.md
+  r2: done  # sprite-refresh.md → Status: shipped, criteria tagged [Shipped]; PRD index row already Shipped
+  r3: done  # AGENTS.md already reflects 8-dir 2-state fox-pip (updated in phase task 8)
+  r4: done  # no user docs (docs/manual, docs/GUIDE.md) present
+  r5: done
 entries:
   - task: 1
     time: "2026-04-12T10:17:53Z"
