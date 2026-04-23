@@ -24,7 +24,8 @@ state:
   # --- Lifecycle (owner: iterator) ---
   phase: tileset
   phase_complete: false
-  status: running
+  status: paused
+  pause_reason: "Fog Marsh swapped to Kenney Tiny Dungeon (colored dungeon pack). FLOOR [48,49,50,51] tan/grey stone, WALL [0,1,2] brown brick, EXIT [22] wooden door, props swapped to dungeon themes (barrels 66/67, crates 67, altars 69/70, candles 65, bones 68). Please `npm run dev`, walk Fog Marsh, report: (a) floor vs wall clearly distinguishable? (b) exit reads as door/threshold? (c) any specific frame that reads wrong — tell me the intent ('should be a skeleton' etc.) and I will swap the id. Ashen Isle untouched — still tiny-town. If we need to pick frames by id rather than guess, I will build tools/editor/frames.html (atlas at 4x with index labels)."
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 20
