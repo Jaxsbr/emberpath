@@ -1,0 +1,10 @@
+{
+  "name": "monochrome-rpg",
+  "source": "Kenney Monochrome RPG (1.2) — Monochrome variant",
+  "sourceUrl": "https://kenney.nl/assets/monochrome-rpg",
+  "license": "CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/",
+  "atlas": "tilemap.png",
+  "frame": { "width": 16, "height": 16, "margin": 0, "spacing": 0 },
+  "grid": { "columns": 17, "rows": 8, "total": 136 },
+  "note": "Packed spritesheet (no inter-tile spacing). Monochrome variant chosen over Dot Matrix and Default for dead-end allegory (Fog Marsh). Frame index = row * columns + col."
+}
