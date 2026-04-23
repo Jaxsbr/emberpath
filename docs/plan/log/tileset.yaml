@@ -24,6 +24,13 @@ entries:
     description: "Branch B investigation. Read both staged tilemaps visually via Read tool. tiny-town (12x11=132 frames): row 0 grass + trees, row 1 grass/dirt-path variants + trees, row 2 flowers/stones/plants, rows 3-5 roof tops (blue/red/brown), rows 6-9 building walls/doors/stone, row 10 fences/gates. monochrome-rpg Monochrome variant (17x8=136 frames): row 0 grass variants + bushes/trees, row 1 gravestones/mushrooms/stones, rows 2-5 buildings/walls/stairs/doors, rows 6-7 characters/hearts/items. Phase classified server/cross-cutting (modifies types, new module, GameScene renderer); investigate-first required before each implement. Queued a focused investigate task to cross-reference atlas visuals with frame indices and draft docs/plan/tileset-frame-analysis.md. That analysis feeds src/maps/tilesets.ts implementation on iteration 5."
     result: pass
     tokens: ~3000
+  - task: 5
+    time: "2026-04-23T10:07:00Z"
+    type: implement
+    story: US-49
+    description: "Created src/maps/tilesets.ts: TilesetDefinition, TILESETS registry (tiny-town, monochrome-rpg), hasTileset() predicate, resolveFrame(tilesetId, kind, col, row) pure picker using FNV-1a-style hash (Math.imul) of (col, row, kind, tilesetId) % frames.length. Added TileType.EXIT = 2 to constants.ts as render-only role (documented — never stored in area.map). Unknown tilesetId logs error listing known ids; missing-kind logs warning with TileType name. Verify passes. Audited TileType consumers (collision.ts, movement.ts, ashen-isle.ts, GameScene.ts): none use exhaustive switch on TileType, only equality checks against WALL — adding EXIT does not break them. Story US-49 advanced: 3 of ~7 criteria met (registry shape, registry populated, picker pure). Remaining US-49 criteria require GameScene rendering wiring (floor/wall variants visible on render)."
+    result: pass
+    tokens: ~5000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

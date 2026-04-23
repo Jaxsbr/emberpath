@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: "[US-49] Create src/maps/tilesets.ts — export TilesetRegistry with entries for tiny-town and monochrome-rpg using the frame indices from docs/plan/tileset-frame-analysis.md. Registry shape: Record<string, { atlasKey: string; tileFrames: Record<'FLOOR' | 'WALL' | 'EXIT', string[]> }>. Include resolveFrame(tilesetId, kind, col, row): string | null — pure deterministic variant picker keyed on (col, row, kind, tilesetId), no RNG, no per-frame recompute, logs a descriptive warning and returns null for unknown tilesetId/kind. Frame name format: 4-digit zero-padded index string (e.g. '0000', '0015', '0120') matching the numeric frame keys Phaser will assign to each spritesheet cell. Do NOT wire into GameScene yet — that is the next task."
+  task_number: 5
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
