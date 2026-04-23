@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
+import { TILESETS, resolveFrame, hasTileset } from '../maps/tilesets';
 import { AreaDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -14,8 +15,9 @@ import { evaluateCondition } from '../systems/conditions';
 import { setFlag } from '../triggers/flags';
 
 const TARGET_VISIBLE_TILES = 10;
-const EXIT_COLOR = 0xc89b3c; // amber-gold — reads as passage/doorway
 const FADE_DURATION = 400;
+// Source tilesets are 16×16; game tile size is 32×32 — sprites are scaled to TILE_SIZE on render.
+const TILESET_SOURCE_SIZE = 16;
 
 // Fox-pip sprite animation constants
 // Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
@@ -34,7 +36,7 @@ export class GameScene extends Phaser.Scene {
   private debugOverlay!: DebugOverlaySystem;
   private animationSystem!: AnimationSystem;
   private player!: Phaser.GameObjects.Sprite;
-  private tileGraphics!: Phaser.GameObjects.Graphics;
+  private tileLayer: Phaser.GameObjects.GameObject[] = [];
   private npcRects: Phaser.GameObjects.Rectangle[] = [];
   private boundWindowResize: (() => void) | null = null;
   private transitionInProgress = false;
@@ -54,6 +56,16 @@ export class GameScene extends Phaser.Scene {
           this.load.image(key, path);
         }
       }
+    }
+
+    // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
+    // indices; resolveFrame() returns them as strings which Phaser accepts directly.
+    // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
+    for (const [id, def] of Object.entries(TILESETS)) {
+      this.load.spritesheet(def.atlasKey, `tilesets/${id}/tilemap.png`, {
+        frameWidth: TILESET_SOURCE_SIZE,
+        frameHeight: TILESET_SOURCE_SIZE,
+      });
     }
   }
 
@@ -174,10 +186,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderTileMap(): void {
-    this.tileGraphics = this.add.graphics();
-    this.tileGraphics.setDepth(0);
+    this.tileLayer = [];
 
-    // Build a set of exit zone tile coordinates for distinct rendering
     const exitTiles = new Set<string>();
     for (const exit of this.area.exits) {
       for (let r = exit.row; r < exit.row + exit.height; r++) {
@@ -187,23 +197,54 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Fallback: unknown tileset id — render flat-color tiles so the scene still
+    // loads with a clear console error (US-48 error-path).
+    if (!hasTileset(this.area.tileset)) {
+      console.error(
+        `[GameScene] Unknown tileset id '${this.area.tileset}' on area '${this.area.id}'. ` +
+          `Rendering flat-color fallback.`,
+      );
+      this.renderFallbackTiles(exitTiles);
+      return;
+    }
+
+    const atlasKey = TILESETS[this.area.tileset].atlasKey;
     for (let row = 0; row < this.area.mapRows; row++) {
       for (let col = 0; col < this.area.mapCols; col++) {
         const tile = this.area.map[row][col];
-        const x = col * TILE_SIZE;
-        const y = row * TILE_SIZE;
-        let color: number;
-        if (exitTiles.has(`${col},${row}`)) {
-          color = EXIT_COLOR;
-        } else if (tile === TileType.WALL) {
-          color = this.area.visual.wallColor;
-        } else {
-          color = this.area.visual.floorColor;
-        }
-        this.tileGraphics.fillStyle(color);
-        this.tileGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        const kind = exitTiles.has(`${col},${row}`)
+          ? TileType.EXIT
+          : tile === TileType.WALL
+          ? TileType.WALL
+          : TileType.FLOOR;
+        const frame = resolveFrame(this.area.tileset, kind, col, row);
+        if (frame === null) continue;
+        const sprite = this.add.sprite(col * TILE_SIZE, row * TILE_SIZE, atlasKey, frame);
+        sprite.setOrigin(0, 0);
+        sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
+        sprite.setDepth(0);
+        this.tileLayer.push(sprite);
       }
     }
+  }
+
+  private renderFallbackTiles(exitTiles: Set<string>): void {
+    const g = this.add.graphics();
+    g.setDepth(0);
+    const FALLBACK_EXIT = 0xc89b3c;
+    for (let row = 0; row < this.area.mapRows; row++) {
+      for (let col = 0; col < this.area.mapCols; col++) {
+        const tile = this.area.map[row][col];
+        const color = exitTiles.has(`${col},${row}`)
+          ? FALLBACK_EXIT
+          : tile === TileType.WALL
+          ? this.area.visual.wallColor
+          : this.area.visual.floorColor;
+        g.fillStyle(color);
+        g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      }
+    }
+    this.tileLayer.push(g);
   }
 
   private renderNpcs(): void {
@@ -230,7 +271,7 @@ export class GameScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([this.tileGraphics, this.player, ...this.npcRects]);
+    uiCam.ignore([...this.tileLayer, this.player, ...this.npcRects]);
 
     this.scale.on('resize', this.handleResize, this);
 

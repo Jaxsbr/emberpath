@@ -6,6 +6,8 @@ import { StoryScene } from './scenes/StoryScene';
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game-container',
+  // Nearest-neighbor filtering — crisp pixel art for tilesets, fox-pip, and future sprites.
+  pixelArt: true,
   scale: {
     mode: Phaser.Scale.RESIZE,
   },
