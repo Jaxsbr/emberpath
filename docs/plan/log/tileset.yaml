@@ -127,6 +127,14 @@ entries:
     result: pass
     notes: awaiting manual browser verification — see pause_reason
     tokens: ~3000
+  - task: 19
+    time: "2026-04-24T00:00:00Z"
+    type: implement
+    story: US-49
+    description: "Resumed from pause. Operator ran dev server and reported Fog Marsh can't distinguish floor from wall (banded shingle texture of frames 51/52 blends with chevron-grass floor), and the green square EXIT frame 39 doesn't read as threshold. Ashen Isle reads clearly (positive confirmation). Swapped monochrome-rpg WALL frames from [51,52] to [34,35,36] — row 2 solid stone blocks should read as dark solid obstacles. Swapped EXIT from [39] to [17] — row 1 col 0 is an arch/cave-entrance shape that reads as a threshold. FLOOR frames [0,1,2] kept — rendered correctly as grey grass per screenshot. Props frames unchanged this iteration (operator feedback was floor/wall focused). Verify passes; awaiting second manual visual check."
+    result: pass
+    notes: monochrome frame re-pick; expect Jaco to re-run dev and confirm or iterate
+    tokens: ~4000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

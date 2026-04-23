@@ -24,11 +24,10 @@ state:
   # --- Lifecycle (owner: iterator) ---
   phase: tileset
   phase_complete: false
-  status: paused
-  pause_reason: "All structural criteria are met and every non-manual done-when box can be ticked. Remaining gate is browser-runtime verification: run `npm run dev`, inspect both areas, and tick the corresponding `- [ ]` boxes in `docs/plan/phase-goal.md` (the Behavior/reads-as sections). Working scratchpad + fix-it guidance: `docs/plan/tileset-manual-verify.md`. If any tile or prop reads wrong, edit indices in `src/maps/tilesets.ts` (FLOOR/WALL/EXIT) or the `spriteFrame` values in `src/data/areas/{ashen-isle,fog-marsh}.ts` — the registry + resolveFrame picker keeps fixes surgical. Resume with `/sabs:build-loop action=resume project=/Users/jacobusbrink/Jaxs/projects/emberpath` after ticking and the Phase Completion Gate will fire."
+  status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 17
+  task_number: 19
   next_task: null
   last_result: pass
   consecutive_fails: 0

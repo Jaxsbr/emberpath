@@ -18,8 +18,8 @@ export const TILESETS: Record<string, TilesetDefinition> = {
     atlasKey: 'tileset-monochrome-rpg',
     tileFrames: {
       [TileType.FLOOR]: ['0', '1', '2'],
-      [TileType.WALL]: ['51', '52'],
-      [TileType.EXIT]: ['39'],
+      [TileType.WALL]: ['34', '35', '36'],
+      [TileType.EXIT]: ['17'],
     },
   },
 };
