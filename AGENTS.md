@@ -73,7 +73,7 @@ assets/
       tilemap.json     # grid metadata + provenance
       Tilesheet.txt    # Kenney grid info
       License.txt      # CC0 attribution
-    monochrome-rpg/    # Kenney Monochrome RPG CC0 (Monochrome variant) — 16×16 packed (136 frames, 17×8), Fog Marsh
+    tiny-dungeon/      # Kenney Tiny Dungeon CC0 — 16×16 packed (132 frames, 12×11), Fog Marsh (tomb/dungeon aesthetic)
 tools/
   editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
     src/
@@ -111,7 +111,7 @@ tools/
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
 | `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum (FLOOR=0, WALL=1, EXIT=2 render-only) |
-| `maps/tilesets.ts` | TilesetDefinition + TILESETS registry (tiny-town, monochrome-rpg), resolveFrame(tilesetId, kind, col, row) pure variant picker using FNV-1a-style hash of (col,row,kind,tilesetId), hasTileset() predicate |
+| `maps/tilesets.ts` | TilesetDefinition + TILESETS registry (tiny-town, tiny-dungeon), resolveFrame(tilesetId, kind, col, row) pure variant picker using FNV-1a-style hash of (col,row,kind,tilesetId), hasTileset() predicate |
 | `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation (map, dialogue, flow), view dispatch, detail panel |
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |

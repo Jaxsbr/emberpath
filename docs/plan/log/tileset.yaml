@@ -135,6 +135,14 @@ entries:
     result: pass
     notes: monochrome frame re-pick; expect Jaco to re-run dev and confirm or iterate
     tokens: ~4000
+  - task: 20
+    time: "2026-04-24T00:10:00Z"
+    type: implement
+    story: US-48
+    description: "Operator feedback on second visual: monochrome-rpg variants are all 1-bit line art (Monochrome B/W, Dot Matrix green-tint, Default purple-tint) — fundamentally lack color depth to distinguish floor from wall regardless of frame choice. Presented three options; operator chose swap to Kenney Tiny Dungeon (colored brown-brick walls + tan/grey stone floors + dungeon props — tomb aesthetic fits dead-end allegory). Swap applied: downloaded kenney_tiny-dungeon.zip, staged packed spritesheet to assets/tilesets/tiny-dungeon/ (tilemap.png, tilemap.json, Tilesheet.txt, License.txt), removed assets/tilesets/monochrome-rpg/. Updated src/maps/tilesets.ts: renamed 'monochrome-rpg' entry to 'tiny-dungeon' with FLOOR=[48,49,50,51] (tan dungeon floor row 4), WALL=[0,1,2] (brown brick row 0), EXIT=[22] (wooden door). Updated fog-marsh.ts: tileset='tiny-dungeon' + swapped all 12 prop spriteFrames to dungeon-themed (barrels 66/67, crates 67, altars 69/70, candles 65, bones 68). Updated AGENTS.md directory layout + tilesets registry description, phase-goal.md narrative + done-when references, docs/product/phases/tileset.md, docs/plan/tileset-manual-verify.md. Ticked the 'fog-marsh.ts sets tileset: tiny-dungeon and >=10 props' done-when (now true). Verify passes main + editor. Remaining monochrome-rpg refs are in historical log entries and the frame-analysis.md — kept as accurate records of prior exploration."
+    result: pass
+    notes: tiny-dungeon swap — expect clear floor/wall contrast
+    tokens: ~10000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

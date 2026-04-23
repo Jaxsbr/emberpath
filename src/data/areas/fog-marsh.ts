@@ -11,7 +11,7 @@ export const fogMarsh: AreaDefinition = {
   name: 'Fog Marsh',
   mapCols: 30,
   mapRows: 24,
-  tileset: 'monochrome-rpg',
+  tileset: 'tiny-dungeon',
   map: [
     //0                                          29
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W], // 0
@@ -43,20 +43,20 @@ export const fogMarsh: AreaDefinition = {
     { id: 'marsh-hermit', name: 'Marsh Hermit', col: 18, row: 10, color: 0x5a7a6b },
   ],
   props: [
-    // Gravestones, skulls, dead shrubs, mushrooms — dead-end allegory imagery.
-    // Frames from docs/plan/tileset-frame-analysis.md (monochrome-rpg shortlist).
-    { id: 'gravestone-n1', col: 4, row: 2, spriteFrame: '18' },
-    { id: 'dead-shrub-n1', col: 14, row: 2, spriteFrame: '3' },
-    { id: 'dead-tree-n1', col: 22, row: 2, spriteFrame: '5' },
-    { id: 'mushroom-m1', col: 4, row: 8, spriteFrame: '20' },
-    { id: 'gravestone-m1', col: 12, row: 8, spriteFrame: '19' },
-    { id: 'skull-m1', col: 26, row: 8, spriteFrame: '22' },
-    { id: 'dead-shrub-c1', col: 4, row: 14, spriteFrame: '4' },
-    { id: 'mushroom-c1', col: 12, row: 14, spriteFrame: '21' },
-    { id: 'dead-tree-c1', col: 24, row: 14, spriteFrame: '6' },
-    { id: 'gravestone-s1', col: 8, row: 19, spriteFrame: '18' },
-    { id: 'skull-s1', col: 14, row: 19, spriteFrame: '23' },
-    { id: 'gravestone-s2', col: 22, row: 19, spriteFrame: '19' },
+    // Dungeon/tomb decoration — barrels, crates, altars, candles, bones, chests.
+    // Frames from tiny-dungeon atlas (best-guess from preview; swap indices if any read wrong).
+    { id: 'barrel-n1', col: 4, row: 2, spriteFrame: '66' },
+    { id: 'crate-n1', col: 14, row: 2, spriteFrame: '67' },
+    { id: 'altar-n1', col: 22, row: 2, spriteFrame: '70' },
+    { id: 'barrel-m1', col: 4, row: 8, spriteFrame: '67' },
+    { id: 'crate-m1', col: 12, row: 8, spriteFrame: '66' },
+    { id: 'candle-m1', col: 26, row: 8, spriteFrame: '65' },
+    { id: 'bones-c1', col: 4, row: 14, spriteFrame: '68' },
+    { id: 'barrel-c1', col: 12, row: 14, spriteFrame: '66' },
+    { id: 'altar-c1', col: 24, row: 14, spriteFrame: '69' },
+    { id: 'crate-s1', col: 8, row: 19, spriteFrame: '67' },
+    { id: 'candle-s1', col: 14, row: 19, spriteFrame: '65' },
+    { id: 'barrel-s1', col: 22, row: 19, spriteFrame: '66' },
   ],
   triggers: [
     // Thought trigger — entering the foggy open area

@@ -14,12 +14,15 @@ export const TILESETS: Record<string, TilesetDefinition> = {
       [TileType.EXIT]: ['15'],
     },
   },
-  'monochrome-rpg': {
-    atlasKey: 'tileset-monochrome-rpg',
+  'tiny-dungeon': {
+    atlasKey: 'tileset-tiny-dungeon',
     tileFrames: {
-      [TileType.FLOOR]: ['0', '1', '2'],
-      [TileType.WALL]: ['34', '35', '36'],
-      [TileType.EXIT]: ['17'],
+      // Tan/orange dungeon floor (row 4 start — clearly distinct from brick walls).
+      [TileType.FLOOR]: ['48', '49', '50', '51'],
+      // Brown dark brick wall tops (row 0 start — strong color contrast with tan floor).
+      [TileType.WALL]: ['0', '1', '2'],
+      // Wooden door tile — reads as threshold.
+      [TileType.EXIT]: ['22'],
     },
   },
 };

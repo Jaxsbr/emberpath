@@ -13,13 +13,13 @@ Each checkbox is a done-when criterion from `docs/product/phases/tileset.md` tha
 - [ ] Fox sprite renders in front of a prop when the fox's world y > prop's world y (walk behind-then-in-front of a tree to verify) [US-50]
 - [ ] Exit tile communicates "walkable path toward map edge" rather than "glowing UI marker" — first-time-player reads-as [US-51]
 
-## Fog Marsh (`monochrome-rpg`)
+## Fog Marsh (`tiny-dungeon`)
 
-- [ ] Floor shows ≥3 visually distinct grey/dead variants across the visible map [US-49]
-- [ ] Walls show ≥2 visually distinct monochrome variants [US-49]
-- [ ] ≥10 props visible (gravestones, skulls, dead shrubs, bones) at expected positions [US-50]
-- [ ] Exit tile renders as a flagstone/doorway sprite; area transition still fires on overlap [US-51]
-- [ ] Exit tile communicates "doorway/stone threshold" rather than "glowing UI marker" — first-time-player reads-as [US-51]
+- [ ] Floor shows ≥3 visually distinct tan/stone variants across the visible map [US-49]
+- [ ] Walls show ≥2 visually distinct brown-brick variants [US-49]
+- [ ] ≥10 props visible (barrels, crates, altars, candles, bones) at expected positions [US-50]
+- [ ] Exit tile renders as a wooden-door sprite; area transition still fires on overlap [US-51]
+- [ ] Exit tile communicates "wooden door / tomb threshold" rather than "glowing UI marker" — first-time-player reads-as [US-51]
 
 ## Both areas
 

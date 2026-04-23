@@ -4,7 +4,7 @@ Status: draft
 
 ## Phase goal
 
-Replace `fillRect`-based flat-color tile rendering with sprite-based rendering from Kenney dev-art atlases (tiny-town for Ashen Isle, monochrome-rpg for Fog Marsh), add per-cell tile variants for visual texture, introduce a non-blocking decorative prop system, and restyle exit zones as diegetic path/doorway tiles. The world should read as "a place worth walking through" instead of a geometry diagram, and Fog Marsh should feel visually distinct from Ashen Isle.
+Replace `fillRect`-based flat-color tile rendering with sprite-based rendering from Kenney dev-art atlases (tiny-town for Ashen Isle, tiny-dungeon for Fog Marsh), add per-cell tile variants for visual texture, introduce a non-blocking decorative prop system, and restyle exit zones as diegetic path/doorway tiles. The world should read as "a place worth walking through" instead of a geometry diagram, and Fog Marsh should feel visually distinct from Ashen Isle.
 
 ## Design direction
 
@@ -23,7 +23,7 @@ As a player, I want the map rendered with actual tile sprites instead of flat-co
 **Acceptance criteria**:
 - `GameScene` loads the Kenney tiny-town tile atlas and renders FLOOR / WALL / EXIT tiles as sprites at `TILE_SIZE` (32px), source frames scaled 2× from 16px with nearest-neighbor (no smoothing)
 - `AreaDefinition` gains a required `tileset` string field specifying which atlas to use
-- Ashen Isle sets `tileset: 'tiny-town'`; Fog Marsh sets `tileset: 'monochrome-rpg'`
+- Ashen Isle sets `tileset: 'tiny-town'`; Fog Marsh sets `tileset: 'tiny-dungeon'`
 - EXIT tiles render via the tileset's path/doorway frame — `EXIT_COLOR` rectangle render path is removed
 - `tileGraphics` Graphics object is removed from `GameScene`; all tile rendering happens via sprites
 - Existing `visual.floorColor` / `visual.wallColor` fields are retained on `AreaDefinition` for the editor's map-overview mode (editor keeps rendering colored squares; the game scene ignores these fields)
@@ -34,7 +34,7 @@ As a player, I want the map rendered with actual tile sprites instead of flat-co
 - Manual section: N/A (no user-facing interaction)
 - Key steps: N/A
 
-**Design rationale:** Kenney tiny-town is the closest dev-art match to the bright-friendly tone of the fox child sprite; monochrome-rpg provides a contrasting grey/dead palette for Fog Marsh to reinforce the dead-end allegory. Retaining `visual.floorColor/wallColor` on `AreaDefinition` keeps the editor's minimap working without bundling atlases into the editor build.
+**Design rationale:** Kenney tiny-town is the closest dev-art match to the bright-friendly tone of the fox child sprite; tiny-dungeon provides a contrasting grey/dead palette for Fog Marsh to reinforce the dead-end allegory. Retaining `visual.floorColor/wallColor` on `AreaDefinition` keeps the editor's minimap working without bundling atlases into the editor build.
 
 ---
 
@@ -47,7 +47,7 @@ As a player, I want floor and wall tiles to have visual variation instead of a s
 - Wall tiles select from ≥2 variant frames per tileset with the same determinism property
 - Variant selection is a pure function of `(col, row, tileType, tilesetId)` — no RNG state, no per-frame recomputation
 - A single lookup module (`src/maps/tilesets.ts`) owns the registry: `tilesetId → { atlasKey, tileFrames: Record<TileType, string[]> }`
-- Both tilesets (tiny-town, monochrome-rpg) have populated variant frame lists
+- Both tilesets (tiny-town, tiny-dungeon) have populated variant frame lists
 
 **User guidance:**
 - Discovery: Automatic — visual variation is ambient
@@ -68,7 +68,7 @@ As a player, I want scattered non-blocking decorations (bushes, stones, stumps, 
 - Props render as sprites at world-space depth 3 — between Tiles (0) and Entities (5) — so the fox walks in front of nearby props when overlapping
 - Props are non-blocking: `collision.ts` is NOT modified; walking through a prop's tile coordinate produces no collision stop
 - Ashen Isle defines ≥15 props using tiny-town environment frames (bushes, stones, trees, fences)
-- Fog Marsh defines ≥10 props using monochrome-rpg environment frames (gravestones, skulls, dead shrubs, bones)
+- Fog Marsh defines ≥10 props using tiny-dungeon environment frames (gravestones, skulls, dead shrubs, bones)
 - Editor's `mapRenderer.ts` renders props as small colored dots/glyphs so the editor map-overview reflects prop positions
 - AGENTS.md depth map updated to include `Props | 3 | main | Decorative non-blocking sprites` between Tiles and Entities
 
@@ -89,7 +89,7 @@ As a player, I want exit zones to look like paths or doorways in the art style, 
 
 **Acceptance criteria**:
 - EXIT tiles in Ashen Isle render using tiny-town's dirt-path frame (specific frame name documented in `tilesets.ts`)
-- EXIT tiles in Fog Marsh render using monochrome-rpg's flagstone/doorway frame (specific frame name documented)
+- EXIT tiles in Fog Marsh render using tiny-dungeon's flagstone/doorway frame (specific frame name documented)
 - Debug overlay (F3) still highlights exit zones with orange outline and destination label (existing behavior preserved)
 - `EXIT_COLOR` constant is removed from `GameScene.ts` and is no longer referenced anywhere in the source tree
 - The exit tile reads as a walkable path/doorway to the player — not a glowing HUD marker
@@ -113,14 +113,14 @@ As a player, I want exit zones to look like paths or doorways in the art style, 
 ### Structural — assets & types
 
 - [ ] `assets/tilesets/tiny-town/` exists and contains at least the source atlas PNG and a frame-mapping JSON (Phaser atlas format or equivalent index) [US-48]
-- [ ] `assets/tilesets/monochrome-rpg/` exists with the same contents for the monochrome atlas [US-48]
+- [ ] `assets/tilesets/tiny-dungeon/` exists with the same contents for the monochrome atlas [US-48]
 - [ ] `src/maps/tilesets.ts` exists and exports a registry of tilesets keyed by id, each entry containing `{ atlasKey: string; tileFrames: Record<TileType, string[]> }` [US-49]
-- [ ] `tilesets.ts` registry has entries for `tiny-town` and `monochrome-rpg`, each with `FLOOR` ≥3 frames, `WALL` ≥2 frames, `EXIT` ≥1 frame [US-49]
+- [ ] `tilesets.ts` registry has entries for `tiny-town` and `tiny-dungeon`, each with `FLOOR` ≥3 frames, `WALL` ≥2 frames, `EXIT` ≥1 frame [US-49]
 - [ ] `AreaDefinition` in `src/data/areas/types.ts` has required field `tileset: string` [US-48]
 - [ ] `AreaDefinition` has required field `props: PropDefinition[]` [US-50]
 - [ ] `PropDefinition` exported from `types.ts` with `{ id: string; col: number; row: number; spriteFrame: string }` at minimum [US-50]
 - [ ] `src/data/areas/ashen-isle.ts` sets `tileset: 'tiny-town'` and defines ≥15 entries in `props` [US-50]
-- [ ] `src/data/areas/fog-marsh.ts` sets `tileset: 'monochrome-rpg'` and defines ≥10 entries in `props` [US-50]
+- [ ] `src/data/areas/fog-marsh.ts` sets `tileset: 'tiny-dungeon'` and defines ≥10 entries in `props` [US-50]
 
 ### Structural — rendering
 

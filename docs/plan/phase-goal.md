@@ -1,10 +1,10 @@
 ## Phase goal
 
-Replace `fillRect`-based flat-color tile rendering with sprite-based rendering from Kenney dev-art atlases (tiny-town for Ashen Isle, monochrome-rpg for Fog Marsh), add per-cell tile variants for visual texture, introduce a non-blocking decorative prop system, and restyle exit zones as diegetic path/doorway tiles. The world should read as "a place worth walking through" instead of a geometry diagram, and Fog Marsh should feel visually distinct from Ashen Isle.
+Replace `fillRect`-based flat-color tile rendering with sprite-based rendering from Kenney dev-art atlases (tiny-town for Ashen Isle, tiny-dungeon for Fog Marsh), add per-cell tile variants for visual texture, introduce a non-blocking decorative prop system, and restyle exit zones as diegetic path/doorway tiles. The world should read as "a place worth walking through" instead of a geometry diagram, and Fog Marsh should feel visually distinct from Ashen Isle.
 
 ### Design direction
 
-Charming classic-RPG overworld aesthetic (16-bit pixel-art tilemap idiom). **Ashen Isle** leans cool green-brown with scattered stones, withered shrubs, bare trees, and dirt paths — "quietly forsaken," not grimdark. **Fog Marsh** leans monochrome/desaturated grey with gravestones, skulls, twisted stumps, and dead shrubs — a visual cue for "dead-end" in the allegory. Source tiles are 16px; render at 32px using nearest-neighbor filtering for crisp pixel art. Apply the `sabs:frontend-design` skill during implementation.
+Charming classic-RPG overworld aesthetic (16-bit pixel-art tilemap idiom). **Ashen Isle** leans cool green-brown with scattered stones, withered shrubs, bare trees, and dirt paths — "quietly forsaken," not grimdark. **Fog Marsh** uses a dungeon/tomb aesthetic — brown brick walls, tan/grey stone floors, wooden doors, barrels, crates, altars, candles, bones — a visual cue for "trapped dead-end" in the allegory. Source tiles are 16px; render at 32px using nearest-neighbor filtering for crisp pixel art. Apply the `sabs:frontend-design` skill during implementation.
 
 ### Stories in scope
 
@@ -21,14 +21,14 @@ Charming classic-RPG overworld aesthetic (16-bit pixel-art tilemap idiom). **Ash
 
 #### Structural — assets & types
 - [ ] `assets/tilesets/tiny-town/` exists and contains at least the source atlas PNG and a frame-mapping JSON (Phaser atlas format or equivalent index) [US-48]
-- [ ] `assets/tilesets/monochrome-rpg/` exists with the same contents for the monochrome atlas [US-48]
+- [ ] `assets/tilesets/tiny-dungeon/` exists with the same contents for the monochrome atlas [US-48]
 - [ ] `src/maps/tilesets.ts` exists and exports a registry of tilesets keyed by id, each entry containing `{ atlasKey: string; tileFrames: Record<TileType, string[]> }` [US-49]
-- [ ] `tilesets.ts` registry has entries for `tiny-town` and `monochrome-rpg`, each with `FLOOR` ≥3 frames, `WALL` ≥2 frames, `EXIT` ≥1 frame [US-49]
+- [ ] `tilesets.ts` registry has entries for `tiny-town` and `tiny-dungeon`, each with `FLOOR` ≥3 frames, `WALL` ≥2 frames, `EXIT` ≥1 frame [US-49]
 - [ ] `AreaDefinition` in `src/data/areas/types.ts` has required field `tileset: string` [US-48]
 - [ ] `AreaDefinition` has required field `props: PropDefinition[]` [US-50]
 - [ ] `PropDefinition` exported from `types.ts` with `{ id: string; col: number; row: number; spriteFrame: string }` at minimum [US-50]
 - [ ] `src/data/areas/ashen-isle.ts` sets `tileset: 'tiny-town'` and defines ≥15 entries in `props` [US-50]
-- [ ] `src/data/areas/fog-marsh.ts` sets `tileset: 'monochrome-rpg'` and defines ≥10 entries in `props` [US-50]
+- [x] `src/data/areas/fog-marsh.ts` sets `tileset: 'tiny-dungeon'` and defines ≥10 entries in `props` [US-50]
 
 #### Structural — rendering
 - [ ] `GameScene.preload()` loads both tileset atlases via `this.load.atlas(...)` (or `load.image` + manual frame config) [US-48]
@@ -51,14 +51,14 @@ Manual verification checklist written to `docs/plan/tileset-manual-verify.md`. E
 - [ ] **Ashen Isle**: Fox sprite renders in front of a prop when the fox's world y > prop's world y (verified by walking behind/in-front of a tree) [US-50]
 - [ ] **Fog Marsh**: Floor shows ≥3 visually distinct grey/dead variants across the visible map [US-49]
 - [ ] **Fog Marsh**: Walls show ≥2 visually distinct monochrome variants [US-49]
-- [ ] **Fog Marsh**: ≥10 props visible (gravestones, skulls, dead shrubs, bones) at expected positions [US-50]
-- [ ] **Fog Marsh**: Exit tile renders as a flagstone/doorway sprite; area transition still fires on overlap [US-51]
+- [ ] **Fog Marsh**: ≥10 props visible (barrels, crates, altars, candles, bones) at expected positions [US-50]
+- [ ] **Fog Marsh**: Exit tile renders as a wooden-door/dungeon-doorway sprite; area transition still fires on overlap [US-51]
 - [ ] **Both areas**: Tile art renders crisp (no smoothing/blur) — visible on close inspection of a single tile [US-48]
 - [ ] **Both areas**: No console errors or warnings during scene load or during normal play for 30 seconds [US-48]
 
 #### Behavior — reads-as (required by Visual "reads as" compounded rule)
 - [ ] Ashen Isle exit tile communicates "walkable path toward map edge" to a first-time player (rather than "glowing UI marker") — verified via manual check with a new-eye observer note in the manual-verify doc [US-51]
-- [ ] Fog Marsh exit tile communicates "doorway/stone threshold" to a first-time player — verified same way [US-51]
+- [ ] Fog Marsh exit tile communicates "wooden door / tomb threshold" to a first-time player — verified same way [US-51]
 
 #### Editor sync
 - [ ] Editor's `tools/editor/src/mapRenderer.ts` renders props as small colored dots or glyphs at `(col, row)` positions — verified by opening the editor and inspecting either area [US-50]

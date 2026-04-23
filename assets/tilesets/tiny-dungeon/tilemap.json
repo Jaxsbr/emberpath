@@ -1,0 +1,10 @@
+{
+  "name": "tiny-dungeon",
+  "source": "Kenney Tiny Dungeon (1.1)",
+  "sourceUrl": "https://kenney.nl/assets/tiny-dungeon",
+  "license": "CC0 1.0 Universal — https://creativecommons.org/publicdomain/zero/1.0/",
+  "atlas": "tilemap.png",
+  "frame": { "width": 16, "height": 16, "margin": 0, "spacing": 0 },
+  "grid": { "columns": 12, "rows": 11, "total": 132 },
+  "note": "Packed spritesheet (no inter-tile spacing). Colored dungeon aesthetic (brown brick walls, tan/grey stone floors, wooden doors, barrels, skeletons) — chosen over monochrome-rpg for Fog Marsh after visual verification showed 1-bit line-art lacked floor/wall contrast."
+}
