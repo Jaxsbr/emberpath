@@ -24,4 +24,11 @@ entries:
     description: "Branch B investigation. Read both staged tilemaps visually via Read tool. tiny-town (12x11=132 frames): row 0 grass + trees, row 1 grass/dirt-path variants + trees, row 2 flowers/stones/plants, rows 3-5 roof tops (blue/red/brown), rows 6-9 building walls/doors/stone, row 10 fences/gates. monochrome-rpg Monochrome variant (17x8=136 frames): row 0 grass variants + bushes/trees, row 1 gravestones/mushrooms/stones, rows 2-5 buildings/walls/stairs/doors, rows 6-7 characters/hearts/items. Phase classified server/cross-cutting (modifies types, new module, GameScene renderer); investigate-first required before each implement. Queued a focused investigate task to cross-reference atlas visuals with frame indices and draft docs/plan/tileset-frame-analysis.md. That analysis feeds src/maps/tilesets.ts implementation on iteration 5."
     result: pass
     tokens: ~3000
+  - task: 4
+    time: "2026-04-23T10:02:00Z"
+    type: investigate
+    story: US-48
+    description: "Executed queued investigate. Wrote docs/plan/tileset-frame-analysis.md with draft frame-index mappings per tileset: tiny-town FLOOR=[0,1,2], WALL=[120,121,122] (row 10 stone), EXIT=[15] (dirt-path spot), plus ~20 candidate prop frames (trees 6-10, flowers 11/26, stones 13/25, bushes 28/29, sign 27, fences 128-131). monochrome-rpg FLOOR=[0,1,2], WALL=[51,52], EXIT=[39] (row 2 stairs/doorway), plus ~15 prop candidates (gravestones 18/19, mushrooms 20/21, skulls 22/23, dead shrubs 3/4, dead trees 5/6). Doc flags these as best-guess informed by atlas preview — implementation must verify visually. Also documented a key design decision: tilesets registry uses a separate Record<'FLOOR'|'WALL'|'EXIT', string[]> keyed on render-kind strings (not TileType enum) so EXIT is cleanly represented without polluting TileType (exits are overlay zones, not stored in area.map). Queued the src/maps/tilesets.ts implement task with a precise shape + determinism + error-handling spec. Verify passes."
+    result: pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
