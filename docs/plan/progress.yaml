@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 12
-  next_task: "[US-50] Investigate: plan prop rendering in GameScene + data populations for ashen-isle (>=15 props) and fog-marsh (>=10 props). Draft: (a) GameScene.renderProps() helper — iterate area.props, for each look up frame in the tileset atlas (using area.tileset's atlasKey and prop.spriteFrame as the frame id), add sprite at (col*TILE_SIZE, row*TILE_SIZE) with setOrigin(0,0), setDisplaySize(TILE_SIZE, TILE_SIZE), setDepth(3); (b) error path — if frame doesn't exist on the atlas texture (check via this.textures.get(atlasKey).has(frame)), log a console warning naming prop.id and missing frame then SKIP that prop so scene continues; (c) collect prop sprites for uiCam.ignore; (d) call renderProps() from create() after renderTileMap(). Ashen Isle candidate prop placements (use tiny-town frames from docs/plan/tileset-frame-analysis.md — trees 6/7/8/9/10, flowers 11/26, stones 13/25, bushes 28/29, sign 27, fences 128-131): place ~18 across open-grass cells avoiding walls and paths; keep away from NPC position (col 13, row 12) and player spawn (col 2, row 2) and exit zone (col 47, row 17). Fog Marsh candidates (monochrome-rpg frames 18/19 gravestones, 20/21 mushrooms, 22/23 skulls, 3/4 dead shrubs, 5/6 dead trees): place ~12 on open-grass cells. Output: exact prop arrays to append to each area data file."
+  task_number: 13
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

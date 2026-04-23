@@ -81,6 +81,14 @@ entries:
     description: "Branch B. Keystone renderer shipped. Next major chunk is US-50 props. Queued an investigate task to draft both the GameScene.renderProps() helper (with missing-frame error path per US-50 criterion) and the exact prop arrays for ashen-isle and fog-marsh with their specific frames and (col, row) positions. Constraints: props placed on FLOOR cells only, avoid NPC positions, avoid exit zones, avoid player spawn. Frames come from the tileset-frame-analysis.md shortlist."
     result: pass
     tokens: ~1500
+  - task: 13
+    time: "2026-04-23T10:40:00Z"
+    type: implement
+    story: US-50
+    description: "Implemented GameScene.renderProps() with missing-frame error path (checks texture.has(frame) and skips with console.warn naming prop.id + missing frame on that tileset). Added propSprites field; called renderProps() from create() between renderTileMap and renderNpcs; spread propSprites into uiCam.ignore. Populated ashen-isle props (18 — bushes 28/29, trees 6/7/8/9/10, stones 13/25, flowers 11/26, signs 27, fence 128) and fog-marsh props (12 — gravestones 18/19, dead-shrubs 3/4, dead-trees 5/6, mushrooms 20/21, skulls 22/23), all on open-grass cells avoiding NPCs, exit zones, player spawn. Also updated AGENTS.md depth map: added Props | 3 | main | Decorative non-blocking sprites between Tiles (0) and Entities (5) — satisfies golden principle (new visual elements must reference depth map) and closes one US-50 invariant criterion. collision.ts untouched (verified empty git diff). tsc + build pass. US-50 advances: 6 of ~8 criteria met (AreaDefinition.props ✓, PropDefinition exported ✓, depth 3 ✓, collision untouched ✓, Ashen >=15 ✓, Fog >=10 ✓, AGENTS.md depth row ✓). Remaining US-50: editor mapRenderer prop dots + manual verify (>=15/>=10 visible in browser, fox renders in front of props when y > prop.y)."
+    result: pass
+    notes: renderProps added with graceful missing-frame skip; AGENTS.md depth map updated
+    tokens: ~8000
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate
