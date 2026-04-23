@@ -31,6 +31,13 @@ entries:
     description: "Created src/maps/tilesets.ts: TilesetDefinition, TILESETS registry (tiny-town, monochrome-rpg), hasTileset() predicate, resolveFrame(tilesetId, kind, col, row) pure picker using FNV-1a-style hash (Math.imul) of (col, row, kind, tilesetId) % frames.length. Added TileType.EXIT = 2 to constants.ts as render-only role (documented — never stored in area.map). Unknown tilesetId logs error listing known ids; missing-kind logs warning with TileType name. Verify passes. Audited TileType consumers (collision.ts, movement.ts, ashen-isle.ts, GameScene.ts): none use exhaustive switch on TileType, only equality checks against WALL — adding EXIT does not break them. Story US-49 advanced: 3 of ~7 criteria met (registry shape, registry populated, picker pure). Remaining US-49 criteria require GameScene rendering wiring (floor/wall variants visible on render)."
     result: pass
     tokens: ~5000
+  - task: 6
+    time: "2026-04-23T10:10:00Z"
+    type: investigate
+    story: US-48
+    description: "Branch B. Next foundation work: adding required AreaDefinition.tileset (string) + AreaDefinition.props (PropDefinition[]) fields. Queued an investigate task to audit every AreaDefinition consumer and draft exact diffs before applying. Investigate-first per phase classification (server/cross-cutting). Consumers already partially known from prior reads: GameScene.create, registry.ts, ashen-isle.ts, fog-marsh.ts, and likely editor mapRenderer.ts / flowRenderer.ts. Keeping visual.floorColor/wallColor explicitly retained (golden principle: no silent breaking changes)."
+    result: pass
+    tokens: ~1500
   - task: 4
     time: "2026-04-23T10:02:00Z"
     type: investigate

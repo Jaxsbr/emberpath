@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: null
+  task_number: 6
+  next_task: "[US-48/US-50] Investigate: grep all references to AreaDefinition in src/ and tools/editor/src/ to enumerate consumers; identify which will break when required fields `tileset: string` and `props: PropDefinition[]` are added. Draft diffs for: (a) src/data/areas/types.ts — add PropDefinition interface and the two required fields; (b) src/data/areas/ashen-isle.ts — set tileset: 'tiny-town', props: [] (to be filled later); (c) src/data/areas/fog-marsh.ts — set tileset: 'monochrome-rpg', props: []; (d) any editor-side tools/editor/src/* code that constructs or consumes AreaDefinition and may need the same additions or a default. Keep visual.floorColor/wallColor fields unchanged. Output: short findings summary in the progress log; next iteration applies the diffs."
   last_result: pass
   consecutive_fails: 0
 
