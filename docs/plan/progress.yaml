@@ -24,8 +24,7 @@ state:
   # --- Lifecycle (owner: iterator) ---
   phase: tileset
   phase_complete: false
-  status: paused
-  pause_reason: "Source tileset atlases not staged. assets/tilesets/ does not exist and Kenney tiny-town/monochrome-rpg atlases are not present anywhere in the repo. Awaiting operator decision: (a) I WebFetch Kenney CC0, (b) generate via pixellab-team MCP, or (c) operator stages atlases manually. Resume with: /sabs:build-loop action=resume after decision."
+  status: running
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 1
