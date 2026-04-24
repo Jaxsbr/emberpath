@@ -1,15 +1,6 @@
 import Phaser from 'phaser';
 import { PLAYER_SPEED } from '../maps/constants';
-
-type Direction =
-  | 'north'
-  | 'north-east'
-  | 'east'
-  | 'south-east'
-  | 'south'
-  | 'south-west'
-  | 'west'
-  | 'north-west';
+import { Direction, velocityToDirection } from './direction';
 
 type AnimState = 'idle' | 'walk';
 
@@ -42,7 +33,7 @@ export class AnimationSystem {
     const isMoving = vx !== 0 || vy !== 0;
 
     if (isMoving) {
-      this.facingDirection = this.velocityToDirection(vx, vy);
+      this.facingDirection = velocityToDirection(vx, vy);
       this.playAnim('walk', this.facingDirection);
     } else {
       this.playAnim('idle', this.facingDirection);
@@ -55,31 +46,6 @@ export class AnimationSystem {
    */
   getCurrentSpeed(): number {
     return PLAYER_SPEED;
-  }
-
-  /**
-   * Map velocity to one of 8 directions using octant boundaries (45-degree sectors).
-   * atan2 returns angle in [-π, π]; we normalize to [0, 2π] then quantize to 8 sectors.
-   * Note: vy is positive-down in screen space (Phaser), so south = positive vy.
-   */
-  private velocityToDirection(vx: number, vy: number): Direction {
-    // Quantize atan2 angle to nearest 45° sector (8 directions).
-    // atan2(vy, vx): east=0, south=π/2, west=±π, north=-π/2
-    // Directions ordered clockwise from east, matching normalized [0, 2π] sector indices.
-    const angle = Math.atan2(vy, vx);
-    const normalized = angle < 0 ? angle + 2 * Math.PI : angle;
-    const DIRECTIONS: Direction[] = [
-      'east',       //   0° sector
-      'south-east', //  45°
-      'south',      //  90°
-      'south-west', // 135°
-      'west',       // 180°
-      'north-west', // 225°
-      'north',      // 270°
-      'north-east', // 315°
-    ];
-    const sectorIndex = Math.round(normalized / (Math.PI / 4)) % 8;
-    return DIRECTIONS[sectorIndex];
   }
 
   private playAnim(state: AnimState, direction: Direction): void {

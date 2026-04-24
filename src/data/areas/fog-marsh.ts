@@ -40,7 +40,7 @@ export const fogMarsh: AreaDefinition = {
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W], // 23
   ],
   npcs: [
-    { id: 'marsh-hermit', name: 'Marsh Hermit', col: 18, row: 10, color: 0x5a7a6b },
+    { id: 'marsh-hermit', name: 'Marsh Hermit', col: 18, row: 10, color: 0x5a7a6b, sprite: 'marsh-hermit', wanderRadius: 2, awarenessRadius: 3 },
   ],
   props: [
     // Dungeon/tomb decoration — barrels, crates, altars, candles, bones, chests.

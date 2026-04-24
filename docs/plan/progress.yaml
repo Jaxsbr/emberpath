@@ -22,23 +22,23 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: tileset
+  phase: npc-behavior
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 25
+  task_number: 20
   next_task: null
   last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
-  review_stage: review_complete
+  review_stage: review_posted
   review_complete: true
-  pr_number: 13
+  pr_number: 14
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-48, US-49, US-50, US-51]
+  completed_stories: [US-52, US-53, US-54, US-55]

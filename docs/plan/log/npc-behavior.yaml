@@ -1,0 +1,159 @@
+phase: "npc-behavior"
+started: "2026-04-24T11:33:03Z"
+entries:
+  - task: 1
+    time: "2026-04-24T11:33:03Z"
+    type: investigate
+    story: phase
+    description: "Branch B — phase start. Read AGENTS.md, phase-goal.md, spec at docs/product/phases/npc-behavior.md. Verify passes (tsc --noEmit && vite build). Asset staging exists at /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/{idle,walk,static}/ (directories present). Phase classified server/cross-cutting (new module src/systems/npcBehavior.ts + src/systems/npcSprites.ts, NpcDefinition field additions in types.ts, collision.ts + npcInteraction.ts must consume live positions, AnimationSystem's octant extracted to a shared location). Per the investigate-first mandate, queued an investigate task (not implement) to (a) enumerate staged asset files exactly and confirm naming convention, (b) audit NpcDefinition consumers and draft types.ts diff, (c) mirror fox-pip preload pattern for the NPC sprite registry, (d) Learning #70 octant consumer audit. Next iteration will execute this investigate and queue the first implement task."
+    result: pass
+    notes: phase classified server/cross-cutting; investigate-first enforced
+    tokens: ~15000
+  - task: 2
+    time: "2026-04-24T11:40:00Z"
+    type: investigate
+    story: US-52
+    description: "Executed queued investigate. Findings — (1) Asset staging verified: /Users/jacobusbrink/Jaxs/assets/emberpath/npc/marsh-hermit/ and /old-man/ each contain idle/<8 dirs>/frame_000..003.png (32), walk/<8 dirs>/frame_000..003.png (32), static/<dir>.png × 8 — matches spec exactly. Total 144 files, 72 per NPC. (2) NpcDefinition consumers in src/: types.ts (decl + AreaDefinition.npcs), areas/{ashen-isle,fog-marsh}.ts (definition sites), GameScene.ts:281-283 (the Rectangle render path to remove), collision.ts (getNpcBounds uses npc.col/row — must switch to live positions), npcInteraction.ts:70-71 (uses npc.col/row for nearest-NPC range — must switch to live positions), debugOverlay.ts:136-137 (uses npc.col/row for radius circles — spawn tile is correct for wander circle; interaction circle may want live position). Editor mapRenderer.ts:240-269 reads npc.col/row/color unchanged (editor operates on static defs). movement.ts has indirect NpcDefinition[] typing only. (3) Direction/octant audit (Learning #70): only ONE octant site in src/ — animation.ts:65 `velocityToDirection(vx, vy)`. GameScene:25 declares a pure DIRECTIONS list constant (no derivation). No other Math.atan2 or octant tables anywhere in src/. Extraction plan: move velocityToDirection to src/systems/direction.ts as pure exported function, have AnimationSystem import it, NpcBehaviorSystem import it. Single-owner extraction, clean. (4) Fox-pip preload pattern (GameScene.ts:50-57, 412-423): iterates DIRECTIONS × FRAME_COUNTS[anim], this.load.image per frame key `fox-pip-<anim>-<dir>-<i>`; then registerAnimations() creates `fox-pip-<anim>-<dir>` Phaser animations at 8 fps repeat:-1. NPC mirror: iterate registry entries, same pattern with `npc-<spriteId>-<anim>-<dir>-<i>` keys and `npc-<spriteId>-<anim>-<dir>` anims, plus static loaded as plain image keys `npc-<spriteId>-static-<dir>`. Queued the asset-copy task as the next unit (smallest commit; no TS changes)."
+    result: pass
+    notes: investigate-only — no code changes; verify state unchanged
+    tokens: ~7000
+  - task: 3
+    time: "2026-04-24T11:45:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — copied NPC sprite assets from staging to assets/npc/. cp -R each NPC subtree. File count verified per dir: marsh-hermit idle=32, walk=32, static=8; old-man idle=32, walk=32, static=8; 144 total. Verify passes (tsc --noEmit && vite build). Promoted baseline. No source changes yet — registry, types, and preload wiring come in the next iteration. 4 US-52 structural asset criteria now met (idle/walk/static trees exist for both NPCs); story still far from complete."
+    result: pass
+    notes: staging-only; US-52 asset-existence criteria met (4 of many)
+    tokens: ~2000
+  - task: 4
+    time: "2026-04-24T11:48:00Z"
+    type: investigate
+    story: US-52
+    description: "Branch B — prior investigate already produced full consumer map. Queuing the smallest next compile-together concern: extend NpcDefinition with sprite/wanderRadius/awarenessRadius and fill values in both area data files. Required fields mean types.ts + area files must ship together. Editor's mapRenderer reads only col/row/color, both retained, so editor build is unaffected."
+    result: pass
+    tokens: ~1000
+  - task: 5
+    time: "2026-04-24T11:55:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — NpcDefinition extended with required fields sprite/wanderRadius/awarenessRadius; color retained with comment noting editor map-overview dependency. ashen-isle old-man and fog-marsh marsh-hermit updated with matching sprite ids and radii (2, 3). Verify tsc+build passes. US-52 structural criteria met: NpcDefinition fields ✓, color retained ✓, ashen-isle sprite/radii ✓, fog-marsh sprite/radii ✓."
+    result: pass
+    notes: 4 more US-52 structural criteria met
+    tokens: ~3000
+  - task: 6
+    time: "2026-04-24T11:58:00Z"
+    type: investigate
+    story: US-52
+    description: "Branch B — queue the NPC sprite registry module addition as the next concern. Pure data module, no consumers; matches fox-pip's DIRECTIONS+FRAME_COUNTS pattern but generalised to multi-sprite."
+    result: pass
+    tokens: ~500
+  - task: 7
+    time: "2026-04-24T12:02:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — created src/systems/npcSprites.ts with NPC_DIRECTIONS, NPC_SPRITES registry (marsh-hermit & old-man at idle:4, walk:4), hasNpcSprite, getNpcSpriteIds. Verify tsc+build passes. Registry criterion met."
+    result: pass
+    notes: sprite registry scaffold in place; GameScene preload wiring next
+    tokens: ~2000
+  - task: 8
+    time: "2026-04-24T19:10:00Z"
+    type: investigate
+    story: US-53
+    description: "Branch B — queue octant extraction. Learning #70 consumer audit already enumerated the sole octant site (animation.ts:65). DIRECTIONS list appears in GameScene.ts:25 and npcSprites.ts; both collapse to the shared module to honour single-source rule."
+    result: pass
+    tokens: ~500
+  - task: 9
+    time: "2026-04-24T19:15:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A — extracted shared direction module. src/systems/direction.ts exports DIRECTIONS, Direction, vectorToDirection/velocityToDirection. animation.ts imports from it; npcSprites.ts re-exports DIRECTIONS (dropped duplicate NPC_DIRECTIONS); GameScene imports DIRECTIONS. No behaviour change. Verify passes. US-53 structural criteria met: shared octant function + consumer audit done."
+    result: pass
+    notes: single-source direction module; consumer audit complete
+    tokens: ~3000
+  - task: 10
+    time: "2026-04-24T19:18:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A/B combined — added NPC_SPEED (PLAYER_SPEED × 0.4), NPC_IDLE_MIN_MS (800), NPC_IDLE_MAX_MS (2400) to src/maps/constants.ts. Behaviour system will consume these; no hardcoded literals in system code. Verify passes. US-53 structural criterion met: NPC_SPEED/IDLE bounds named."
+    result: pass
+    tokens: ~1000
+  - task: 11
+    time: "2026-04-24T19:25:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — GameScene wired for NPC animated sprites. preload() iterates NPC_SPRITES and per spriteId loads idle (32 keys), walk (32 keys), static (8 keys); total 72 images per NPC. registerAnimations() registers npc-{spriteId}-{idle,walk}-{dir} animations (16 per NPC) at 8 fps repeat:-1. renderNpcs() creates Phaser.GameObjects.Sprite per NPC at depth 5 centered on the spawn tile, plays npc-{spriteId}-idle-south, and falls back with a descriptive console error to a lowercase rectangle draw if the sprite id is not registered. grep -n 'Rectangle' src/scenes/GameScene.ts returns no matches ✓. uiCam.ignore updated to accept the generalised npcEntities array. Verify tsc+build passes. US-52 structural criteria met: preload loop, anim registration, static image keys, Sprite render path, Rectangle removal, Phaser API contract (Sprite supports both play and setTexture)."
+    result: pass
+    notes: largest US-52 chunk — preload+anim+render now live
+    tokens: ~9000
+  - task: 12
+    time: "2026-04-24T19:40:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A — created src/systems/npcBehavior.ts (NpcBehaviorSystem). Per-NPC state machine idle/walk/aware/dialogue; Chebyshev-bounded random wander off spawn with 4-sample path wall check + pivot-toward-spawn when outside radius; awareness halt-and-face with lastStaticDir guard; enterDialogue/exitDialogue idempotent. Wired into GameScene.create() (after renderNpcs+registerAnimations) and GameScene.update() (after inputSystem, before triggerZone). npcInteraction callback now calls enterDialogue before dialogueSystem.start, catches a throw and calls exitDialogue (failure recovery), and tracks activeDialogueNpcId. DialogueSystem.setOnEnd wires exitDialogue on close. Verify passes. US-53/US-54/US-55 mechanism criteria met structurally."
+    result: pass
+    notes: behaviour system skeleton complete — awareness + dialogue snap-and-hold included
+    tokens: ~12000
+  - task: 13
+    time: "2026-04-24T19:45:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A — collision.ts + movement.ts + npcInteraction.ts consume NpcLivePositions. collidesWithNpc/getNpcBounds accept an optional live map; npcInteraction.setLivePositionsProvider plugs it in. GameScene passes npcBehavior.getLivePositions() into moveWithCollision and npcInteraction every tick. Fallback to static spawn tile preserved for the pre-first-update window. Verify passes."
+    result: pass
+    notes: live-position consumption done
+    tokens: ~4000
+  - task: 14
+    time: "2026-04-24T19:48:00Z"
+    type: implement
+    story: US-54
+    description: "Branch A — debugOverlay.drawNpcRadii now renders three circles per NPC at depth 50: interaction (solid yellow, existing), wander (dashed green, wanderRadius × TILE_SIZE), awareness (dashed yellow, awarenessRadius × TILE_SIZE). Dashes approximated with 24 line segments at 50% duty cycle (Phaser.Graphics has no native setLineDash). Draw order documented inline as the deterministic z-order per Learning #57 facet. Verify passes."
+    result: pass
+    notes: F3 overlay now covers all US-54 radii
+    tokens: ~2500
+  - task: 15
+    time: "2026-04-24T19:50:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — editor mapRenderer.ts now draws dashed green (wander) + dashed yellow (awareness) circles around each NPC's spawn tile before the filled colour dot. cd tools/editor && npm run build passes."
+    result: pass
+    notes: editor parity with in-game F3 overlay
+    tokens: ~2000
+  - task: 16
+    time: "2026-04-24T19:55:00Z"
+    type: docs
+    story: phase
+    description: "Branch A — reconciled AGENTS.md with phase additions: Directory layout (assets/npc/ subtree + new src/systems/ modules), File ownership rows updated for animation/collision/movement/npcInteraction/debugOverlay/GameScene/types and new rows for direction.ts/npcSprites.ts/npcBehavior.ts, Behavior rules expanded with NPC sprite rendering + behaviour entries + dialogue-suppresses-awareness amendment + debug-overlay z-order bullet. Verify (tsc+build) passes."
+    result: pass
+    notes: AGENTS.md invariants aligned with shipped code
+    tokens: ~4000
+  - task: 17
+    time: "2026-04-24T20:00:00Z"
+    type: completion-gate
+    story: phase
+    description: "Phase Completion Gate — verify re-run passes (tsc --noEmit && npm run build green; tools/editor npm run build green). Done-when audit: every structural criterion verified by source read (types.ts fields, area data values, registry module, constants, direction module, behaviour system, collision+interaction live-position consumption, GameScene preload/anim-reg/render wiring, debug-overlay circles + z-order, editor circle drawing, AGENTS.md reconciliation). Every mechanism-proxy criterion verified by source read (lastStaticDir guard, halt-within-one-frame branch, enterDialogue snap-once + idempotency guards, exitDialogue idempotency, try/catch recovery around dialogueSystem.start, wanderRadius 0 short-circuit, static-texture-before-start-call ordering). AGENTS.md consistency: Directory layout + File ownership rows + Behavior rules match shipped code; zone-level mutual-exclusion rule explicitly includes 'NPC awareness state transitions are suppressed during dialogue'. Error-path spot check: unknown sprite id (console.error + rect fallback), unknown dialogue script (existing), failed dialogueSystem.start (catch + exitDialogue), pre-first-update collision query (livePositions fallback to static). Criteria requiring human runtime observation (60-second unattended wander checks, rapid tap close-cooldown, first-time observer reads-as notes, browser network panel check for vite publicDir routing, console-clean-during-normal-play, post-merge deploy workflow) are paired with automatically-verifiable mechanism proxies and deferred to PR review smoke-testing. Marked phase_complete: true and completed_stories: [US-52, US-53, US-54, US-55]."
+    result: pass
+    notes: phase code-complete; review stage next
+    tokens: ~5000
+  - task: 18
+    time: "2026-04-24T20:10:00Z"
+    type: review-setup
+    story: phase
+    description: "Branch B — phase_complete true + review_stage null + review_complete false. Pushed branch to origin. Created PR https://github.com/Jaxsbr/emberpath/pull/14 via gh pr create (base main, head build/npc-behavior). Body summarises the 4 stories, module additions, Learning #70 consumer audit, verify status, and a manual-verification test plan for the reviewer. pr_number stored. review_stage set to pr_created. Queued [review] review-pr pr=14 auto=true for next iteration."
+    result: pass
+    tokens: ~3000
+  - task: 19
+    time: "2026-04-24T20:15:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed sabs:review-pr pr=14 auto=true. Review posted as COMMENT event (auto mode). Triage — critical: 0, concerns: 2 inline (direction.ts zero-vector falls through to 'east', anims.create duplicate-key on scene restart), nit: 1 inline (direction array re-allocated per wander step). Positives highlighted: direction.ts consolidation, lastStaticDir loop-invariant guard, dialogue try/catch recovery, live-position fallback, unknown-sprite rectangle fallback. review_stage advanced to review_posted. Queued [review] handle-pr-review for next iteration. Also: retro-gate CI check failing because retro_complete is still false — phase-retro run needed after handle-pr-review."
+    result: pass
+    notes: 2 concerns + 1 nit posted
+    tokens: ~6000
+  - task: 20
+    time: "2026-04-24T20:25:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed sabs:handle-pr-review pr=14 auto=true. Triage: 2 concerns (direction.ts zero-vector + GameScene anims.create duplicate-key) → Fix; 1 nit (npcBehavior module-scope array) → Skip per reviewer's explicit future-flag. Applied fixes: vectorToDirection returns 'south' for zero vector; both anim-reg loops guarded with this.anims.exists(key). Verify (tsc+build) passes post-fix. Pushed commit f287b00. Resolved both fixed threads via GraphQL resolveReviewThread. Posted review-summary comment + phase-review-complete summary comment. review_complete set to true."
+    result: pass
+    notes: review cycle closed; retro still required for merge gate
+    tokens: ~7000
+# Each entry: {task, time, story, description, result, notes, tokens}

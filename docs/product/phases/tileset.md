@@ -1,6 +1,6 @@
 # Phase: tileset
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -16,7 +16,7 @@ N/A — this phase introduces no API endpoints, user text input fields, or query
 
 ## Stories
 
-### US-48 — Sprite-based tile rendering
+### US-48 — Sprite-based tile rendering [Shipped]
 
 As a player, I want the map rendered with actual tile sprites instead of flat-color rectangles, so that the world looks like a place instead of a geometry diagram.
 
@@ -38,7 +38,7 @@ As a player, I want the map rendered with actual tile sprites instead of flat-co
 
 ---
 
-### US-49 — Tile variants with deterministic selection
+### US-49 — Tile variants with deterministic selection [Shipped]
 
 As a player, I want floor and wall tiles to have visual variation instead of a single repeated sprite, so that the world doesn't look like a checkerboard.
 
@@ -58,7 +58,7 @@ As a player, I want floor and wall tiles to have visual variation instead of a s
 
 ---
 
-### US-50 — Decorative prop scatter
+### US-50 — Decorative prop scatter [Shipped]
 
 As a player, I want scattered non-blocking decorations (bushes, stones, stumps, bones, gravestones) in each area, so that the world feels inhabited and I have landmarks to navigate by.
 
@@ -83,7 +83,7 @@ As a player, I want scattered non-blocking decorations (bushes, stones, stumps, 
 
 ---
 
-### US-51 — Exit zones styled as path tiles
+### US-51 — Exit zones styled as path tiles [Shipped]
 
 As a player, I want exit zones to look like paths or doorways in the art style, so that I can intuit where map boundaries lead without debug annotations.
 

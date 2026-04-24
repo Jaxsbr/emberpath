@@ -1,7 +1,23 @@
 import { TILE_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { NpcDefinition } from '../data/areas/types';
 
-function getNpcBounds(npc: NpcDefinition): { x: number; y: number; width: number; height: number } {
+export type NpcLivePositions = Map<string, { x: number; y: number }>;
+
+function getNpcBounds(
+  npc: NpcDefinition,
+  livePositions?: NpcLivePositions,
+): { x: number; y: number; width: number; height: number } {
+  const live = livePositions?.get(npc.id);
+  if (live) {
+    // Live positions are centre coords — collision uses top-left.
+    return {
+      x: live.x - NPC_SIZE / 2,
+      y: live.y - NPC_SIZE / 2,
+      width: NPC_SIZE,
+      height: NPC_SIZE,
+    };
+  }
+  // Fallback: static spawn tile. Used before NpcBehaviorSystem.update has run.
   const offset = (TILE_SIZE - NPC_SIZE) / 2;
   return {
     x: npc.col * TILE_SIZE + offset,
@@ -36,9 +52,10 @@ export function collidesWithWall(
 export function collidesWithNpc(
   x: number, y: number, width: number, height: number,
   npcs: NpcDefinition[],
+  livePositions?: NpcLivePositions,
 ): boolean {
   for (const npc of npcs) {
-    const bounds = getNpcBounds(npc);
+    const bounds = getNpcBounds(npc, livePositions);
     if (
       x < bounds.x + bounds.width &&
       x + width > bounds.x &&
