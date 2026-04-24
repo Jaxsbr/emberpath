@@ -25,4 +25,11 @@ entries:
     result: pass
     notes: staging-only; US-52 asset-existence criteria met (4 of many)
     tokens: ~2000
+  - task: 4
+    time: "2026-04-24T11:48:00Z"
+    type: investigate
+    story: US-52
+    description: "Branch B — prior investigate already produced full consumer map. Queuing the smallest next compile-together concern: extend NpcDefinition with sprite/wanderRadius/awarenessRadius and fill values in both area data files. Required fields mean types.ts + area files must ship together. Editor's mapRenderer reads only col/row/color, both retained, so editor build is unaffected."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}

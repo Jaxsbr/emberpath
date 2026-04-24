@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 3
-  next_task: null
+  next_task: "[US-52] Extend NpcDefinition in src/data/areas/types.ts with required fields `sprite: string`, `wanderRadius: number`, `awarenessRadius: number` (keep `color` for editor map-overview). Update src/data/areas/ashen-isle.ts (old-man: sprite: 'old-man', wanderRadius: 2, awarenessRadius: 3) and src/data/areas/fog-marsh.ts (marsh-hermit: sprite: 'marsh-hermit', wanderRadius: 2, awarenessRadius: 3). Must compile together (required fields; areas won't typecheck otherwise). Verify tsc --noEmit && npm run build passes. Editor build not yet affected — tools/editor/src/mapRenderer.ts reads only npc.col/row/color which remain. One concern: add the data-model fields and fill them in both areas."
   last_result: pass
   consecutive_fails: 0
 
