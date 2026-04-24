@@ -14,6 +14,7 @@ import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
 import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite } from '../systems/npcSprites';
+import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { setFlag } from '../triggers/flags';
 
 const TARGET_VISIBLE_TILES = 10;
@@ -41,6 +42,8 @@ export class GameScene extends Phaser.Scene {
   private propSprites: Phaser.GameObjects.Sprite[] = [];
   private npcEntities: Phaser.GameObjects.GameObject[] = [];
   private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
+  private npcBehavior!: NpcBehaviorSystem;
+  private activeDialogueNpcId: string | null = null;
   private boundWindowResize: (() => void) | null = null;
   private transitionInProgress = false;
 
@@ -100,8 +103,9 @@ export class GameScene extends Phaser.Scene {
 
     this.renderTileMap();
     this.renderProps();
-    this.renderNpcs();
     this.registerAnimations();
+    this.renderNpcs();
+    this.npcBehavior = new NpcBehaviorSystem(this, this.area.npcs, this.area.map, this.npcSpritesById);
     this.createPlayer(data?.entryPoint);
     this.setupCamera();
     // Fade in when entering from an area transition
@@ -136,7 +140,24 @@ export class GameScene extends Phaser.Scene {
         console.error(`NPC dialogue script not found: ${npc.id}-intro`);
         return;
       }
-      this.dialogueSystem.start(script);
+      const playerCenter = { x: this.player.x, y: this.player.y };
+      this.npcBehavior.enterDialogue(npc.id, playerCenter);
+      try {
+        this.dialogueSystem.start(script);
+      } catch (err) {
+        // Recovery: don't let the NPC get stuck in 'dialogue' with no UI open.
+        console.error(`Dialogue start failed for NPC '${npc.id}':`, err);
+        this.npcBehavior.exitDialogue(npc.id);
+        return;
+      }
+      // Track which NPC this dialogue belongs to so onEnd can release it.
+      this.activeDialogueNpcId = npc.id;
+    });
+    this.dialogueSystem.setOnEnd(() => {
+      if (this.activeDialogueNpcId) {
+        this.npcBehavior.exitDialogue(this.activeDialogueNpcId);
+        this.activeDialogueNpcId = null;
+      }
     });
     this.dialogueSystem.setOnChoice((choice) => {
       if (choice.setFlags) {
@@ -194,6 +215,7 @@ export class GameScene extends Phaser.Scene {
     );
     this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
 
+    this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
 
