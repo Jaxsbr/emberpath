@@ -13,6 +13,7 @@ import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
+import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite } from '../systems/npcSprites';
 import { setFlag } from '../triggers/flags';
 
 const TARGET_VISIBLE_TILES = 10;
@@ -38,7 +39,8 @@ export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
   private tileLayer: Phaser.GameObjects.GameObject[] = [];
   private propSprites: Phaser.GameObjects.Sprite[] = [];
-  private npcRects: Phaser.GameObjects.Rectangle[] = [];
+  private npcEntities: Phaser.GameObjects.GameObject[] = [];
+  private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
   private boundWindowResize: (() => void) | null = null;
   private transitionInProgress = false;
 
@@ -67,6 +69,22 @@ export class GameScene extends Phaser.Scene {
         frameWidth: TILESET_SOURCE_SIZE,
         frameHeight: TILESET_SOURCE_SIZE,
       });
+    }
+
+    // Load per-NPC sprite frames driven by the registry — adding a new NPC becomes
+    // a registry entry plus an AreaDefinition row, with no scene-file edit.
+    for (const spriteId of getNpcSpriteIds()) {
+      const def = NPC_SPRITES[spriteId];
+      for (const dir of DIRECTIONS) {
+        for (let i = 0; i < def.idleFrameCount; i++) {
+          this.load.image(`npc-${spriteId}-idle-${dir}-${i}`, `npc/${spriteId}/idle/${dir}/frame_00${i}.png`);
+        }
+        for (let i = 0; i < def.walkFrameCount; i++) {
+          this.load.image(`npc-${spriteId}-walk-${dir}-${i}`, `npc/${spriteId}/walk/${dir}/frame_00${i}.png`);
+        }
+        // Static poses are single-frame — loaded as plain image keys and applied via setTexture.
+        this.load.image(`npc-${spriteId}-static-${dir}`, `npc/${spriteId}/static/${dir}.png`);
+      }
     }
   }
 
@@ -278,12 +296,21 @@ export class GameScene extends Phaser.Scene {
   private renderNpcs(): void {
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
     for (const npc of this.area.npcs) {
-      const x = npc.col * TILE_SIZE + offset;
-      const y = npc.row * TILE_SIZE + offset;
-      const rect = this.add.rectangle(x, y, NPC_SIZE, NPC_SIZE, npc.color);
-      rect.setOrigin(0, 0);
-      rect.setDepth(5);
-      this.npcRects.push(rect);
+      const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
+      const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
+      if (hasNpcSprite(npc.sprite)) {
+        const sprite = this.add.sprite(cx, cy, `npc-${npc.sprite}-idle-south-0`);
+        sprite.setDepth(5);
+        sprite.play(`npc-${npc.sprite}-idle-south`);
+        this.npcEntities.push(sprite);
+        this.npcSpritesById.set(npc.id, sprite);
+      } else {
+        console.error(`NPC '${npc.id}' references unknown sprite id '${npc.sprite}' — falling back to rectangle render.`);
+        const rect = this.add.rectangle(cx - NPC_SIZE / 2, cy - NPC_SIZE / 2, NPC_SIZE, NPC_SIZE, npc.color);
+        rect.setOrigin(0, 0);
+        rect.setDepth(5);
+        this.npcEntities.push(rect);
+      }
     }
   }
 
@@ -299,7 +326,7 @@ export class GameScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([...this.tileLayer, ...this.propSprites, this.player, ...this.npcRects]);
+    uiCam.ignore([...this.tileLayer, ...this.propSprites, this.player, ...this.npcEntities]);
 
     this.scale.on('resize', this.handleResize, this);
 
@@ -410,7 +437,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private registerAnimations(): void {
-    // Register 16 Phaser animations: fox-pip-{idle,walk}-{8 directions}
+    // Register 16 fox-pip animations: fox-pip-{idle,walk}-{8 directions}
     // idle: 4 frames per direction; walk: 8 frames per direction
     for (const anim of ANIM_TYPES) {
       const frameCount = FRAME_COUNTS[anim];
@@ -426,6 +453,28 @@ export class GameScene extends Phaser.Scene {
           frameRate: ANIM_FRAME_RATE,
           repeat: -1,
         });
+      }
+    }
+
+    // Register per-NPC animations: npc-{spriteId}-{idle,walk}-{8 directions}.
+    // Static poses are NOT registered as animations — they are plain textures applied via setTexture.
+    for (const spriteId of getNpcSpriteIds()) {
+      const def = NPC_SPRITES[spriteId];
+      for (const anim of ANIM_TYPES) {
+        const frameCount = anim === 'idle' ? def.idleFrameCount : def.walkFrameCount;
+        for (const dir of DIRECTIONS) {
+          const key = `npc-${spriteId}-${anim}-${dir}`;
+          const frames: { key: string }[] = [];
+          for (let i = 0; i < frameCount; i++) {
+            frames.push({ key: `npc-${spriteId}-${anim}-${dir}-${i}` });
+          }
+          this.anims.create({
+            key,
+            frames,
+            frameRate: ANIM_FRAME_RATE,
+            repeat: -1,
+          });
+        }
       }
     }
   }
