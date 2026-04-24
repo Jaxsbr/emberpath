@@ -70,4 +70,11 @@ entries:
     result: pass
     notes: single-source direction module; consumer audit complete
     tokens: ~3000
+  - task: 10
+    time: "2026-04-24T19:18:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A/B combined — added NPC_SPEED (PLAYER_SPEED × 0.4), NPC_IDLE_MIN_MS (800), NPC_IDLE_MAX_MS (2400) to src/maps/constants.ts. Behaviour system will consume these; no hardcoded literals in system code. Verify passes. US-53 structural criterion met: NPC_SPEED/IDLE bounds named."
+    result: pass
+    tokens: ~1000
 # Each entry: {task, time, story, description, result, notes, tokens}
