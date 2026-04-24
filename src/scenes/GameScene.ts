@@ -106,6 +106,7 @@ export class GameScene extends Phaser.Scene {
     this.registerAnimations();
     this.renderNpcs();
     this.npcBehavior = new NpcBehaviorSystem(this, this.area.npcs, this.area.map, this.npcSpritesById);
+    this.activeDialogueNpcId = null;
     this.createPlayer(data?.entryPoint);
     this.setupCamera();
     // Fade in when entering from an area transition
@@ -134,6 +135,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.triggerZone.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.npcInteraction = new NpcInteractionSystem(this, this.area.npcs);
+    this.npcInteraction.setLivePositionsProvider(() => this.npcBehavior.getLivePositions());
     this.npcInteraction.setInteractionCallback((npc) => {
       const script = this.area.dialogues[`${npc.id}-intro`];
       if (!script) {
@@ -211,7 +213,11 @@ export class GameScene extends Phaser.Scene {
       },
       { x: moveVx, y: moveVy },
       delta,
-      { map: this.area.map, npcs: this.area.npcs },
+      {
+        map: this.area.map,
+        npcs: this.area.npcs,
+        npcLivePositions: this.npcBehavior.getLivePositions(),
+      },
     );
     this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
 

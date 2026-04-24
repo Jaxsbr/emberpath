@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, NPC_SIZE } from '../maps/constants';
 import { NpcDefinition } from '../data/areas/types';
+import { NpcLivePositions } from './collision';
 const INTERACTION_RANGE = 1.5 * TILE_SIZE;
 const TAP_MAX_DURATION = 300;
 const TAP_MAX_DISTANCE = 15;
@@ -8,6 +9,7 @@ const TAP_MAX_DISTANCE = 15;
 export class NpcInteractionSystem {
   private scene: Phaser.Scene;
   private npcs: NpcDefinition[];
+  private getLivePositions: (() => NpcLivePositions) | null = null;
   private spaceKey: Phaser.Input.Keyboard.Key | null = null;
   private promptText: Phaser.GameObjects.Text | null = null;
   private nearestNpc: NpcDefinition | null = null;
@@ -19,6 +21,11 @@ export class NpcInteractionSystem {
     this.scene = scene;
     this.npcs = npcs;
     this.setupInput();
+  }
+
+  /** Wire the NPC live-position provider. If not set, the system falls back to the static spawn tile. */
+  setLivePositionsProvider(provider: () => NpcLivePositions): void {
+    this.getLivePositions = provider;
   }
 
   setInteractionCallback(cb: (npc: NpcDefinition) => void): void {
@@ -65,10 +72,12 @@ export class NpcInteractionSystem {
     let nearest: NpcDefinition | null = null;
     let nearestDist = Infinity;
 
+    const live = this.getLivePositions?.();
     const npcOffset = TILE_SIZE / 2;
     for (const npc of this.npcs) {
-      const npcCenterX = npc.col * TILE_SIZE + npcOffset;
-      const npcCenterY = npc.row * TILE_SIZE + npcOffset;
+      const livePos = live?.get(npc.id);
+      const npcCenterX = livePos ? livePos.x : npc.col * TILE_SIZE + npcOffset;
+      const npcCenterY = livePos ? livePos.y : npc.row * TILE_SIZE + npcOffset;
       const dx = px - npcCenterX;
       const dy = py - npcCenterY;
       const dist = Math.sqrt(dx * dx + dy * dy);
