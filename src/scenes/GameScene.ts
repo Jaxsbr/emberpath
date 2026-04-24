@@ -465,12 +465,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private registerAnimations(): void {
-    // Register 16 fox-pip animations: fox-pip-{idle,walk}-{8 directions}
-    // idle: 4 frames per direction; walk: 8 frames per direction
+    // Animations are registered on the global anim manager, so they survive a
+    // scene.restart. Guard with anims.exists to avoid "key already exists" warnings
+    // on every area transition.
+    // fox-pip — 16 animations: fox-pip-{idle,walk}-{8 directions}. idle: 4 frames, walk: 8 frames.
     for (const anim of ANIM_TYPES) {
       const frameCount = FRAME_COUNTS[anim];
       for (const dir of DIRECTIONS) {
         const key = `fox-pip-${anim}-${dir}`;
+        if (this.anims.exists(key)) continue;
         const frames: { key: string }[] = [];
         for (let i = 0; i < frameCount; i++) {
           frames.push({ key: `fox-pip-${anim}-${dir}-${i}` });
@@ -484,7 +487,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Register per-NPC animations: npc-{spriteId}-{idle,walk}-{8 directions}.
+    // Per-NPC animations: npc-{spriteId}-{idle,walk}-{8 directions}. Same guard.
     // Static poses are NOT registered as animations — they are plain textures applied via setTexture.
     for (const spriteId of getNpcSpriteIds()) {
       const def = NPC_SPRITES[spriteId];
@@ -492,6 +495,7 @@ export class GameScene extends Phaser.Scene {
         const frameCount = anim === 'idle' ? def.idleFrameCount : def.walkFrameCount;
         for (const dir of DIRECTIONS) {
           const key = `npc-${spriteId}-${anim}-${dir}`;
+          if (this.anims.exists(key)) continue;
           const frames: { key: string }[] = [];
           for (let i = 0; i < frameCount; i++) {
             frames.push({ key: `npc-${spriteId}-${anim}-${dir}-${i}` });
