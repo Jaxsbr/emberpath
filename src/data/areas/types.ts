@@ -11,7 +11,11 @@ export interface NpcDefinition {
   name: string;
   col: number;
   row: number;
+  // Retained for editor's map-overview mode — the game scene now renders via sprite.
   color: number;
+  sprite: string;
+  wanderRadius: number;
+  awarenessRadius: number;
 }
 
 export interface DialogueChoice {

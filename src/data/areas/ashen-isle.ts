@@ -51,7 +51,7 @@ export const ashenIsle: AreaDefinition = {
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
   ],
   npcs: [
-    { id: 'old-man', name: 'Old Man', col: 13, row: 12, color: 0x8b6914 },
+    { id: 'old-man', name: 'Old Man', col: 13, row: 12, color: 0x8b6914, sprite: 'old-man', wanderRadius: 2, awarenessRadius: 3 },
   ],
   props: [
     // Scattered decoration across open grass bands — bushes, stones, trees, flowers, signs, fences.
