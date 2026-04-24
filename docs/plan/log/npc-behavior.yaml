@@ -17,4 +17,12 @@ entries:
     result: pass
     notes: investigate-only — no code changes; verify state unchanged
     tokens: ~7000
+  - task: 3
+    time: "2026-04-24T11:45:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — copied NPC sprite assets from staging to assets/npc/. cp -R each NPC subtree. File count verified per dir: marsh-hermit idle=32, walk=32, static=8; old-man idle=32, walk=32, static=8; 144 total. Verify passes (tsc --noEmit && vite build). Promoted baseline. No source changes yet — registry, types, and preload wiring come in the next iteration. 4 US-52 structural asset criteria now met (idle/walk/static trees exist for both NPCs); story still far from complete."
+    result: pass
+    notes: staging-only; US-52 asset-existence criteria met (4 of many)
+    tokens: ~2000
 # Each entry: {task, time, story, description, result, notes, tokens}
