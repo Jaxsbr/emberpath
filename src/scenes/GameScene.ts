@@ -379,7 +379,10 @@ export class GameScene extends Phaser.Scene {
   private calculateZoom(): number {
     const shortSide = Math.min(this.scale.width, this.scale.height);
     const targetWorldSize = TARGET_VISIBLE_TILES * TILE_SIZE;
-    return Math.max(1, shortSide / targetWorldSize);
+    // Snap to integer zoom — fractional zoom on a packed tile atlas (e.g. tiny-dungeon)
+    // makes the GPU sample neighbouring frames at sub-pixel boundaries, which renders as
+    // thin seams between tiles that disappear when the camera scroll changes by 1px.
+    return Math.max(1, Math.floor(shortSide / targetWorldSize));
   }
 
   private handleResize(): void {
