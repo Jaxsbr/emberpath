@@ -241,6 +241,28 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     const cy = LABEL_MARGIN + npc.row * CELL + CELL / 2;
     const radius = CELL / 2.2;
 
+    // Wander radius (dashed green) and awareness radius (dashed yellow) around the spawn tile.
+    if (npc.wanderRadius > 0) {
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#44ff44';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, npc.wanderRadius * CELL, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (npc.awarenessRadius > 0) {
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#ffff44';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, npc.awarenessRadius * CELL, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     ctx.fillStyle = hexToCSS(npc.color);
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
