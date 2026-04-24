@@ -189,3 +189,11 @@ entries:
     result: pass
     tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
+
+reconciliation_status:
+  r0: done  # PRD already index-only; no legacy inline stories to extract
+  r1: done  # no docs/architecture/ARCHITECTURE.md exists
+  r2: done  # tileset.md Status -> shipped, US-48..US-51 tagged [Shipped]; PRD index row already Shipped
+  r3: done  # AGENTS.md already reconciled during tileset phase (tilesets directory, tilesets.ts, Props depth, sprite-based tile rendering + props behavior rules)
+  r4: done  # no user docs framework (no docs/manual, no docs/GUIDE.md, no User Manual section in README); tileset phase introduced only ambient visuals, no user-facing controls to document
+  r5: done
