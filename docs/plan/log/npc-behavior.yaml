@@ -55,4 +55,11 @@ entries:
     result: pass
     notes: sprite registry scaffold in place; GameScene preload wiring next
     tokens: ~2000
+  - task: 8
+    time: "2026-04-24T19:10:00Z"
+    type: investigate
+    story: US-53
+    description: "Branch B — queue octant extraction. Learning #70 consumer audit already enumerated the sole octant site (animation.ts:65). DIRECTIONS list appears in GameScene.ts:25 and npcSprites.ts; both collapse to the shared module to honour single-source rule."
+    result: pass
+    tokens: ~500
 # Each entry: {task, time, story, description, result, notes, tokens}
