@@ -32,4 +32,12 @@ entries:
     description: "Branch B — prior investigate already produced full consumer map. Queuing the smallest next compile-together concern: extend NpcDefinition with sprite/wanderRadius/awarenessRadius and fill values in both area data files. Required fields mean types.ts + area files must ship together. Editor's mapRenderer reads only col/row/color, both retained, so editor build is unaffected."
     result: pass
     tokens: ~1000
+  - task: 5
+    time: "2026-04-24T11:55:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — NpcDefinition extended with required fields sprite/wanderRadius/awarenessRadius; color retained with comment noting editor map-overview dependency. ashen-isle old-man and fog-marsh marsh-hermit updated with matching sprite ids and radii (2, 3). Verify tsc+build passes. US-52 structural criteria met: NpcDefinition fields ✓, color retained ✓, ashen-isle sprite/radii ✓, fog-marsh sprite/radii ✓."
+    result: pass
+    notes: 4 more US-52 structural criteria met
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
