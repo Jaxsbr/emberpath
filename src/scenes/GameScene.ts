@@ -12,6 +12,7 @@ import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
+import { DIRECTIONS } from '../systems/direction';
 import { setFlag } from '../triggers/flags';
 
 const TARGET_VISIBLE_TILES = 10;
@@ -22,7 +23,6 @@ const TILESET_SOURCE_SIZE = 16;
 // Fox-pip sprite animation constants
 // Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
 const ANIM_TYPES = ['idle', 'walk'] as const;
-const DIRECTIONS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'] as const;
 const FRAME_COUNTS: Record<typeof ANIM_TYPES[number], number> = { idle: 4, walk: 8 };
 const ANIM_FRAME_RATE = 8;
 

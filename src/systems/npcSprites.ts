@@ -1,15 +1,4 @@
-export const NPC_DIRECTIONS = [
-  'north',
-  'north-east',
-  'east',
-  'south-east',
-  'south',
-  'south-west',
-  'west',
-  'north-west',
-] as const;
-
-export type NpcDirection = (typeof NPC_DIRECTIONS)[number];
+export { DIRECTIONS, type Direction } from './direction';
 
 export interface NpcSpriteDefinition {
   idleFrameCount: number;
