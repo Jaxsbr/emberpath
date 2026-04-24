@@ -1,4 +1,12 @@
 phase: "npc-behavior"
 started: "2026-04-24T11:33:03Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-24T11:33:03Z"
+    type: investigate
+    story: phase
+    description: "Branch B — phase start. Read AGENTS.md, phase-goal.md, spec at docs/product/phases/npc-behavior.md. Verify passes (tsc --noEmit && vite build). Asset staging exists at /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/{idle,walk,static}/ (directories present). Phase classified server/cross-cutting (new module src/systems/npcBehavior.ts + src/systems/npcSprites.ts, NpcDefinition field additions in types.ts, collision.ts + npcInteraction.ts must consume live positions, AnimationSystem's octant extracted to a shared location). Per the investigate-first mandate, queued an investigate task (not implement) to (a) enumerate staged asset files exactly and confirm naming convention, (b) audit NpcDefinition consumers and draft types.ts diff, (c) mirror fox-pip preload pattern for the NPC sprite registry, (d) Learning #70 octant consumer audit. Next iteration will execute this investigate and queue the first implement task."
+    result: pass
+    notes: phase classified server/cross-cutting; investigate-first enforced
+    tokens: ~15000
 # Each entry: {task, time, story, description, result, notes, tokens}

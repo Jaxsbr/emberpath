@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 1
-  next_task: null
+  next_task: "[US-52] Investigate: enumerate staged NPC assets at /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/{idle,walk,static}/ (file counts per dir; confirm idle/walk frames named frame_000..003.png in 8 direction subfolders and static as 8 single <dir>.png files). Audit existing NpcDefinition consumers in src/ and tools/editor/src/ and draft the types.ts diff adding `sprite: string`, `wanderRadius: number`, `awarenessRadius: number` (retain `color`). Review fox-pip preload + animation registration pattern in src/scenes/GameScene.ts so the NPC sprite registry (src/systems/npcSprites.ts) mirrors it. Enumerate all direction-from-vector sites in src/ (any Math.atan2 / octant table / direction-string derivation) per Learning #70 consumer audit, so octant extraction in the next task is informed."
   last_result: pass
   consecutive_fails: 0
 
