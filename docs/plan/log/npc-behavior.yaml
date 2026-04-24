@@ -40,4 +40,11 @@ entries:
     result: pass
     notes: 4 more US-52 structural criteria met
     tokens: ~3000
+  - task: 6
+    time: "2026-04-24T11:58:00Z"
+    type: investigate
+    story: US-52
+    description: "Branch B — queue the NPC sprite registry module addition as the next concern. Pure data module, no consumers; matches fox-pip's DIRECTIONS+FRAME_COUNTS pattern but generalised to multi-sprite."
+    result: pass
+    tokens: ~500
 # Each entry: {task, time, story, description, result, notes, tokens}

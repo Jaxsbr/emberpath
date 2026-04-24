@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 4
-  next_task: null
+  next_task: "[US-52] Add src/systems/npcSprites.ts — NPC sprite registry keyed by sprite id. Each entry: { idleFrameCount: 4, walkFrameCount: 4, directions: ['north','north-east','east','south-east','south','south-west','west','north-west'] }. Export `NPC_SPRITES` const + `NpcSpriteId` union (or string) + `hasNpcSprite(id)` predicate. Register `marsh-hermit` and `old-man` with the shipped-asset counts (idle/walk both 4 frames as confirmed in the asset audit). Pure data module — no consumers yet, so no GameScene changes this task. Verify tsc+build passes. One concern: the registry scaffold."
   last_result: pass
   consecutive_fails: 0
 
