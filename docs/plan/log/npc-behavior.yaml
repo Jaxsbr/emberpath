@@ -1,0 +1,4 @@
+phase: "npc-behavior"
+started: "2026-04-24T11:33:03Z"
+entries: []
+# Each entry: {task, time, story, description, result, notes, tokens}
