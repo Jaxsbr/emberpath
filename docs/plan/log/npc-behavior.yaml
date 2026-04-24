@@ -47,4 +47,12 @@ entries:
     description: "Branch B — queue the NPC sprite registry module addition as the next concern. Pure data module, no consumers; matches fox-pip's DIRECTIONS+FRAME_COUNTS pattern but generalised to multi-sprite."
     result: pass
     tokens: ~500
+  - task: 7
+    time: "2026-04-24T12:02:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — created src/systems/npcSprites.ts with NPC_DIRECTIONS, NPC_SPRITES registry (marsh-hermit & old-man at idle:4, walk:4), hasNpcSprite, getNpcSpriteIds. Verify tsc+build passes. Registry criterion met."
+    result: pass
+    notes: sprite registry scaffold in place; GameScene preload wiring next
+    tokens: ~2000
 # Each entry: {task, time, story, description, result, notes, tokens}
