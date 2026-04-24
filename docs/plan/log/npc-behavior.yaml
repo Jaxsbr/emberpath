@@ -62,4 +62,12 @@ entries:
     description: "Branch B — queue octant extraction. Learning #70 consumer audit already enumerated the sole octant site (animation.ts:65). DIRECTIONS list appears in GameScene.ts:25 and npcSprites.ts; both collapse to the shared module to honour single-source rule."
     result: pass
     tokens: ~500
+  - task: 9
+    time: "2026-04-24T19:15:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A — extracted shared direction module. src/systems/direction.ts exports DIRECTIONS, Direction, vectorToDirection/velocityToDirection. animation.ts imports from it; npcSprites.ts re-exports DIRECTIONS (dropped duplicate NPC_DIRECTIONS); GameScene imports DIRECTIONS. No behaviour change. Verify passes. US-53 structural criteria met: shared octant function + consumer audit done."
+    result: pass
+    notes: single-source direction module; consumer audit complete
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}

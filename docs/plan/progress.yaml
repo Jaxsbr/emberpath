@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-53] Extract shared direction module. Create src/systems/direction.ts exporting Direction type, DIRECTIONS const (iteration order north..north-west), and vectorToDirection/velocityToDirection (octant-quantized). Update src/systems/animation.ts to import Direction + velocityToDirection (remove internal octant table + local Direction type). Update src/systems/npcSprites.ts to reuse DIRECTIONS (remove NPC_DIRECTIONS duplicate). Update src/scenes/GameScene.ts to import DIRECTIONS from the shared module (remove local const at line ~25). Per Learning #70 consumer audit, these are the only direction-name/octant sites. No behavior change — refactor only. Verify tsc --noEmit && npm run build passes."
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
