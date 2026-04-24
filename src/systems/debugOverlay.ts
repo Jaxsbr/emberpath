@@ -132,14 +132,43 @@ export class DebugOverlaySystem {
   private drawNpcRadii(npcs: NpcDefinition[]): void {
     if (!this.graphics) return;
 
+    // Z-order per Learning #57 facet: interaction (solid yellow) → wander (dashed green)
+    // → awareness (dashed yellow). All three render at DEBUG_DEPTH=50 on the same Graphics
+    // instance; later draws visually paint on top so the order above is the stacking order.
     for (const npc of npcs) {
       const cx = npc.col * TILE_SIZE + TILE_SIZE / 2;
       const cy = npc.row * TILE_SIZE + TILE_SIZE / 2;
 
+      // 1. Interaction range (solid yellow) — existing.
       this.graphics.fillStyle(0xffff00, NPC_RADIUS_ALPHA);
       this.graphics.fillCircle(cx, cy, INTERACTION_RANGE);
       this.graphics.lineStyle(1, 0xffff00, 0.5);
       this.graphics.strokeCircle(cx, cy, INTERACTION_RANGE);
+
+      // 2. Wander radius (dashed green) — centred on spawn tile.
+      this.drawDashedCircle(cx, cy, npc.wanderRadius * TILE_SIZE, 0x44ff44);
+
+      // 3. Awareness radius (dashed yellow) — centred on spawn tile.
+      this.drawDashedCircle(cx, cy, npc.awarenessRadius * TILE_SIZE, 0xffff00);
+    }
+  }
+
+  private drawDashedCircle(cx: number, cy: number, radius: number, color: number): void {
+    if (!this.graphics || radius <= 0) return;
+    const segments = 48; // 48 × 7.5° gives a visibly dashed stroke without noise.
+    const gap = 2; // draw segment, skip next — produces a ~50% duty-cycle dash.
+    this.graphics.lineStyle(1, color, 0.8);
+    for (let i = 0; i < segments; i += gap) {
+      const a0 = (i / segments) * Math.PI * 2;
+      const a1 = ((i + 1) / segments) * Math.PI * 2;
+      const x0 = cx + Math.cos(a0) * radius;
+      const y0 = cy + Math.sin(a0) * radius;
+      const x1 = cx + Math.cos(a1) * radius;
+      const y1 = cy + Math.sin(a1) * radius;
+      this.graphics.beginPath();
+      this.graphics.moveTo(x0, y0);
+      this.graphics.lineTo(x1, y1);
+      this.graphics.strokePath();
     }
   }
 
