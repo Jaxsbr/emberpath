@@ -85,4 +85,52 @@ entries:
     result: pass
     notes: largest US-52 chunk — preload+anim+render now live
     tokens: ~9000
+  - task: 12
+    time: "2026-04-24T19:40:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A — created src/systems/npcBehavior.ts (NpcBehaviorSystem). Per-NPC state machine idle/walk/aware/dialogue; Chebyshev-bounded random wander off spawn with 4-sample path wall check + pivot-toward-spawn when outside radius; awareness halt-and-face with lastStaticDir guard; enterDialogue/exitDialogue idempotent. Wired into GameScene.create() (after renderNpcs+registerAnimations) and GameScene.update() (after inputSystem, before triggerZone). npcInteraction callback now calls enterDialogue before dialogueSystem.start, catches a throw and calls exitDialogue (failure recovery), and tracks activeDialogueNpcId. DialogueSystem.setOnEnd wires exitDialogue on close. Verify passes. US-53/US-54/US-55 mechanism criteria met structurally."
+    result: pass
+    notes: behaviour system skeleton complete — awareness + dialogue snap-and-hold included
+    tokens: ~12000
+  - task: 13
+    time: "2026-04-24T19:45:00Z"
+    type: implement
+    story: US-53
+    description: "Branch A — collision.ts + movement.ts + npcInteraction.ts consume NpcLivePositions. collidesWithNpc/getNpcBounds accept an optional live map; npcInteraction.setLivePositionsProvider plugs it in. GameScene passes npcBehavior.getLivePositions() into moveWithCollision and npcInteraction every tick. Fallback to static spawn tile preserved for the pre-first-update window. Verify passes."
+    result: pass
+    notes: live-position consumption done
+    tokens: ~4000
+  - task: 14
+    time: "2026-04-24T19:48:00Z"
+    type: implement
+    story: US-54
+    description: "Branch A — debugOverlay.drawNpcRadii now renders three circles per NPC at depth 50: interaction (solid yellow, existing), wander (dashed green, wanderRadius × TILE_SIZE), awareness (dashed yellow, awarenessRadius × TILE_SIZE). Dashes approximated with 24 line segments at 50% duty cycle (Phaser.Graphics has no native setLineDash). Draw order documented inline as the deterministic z-order per Learning #57 facet. Verify passes."
+    result: pass
+    notes: F3 overlay now covers all US-54 radii
+    tokens: ~2500
+  - task: 15
+    time: "2026-04-24T19:50:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — editor mapRenderer.ts now draws dashed green (wander) + dashed yellow (awareness) circles around each NPC's spawn tile before the filled colour dot. cd tools/editor && npm run build passes."
+    result: pass
+    notes: editor parity with in-game F3 overlay
+    tokens: ~2000
+  - task: 16
+    time: "2026-04-24T19:55:00Z"
+    type: docs
+    story: phase
+    description: "Branch A — reconciled AGENTS.md with phase additions: Directory layout (assets/npc/ subtree + new src/systems/ modules), File ownership rows updated for animation/collision/movement/npcInteraction/debugOverlay/GameScene/types and new rows for direction.ts/npcSprites.ts/npcBehavior.ts, Behavior rules expanded with NPC sprite rendering + behaviour entries + dialogue-suppresses-awareness amendment + debug-overlay z-order bullet. Verify (tsc+build) passes."
+    result: pass
+    notes: AGENTS.md invariants aligned with shipped code
+    tokens: ~4000
+  - task: 17
+    time: "2026-04-24T20:00:00Z"
+    type: completion-gate
+    story: phase
+    description: "Phase Completion Gate — verify re-run passes (tsc --noEmit && npm run build green; tools/editor npm run build green). Done-when audit: every structural criterion verified by source read (types.ts fields, area data values, registry module, constants, direction module, behaviour system, collision+interaction live-position consumption, GameScene preload/anim-reg/render wiring, debug-overlay circles + z-order, editor circle drawing, AGENTS.md reconciliation). Every mechanism-proxy criterion verified by source read (lastStaticDir guard, halt-within-one-frame branch, enterDialogue snap-once + idempotency guards, exitDialogue idempotency, try/catch recovery around dialogueSystem.start, wanderRadius 0 short-circuit, static-texture-before-start-call ordering). AGENTS.md consistency: Directory layout + File ownership rows + Behavior rules match shipped code; zone-level mutual-exclusion rule explicitly includes 'NPC awareness state transitions are suppressed during dialogue'. Error-path spot check: unknown sprite id (console.error + rect fallback), unknown dialogue script (existing), failed dialogueSystem.start (catch + exitDialogue), pre-first-update collision query (livePositions fallback to static). Criteria requiring human runtime observation (60-second unattended wander checks, rapid tap close-cooldown, first-time observer reads-as notes, browser network panel check for vite publicDir routing, console-clean-during-normal-play, post-merge deploy workflow) are paired with automatically-verifiable mechanism proxies and deferred to PR review smoke-testing. Marked phase_complete: true and completed_stories: [US-52, US-53, US-54, US-55]."
+    result: pass
+    notes: phase code-complete; review stage next
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

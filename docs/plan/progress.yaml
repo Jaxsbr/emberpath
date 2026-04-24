@@ -23,11 +23,11 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: npc-behavior
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
+  task_number: 17
   next_task: null
   last_result: pass
   consecutive_fails: 0
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: []
+  completed_stories: [US-52, US-53, US-54, US-55]
