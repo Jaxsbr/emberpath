@@ -77,4 +77,12 @@ entries:
     description: "Branch A/B combined — added NPC_SPEED (PLAYER_SPEED × 0.4), NPC_IDLE_MIN_MS (800), NPC_IDLE_MAX_MS (2400) to src/maps/constants.ts. Behaviour system will consume these; no hardcoded literals in system code. Verify passes. US-53 structural criterion met: NPC_SPEED/IDLE bounds named."
     result: pass
     tokens: ~1000
+  - task: 11
+    time: "2026-04-24T19:25:00Z"
+    type: implement
+    story: US-52
+    description: "Branch A — GameScene wired for NPC animated sprites. preload() iterates NPC_SPRITES and per spriteId loads idle (32 keys), walk (32 keys), static (8 keys); total 72 images per NPC. registerAnimations() registers npc-{spriteId}-{idle,walk}-{dir} animations (16 per NPC) at 8 fps repeat:-1. renderNpcs() creates Phaser.GameObjects.Sprite per NPC at depth 5 centered on the spawn tile, plays npc-{spriteId}-idle-south, and falls back with a descriptive console error to a lowercase rectangle draw if the sprite id is not registered. grep -n 'Rectangle' src/scenes/GameScene.ts returns no matches ✓. uiCam.ignore updated to accept the generalised npcEntities array. Verify tsc+build passes. US-52 structural criteria met: preload loop, anim registration, static image keys, Sprite render path, Rectangle removal, Phaser API contract (Sprite supports both play and setTexture)."
+    result: pass
+    notes: largest US-52 chunk — preload+anim+render now live
+    tokens: ~9000
 # Each entry: {task, time, story, description, result, notes, tokens}
