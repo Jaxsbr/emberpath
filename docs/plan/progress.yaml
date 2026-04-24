@@ -22,12 +22,12 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: sprite-refresh
+  phase: tileset
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 13
+  task_number: 25
   next_task: null
   last_result: pass
   consecutive_fails: 0
@@ -35,10 +35,10 @@ state:
   # --- Review (owner: iterator) ---
   review_stage: review_complete
   review_complete: true
-  pr_number: 12
+  pr_number: 13
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-46, US-47]
+  completed_stories: [US-48, US-49, US-50, US-51]

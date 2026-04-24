@@ -1,6 +1,6 @@
 # Phase: sprite-refresh
 
-Status: draft
+Status: shipped
 
 ## Stories
 
@@ -50,33 +50,33 @@ As a player, I want Pip to animate in 8 directions (N, NE, E, SE, S, SW, W, NW) 
 ## Done-when (observable)
 
 ### Asset integration [US-46]
-- [ ] `assets/characters/fox-pip/idle/{north,north-east,east,south-east,south,south-west,west,north-west}/frame_00{0-3}.png` — 32 files present [US-46]
-- [ ] `assets/characters/fox-pip/walk/{north,north-east,east,south-east,south,south-west,west,north-west}/frame_00{0-7}.png` — 64 files present [US-46]
-- [ ] `assets/characters/fox-pip/run/` directory does not exist [US-46]
-- [ ] GameScene.preload() loads all 96 fox-pip frames: idle (8 dirs �� 4 frames) + walk (8 dirs × 8 frames); does not reference run frames [US-46]
-- [ ] 16 Phaser animations registered with keys `fox-pip-{idle,walk}-{north,north-east,east,south-east,south,south-west,west,north-west}` [US-46]
-- [ ] idle animations have 4 frames each; walk animations have 8 frames each [US-46]
-- [ ] All animations have frameRate 8 and repeat -1 [US-46]
-- [ ] No references to `fox-pip-run-*` animation keys remain in `src/` (grep confirms zero matches) [US-46]
-- [ ] Player sprite created using fox-pip animation, displayed at depth 5, collision bounding box remains PLAYER_SIZE (24px) [US-46]
-- [ ] Player sprite `setScale()` value explicitly accounts for the new character's native PNG resolution; code comment documents native resolution and chosen scale [US-46]
+- [x] `assets/characters/fox-pip/idle/{north,north-east,east,south-east,south,south-west,west,north-west}/frame_00{0-3}.png` — 32 files present [US-46] [Shipped]
+- [x] `assets/characters/fox-pip/walk/{north,north-east,east,south-east,south,south-west,west,north-west}/frame_00{0-7}.png` — 64 files present [US-46] [Shipped]
+- [x] `assets/characters/fox-pip/run/` directory does not exist [US-46] [Shipped]
+- [x] GameScene.preload() loads all 96 fox-pip frames: idle (8 dirs × 4 frames) + walk (8 dirs × 8 frames); does not reference run frames [US-46] [Shipped]
+- [x] 16 Phaser animations registered with keys `fox-pip-{idle,walk}-{north,north-east,east,south-east,south,south-west,west,north-west}` [US-46] [Shipped]
+- [x] idle animations have 4 frames each; walk animations have 8 frames each [US-46] [Shipped]
+- [x] All animations have frameRate 8 and repeat -1 [US-46] [Shipped]
+- [x] No references to `fox-pip-run-*` animation keys remain in `src/` (grep confirms zero matches) [US-46] [Shipped]
+- [x] Player sprite created using fox-pip animation, displayed at depth 5, collision bounding box remains PLAYER_SIZE (24px) [US-46] [Shipped]
+- [x] Player sprite `setScale()` value explicitly accounts for the new character's native PNG resolution; code comment documents native resolution and chosen scale [US-46] [Shipped]
 
 ### Animation system simplification [US-47]
-- [ ] AnimationSystem `AnimState` type is `'idle' | 'walk'` — no 'run' [US-47]
-- [ ] AnimationSystem `Direction` type includes all 8 directions: north, north-east, east, south-east, south, south-west, west, north-west [US-47]
-- [ ] `velocityToDirection()` maps velocity to 8 directions using octant boundaries (45-degree sectors) [US-47]
-- [ ] No references to `RUN_MULTIPLIER` or `RUN_THRESHOLD_MS` in `src/systems/animation.ts` [US-47]
-- [ ] `RUN_MULTIPLIER` and `RUN_THRESHOLD_MS` constants removed from `src/maps/constants.ts` [US-47]
-- [ ] No `moveElapsedMs` property or walk-to-run timer logic in AnimationSystem [US-47]
-- [ ] `getCurrentSpeed()` always returns PLAYER_SPEED [US-47]
-- [ ] Diagonal suppression code block removed from GameScene.update() — no `suppressedVx`/`suppressedVy` variables [US-47]
-- [ ] On spawn with no movement input, player sprite plays `fox-pip-idle-south` [US-47]
-- [ ] After moving north-east then stopping, player sprite plays `fox-pip-idle-north-east` [US-47]
-- [ ] Moving diagonally (W+D keys or diagonal joystick) produces diagonal movement and plays the corresponding diagonal direction animation [US-47]
+- [x] AnimationSystem `AnimState` type is `'idle' | 'walk'` — no 'run' [US-47] [Shipped]
+- [x] AnimationSystem `Direction` type includes all 8 directions: north, north-east, east, south-east, south, south-west, west, north-west [US-47] [Shipped]
+- [x] `velocityToDirection()` maps velocity to 8 directions using octant boundaries (45-degree sectors) [US-47] [Shipped]
+- [x] No references to `RUN_MULTIPLIER` or `RUN_THRESHOLD_MS` in `src/systems/animation.ts` [US-47] [Shipped]
+- [x] `RUN_MULTIPLIER` and `RUN_THRESHOLD_MS` constants removed from `src/maps/constants.ts` [US-47] [Shipped]
+- [x] No `moveElapsedMs` property or walk-to-run timer logic in AnimationSystem [US-47] [Shipped]
+- [x] `getCurrentSpeed()` always returns PLAYER_SPEED [US-47] [Shipped]
+- [x] Diagonal suppression code block removed from GameScene.update() — no `suppressedVx`/`suppressedVy` variables [US-47] [Shipped]
+- [x] On spawn with no movement input, player sprite plays `fox-pip-idle-south` [US-47] [Shipped]
+- [x] After moving north-east then stopping, player sprite plays `fox-pip-idle-north-east` [US-47] [Shipped]
+- [x] Moving diagonally (W+D keys or diagonal joystick) produces diagonal movement and plays the corresponding diagonal direction animation [US-47] [Shipped]
 
 ### Structural [phase]
-- [ ] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [ ] AGENTS.md reflects updated animation system: 2-state (idle/walk), 8-direction, variable frame counts (idle: 4, walk: 8), no run, no diagonal suppression [phase]
+- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase] [Shipped]
+- [x] AGENTS.md reflects updated animation system: 2-state (idle/walk), 8-direction, variable frame counts (idle: 4, walk: 8), no run, no diagonal suppression [phase] [Shipped]
 
 Safety criteria: N/A — this phase introduces no endpoints, user input fields, or query interpolation. All changes are internal game animation logic.
 

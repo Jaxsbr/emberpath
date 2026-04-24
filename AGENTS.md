@@ -58,7 +58,8 @@ src/
   triggers/
     flags.ts           # Flag store — getFlag, setFlag, incrementFlag, resetAllFlags, localStorage persistence
   maps/
-    constants.ts       # TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType
+    constants.ts       # TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType (FLOOR/WALL/EXIT — EXIT is render-only)
+    tilesets.ts        # TILESETS registry + resolveFrame() deterministic variant picker per (col,row,kind,tilesetId)
 assets/
   characters/
     fox-pip/           # PixelLab-generated fox child animation frames (96 PNGs)
@@ -66,6 +67,13 @@ assets/
         north/north-east/east/south-east/south/south-west/west/north-west/  frame_000..003.png
       walk/            # 8 directions × 8 frames each
         north/north-east/east/south-east/south/south-west/west/north-west/  frame_000..007.png
+  tilesets/
+    tiny-town/         # Kenney Tiny Town CC0 — 16×16 packed spritesheet (132 frames, 12×11), Ashen Isle
+      tilemap.png      # atlas
+      tilemap.json     # grid metadata + provenance
+      Tilesheet.txt    # Kenney grid info
+      License.txt      # CC0 attribution
+    tiny-dungeon/      # Kenney Tiny Dungeon CC0 — 16×16 packed (132 frames, 12×11), Fog Marsh (tomb/dungeon aesthetic)
 tools/
   editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
     src/
@@ -85,7 +93,7 @@ tools/
 | Module | Owns |
 |---|---|
 | `scenes/TitleScene.ts` | Title screen UI, scene transition to GameScene, flag reset |
-| `scenes/GameScene.ts` | Area loading, tile rendering, fox-pip animated player sprite (preloads 96 frames across idle:4f and walk:8f per direction, registers 16 animations for 8 directions), 8-direction movement, camera setup, update loop, system orchestration, exit zone detection, area transitions with fade |
+| `scenes/GameScene.ts` | Area loading; sprite-based tile rendering (preloads per-area tileset spritesheet, renderTileMap iterates cells and calls resolveFrame from `maps/tilesets.ts` to pick deterministic variants per (col,row), FLOOR/WALL/EXIT sprites at depth 0); prop rendering (renderProps iterates area.props at depth 3 with missing-frame warning+skip); graceful flat-color fallback on unknown tileset id; fox-pip animated player sprite (preloads 96 frames across idle:4f and walk:8f per direction, registers 16 animations for 8 directions); 8-direction movement; camera setup; update loop; system orchestration; exit zone detection; area transitions with fade |
 | `scenes/StoryScene.ts` | Full-screen story scenes — beat display, fade transitions, GameScene pause/resume |
 | `systems/input.ts` | All input handling — keyboard keys, touch joystick lifecycle |
 | `systems/movement.ts` | Position updates with collision checking — accepts area collision data (map + NPCs) |
@@ -97,12 +105,13 @@ tools/
 | `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
 | `systems/animation.ts` | AnimationSystem — 8-direction fox-pip sprite animation state machine (idle/walk), octant-based velocity-to-direction mapping, current speed provider |
 | `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radii in world space |
-| `data/areas/types.ts` | All shared types — AreaDefinition, ExitDefinition, NpcDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
+| `data/areas/types.ts` | All shared types — AreaDefinition (includes required `tileset: string` and `props: PropDefinition[]`; `visual.floorColor/wallColor` retained for editor), ExitDefinition, NpcDefinition, PropDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
 | `data/areas/registry.ts` | Area registry — maps area IDs to AreaDefinitions, getAllAreaIds() for enumeration |
 | `data/areas/ashen-isle.ts` | Ashen Isle area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `data/areas/fog-marsh.ts` | Fog Marsh area definition — co-located map, NPCs, triggers, dialogues, story scenes, exits |
 | `triggers/flags.ts` | Flag store — read/write/increment/reset, localStorage persistence (shared across areas) |
-| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum |
+| `maps/constants.ts` | Global constants — TILE_SIZE, PLAYER_SIZE, PLAYER_SPEED, NPC_SIZE, TileType enum (FLOOR=0, WALL=1, EXIT=2 render-only) |
+| `maps/tilesets.ts` | TilesetDefinition + TILESETS registry (tiny-town, tiny-dungeon), resolveFrame(tilesetId, kind, col, row) pure variant picker using FNV-1a-style hash of (col,row,kind,tilesetId), hasTileset() predicate |
 | `tools/editor/src/main.ts` | Editor app shell — area selector, tab navigation (map, dialogue, flow), view dispatch, detail panel |
 | `tools/editor/src/mapRenderer.ts` | Canvas map view — tile grid, NPC circles, trigger/exit zone overlays, click-to-detail |
 | `tools/editor/src/dialogueRenderer.ts` | Dialogue tree view — BFS node graph layout, SVG edges, choice labels, flag annotations |
@@ -114,7 +123,8 @@ Explicit rendering order for visual layers (Learning #57):
 
 | Layer | Depth | Camera | Description |
 |---|---|---|---|
-| Tiles | 0 | main | Floor, wall, and exit zone tile graphics |
+| Tiles | 0 | main | Floor, wall, and exit zone tile sprites |
+| Props | 3 | main | Decorative non-blocking sprites (bushes, stones, gravestones, etc.) |
 | Entities | 5 | main | Player character and NPCs |
 | Thoughts | 8 | main | Thought bubble text and background (world-space, above player) |
 | Debug overlay | 50 | main | Trigger zone rectangles, exit labels, NPC radii (F3 toggle) |
@@ -144,6 +154,8 @@ New visual elements must reference this map. Ad-hoc depth values are prohibited.
 - **Area transitions:** GameScene accepts `{ areaId, entryPoint }` via scene data. All systems (collision, movement, triggers, NPC interaction, dialogue, story scenes) are parameterized — they receive area data via constructor or method parameters, no global imports. During transition: movement, NPC interaction, triggers, and dialogue are suppressed (transitionInProgress guard).
 - **Debug overlay:** F3 toggles visibility (off by default). Shows trigger zones as color-coded semi-transparent rectangles (blue=thought, magenta=story, green=dialogue, orange=exit), text labels with ID/type/condition, exit destination labels, NPC interaction radii as yellow circles. World-space at depth 50. Toggle is guarded during dialogue.
 - **Flag persistence:** Flags stored in localStorage under 'emberpath_flags'. Flags work cross-area — set in one area, readable in another. Reset available from TitleScene.
+- **Tile rendering (sprite-based):** Tiles are rendered via Phaser spritesheets loaded from `assets/tilesets/<id>/tilemap.png` (16×16 packed). Each `AreaDefinition` has a required `tileset: string` naming one of the registry entries in `maps/tilesets.ts`. `GameScene.preload()` loads every registered atlas. `renderTileMap()` iterates cells, determines tile kind (EXIT when cell overlaps an area.exits zone, else WALL or FLOOR from `area.map`), and calls `resolveFrame(tilesetId, kind, col, row)` — a pure function with FNV-1a hash determinism — to pick a variant. Sprites are placed at depth 0 and scaled to `TILE_SIZE` via `setDisplaySize`. Nearest-neighbor filtering is applied globally via `pixelArt: true` in the Phaser game config (`main.ts`). If `area.tileset` is unknown, a descriptive console error is logged and `renderFallbackTiles()` draws flat-color tiles using `visual.floorColor/wallColor` so the scene still loads. `EXIT_COLOR` and the old `tileGraphics` Graphics path are removed.
+- **Decorative props (non-blocking):** `AreaDefinition.props: PropDefinition[]` is a list of `{ id, col, row, spriteFrame }` entries rendered by `GameScene.renderProps()` at depth 3 (between Tiles and Entities). Props look up their frame on the area's tileset atlas; a missing frame logs a warning naming the prop id and the missing frame, then skips that prop. Props are NOT added to collision structures — `collision.ts` is not consulted for props, so the player walks through their cells.
 - **Player sprite (fox-pip):** Player is a `Phaser.GameObjects.Sprite` at Entities depth 5, using PixelLab-generated fox child animation frames (96 PNGs — idle: 8 dirs × 4 frames = 32, walk: 8 dirs × 8 frames = 64). Frames preloaded individually in `GameScene.preload()` using per-animation-type frame counts (`FRAME_COUNTS: {idle: 4, walk: 8}`). 16 Phaser animations registered as `fox-pip-{idle,walk}-{north,north-east,east,south-east,south,south-west,west,north-west}` at 8 FPS with `repeat: -1`. Collision bounding box is PLAYER_SIZE (24px). Rendered at native scale (68×68px, `setScale(1)`) — collision math uses PLAYER_SIZE directly. Vite serves assets from `assets/` (`publicDir: 'assets'` in vite.config.ts).
 - **Animation state machine (`systems/animation.ts`):** `AnimationSystem` manages sprite animation state. Two states: idle (stationary), walk (moving). Tracks `facingDirection` (default south on spawn), plays 8-direction animation. `velocityToDirection()` maps velocity to one of 8 directions using octant boundaries (atan2 quantized to 45° sectors): north, north-east, east, south-east, south, south-west, west, north-west. `getCurrentSpeed()` always returns PLAYER_SPEED — no speed acceleration. GameScene passes raw input velocity directly (no diagonal suppression).
 

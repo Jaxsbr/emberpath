@@ -190,6 +190,35 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     });
   }
 
+  // Draw props (between exits and NPCs — matches game depth order Tiles < Props < Entities)
+  for (const prop of area.props) {
+    const cx = LABEL_MARGIN + prop.col * CELL + CELL / 2;
+    const cy = LABEL_MARGIN + prop.row * CELL + CELL / 2;
+    const radius = CELL / 4;
+
+    ctx.fillStyle = '#c89b68';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    clickables.push({
+      x: cx - radius,
+      y: cy - radius,
+      w: radius * 2,
+      h: radius * 2,
+      data: {
+        type: 'prop',
+        id: prop.id,
+        col: prop.col,
+        row: prop.row,
+        spriteFrame: prop.spriteFrame,
+      },
+    });
+  }
+
   // Draw player spawn
   const spawnX = LABEL_MARGIN + area.playerSpawn.col * CELL + CELL / 2;
   const spawnY = LABEL_MARGIN + area.playerSpawn.row * CELL + CELL / 2;

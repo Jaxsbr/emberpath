@@ -1,50 +1,81 @@
 ## Phase goal
 
-Replace the 4-direction fox sprite set with a new bipedal fox child character supporting 8-direction movement (idle and walk states only). Remove the run state, diagonal suppression, and run-related constants. Copy the new PixelLab-generated frames from `pixellab-research/fox-child-final/` into game assets and update GameScene + AnimationSystem to use 8 directions with variable per-type frame counts (idle: 4 frames, walk: 8 frames).
+Replace `fillRect`-based flat-color tile rendering with sprite-based rendering from Kenney dev-art atlases (tiny-town for Ashen Isle, tiny-dungeon for Fog Marsh), add per-cell tile variants for visual texture, introduce a non-blocking decorative prop system, and restyle exit zones as diegetic path/doorway tiles. The world should read as "a place worth walking through" instead of a geometry diagram, and Fog Marsh should feel visually distinct from Ashen Isle.
 
-### Dependencies
-- sprite-animation — archived ✓
+### Design direction
+
+Charming classic-RPG overworld aesthetic (16-bit pixel-art tilemap idiom). **Ashen Isle** leans cool green-brown with scattered stones, withered shrubs, bare trees, and dirt paths — "quietly forsaken," not grimdark. **Fog Marsh** uses a dungeon/tomb aesthetic — brown brick walls, tan/grey stone floors, wooden doors, barrels, crates, altars, candles, bones — a visual cue for "trapped dead-end" in the allegory. Source tiles are 16px; render at 32px using nearest-neighbor filtering for crisp pixel art. Apply the `sabs:frontend-design` skill during implementation.
 
 ### Stories in scope
-- US-46 — Fox child sprite asset replacement
-- US-47 — 8-direction movement and simplified animation states
+
+- US-48 — Sprite-based tile rendering
+- US-49 — Tile variants with deterministic selection
+- US-50 — Decorative prop scatter
+- US-51 — Exit zones styled as path tiles
 
 ### Done-when (observable)
 
-#### Asset integration [US-46]
-- [x] `assets/characters/fox-pip/idle/{north,north-east,east,south-east,south,south-west,west,north-west}/frame_00{0-3}.png` — 32 files present [US-46]
-- [x] `assets/characters/fox-pip/walk/{north,north-east,east,south-east,south,south-west,west,north-west}/frame_00{0-7}.png` — 64 files present [US-46]
-- [x] `assets/characters/fox-pip/run/` directory does not exist [US-46]
-- [x] GameScene.preload() loads all 96 fox-pip frames: idle (8 dirs × 4 frames) + walk (8 dirs × 8 frames); does not reference run frames [US-46]
-- [x] 16 Phaser animations registered with keys `fox-pip-{idle,walk}-{north,north-east,east,south-east,south,south-west,west,north-west}` [US-46]
-- [x] idle animations have 4 frames each; walk animations have 8 frames each [US-46]
-- [x] All animations have frameRate 8 and repeat -1 [US-46]
-- [x] No references to `fox-pip-run-*` animation keys remain in `src/` (grep confirms zero matches) [US-46]
-- [x] Player sprite created using fox-pip animation, displayed at depth 5, collision bounding box remains PLAYER_SIZE (24px) [US-46]
-- [x] Player sprite `setScale()` value explicitly accounts for the new character's native PNG resolution; code comment documents native resolution and chosen scale [US-46]
+#### Error paths
+- [x] If an area's `tileset` id is not registered in `tilesets.ts`, `GameScene` logs a descriptive console error naming the missing tileset id and does not crash (scene may render fallback flat-color tiles or refuse to load with a clear message — either is acceptable, but silent failure is not) [US-48]
+- [x] If a `PropDefinition.spriteFrame` references a frame that does not exist in the tileset atlas, a console warning is logged naming the prop id and missing frame; scene continues to render other props [US-50]
 
-#### Animation system simplification [US-47]
-- [x] AnimationSystem `AnimState` type is `'idle' | 'walk'` — no 'run' [US-47]
-- [x] AnimationSystem `Direction` type includes all 8 directions: north, north-east, east, south-east, south, south-west, west, north-west [US-47]
-- [x] `velocityToDirection()` maps velocity to 8 directions using octant boundaries (45-degree sectors) [US-47]
-- [x] No references to `RUN_MULTIPLIER` or `RUN_THRESHOLD_MS` in `src/systems/animation.ts` [US-47]
-- [x] `RUN_MULTIPLIER` and `RUN_THRESHOLD_MS` constants removed from `src/maps/constants.ts` [US-47]
-- [x] No `moveElapsedMs` property or walk-to-run timer logic in AnimationSystem [US-47]
-- [x] `getCurrentSpeed()` always returns PLAYER_SPEED [US-47]
-- [x] Diagonal suppression code block removed from GameScene.update() — no `suppressedVx`/`suppressedVy` variables [US-47]
-- [x] On spawn with no movement input, player sprite plays `fox-pip-idle-south` [US-47]
-- [x] After moving north-east then stopping, player sprite plays `fox-pip-idle-north-east` [US-47]
-- [x] Moving diagonally (W+D keys or diagonal joystick) produces diagonal movement and plays the corresponding diagonal direction animation [US-47]
+#### Structural — assets & types
+- [x] `assets/tilesets/tiny-town/` exists and contains at least the source atlas PNG and a frame-mapping JSON (Phaser atlas format or equivalent index) [US-48]
+- [x] `assets/tilesets/tiny-dungeon/` exists with the same contents for the monochrome atlas [US-48]
+- [x] `src/maps/tilesets.ts` exists and exports a registry of tilesets keyed by id, each entry containing `{ atlasKey: string; tileFrames: Record<TileType, string[]> }` [US-49]
+- [x] `tilesets.ts` registry has entries for `tiny-town` and `tiny-dungeon`, each with `FLOOR` ≥3 frames, `WALL` ≥2 frames, `EXIT` ≥1 frame [US-49]
+- [x] `AreaDefinition` in `src/data/areas/types.ts` has required field `tileset: string` [US-48]
+- [x] `AreaDefinition` has required field `props: PropDefinition[]` [US-50]
+- [x] `PropDefinition` exported from `types.ts` with `{ id: string; col: number; row: number; spriteFrame: string }` at minimum [US-50]
+- [x] `src/data/areas/ashen-isle.ts` sets `tileset: 'tiny-town'` and defines ≥15 entries in `props` [US-50]
+- [x] `src/data/areas/fog-marsh.ts` sets `tileset: 'tiny-dungeon'` and defines ≥10 entries in `props` [US-50]
 
-#### Structural [phase]
-- [x] `npx tsc --noEmit && npm run build` passes with zero errors [phase]
-- [x] AGENTS.md reflects updated animation system: 2-state (idle/walk), 8-direction, variable frame counts (idle: 4, walk: 8), no run, no diagonal suppression [phase]
+#### Structural — rendering
+- [x] `GameScene.preload()` loads both tileset atlases via `this.load.atlas(...)` (or `load.image` + manual frame config) [US-48]
+- [x] `GameScene.renderTileMap()` contains zero `fillRect` calls for FLOOR/WALL/EXIT tiles (verified: grep in method body returns no matches) [US-48]
+- [x] `grep -n "tileGraphics" src/scenes/GameScene.ts` returns no matches — Graphics-based tile render path removed [US-48]
+- [x] `grep -rn "EXIT_COLOR" src/` returns no matches — constant removed [US-51]
+- [x] Nearest-neighbor texture filtering is applied to tileset textures (verified: `setFilter(Phaser.Textures.FilterMode.NEAREST)` or equivalent applied in preload or at texture load) [US-48]
+- [x] Tile variant selection function is pure — no `Math.random()` or date-based input; depends only on `(col, row, tileType, tilesetId)` (verified: read `tilesets.ts` variant picker) [US-49]
+- [x] Prop rendering adds sprites at depth 3 — between Tiles (0) and Entities (5) (verified: source reads `setDepth(3)` on prop sprites) [US-50]
+- [x] Prop sprites are not added to `collisionBoxes` / wall collision data structures — `collision.ts` is unchanged in this phase (verified: `git diff` for `collision.ts` is empty) [US-50]
+
+#### Behavior — per-variant manual verification
+
+Manual verification checklist written to `docs/plan/tileset-manual-verify.md`. Each per-area checkbox below is its own done-when criterion:
+
+- [x] **Ashen Isle**: On scene load, floor shows ≥3 visually distinct grass/ground variants across the visible map [US-49]
+- [x] **Ashen Isle**: Walls show ≥2 visually distinct stone/edge variants [US-49]
+- [x] **Ashen Isle**: ≥15 props visible across the map (bushes, stones, trees, fences) at expected positions [US-50]
+- [x] **Ashen Isle**: Exit tile renders as a dirt-path sprite; fox can walk into it and trigger area transition [US-51]
+- [x] **Ashen Isle**: Fox sprite renders in front of a prop when the fox's world y > prop's world y (verified by walking behind/in-front of a tree) [US-50]
+- [x] **Fog Marsh**: Floor shows ≥3 visually distinct tan/stone variants across the visible map [US-49]
+- [x] **Fog Marsh**: Walls show ≥2 visually distinct brown-brick variants [US-49]
+- [x] **Fog Marsh**: ≥10 props visible (barrels, crates, altars, candles, bones) at expected positions [US-50]
+- [x] **Fog Marsh**: Exit tile renders as a wooden-door/dungeon-doorway sprite; area transition still fires on overlap [US-51]
+- [x] **Both areas**: Tile art renders crisp (no smoothing/blur) — visible on close inspection of a single tile [US-48]
+- [x] **Both areas**: No console errors or warnings during scene load or during normal play for 30 seconds [US-48]
+
+#### Behavior — reads-as (required by Visual "reads as" compounded rule)
+- [x] Ashen Isle exit tile communicates "walkable path toward map edge" to a first-time player (rather than "glowing UI marker") — verified via manual check with a new-eye observer note in the manual-verify doc [US-51]
+- [x] Fog Marsh exit tile communicates "wooden door / tomb threshold" to a first-time player — verified same way [US-51]
+
+#### Editor sync
+- [x] Editor's `tools/editor/src/mapRenderer.ts` renders props as small colored dots or glyphs at `(col, row)` positions — verified by opening the editor and inspecting either area [US-50]
+- [x] `cd tools/editor && npm run build` succeeds [US-48]
+
+#### Invariants
+- [x] `npx tsc --noEmit && npm run build` passes for the main game [phase]
+- [x] AGENTS.md depth map includes a row for `Props | 3 | main | Decorative non-blocking sprites` between Tiles and Entities [US-50]
+- [x] AGENTS.md "Directory layout" tree reflects `assets/tilesets/` [phase]
+- [x] AGENTS.md "File ownership" table includes an entry for `src/maps/tilesets.ts` [US-49]
+- [x] AGENTS.md "Behavior rules" includes a new rule describing sprite-based tile rendering, per-area `tileset` field, nearest-neighbor filtering, deterministic variant selection, and non-blocking props [US-48]
 
 ### Golden principles (phase-relevant)
-- Depth map is non-negotiable: the player sprite must sit at depth 5 (Entities layer). Ad-hoc depth values are prohibited.
-- PLAYER_SIZE (24px) is the collision bounding box constant — do not change it.
-- Camera: `cam.startFollow(player)` must target the player sprite. Dual-camera `uiCam.ignore()` call must include the player sprite.
-- Movement: axis-independent collision and wall-sliding via `moveWithCollision` must be preserved unchanged. Movement speed is PLAYER_SPEED (no run multiplier).
-- Scene code must call systems-module functions, not duplicate them (Learning #64). Animation state logic lives in `systems/animation.ts`, not inlined in GameScene.
-- Before submitting, check for: (a) setup operations that run every update loop iteration but only need to run once, (b) conditional branches where both outcomes produce the same result, (c) comments referencing behavior no longer present (Learning EP-01).
-- When changing a system module, audit all callers (GameScene) to ensure they still work after run-state removal and 8-direction changes (Learning #70 — cross-cutting breaks during refactoring).
+
+- **Depth map authority**: New visual elements must reference the depth map in AGENTS.md. Ad-hoc depth values are prohibited. (This phase adds `Props | 3`.)
+- **Responsive scaling**: Phaser Scale.RESIZE mode — no fixed 800×600. Tile sprites must render correctly at any viewport size; the world stays 1600×1216 pixels for Ashen Isle.
+- **Parameterized systems**: Area systems receive area data via constructor or parameters — no global imports. Tile and prop rendering must follow the same discipline: both receive the `AreaDefinition` as input.
+- **No silent breaking changes**: Existing `visual.floorColor/wallColor` fields remain on `AreaDefinition` for editor use. They are retained explicitly, not silently removed.
+- **From LEARNINGS EP-01**: Before submitting, check for (a) setup ops that run every loop iteration but only need to run once (tile sprite creation runs once in `renderTileMap`, NOT per frame), (b) dead guard conditions, (c) comments referencing behavior no longer present, (d) function names implying a different contract than the implementation.
+- **Frontend-design skill applies**: This phase touches visual rendering — apply the `sabs:frontend-design` guidelines (distinctive palette, intentional pixel-art rendering, no generic defaults).

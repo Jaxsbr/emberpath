@@ -11,6 +11,7 @@ export const fogMarsh: AreaDefinition = {
   name: 'Fog Marsh',
   mapCols: 30,
   mapRows: 24,
+  tileset: 'tiny-dungeon',
   map: [
     //0                                          29
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W], // 0
@@ -40,6 +41,22 @@ export const fogMarsh: AreaDefinition = {
   ],
   npcs: [
     { id: 'marsh-hermit', name: 'Marsh Hermit', col: 18, row: 10, color: 0x5a7a6b },
+  ],
+  props: [
+    // Dungeon/tomb decoration — barrels, crates, altars, candles, bones, chests.
+    // Frames from tiny-dungeon atlas (best-guess from preview; swap indices if any read wrong).
+    { id: 'barrel-n1', col: 4, row: 2, spriteFrame: '66' },
+    { id: 'crate-n1', col: 14, row: 2, spriteFrame: '67' },
+    { id: 'altar-n1', col: 22, row: 2, spriteFrame: '70' },
+    { id: 'barrel-m1', col: 4, row: 8, spriteFrame: '67' },
+    { id: 'crate-m1', col: 12, row: 8, spriteFrame: '66' },
+    { id: 'candle-m1', col: 26, row: 8, spriteFrame: '65' },
+    { id: 'bones-c1', col: 4, row: 14, spriteFrame: '68' },
+    { id: 'barrel-c1', col: 12, row: 14, spriteFrame: '66' },
+    { id: 'altar-c1', col: 24, row: 14, spriteFrame: '69' },
+    { id: 'crate-s1', col: 8, row: 19, spriteFrame: '67' },
+    { id: 'candle-s1', col: 14, row: 19, spriteFrame: '65' },
+    { id: 'barrel-s1', col: 22, row: 19, spriteFrame: '66' },
   ],
   triggers: [
     // Thought trigger — entering the foggy open area
