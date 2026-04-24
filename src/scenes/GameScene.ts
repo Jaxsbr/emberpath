@@ -349,6 +349,11 @@ export class GameScene extends Phaser.Scene {
     cam.setZoom(this.calculateZoom());
     cam.setBounds(0, 0, mapWidth, mapHeight);
     cam.startFollow(this.player);
+    // Round camera scroll to integer pixels each frame. With a packed tile atlas (no margin
+    // around frames), fractional scroll combined with rounded sprite positions exposes 1px
+    // bleed seams on diagonal movement. The camera-level flag is independent from the global
+    // render flag — both are required for reliable behaviour across Phaser 3.x.
+    cam.setRoundPixels(true);
 
     // UI camera — no zoom/scroll, renders dialogue/joystick/thought bubbles at screen coords
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
