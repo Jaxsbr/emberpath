@@ -9,4 +9,12 @@ entries:
     result: pass
     notes: phase classified server/cross-cutting; investigate-first enforced
     tokens: ~15000
+  - task: 2
+    time: "2026-04-24T11:40:00Z"
+    type: investigate
+    story: US-52
+    description: "Executed queued investigate. Findings — (1) Asset staging verified: /Users/jacobusbrink/Jaxs/assets/emberpath/npc/marsh-hermit/ and /old-man/ each contain idle/<8 dirs>/frame_000..003.png (32), walk/<8 dirs>/frame_000..003.png (32), static/<dir>.png × 8 — matches spec exactly. Total 144 files, 72 per NPC. (2) NpcDefinition consumers in src/: types.ts (decl + AreaDefinition.npcs), areas/{ashen-isle,fog-marsh}.ts (definition sites), GameScene.ts:281-283 (the Rectangle render path to remove), collision.ts (getNpcBounds uses npc.col/row — must switch to live positions), npcInteraction.ts:70-71 (uses npc.col/row for nearest-NPC range — must switch to live positions), debugOverlay.ts:136-137 (uses npc.col/row for radius circles — spawn tile is correct for wander circle; interaction circle may want live position). Editor mapRenderer.ts:240-269 reads npc.col/row/color unchanged (editor operates on static defs). movement.ts has indirect NpcDefinition[] typing only. (3) Direction/octant audit (Learning #70): only ONE octant site in src/ — animation.ts:65 `velocityToDirection(vx, vy)`. GameScene:25 declares a pure DIRECTIONS list constant (no derivation). No other Math.atan2 or octant tables anywhere in src/. Extraction plan: move velocityToDirection to src/systems/direction.ts as pure exported function, have AnimationSystem import it, NpcBehaviorSystem import it. Single-owner extraction, clean. (4) Fox-pip preload pattern (GameScene.ts:50-57, 412-423): iterates DIRECTIONS × FRAME_COUNTS[anim], this.load.image per frame key `fox-pip-<anim>-<dir>-<i>`; then registerAnimations() creates `fox-pip-<anim>-<dir>` Phaser animations at 8 fps repeat:-1. NPC mirror: iterate registry entries, same pattern with `npc-<spriteId>-<anim>-<dir>-<i>` keys and `npc-<spriteId>-<anim>-<dir>` anims, plus static loaded as plain image keys `npc-<spriteId>-static-<dir>`. Queued the asset-copy task as the next unit (smallest commit; no TS changes)."
+    result: pass
+    notes: investigate-only — no code changes; verify state unchanged
+    tokens: ~7000
 # Each entry: {task, time, story, description, result, notes, tokens}

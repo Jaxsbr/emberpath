@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: "[US-52] Investigate: enumerate staged NPC assets at /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/{idle,walk,static}/ (file counts per dir; confirm idle/walk frames named frame_000..003.png in 8 direction subfolders and static as 8 single <dir>.png files). Audit existing NpcDefinition consumers in src/ and tools/editor/src/ and draft the types.ts diff adding `sprite: string`, `wanderRadius: number`, `awarenessRadius: number` (retain `color`). Review fox-pip preload + animation registration pattern in src/scenes/GameScene.ts so the NPC sprite registry (src/systems/npcSprites.ts) mirrors it. Enumerate all direction-from-vector sites in src/ (any Math.atan2 / octant table / direction-string derivation) per Learning #70 consumer audit, so octant extraction in the next task is informed."
+  task_number: 2
+  next_task: "[US-52] Copy NPC sprite assets from /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/{idle,walk,static}/ to repo-relative assets/npc/{marsh-hermit,old-man}/{idle,walk,static}/. Preserve the 8 direction subdirs for idle/walk (frame_000..003.png per dir) and the 8 <dir>.png flat files for static. Expected totals: 32 idle + 32 walk + 8 static = 72 files per NPC, 144 total. Do not touch .gitignore. Verify vite.config.ts `publicDir: 'assets'` still serves the subtree (already generic — no config change required). Verify tsc --noEmit && npm run build passes. This is a staging-only task — no source TypeScript changes; the registry + types come in the next iteration."
   last_result: pass
   consecutive_fails: 0
 
