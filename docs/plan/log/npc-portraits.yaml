@@ -49,4 +49,12 @@ entries:
     result: pass
     notes: ready to wire portrait preload + LINEAR filter override
     tokens: ~5000
+  - task: 7
+    time: "2026-04-25T01:30:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — wired portrait preload + LINEAR filter override in src/scenes/GameScene.ts. Imported NPC_PORTRAITS + getNpcPortraitIds. Added portrait-load loop after the NPC sprite block: iterate getNpcPortraitIds(), this.load.image('npc-portrait-<id>', `npc/<id>/<def.file>`). Registered this.load.once('complete', ...) which iterates NPC_PORTRAITS and calls textures.get(...).setFilter(Phaser.Textures.FilterMode.LINEAR) ONLY for entries with filter: 'linear'. nearest entries inherit global pixelArt:true default — no per-texture override. Verify (tsc + build) passes; only bundle-hash + size delta + build-time differ from baseline. No regressions. Quality checks pass. Story gate: most US-56 criteria met (assets, registry, schema, wiring, preload, filter); pending — AGENTS.md Directory layout + editor sync; US-56 variant baseline depends on US-57 rendering work. Adding-a-third-NPC criterion satisfied: ANY new NPC portrait is now (asset file + registry entry + dialogue script portraitId) — zero edits to GameScene/DialogueSystem."
+    result: pass
+    notes: portrait preload pipeline complete; rendering side (US-57) is next
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
