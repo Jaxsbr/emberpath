@@ -57,4 +57,12 @@ entries:
     result: pass
     notes: portrait preload pipeline complete; rendering side (US-57) is next
     tokens: ~5000
+  - task: 8
+    time: "2026-04-25T01:40:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — re-investigated AGENTS.md vs current code. Findings — Directory layout (lines 80-87) lists marsh-hermit/old-man with idle/walk/static subtrees but does NOT mention portrait.png. File ownership row for systems/npcSprites.ts (line 119) describes the sprite registry but not the new NPC_PORTRAITS registry. These are tagged [US-56] (Directory layout) and [phase] (npcSprites file-ownership row) per phase-goal.md. Other AGENTS.md updates ([phase]) — File ownership row for systems/dialogue.ts (portrait rendering), Behavior rules Dialogue entry (optional portraitId, anchored, mobile clamp), Scaling tuning guide (PORTRAIT_DESIGN_SIZE, PORTRAIT_MOBILE_WIDTH_FRACTION) — are deferred until US-57 implementation lands. Queued task 9 — AGENTS.md updates for the portrait registry/asset additions that are now true: directory layout adds portrait.png under each NPC, npcSprites.ts file-ownership row mentions NPC_PORTRAITS + helpers."
+    result: pass
+    notes: AGENTS.md edits scoped to what is currently true; dialogue/scaling sections deferred
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

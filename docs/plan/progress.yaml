@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 8
-  next_task: null
+  task_number: 9
+  next_task: "[US-56] Update AGENTS.md: (a) under Directory layout, add `portrait.png` line below the static/ entry inside each `marsh-hermit/` and `old-man/` subtree (so the tree shows portraits sit alongside idle/walk/static); (b) extend the File ownership row for `systems/npcSprites.ts` to mention NPC_PORTRAITS registry, NpcPortraitDefinition shape (per-id file + filter mode), hasNpcPortrait + getNpcPortraitIds. Do NOT yet touch the Behavior rules Dialogue entry, the dialogue.ts file-ownership row, or the Scaling tuning guide — those are deferred until US-57 lands."
   last_result: pass
   consecutive_fails: 0
 
