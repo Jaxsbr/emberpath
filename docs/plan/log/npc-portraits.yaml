@@ -65,4 +65,12 @@ entries:
     result: pass
     notes: AGENTS.md edits scoped to what is currently true; dialogue/scaling sections deferred
     tokens: ~5000
+  - task: 9
+    time: "2026-04-25T01:50:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — updated AGENTS.md per queued plan. Directory layout: added portrait.png line under each NPC subtree (marsh-hermit pixel-art/nearest, old-man painterly/linear noted in inline comments). File ownership row for systems/npcSprites.ts extended to mention NPC_PORTRAITS registry, NpcPortraitDefinition shape (square-aspect 1024×1024 assumed), hasNpcPortrait + getNpcPortraitIds. Verify (tsc + build) passes; no regressions. AGENTS.md sections deliberately NOT touched yet: file ownership row for dialogue.ts (portrait rendering not yet shipped), Behavior rules Dialogue entry, Scaling tuning guide. Those are queued for after US-57 lands so the docs match shipped behavior."
+    result: pass
+    notes: AGENTS.md now consistent with shipped portrait registry + assets
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
