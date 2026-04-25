@@ -1,6 +1,6 @@
 # Phase: npc-portraits
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -22,7 +22,7 @@ N/A — this phase introduces no API endpoints, no user text input fields, no qu
 
 ## Stories
 
-### US-56 — Portrait asset, registry, and data wiring
+### US-56 — Portrait asset, registry, and data wiring [Shipped]
 
 As a player, I want each NPC's dialogue to be backed by a portrait asset that the engine knows how to load, so that the dialogue UI in US-57 has a single, consistent place to look up "what does this speaker look like?" without speaker-name string matching.
 
@@ -47,7 +47,7 @@ As a player, I want each NPC's dialogue to be backed by a portrait asset that th
 
 ---
 
-### US-57 — Portrait rendering above the dialogue box (mobile-aware)
+### US-57 — Portrait rendering above the dialogue box (mobile-aware) [Shipped]
 
 As a player, I want the speaking NPC's portrait to appear above the dialogue box's top-left corner during conversation, so that I'm visibly being addressed by *that character* rather than reading text in a vacuum — and on mobile the portrait must scale down so it doesn't crowd narrow screens.
 

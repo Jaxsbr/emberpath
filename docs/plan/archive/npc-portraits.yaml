@@ -154,3 +154,11 @@ entries:
     notes: 0 fixed, 3 skipped (all 3 explicitly hedged); review cycle closed
     tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
+
+reconciliation_status:
+  r0: done   # no legacy inline stories in PRD
+  r1: skip   # no docs/architecture/ARCHITECTURE.md exists
+  r2: done   # phase file marked shipped + stories tagged; PRD index already Shipped
+  r3: done   # AGENTS.md updates were performed within the phase (tasks 9, 13)
+  r4: skip   # no docs/manual/, docs/GUIDE.md, or README user manual section
+  r5: pending
