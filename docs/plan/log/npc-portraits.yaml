@@ -121,4 +121,12 @@ entries:
     result: pass
     notes: phase complete; review cycle next
     tokens: ~10000
+  - task: 16
+    time: "2026-04-25T03:10:00Z"
+    type: review
+    story: phase
+    description: "Branch B — phase_complete && !review_complete && review_stage null. Pushed branch to origin. Created PR https://github.com/Jaxsbr/emberpath/pull/15 via gh pr create (base main, head build/npc-portraits). Body summarises both stories, files touched, done-when evidence, and a manual-verify test plan for the reviewer. pr_number: 15 stored. review_stage advanced to pr_created. Queued [review] review-pr pr=15 auto=true for next iteration."
+    result: pass
+    notes: PR #15 created
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
