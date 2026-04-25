@@ -105,4 +105,12 @@ entries:
     result: pass
     notes: AGENTS.md fully consistent with shipped portrait phase
     tokens: ~5000
+  - task: 14
+    time: "2026-04-25T02:45:00Z"
+    type: implement
+    story: phase
+    description: "Branch B+A — wrote docs/plan/npc-portraits-manual-verify.md modeled on tileset-manual-verify.md. Captures every criterion in phase-goal.md that calls 'verified manually' or 'verified via observer note': asset serving (network panel 200s for both portraits), Old Man + Marsh Hermit per-NPC end-to-end, Whispering Stones no-portrait regression, mobile responsiveness (375×667 + 1280×720 + rotation + choice expansion), per-surface variant baseline (desktop/mobile × no-choices/with-choices/no-portrait), reads-as observer notes (Old Man + Marsh Hermit + anchored), error-path mistyped-id DEV check, 60-second smoke run, post-merge deploy verification. The doc is the durable artefact for the human reviewer to tick off after merge — every checkbox traces back to a phase-goal.md done-when criterion."
+    result: pass
+    notes: manual-verify checklist covers every visual criterion; ready for phase completion gate
+    tokens: ~6000
 # Each entry: {task, time, story, description, result, notes, tokens}
