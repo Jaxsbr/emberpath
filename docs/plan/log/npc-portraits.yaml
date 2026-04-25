@@ -89,4 +89,12 @@ entries:
     result: pass
     notes: US-57 source criteria met; manual verification doc + AGENTS.md updates pending
     tokens: ~10000
+  - task: 12
+    time: "2026-04-25T02:25:00Z"
+    type: implement
+    story: US-56
+    description: "Branch B+A — editor sync. Verified that 'cd tools/editor && npm run build' succeeds with the new optional portraitId fields (TypeScript accepts the optional addition without any editor change). Added a one-line accommodation: tools/editor/src/dialogueRenderer.ts now forwards node.portraitId ?? script.portraitId ?? null through showDetail so the editor's node-detail panel exposes the resolved portrait id when one is wired. Single-paragraph comment near the imports documents that a richer in-graph annotation ('[portrait: <id>]' on the node label) is intentionally deferred — detail-panel exposure is enough for editor users to audit wiring without crowding the graph view. Spec criterion 'either accommodates ... OR deliberately deferred with a one-line comment' satisfied via partial accommodation + comment. Both editor build and main verify pass; no regressions. Investigation pre-cleared in task 10 — work was atomic and small, executed in same iteration."
+    result: pass
+    notes: editor sync done; both build targets pass
+    tokens: ~3000
 # Each entry: {task, time, story, description, result, notes, tokens}
