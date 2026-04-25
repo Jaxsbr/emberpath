@@ -57,26 +57,26 @@ The Tiny Town and Tiny Dungeon Kenney atlases already contain the needed houses,
 
 #### Structural — vocabulary docs (US-61)
 
-- [ ] `docs/tilesets/tiny-town.md` exists with frame table covering all Ashen Isle decorations + a Reserved-for-future appendix [US-61]
-- [ ] `docs/tilesets/tiny-dungeon.md` exists with frame table covering all Fog Marsh decorations + a Reserved-for-future appendix [US-61]
-- [ ] Each doc explains the atlas grid math (frame = row × cols + col) [US-61]
-- [ ] AGENTS.md "Directory layout" tree includes `docs/tilesets/` [US-61]
+- [x] `docs/tilesets/tiny-town.md` exists with frame table covering all Ashen Isle decorations + a Reserved-for-future appendix [US-61]
+- [x] `docs/tilesets/tiny-dungeon.md` exists with frame table covering all Fog Marsh decorations + a Reserved-for-future appendix [US-61]
+- [x] Each doc explains the atlas grid math (frame = row × cols + col) [US-61]
+- [x] AGENTS.md "Directory layout" tree includes `docs/tilesets/` [US-61]
 
 #### Behavior — reads-as (legibility)
 
 Each reads-as is paired with a mechanism proxy, per phase rule.
 
-- [ ] **Ashen Isle reads-as a coastal village**: a first-time observer (someone who has never seen Ashen Isle before) given the question "where are you, and what are the things around you?" can identify (a) "I'm in / next to a village", (b) "that's a path", (c) "that's a house", (d) "that's the water / the edge of the island", (e) "that's the way out (the dock/gate)". At least 4 of 5 identifications correct = pass. [US-59]
-- [ ] **Ashen Isle mechanism proxy**: every legibility element is structurally present per the US-59 acceptance criteria above. [US-59]
-- [ ] **Fog Marsh reads-as a wet marsh with a ruin**: same observer test. Identifications: (a) "I'm in a marsh / wetland / swamp", (b) "the dry strip is the path", (c) "that broken-walls thing is a ruin / shrine / tomb", (d) "the edges are too thick / wet to cross", (e) "the door at the end is the way through". At least 4 of 5 = pass. [US-60]
-- [ ] **Fog Marsh mechanism proxy**: every legibility element is structurally present per the US-60 acceptance criteria. [US-60]
-- [ ] **Diegetic exit reads-as a thing you walk through**: same observer can point at the dock/gate on Ashen Isle and the door on Fog Marsh and say "that's the way out" — without seeing the player ever walk through them. [US-59, US-60]
+- [x] **Ashen Isle reads-as a coastal village**: a first-time observer (someone who has never seen Ashen Isle before) given the question "where are you, and what are the things around you?" can identify (a) "I'm in / next to a village", (b) "that's a path", (c) "that's a house", (d) "that's the water / the edge of the island", (e) "that's the way out (the dock/gate)". At least 4 of 5 identifications correct = pass. [US-59]
+- [x] **Ashen Isle mechanism proxy**: every legibility element is structurally present per the US-59 acceptance criteria above. [US-59]
+- [x] **Fog Marsh reads-as a wet marsh with a ruin**: same observer test. Identifications: (a) "I'm in a marsh / wetland / swamp", (b) "the dry strip is the path", (c) "that broken-walls thing is a ruin / shrine / tomb", (d) "the edges are too thick / wet to cross", (e) "the door at the end is the way through". At least 4 of 5 = pass. [US-60]
+- [x] **Fog Marsh mechanism proxy**: every legibility element is structurally present per the US-60 acceptance criteria. [US-60]
+- [x] **Diegetic exit reads-as a thing you walk through**: same observer can point at the dock/gate on Ashen Isle and the door on Fog Marsh and say "that's the way out" — without seeing the player ever walk through them. [US-59, US-60]
 
 #### Variant baseline (per-area verification)
 
-- [ ] **Ashen Isle**: redesigned area loads, fade-in from TitleScene shows the new layout, all NPC + trigger interactions still work end-to-end, exit to Fog Marsh works [US-59]
-- [ ] **Fog Marsh**: redesigned area loads via the Ashen Isle exit, all NPC + trigger interactions still work end-to-end, exit back to Ashen Isle works [US-60]
-- [ ] **Round-trip**: Ashen Isle → Fog Marsh → Ashen Isle, three full transitions, no orphan sprites, no console warnings, flags persist across transitions [US-59, US-60]
+- [x] **Ashen Isle**: redesigned area loads, fade-in from TitleScene shows the new layout, all NPC + trigger interactions still work end-to-end, exit to Fog Marsh works [US-59]
+- [x] **Fog Marsh**: redesigned area loads via the Ashen Isle exit, all NPC + trigger interactions still work end-to-end, exit back to Ashen Isle works [US-60]
+- [x] **Round-trip**: Ashen Isle → Fog Marsh → Ashen Isle, three full transitions, no orphan sprites, no console warnings, flags persist across transitions [US-59, US-60]
 
 #### Editor sync
 
@@ -90,14 +90,14 @@ Each reads-as is paired with a mechanism proxy, per phase rule.
 
 #### Invariants
 
-- [ ] `npx tsc --noEmit && npm run build` passes [phase]
-- [ ] `cd tools/editor && npm run build` passes [phase]
-- [ ] No console errors during 60 seconds of play covering: spawn on Ashen Isle, walk the path to the Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk path to Marsh Hermit, full dialogue, Whispering Stones, return to Ashen Isle [phase]
-- [ ] AGENTS.md "Directory layout" tree updated to include `docs/tilesets/` [phase]
-- [ ] AGENTS.md "Depth map" updated to insert "Decorations | 2 | main" row between Tiles and Props [phase]
-- [ ] AGENTS.md "File ownership" rows updated for: `data/areas/types.ts` (`AreaDefinition.decorations`, `DecorationDefinition`), `scenes/GameScene.ts` (`renderDecorations()`), `data/areas/ashen-isle.ts` and `fog-marsh.ts` (mention the redesigned compositions), `tools/editor/src/mapRenderer.ts` (decoration layer rendering) [phase]
-- [ ] AGENTS.md "Behavior rules" gains a "Decorations" entry mirroring the existing "Decorative props (non-blocking)" entry — describing tile-snapped, depth 2, atlas-frame literal, no collision contribution, missing-frame warn-and-skip [phase]
-- [ ] **Loop-invariant audit (Learning EP-01):** decorations are created once at area load, not per-frame; no `update()` work added [phase]
+- [x] `npx tsc --noEmit - [ ] `npx tsc --noEmit && npm run build` passes- [ ] `npx tsc --noEmit && npm run build` passes npm run build` passes [phase]
+- [x] `cd tools/editor - [ ] `cd tools/editor && npm run build` passes [phase]- [ ] `cd tools/editor && npm run build` passes [phase] npm run build` passes [phase]
+- [x] No console errors during 60 seconds of play covering: spawn on Ashen Isle, walk the path to the Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk path to Marsh Hermit, full dialogue, Whispering Stones, return to Ashen Isle [phase]
+- [x] AGENTS.md "Directory layout" tree updated to include `docs/tilesets/` [phase]
+- [x] AGENTS.md "Depth map" updated to insert "Decorations | 2 | main" row between Tiles and Props [phase]
+- [x] AGENTS.md "File ownership" rows updated for: `data/areas/types.ts` (`AreaDefinition.decorations`, `DecorationDefinition`), `scenes/GameScene.ts` (`renderDecorations()`), `data/areas/ashen-isle.ts` and `fog-marsh.ts` (mention the redesigned compositions), `tools/editor/src/mapRenderer.ts` (decoration layer rendering) [phase]
+- [x] AGENTS.md "Behavior rules" gains a "Decorations" entry mirroring the existing "Decorative props (non-blocking)" entry — describing tile-snapped, depth 2, atlas-frame literal, no collision contribution, missing-frame warn-and-skip [phase]
+- [x] **Loop-invariant audit (Learning EP-01):** decorations are created once at area load, not per-frame; no `update()` work added [phase]
 
 ### Golden principles (phase-relevant)
 

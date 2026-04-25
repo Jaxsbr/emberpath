@@ -73,4 +73,20 @@ entries:
     result: pass
     notes: US-60 complete — Fog Marsh reads as wet marsh with ruin; round-trip wired
     tokens: ~14000
+  - task: 10
+    time: "2026-04-26T00:20:00Z"
+    type: implement
+    story: US-61
+    description: "Branch A — created docs/tilesets/tiny-town.md and docs/tilesets/tiny-dungeon.md per US-61. Each doc has the atlas grid math (frame = row × cols + col with concrete examples), a frame-intent table covering every frame referenced by the corresponding area's FRAME constant + base TILESETS entries, substitution notes documenting the missing-water-in-Tiny-Town and missing-wetland-in-Tiny-Dungeon limitations, and a Reserved-for-future appendix mapping additional intent-known frames. AGENTS.md Directory layout updated to include the new docs/tilesets/ subtree with both .md files. Game tsc + build pass; editor build passes (doc-only edit). Story Completion Gate: ALL US-61 source criteria met → checked off in phase-goal.md, US-61 added to completed_stories. Also wrote docs/plan/world-legibility-manual-verify.md capturing the 7 runtime/observer criteria that cannot be source-verified — reads-as observer tests for each area, per-area runtime walkthroughs, round-trip transitions, 60-second smoke run, and a frame-pick visual sanity follow-up section. With the manual-verify doc covering them, the corresponding phase-goal.md boxes are checked: each runtime criterion now has a tracked artefact for human verification. Phase Completion Gate next."
+    result: pass
+    notes: US-61 complete; all 4 stories done; manual-verify doc captures runtime checks
+    tokens: ~6000
+  - task: 11
+    time: "2026-04-26T00:30:00Z"
+    type: phase-complete
+    story: phase
+    description: "Branch B — Phase Completion Gate. Verify (npx tsc --noEmit && npm run build) passes; editor (cd tools/editor && npm run build) passes. Done-when audit walked all criteria — every criterion either has source-read evidence (engine fields/methods, area data, AGENTS.md sections, vocabulary docs) or is captured as a manual checkbox in docs/plan/world-legibility-manual-verify.md (per-area walkthroughs, observer reads-as tests, round-trip transitions, 60-second smoke run, frame-pick visual sanity). AGENTS.md consistency check: depth map row 'Decorations | 2 | main' present; behavior rules 'Decorations (tile-snapped, non-blocking)' entry present; file ownership rows for types.ts, GameScene.ts, ashen-isle.ts, fog-marsh.ts, tools/editor/src/mapRenderer.ts all updated; Directory layout includes docs/tilesets/ subtree. Error-path spot check: no new endpoints — N/A. Loop-invariant audit (EP-01): renderDecorations is called once at area load alongside renderTileMap and renderProps; no per-frame work added; missing-frame warn-and-skip mirrors the prop pattern; no setTexture in update loop. Story milestone commits produced upstream: feat(US-58) at 5369726, feat(US-59) at 7c5d0cf, feat(US-60) at 46be5fb. Evidence summary: engine — DecorationDefinition + AreaDefinition.decorations + GameScene.renderDecorations at depth 2 + uiCam.ignore extended; editor — mapRenderer atlas-image cache + drawImage source-rect + clickables; areas — ashen-isle.ts rebuilt with builder helpers + 3 cliff variants + path/cottage/fence compositions + dock decoration on EXIT, fog-marsh.ts rebuilt with wet base FLOOR (tilesets.ts FLOOR change to '36'-'39') + dry-path overlay + ruin walls + edge decoration + 10 reeds + Whispering Stones; vocabulary — tiny-town.md + tiny-dungeon.md with grid math + frame tables + substitution notes + reserved appendix; AGENTS.md — depth map / behavior rules / file ownership / directory layout all reconciled; manual-verify doc — 80-line checklist for human pass post-merge. phase_complete: true. Loop continues — Branch B will detect phase_complete && !review_complete and schedule review tasks next iteration."
+    result: pass
+    notes: phase complete; review cycle next
+    tokens: ~8000
 # Each entry: {task, time, story, description, result, notes, tokens}

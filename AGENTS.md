@@ -86,6 +86,10 @@ assets/
       static/          # 8 single-frame PNGs: north.png / north-east.png / ... / north-west.png
       portrait.png     # 1024×1024 dialogue-UI portrait (pixel-art; nearest-filter)
     old-man/           # Same shape as marsh-hermit; portrait.png is painterly (linear-filter)
+docs/
+  tilesets/            # Per-tileset frame-intent vocabulary (US-61) — one file per atlas
+    tiny-town.md       # Frames used by ashen-isle.ts + reserved-for-future appendix
+    tiny-dungeon.md    # Frames used by fog-marsh.ts + reserved-for-future appendix
 tools/
   editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
     src/

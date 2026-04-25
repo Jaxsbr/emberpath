@@ -23,7 +23,7 @@ config:
 state:
   # --- Lifecycle (owner: iterator) ---
   phase: world-legibility
-  phase_complete: false
+  phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-58, US-59, US-60]
+  completed_stories: [US-58, US-59, US-60, US-61]
