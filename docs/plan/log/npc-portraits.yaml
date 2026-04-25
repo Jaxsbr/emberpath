@@ -1,0 +1,4 @@
+phase: "npc-portraits"
+started: "2026-04-25T00:30:01Z"
+entries:
+# Each entry: {task, time, story, description, result, notes, tokens}
