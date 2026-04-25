@@ -24,12 +24,12 @@ The Tiny Town and Tiny Dungeon Kenney atlases already contain the needed houses,
 
 #### Structural — engine (US-58)
 
-- [ ] `AreaDefinition.decorations: DecorationDefinition[]` exists in `src/data/areas/types.ts` (verified: source read) [US-58]
-- [ ] `DecorationDefinition` has exactly `{ col, row, spriteFrame }` (verified: source read) [US-58]
-- [ ] `GameScene.renderDecorations()` exists and is called in area-load order after `renderTileMap` and before `renderProps` (or alongside; depth ordering is what matters) [US-58]
-- [ ] Decoration sprites render at depth 2; depth map in AGENTS.md is updated to insert "Decorations | 2 | main" between "Tiles | 0" and "Props | 3" [US-58]
-- [ ] Missing-frame decoration logs a warning naming `(col, row)` and the missing frame, then skips (verified: source read of the warn-and-skip branch + a deliberate dev test entry with a bogus frame) [US-58]
-- [ ] No collision contribution from decorations — `collision.ts` is not consulted for decoration cells (verified: source read; player walks through a decoration tile placed on a FLOOR cell) [US-58]
+- [x] `AreaDefinition.decorations: DecorationDefinition[]` exists in `src/data/areas/types.ts` (verified: source read) [US-58]
+- [x] `DecorationDefinition` has exactly `{ col, row, spriteFrame }` (verified: source read) [US-58]
+- [x] `GameScene.renderDecorations()` exists and is called in area-load order after `renderTileMap` and before `renderProps` (or alongside; depth ordering is what matters) [US-58]
+- [x] Decoration sprites render at depth 2; depth map in AGENTS.md is updated to insert "Decorations | 2 | main" between "Tiles | 0" and "Props | 3" [US-58]
+- [x] Missing-frame decoration logs a warning naming `(col, row)` and the missing frame, then skips (verified: source read of the warn-and-skip branch + a deliberate dev test entry with a bogus frame) [US-58]
+- [x] No collision contribution from decorations — `collision.ts` is not consulted for decoration cells (verified: source read; player walks through a decoration tile placed on a FLOOR cell) [US-58]
 
 #### Structural — Ashen Isle redesign (US-59)
 
@@ -80,13 +80,13 @@ Each reads-as is paired with a mechanism proxy, per phase rule.
 
 #### Editor sync
 
-- [ ] `tools/editor/src/mapRenderer.ts` renders the decoration layer on top of the base tile grid, before NPC circles and trigger overlays. Verified by opening the editor and seeing the redesigned Ashen Isle layout (path, houses, fence, water edge, dock) match what the game shows. [US-58, US-59]
-- [ ] `cd tools/editor && npm run build` succeeds with the new types [US-58]
+- [x] `tools/editor/src/mapRenderer.ts` renders the decoration layer on top of the base tile grid, before NPC circles and trigger overlays. Verified by opening the editor and seeing the redesigned Ashen Isle layout (path, houses, fence, water edge, dock) match what the game shows. [US-58, US-59]
+- [x] `cd tools/editor && npm run build` succeeds with the new types [US-58]
 
 #### Error paths
 
-- [ ] A decoration with a bogus `spriteFrame` does NOT crash the area load — only logs a warning and skips (verified by adding a deliberate temp entry with `spriteFrame: 'bogus'`, observing console + visible missing decoration, then removing it) [US-58]
-- [ ] A decoration on a coordinate outside `(mapCols, mapRows)` is not crashing — either ignored with a warning OR rendered off-grid harmlessly. Document the chosen behaviour in `renderDecorations` source comment. [US-58]
+- [x] A decoration with a bogus `spriteFrame` does NOT crash the area load — only logs a warning and skips (verified by adding a deliberate temp entry with `spriteFrame: 'bogus'`, observing console + visible missing decoration, then removing it) [US-58]
+- [x] A decoration on a coordinate outside `(mapCols, mapRows)` is not crashing — either ignored with a warning OR rendered off-grid harmlessly. Document the chosen behaviour in `renderDecorations` source comment. [US-58]
 
 #### Invariants
 
