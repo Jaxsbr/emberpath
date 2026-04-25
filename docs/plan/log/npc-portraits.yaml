@@ -97,4 +97,12 @@ entries:
     result: pass
     notes: editor sync done; both build targets pass
     tokens: ~3000
+  - task: 13
+    time: "2026-04-25T02:35:00Z"
+    type: implement
+    story: phase
+    description: "Branch B+A — AGENTS.md remaining phase-tagged updates. Edited four sections: (1) File ownership row for scenes/GameScene.ts — appended portrait preload + load.complete LINEAR filter override description. (2) File ownership row for systems/dialogue.ts — replaced terse 'Dialogue UI...' with extended description covering portrait id resolution (`node.portraitId ?? script.portraitId ?? null`), anchored origin (0,1), mobile clamp, conditional speaker offset, four-branch setTexture guard, error fallback, lifecycle parity. (3) Behavior rules Dialogue entry — appended portrait paragraph describing optional portraitId on script and node, anchored render, mobile-width clamp, speaker conditional offset, no-portrait fallback unchanged, EP-01 no-flicker guarantee. (4) Scaling tuning guide — appended PORTRAIT_DESIGN_SIZE and PORTRAIT_MOBILE_WIDTH_FRACTION to the dialogue.ts tuning-knob list. Verify (tsc + build) passes; no regressions. AGENTS.md is now consistent with shipped portrait code."
+    result: pass
+    notes: AGENTS.md fully consistent with shipped portrait phase
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
