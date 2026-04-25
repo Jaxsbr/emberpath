@@ -41,4 +41,12 @@ entries:
     result: pass
     notes: schema + data wiring complete; US-56 partially advanced
     tokens: ~5000
+  - task: 6
+    time: "2026-04-25T01:20:00Z"
+    type: investigate
+    story: US-56
+    description: "Branch B — re-investigated. Verify still passes. Done-when walk: schema + data + registry + asset criteria met; remaining US-56 criteria are GameScene preload iteration over portrait registry, LINEAR filter override for old-man, AGENTS.md updates, editor sync. Read GameScene.ts:54-92 — preload structure follows the same pattern (iterate getNpcSpriteIds(), load by key). Plan for task 7: insert a portrait-load loop right after the NPC sprite preload block (after line 91) iterating getNpcPortraitIds() and loading 'npc-portrait-<id>' from `npc/<id>/<def.file>`; add a one-time `this.load.once('complete', ...)` callback inside preload that walks NPC_PORTRAITS and calls setFilter(LINEAR) for entries with filter: 'linear'. Spec allows either preload-callback or create()-time filter application — preload callback chosen because it co-locates the filter override with the load (single concern in one spot). NPC_PORTRAITS is already imported into npcSprites.ts; GameScene already imports NPC_SPRITES + helpers from that module. Queued task 7."
+    result: pass
+    notes: ready to wire portrait preload + LINEAR filter override
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

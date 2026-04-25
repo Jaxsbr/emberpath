@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: null
+  task_number: 7
+  next_task: "[US-56] In src/scenes/GameScene.ts: import NPC_PORTRAITS + getNpcPortraitIds from '../systems/npcSprites'. Add a portrait-load loop after the existing NPC sprite preload block (after line 91): for each id in getNpcPortraitIds(), this.load.image('npc-portrait-<id>', `npc/<id>/<def.file>`). After the loops, register `this.load.once('complete', ...)` which iterates NPC_PORTRAITS and calls `this.textures.get('npc-portrait-<id>').setFilter(Phaser.Textures.FilterMode.LINEAR)` ONLY for entries with filter: 'linear' — entries with filter: 'nearest' inherit the global pixelArt: true default and need no per-texture override."
   last_result: pass
   consecutive_fails: 0
 
