@@ -25,4 +25,12 @@ entries:
     result: pass
     notes: engine in place; editor mapRenderer + AGENTS.md updates pending
     tokens: ~6000
+  - task: 4
+    time: "2026-04-25T23:05:00Z"
+    type: investigate
+    story: US-58
+    description: "Branch A — executed queued [US-58] editor investigate. Read tools/editor/src/mapRenderer.ts (313 lines). Render order today: axis labels → flat-colored tile grid (floorColor/wallColor) → grid lines → trigger zones (color-coded translucent fills) → exit zones (orange) → props (small orange dots, comment notes 'between exits and NPCs') → player spawn (white diamond) → NPCs (filled circles with wander/awareness rings + name label) → click handler. Decorations should slot AFTER base tile grid + grid lines and BEFORE trigger zones — this puts them visually integrated with the map background rather than overlaid as an annotation. The 'match what the game shows' done-when criterion rules out flat-color dots; need actual sprite frames drawn from the atlas. Confirmed the editor's vite.config.ts publicDir is ../../assets (same as the game's), so /tilesets/<id>/tilemap.png resolves identically in the editor's dev server and build. Atlas grid info: both tiny-town and tiny-dungeon are 12 cols × 11 rows of 16×16 frames (per AGENTS.md directory layout note). Frame index n → source rect (n%12*16, floor(n/12)*16, 16, 16). Async load handled via module-level Image() instances + lastRender cache that triggers an automatic re-render when an atlas finishes loading after the first renderMap call. Props are out of scope for this phase — keep as dots. Queued task 5 — single coherent implement commit."
+    result: pass
+    notes: editor render pipeline understood; sprite-from-atlas approach confirmed feasible
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
