@@ -33,4 +33,12 @@ entries:
     result: pass
     notes: continued investigation; ready to wire types + scripts
     tokens: ~5000
+  - task: 5
+    time: "2026-04-25T01:10:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — implemented dialogue schema portraitId + NPC wiring. Added optional portraitId?: string to DialogueNode and DialogueScript in src/data/areas/types.ts (one line each). Wired portraitId: 'old-man' on 'old-man-intro' DialogueScript in ashen-isle.ts (between startNodeId and nodes). Wired portraitId: 'marsh-hermit' on 'marsh-hermit-intro' in fog-marsh.ts at the same position. Whispering Stones script in fog-marsh.ts left untouched (no portraitId — verifies the optional-case spec criterion). Verify (tsc + build) passes; no regressions vs baseline. Quality checks pass (no test files, no try/except, no endpoint additions; AGENTS.md not yet updated but is queued as a [phase] task). Story gate: US-56 schema/data criteria now met — pending GameScene preload + LINEAR filter override + AGENTS.md updates before US-56 closes."
+    result: pass
+    notes: schema + data wiring complete; US-56 partially advanced
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}

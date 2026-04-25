@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-56] Add optional portraitId?: string to DialogueNode and DialogueScript in src/data/areas/types.ts. Wire portraitId: 'old-man' on the 'old-man-intro' DialogueScript in src/data/areas/ashen-isle.ts (insert between startNodeId and nodes). Wire portraitId: 'marsh-hermit' on 'marsh-hermit-intro' in src/data/areas/fog-marsh.ts at the same position. Leave 'whispering-stones' script untouched (no portraitId — verifies optional case)."
+  task_number: 6
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
