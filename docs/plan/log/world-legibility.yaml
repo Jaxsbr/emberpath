@@ -89,4 +89,28 @@ entries:
     result: pass
     notes: phase complete; review cycle next
     tokens: ~8000
+  - task: 12
+    time: "2026-04-26T00:40:00Z"
+    type: review
+    story: phase
+    description: "Branch B — phase_complete && !review_complete && review_stage null. Pushed branch to origin. Created PR https://github.com/Jaxsbr/emberpath/pull/16 via gh pr create (base main, head build/world-legibility). Body summarises all 4 stories, files touched, done-when evidence, and a manual-verify test plan referencing docs/plan/world-legibility-manual-verify.md. pr_number: 16 stored. review_stage advanced to pr_created."
+    result: pass
+    notes: PR #16 created
+    tokens: ~3000
+  - task: 13
+    time: "2026-04-26T00:50:00Z"
+    type: review
+    story: phase
+    description: "Branch A — auto-review posted as a single summary comment on PR #16 (mirrors the npc-portraits flow where GitHub line resolution prevented inline comments). Triage: 0 critical, 4 concerns, 2 nits. Concerns: (1) PROVISIONAL frame picks need visual verification — covered by manual-verify doc; (2) tiny-dungeon FLOOR remap may shift npc-portraits manual-verify baseline — noted for follow-up; (3) editor mapRenderer silently skips decorations on unknown-to-editor tilesets — recommended a warn-once fix; (4) NPC wanderRadius reduced from 2 to 1 — deliberate but flagged. Nits: (5) builder helpers duplicated between area files; (6) ashen-isle row 37 W vs schematic path. review_stage advanced to review_posted."
+    result: pass
+    notes: 4 concerns + 2 nits posted
+    tokens: ~5000
+  - task: 14
+    time: "2026-04-26T01:00:00Z"
+    type: review
+    story: phase
+    description: "Branch A — handle-pr-review on PR #16. Triage: fixed concern #3 (editor unknown-tileset warn-once) — added warnedTilesets Set + console.warn in mapRenderer.ts when area.tileset has no ATLAS_GRID entry and area.decorations is non-empty; committed as fix(US-58). Skipped concern #1 (PROVISIONAL picks — manual-verify covers + each is one-line swappable), concern #2 (npc-portraits manual-verify drift — followup task for later phase, no code action here), concern #4 (wanderRadius — revisit during play-testing), nit #5 (helper duplication — acceptable for two consumers, comment flags for future extraction), nit #6 (row 37 W vs schematic — engine safety wins, cosmetic only). Editor build passes after fix. review_complete set to true. Posted phase-review-complete summary comment to PR 16."
+    result: pass
+    notes: 1 fixed (editor warning), 5 skipped (all hedged); review cycle closed
+    tokens: ~4000
 # Each entry: {task, time, story, description, result, notes, tokens}
