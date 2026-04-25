@@ -98,6 +98,7 @@ export const fogMarsh: AreaDefinition = {
     'marsh-hermit-intro': {
       id: 'marsh-hermit-intro',
       startNodeId: 'greeting',
+      portraitId: 'marsh-hermit',
       nodes: [
         {
           id: 'greeting',

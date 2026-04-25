@@ -30,12 +30,14 @@ export interface DialogueNode {
   text: string;
   nextId?: string;
   choices?: DialogueChoice[];
+  portraitId?: string;
 }
 
 export interface DialogueScript {
   id: string;
   startNodeId: string;
   nodes: DialogueNode[];
+  portraitId?: string;
 }
 
 export interface StoryBeat {

@@ -112,6 +112,7 @@ export const ashenIsle: AreaDefinition = {
     'old-man-intro': {
       id: 'old-man-intro',
       startNodeId: 'greeting',
+      portraitId: 'old-man',
       nodes: [
         {
           id: 'greeting',
