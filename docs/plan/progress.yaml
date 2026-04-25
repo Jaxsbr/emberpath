@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-56] Investigate: read src/systems/npcSprites.ts (current NPC_SPRITES shape, exports), src/data/areas/types.ts (DialogueScript + DialogueNode declarations), src/scenes/GameScene.ts (preload iteration over NPC_SPRITES + create/registerAnimations pattern), src/systems/dialogue.ts (UI-element ownership lifecycle). Output the precise diff plan for the next US-56 implement task: (a) copy portrait source files to assets/npc/<id>/portrait.png; (b) add portrait registry (NPC_PORTRAITS or extend NPC_SPRITES) with per-id { file, filter } and 'square aspect' inline comment; (c) add optional portraitId?: string to DialogueScript and DialogueNode in types.ts; (d) wire portraitId on Old Man and Marsh Hermit dialogue scripts; (e) confirm Whispering Stones script remains portrait-less."
   last_result: pass
   consecutive_fails: 0
 

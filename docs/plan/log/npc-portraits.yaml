@@ -1,4 +1,12 @@
 phase: "npc-portraits"
 started: "2026-04-25T00:30:01Z"
 entries:
+  - task: 1
+    time: "2026-04-25T00:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — phase start. Read AGENTS.md (current; reflects npc-behavior shipping). Read phase-goal.md (transposed from docs/product/phases/npc-portraits.md, US-56 + US-57, 2 stories). Verify (npx tsc --noEmit && npm run build) passes — establishes baseline. Confirmed source portrait assets exist at /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/portrait.png. Phase classified server/schema/cross-cutting (modifies shared types DialogueScript/DialogueNode in src/data/areas/types.ts, adds portrait registry consumed by GameScene preload + DialogueSystem render, touches multiple area data files). Per investigate-first mandate, queued an investigate task (not implement) to audit current src/systems/npcSprites.ts NPC_SPRITES shape, src/data/areas/types.ts DialogueScript/DialogueNode declaration sites, src/scenes/GameScene.ts preload + create iteration patterns, and src/systems/dialogue.ts UI-element ownership/lifecycle, then produce a precise diff plan for the first US-56 implement task (asset copy + portrait registry + optional portraitId fields + wiring portraitId into the two NPC dialogue scripts)."
+    result: pass
+    notes: phase classified server/schema/cross-cutting; investigate-first enforced
+    tokens: ~30000
 # Each entry: {task, time, story, description, result, notes, tokens}
