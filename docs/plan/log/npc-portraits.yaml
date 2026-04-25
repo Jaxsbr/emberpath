@@ -137,4 +137,20 @@ entries:
     result: pass
     notes: 2 concerns + 1 nit posted as a summary review comment
     tokens: ~6000
+  - task: 18
+    time: "2026-04-25T03:25:00Z"
+    type: review
+    story: phase
+    description: "Branch B — phase_complete && review_stage=review_posted → queued [review] handle-pr-review pr=15 auto=true. review_stage stays at review_posted until the handle task executes."
+    result: pass
+    notes: queued handle-pr-review
+    tokens: ~1000
+  - task: 19
+    time: "2026-04-25T03:30:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed sabs:handle-pr-review pr=15 auto=true. GraphQL reviewThreads query returned 0 inline threads (the review-pr task posted findings as a single summary body comment because GitHub returned 'Line could not be resolved' on the inline comment attempt). Triaged the body-summary findings instead: Concern 1 (registry-miss/missing-texture log noise on repeat invalid id) → Skip per the reviewer's explicit 'Open to leaving as-is for simplicity' hedge — log noise only fires during a typo-fix cycle, not in production. Concern 2 (redrawBox→applyPortrait double-runs reposition pair) → Skip — reviewer noted 'visually invisible (sync code; nothing renders between calls)' and the reposition methods are O(1) updates. Nit (editor deferral comment six lines vs 'one-line') → Skip per reviewer's 'Skip if you prefer the longer rationale for future maintainers' hedge — the comment serves a maintenance purpose. No code fixes applied. Re-ran verify (npx tsc --noEmit && npm run build) + editor build — both pass post-triage. review_complete set to true. Posted phase-review-complete summary comment to PR 15."
+    result: pass
+    notes: 0 fixed, 3 skipped (all 3 explicitly hedged); review cycle closed
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
