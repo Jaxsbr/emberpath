@@ -13,6 +13,32 @@ const TRIGGER_COLORS: Record<string, string> = {
   exit: '#ffaa44',
 };
 
+// Source-atlas grid info for the decoration sprite renderer below. Both
+// Kenney atlases used by the game are 12×11 grids of 16×16 frames; the editor
+// reads the same /tilesets/<id>/tilemap.png path the game does (publicDir is
+// shared via vite.config.ts).
+const ATLAS_GRID = {
+  'tiny-town': { url: '/tilesets/tiny-town/tilemap.png', cols: 12, frameSize: 16 },
+  'tiny-dungeon': { url: '/tilesets/tiny-dungeon/tilemap.png', cols: 12, frameSize: 16 },
+} as const;
+type AtlasId = keyof typeof ATLAS_GRID;
+
+// Atlases are loaded once at module init and cached. While an atlas is still
+// loading on the very first renderMap call, decorations using that atlas are
+// silently skipped this pass; the onload handler re-runs the most recent
+// renderMap call so the decoration layer paints in as soon as it can.
+const atlases: Record<string, HTMLImageElement> = {};
+let lastRender: { container: HTMLElement; area: AreaDefinition } | null = null;
+
+for (const [id, info] of Object.entries(ATLAS_GRID)) {
+  const img = new Image();
+  img.onload = () => {
+    if (lastRender) renderMap(lastRender.container, lastRender.area);
+  };
+  img.src = info.url;
+  atlases[id] = img;
+}
+
 interface Clickable {
   x: number;
   y: number;
@@ -28,6 +54,7 @@ function hexToCSS(hex: number): string {
 }
 
 export function renderMap(container: HTMLElement, area: AreaDefinition): void {
+  lastRender = { container, area };
   container.innerHTML = '';
   clickables = [];
 
@@ -80,6 +107,38 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     ctx.moveTo(LABEL_MARGIN, LABEL_MARGIN + row * CELL);
     ctx.lineTo(LABEL_MARGIN + area.mapCols * CELL, LABEL_MARGIN + row * CELL);
     ctx.stroke();
+  }
+
+  // Draw decorations (between base tile grid and trigger zones — matches the
+  // game's depth ordering: tiles at depth 0, decorations at depth 2, props at
+  // depth 3, with triggers/exits as editor-only annotations on top).
+  const atlasInfo = (ATLAS_GRID as Record<string, { url: string; cols: number; frameSize: number }>)[area.tileset];
+  const atlasImg = atlases[area.tileset];
+  if (atlasInfo && atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0) {
+    for (const dec of area.decorations) {
+      const frameIdx = Number(dec.spriteFrame);
+      if (!Number.isFinite(frameIdx)) continue;
+      const srcX = (frameIdx % atlasInfo.cols) * atlasInfo.frameSize;
+      const srcY = Math.floor(frameIdx / atlasInfo.cols) * atlasInfo.frameSize;
+      const dx = LABEL_MARGIN + dec.col * CELL;
+      const dy = LABEL_MARGIN + dec.row * CELL;
+      // Disable image smoothing so pixel-art frames stay crisp at 1:1 scale.
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(atlasImg, srcX, srcY, atlasInfo.frameSize, atlasInfo.frameSize, dx, dy, CELL, CELL);
+
+      clickables.push({
+        x: dx,
+        y: dy,
+        w: CELL,
+        h: CELL,
+        data: {
+          type: 'decoration',
+          col: dec.col,
+          row: dec.row,
+          spriteFrame: dec.spriteFrame,
+        },
+      });
+    }
   }
 
   // Draw trigger zones
