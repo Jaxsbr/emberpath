@@ -73,4 +73,12 @@ entries:
     result: pass
     notes: AGENTS.md now consistent with shipped portrait registry + assets
     tokens: ~3000
+  - task: 10
+    time: "2026-04-25T02:00:00Z"
+    type: investigate
+    story: US-57
+    description: "Branch B — Read full src/systems/dialogue.ts (587 lines). DialogueSystem owns boxGraphics, speakerText, dialogueText, choiceTexts/choiceBgs, confirmBg/confirmLabel, continueHint as nullable private fields with consistent lifecycle: createBox() at line 418 builds the basic UI in start(); showNode() at line 195 transitions per-node; redrawBox() at 458 repositions on resize+choice expansion; handleResize() at 483 wraps redrawBox + choice rows; close() at 550 destroys all UI elements + resets state; clearChoices() at 525 destroys choice-only UI. ignoreOnMainCamera helper at 572. Plan for the US-57 implement task: add PORTRAIT_DESIGN_SIZE=96 and PORTRAIT_MOBILE_WIDTH_FRACTION=0.22 module constants; portraitImage: Image|null + currentPortraitId: string|null fields; resolvePortraitId(node) helper (node.portraitId ?? script.portraitId ?? null); applyPortrait(id) with four-branch guard (null→null no-op, null→id create, id→same no-op, id→other setTexture swap, *→missing-id error log + destroy fallback); repositionPortrait() (pos = (s(BOX_PADDING), boxY) at origin (0,1), display size = min(s(PORTRAIT_DESIGN_SIZE), canvasWidth*PORTRAIT_MOBILE_WIDTH_FRACTION)) and repositionSpeakerLabel() (conditional offset right of portrait when active). Wire applyPortrait + repositionSpeakerLabel into showNode (after node assignment, after redrawBox); into redrawBox (after speaker reposition — speaker label needs the conditional offset); into handleResize via redrawBox path; into close() for cleanup. Existing start() idempotency guard (line 103: if (active) return) prevents double-create. NPC_PORTRAITS + hasNpcPortrait imported from npcSprites for registry validation. Queued task 11 — single coherent commit since the changes are tightly coupled (helpers + lifecycle hooks + speaker conditional offset) and splitting would leave broken intermediate states (e.g. portraitImage created but speaker not offset)."
+    result: pass
+    notes: ready to implement US-57 dialogue rendering as one coherent commit
+    tokens: ~7000
 # Each entry: {task, time, story, description, result, notes, tokens}
