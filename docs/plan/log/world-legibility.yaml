@@ -33,4 +33,12 @@ entries:
     result: pass
     notes: editor render pipeline understood; sprite-from-atlas approach confirmed feasible
     tokens: ~5000
+  - task: 5
+    time: "2026-04-25T23:15:00Z"
+    type: implement
+    story: US-58
+    description: "Branch A — implemented editor decoration sprite rendering. Added ATLAS_GRID table (tiny-town, tiny-dungeon both 12×11×16) and module-level atlases cache + lastRender cache (the onload handler re-runs the most recent renderMap call so decorations appear as soon as atlases finish loading). Added decoration pass to renderMap between base tile grid and trigger zones, drawImage source rect computed from frame index with imageSmoothingEnabled=false for crisp pixel-art rendering at 1:1 atlas:editor scale. Decorations added to clickables list with type:'decoration' so authors can inspect them in the detail panel. Atlas served via the editor's publicDir which mirrors the game's. Verify: game npx tsc --noEmit + npm run build pass; editor cd tools/editor && npm run build passes. No regressions vs baseline. Quality checks pass (no test changes, no try/except, no new endpoints, AGENTS.md not yet describes decoration layer but is not contradictory — that update is queued as the next [US-58]+[phase] task). Story gate: US-58 still has the [US-58] AGENTS.md depth-map row criterion + the manual deliberate-bogus-frame verify (source-read sufficient per existing renderProps precedent) + several [phase] AGENTS.md updates pending. Not closing US-58 yet."
+    result: pass
+    notes: editor mapRenderer decoration sprites done; AGENTS.md depth-map row pending
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
