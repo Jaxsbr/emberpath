@@ -9,4 +9,12 @@ entries:
     result: pass
     notes: phase classified server/schema/cross-cutting; investigate-first enforced
     tokens: ~30000
+  - task: 2
+    time: "2026-04-25T00:40:00Z"
+    type: investigate
+    story: US-56
+    description: "Branch A — executed queued [US-56] investigate. Findings: (1) src/systems/npcSprites.ts: NpcSpriteDefinition has { idleFrameCount, walkFrameCount }; NPC_SPRITES record keyed by 'marsh-hermit' and 'old-man'; module exports hasNpcSprite() and getNpcSpriteIds(). Plan — extend in same file: add NpcPortraitDefinition { file: string; filter: 'nearest' | 'linear' } with inline 'square aspect 1024×1024' comment; add NPC_PORTRAITS record with marsh-hermit→nearest, old-man→linear; add hasNpcPortrait(id) and getNpcPortraitIds() helpers mirroring sprite pattern. (2) src/data/areas/types.ts: DialogueNode interface at line 27-33 has id/speaker/text/nextId?/choices?. DialogueScript at line 35-39 has id/startNodeId/nodes. Plan — add optional portraitId?: string to BOTH interfaces (node-level overrides script-level per spec). (3) src/scenes/GameScene.ts preload at line 54 iterates getNpcSpriteIds() and loads sprite frames. Plan for later impl task — iterate getNpcPortraitIds() and load each as 'npc-portrait-<id>' using registry's file field; use load.complete callback to setFilter(LINEAR) on the textures whose registry filter='linear'. (4) src/systems/dialogue.ts: DialogueSystem at line 23 owns boxGraphics/speakerText/dialogueText/choiceTexts/choiceBgs/confirmBg/confirmLabel/continueHint as nullable private fields; start() at 102, showNode() at 195, redrawBox + handleResize + close pattern in place. Plan for US-57 impl — add portraitImage: Image|null field with same lifecycle hooks. Queued task 3 — implement asset copy + portrait registry in npcSprites.ts (one concern: portrait infrastructure)."
+    result: pass
+    notes: investigation produced concrete diff plan for tasks 3-N
+    tokens: ~12000
 # Each entry: {task, time, story, description, result, notes, tokens}
