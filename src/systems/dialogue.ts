@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { DialogueScript, DialogueNode, DialogueChoice } from '../data/areas/types';
+import { hasNpcPortrait } from './npcSprites';
 
 const BOX_HEIGHT = 120;
 const BOX_PADDING = 12;
@@ -10,6 +11,12 @@ const CHARS_PER_SECOND = 30;
 const BOX_COLOR = 0x111122;
 const BOX_ALPHA = 0.9;
 const DEPTH = 200;
+
+// Portrait sizing — design pixel size on desktop, fraction-of-canvas clamp on mobile.
+// Portrait is square (registry assumes 1024×1024 source). Tuning lives here so the
+// AGENTS.md "Scaling tuning guide" stays the single source of truth for dialogue knobs.
+const PORTRAIT_DESIGN_SIZE = 96;
+const PORTRAIT_MOBILE_WIDTH_FRACTION = 0.22;
 
 // Mobile choice layout
 const MOBILE_CHOICE_HEIGHT = 44;
@@ -41,6 +48,13 @@ export class DialogueSystem {
   private choiceBgs: Phaser.GameObjects.Rectangle[] = [];
   private confirmBg: Phaser.GameObjects.Rectangle | null = null;
   private confirmLabel: Phaser.GameObjects.Text | null = null;
+
+  // Portrait — anchored above the box's top-left, bottom edge flush with box top.
+  // The Image is created once on first non-null portrait id and texture-swapped on
+  // node-portrait-id change to avoid a one-frame flicker (Learning EP-01: setTexture
+  // only fires when the resolved id actually changes).
+  private portraitImage: Phaser.GameObjects.Image | null = null;
+  private currentPortraitId: string | null = null;
 
   // Typewriter state
   private fullText = '';
@@ -85,6 +99,75 @@ export class DialogueSystem {
 
   private get canvasWidth(): number {
     return this.scene.scale.width;
+  }
+
+  private resolvePortraitId(node: DialogueNode): string | null {
+    return node.portraitId ?? this.script?.portraitId ?? null;
+  }
+
+  private getPortraitRenderSize(): number {
+    return Math.min(this.s(PORTRAIT_DESIGN_SIZE), this.canvasWidth * PORTRAIT_MOBILE_WIDTH_FRACTION);
+  }
+
+  // Four-branch guard so setTexture only fires when the resolved id actually
+  // changes (Learning EP-01 loop-invariant). Falls back to "no portrait rendered"
+  // on registry miss or missing texture — dialogue continues without crashing.
+  private applyPortrait(portraitId: string | null): void {
+    if (portraitId === this.currentPortraitId) return;
+
+    if (portraitId === null) {
+      this.portraitImage?.destroy();
+      this.portraitImage = null;
+      this.currentPortraitId = null;
+      this.repositionSpeakerLabel();
+      return;
+    }
+
+    if (!hasNpcPortrait(portraitId)) {
+      console.error(`Dialogue portrait id not in registry: ${portraitId}`);
+      this.portraitImage?.destroy();
+      this.portraitImage = null;
+      this.currentPortraitId = null;
+      this.repositionSpeakerLabel();
+      return;
+    }
+
+    const key = `npc-portrait-${portraitId}`;
+    if (!this.scene.textures.exists(key)) {
+      console.error(`Dialogue portrait texture missing: ${key}`);
+      this.portraitImage?.destroy();
+      this.portraitImage = null;
+      this.currentPortraitId = null;
+      this.repositionSpeakerLabel();
+      return;
+    }
+
+    if (this.portraitImage === null) {
+      this.portraitImage = this.scene.add.image(this.s(BOX_PADDING), this.boxY, key);
+      this.portraitImage.setOrigin(0, 1);
+      this.portraitImage.setScrollFactor(0);
+      this.portraitImage.setDepth(DEPTH);
+      this.ignoreOnMainCamera(this.portraitImage);
+    } else {
+      this.portraitImage.setTexture(key);
+    }
+    this.currentPortraitId = portraitId;
+    this.repositionPortrait();
+    this.repositionSpeakerLabel();
+  }
+
+  private repositionPortrait(): void {
+    if (!this.portraitImage) return;
+    const size = this.getPortraitRenderSize();
+    this.portraitImage.setPosition(this.s(BOX_PADDING), this.boxY);
+    this.portraitImage.setDisplaySize(size, size);
+  }
+
+  private repositionSpeakerLabel(): void {
+    if (!this.speakerText) return;
+    const baseX = this.s(BOX_PADDING);
+    const x = this.portraitImage ? baseX + this.portraitImage.displayWidth + this.s(8) : baseX;
+    this.speakerText.setPosition(x, this.boxY - this.s(20));
   }
 
   get isActive(): boolean {
@@ -199,6 +282,8 @@ export class DialogueSystem {
     // Reset box to normal height when showing a new node
     this.currentBoxHeight = BOX_HEIGHT;
     this.redrawBox();
+
+    this.applyPortrait(this.resolvePortraitId(node));
 
     if (this.speakerText) {
       this.speakerText.setText(node.speaker);
@@ -461,9 +546,13 @@ export class DialogueSystem {
     this.boxGraphics.fillStyle(BOX_COLOR, BOX_ALPHA);
     this.boxGraphics.fillRect(0, this.boxY, this.canvasWidth, this.s(this.currentBoxHeight));
 
+    // Portrait must reposition before the speaker label so the label's conditional
+    // x-offset reads the up-to-date portrait displayWidth.
+    this.repositionPortrait();
+
     // Reposition text elements to match new box position
     if (this.speakerText) {
-      this.speakerText.setPosition(this.s(BOX_PADDING), this.boxY - this.s(20));
+      this.repositionSpeakerLabel();
       this.speakerText.setFontSize(this.s(SPEAKER_FONT_SIZE));
     }
     if (this.dialogueText) {
@@ -559,6 +648,9 @@ export class DialogueSystem {
     this.dialogueText = null;
     this.continueHint?.destroy();
     this.continueHint = null;
+    this.portraitImage?.destroy();
+    this.portraitImage = null;
+    this.currentPortraitId = null;
     this.clearChoices();
     this.currentBoxHeight = BOX_HEIGHT;
     this.active = false;

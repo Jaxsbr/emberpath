@@ -1,6 +1,6 @@
 # Phase: npc-behavior
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -21,7 +21,7 @@ N/A — this phase introduces no API endpoints, user text input fields, or query
 
 ## Stories
 
-### US-52 — NPC sprite system & data model
+### US-52 — NPC sprite system & data model [Shipped]
 
 As a player, I want the Marsh Hermit and Old Man rendered as animated 8-direction characters instead of coloured rectangles, so that they read as living characters in the world rather than placeholder markers.
 
@@ -47,7 +47,7 @@ As a player, I want the Marsh Hermit and Old Man rendered as animated 8-directio
 
 ---
 
-### US-53 — Bounded wander with collision-aware path planning
+### US-53 — Bounded wander with collision-aware path planning [Shipped]
 
 As a player, I want NPCs to walk slowly around their spawn area in random 8-direction steps and pause to idle between steps, so that the world feels populated by characters who go about their day rather than statues fixed to a tile.
 
@@ -77,7 +77,7 @@ As a player, I want NPCs to walk slowly around their spawn area in random 8-dire
 
 ---
 
-### US-54 — Player awareness & dynamic facing
+### US-54 — Player awareness & dynamic facing [Shipped]
 
 As a player, I want NPCs to stop walking and turn to look at me when I get close, so that they feel aware of me as another presence in the world rather than going about their loop while I pass through.
 
@@ -104,7 +104,7 @@ As a player, I want NPCs to stop walking and turn to look at me when I get close
 
 ---
 
-### US-55 — Dialogue facing snap-and-hold
+### US-55 — Dialogue facing snap-and-hold [Shipped]
 
 As a player, I want the NPC to face me directly during conversation regardless of which side I approached them from, so that dialogue feels like the NPC is talking *to me* rather than reciting at the wall.
 

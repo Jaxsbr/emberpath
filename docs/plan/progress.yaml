@@ -22,7 +22,7 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: npc-behavior
+  phase: npc-portraits
   phase_complete: true
   status: running
 
@@ -35,10 +35,10 @@ state:
   # --- Review (owner: iterator) ---
   review_stage: review_posted
   review_complete: true
-  pr_number: 14
+  pr_number: 15
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-52, US-53, US-54, US-55]
+  completed_stories: [US-56, US-57]

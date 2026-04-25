@@ -1,0 +1,156 @@
+phase: "npc-portraits"
+started: "2026-04-25T00:30:01Z"
+entries:
+  - task: 1
+    time: "2026-04-25T00:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — phase start. Read AGENTS.md (current; reflects npc-behavior shipping). Read phase-goal.md (transposed from docs/product/phases/npc-portraits.md, US-56 + US-57, 2 stories). Verify (npx tsc --noEmit && npm run build) passes — establishes baseline. Confirmed source portrait assets exist at /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/portrait.png. Phase classified server/schema/cross-cutting (modifies shared types DialogueScript/DialogueNode in src/data/areas/types.ts, adds portrait registry consumed by GameScene preload + DialogueSystem render, touches multiple area data files). Per investigate-first mandate, queued an investigate task (not implement) to audit current src/systems/npcSprites.ts NPC_SPRITES shape, src/data/areas/types.ts DialogueScript/DialogueNode declaration sites, src/scenes/GameScene.ts preload + create iteration patterns, and src/systems/dialogue.ts UI-element ownership/lifecycle, then produce a precise diff plan for the first US-56 implement task (asset copy + portrait registry + optional portraitId fields + wiring portraitId into the two NPC dialogue scripts)."
+    result: pass
+    notes: phase classified server/schema/cross-cutting; investigate-first enforced
+    tokens: ~30000
+  - task: 2
+    time: "2026-04-25T00:40:00Z"
+    type: investigate
+    story: US-56
+    description: "Branch A — executed queued [US-56] investigate. Findings: (1) src/systems/npcSprites.ts: NpcSpriteDefinition has { idleFrameCount, walkFrameCount }; NPC_SPRITES record keyed by 'marsh-hermit' and 'old-man'; module exports hasNpcSprite() and getNpcSpriteIds(). Plan — extend in same file: add NpcPortraitDefinition { file: string; filter: 'nearest' | 'linear' } with inline 'square aspect 1024×1024' comment; add NPC_PORTRAITS record with marsh-hermit→nearest, old-man→linear; add hasNpcPortrait(id) and getNpcPortraitIds() helpers mirroring sprite pattern. (2) src/data/areas/types.ts: DialogueNode interface at line 27-33 has id/speaker/text/nextId?/choices?. DialogueScript at line 35-39 has id/startNodeId/nodes. Plan — add optional portraitId?: string to BOTH interfaces (node-level overrides script-level per spec). (3) src/scenes/GameScene.ts preload at line 54 iterates getNpcSpriteIds() and loads sprite frames. Plan for later impl task — iterate getNpcPortraitIds() and load each as 'npc-portrait-<id>' using registry's file field; use load.complete callback to setFilter(LINEAR) on the textures whose registry filter='linear'. (4) src/systems/dialogue.ts: DialogueSystem at line 23 owns boxGraphics/speakerText/dialogueText/choiceTexts/choiceBgs/confirmBg/confirmLabel/continueHint as nullable private fields; start() at 102, showNode() at 195, redrawBox + handleResize + close pattern in place. Plan for US-57 impl — add portraitImage: Image|null field with same lifecycle hooks. Queued task 3 — implement asset copy + portrait registry in npcSprites.ts (one concern: portrait infrastructure)."
+    result: pass
+    notes: investigation produced concrete diff plan for tasks 3-N
+    tokens: ~12000
+  - task: 3
+    time: "2026-04-25T00:50:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — implemented portrait registry + asset copy. cp /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/portrait.png -> assets/npc/<id>/portrait.png (868KB + 2.4MB, 1024x1024 each). Extended src/systems/npcSprites.ts: added NpcPortraitDefinition { file: string; filter: 'nearest'|'linear' } interface, NPC_PORTRAITS record (marsh-hermit→nearest, old-man→linear), hasNpcPortrait() + getNpcPortraitIds() helpers. Inline comment on the registry block documents the 1024×1024 square-aspect assumption + non-square out-of-scope. Verify (tsc + build) passes. No regression vs baseline (only bundle hash + build time differ). Quality checks: no-silent-pass + no-bare-except + error-path-coverage + agents-consistency — none applicable to this task; AGENTS.md is incomplete (portrait registry not yet documented) but not contradictory — that update is queued as its own [phase] task per phase-goal.md. Story gate: US-56 has many criteria still unmet (types, script wiring, preload, AGENTS.md). Not closing US-56 yet."
+    result: pass
+    notes: portrait infrastructure in place; registry consumers still pending
+    tokens: ~6000
+  - task: 4
+    time: "2026-04-25T01:00:00Z"
+    type: investigate
+    story: US-56
+    description: "Branch B — re-investigated state. Verify still passes; portrait registry + assets in place from task 3. Done-when walk: structural assets/registry criteria met (3 done); types/wiring/preload/AGENTS.md still pending. Confirmed the three relevant dialogue scripts in source: ashen-isle.ts:112 'old-man-intro' DialogueScript (startNodeId at line 114; portraitId belongs between id+startNodeId and nodes); fog-marsh.ts:98 'marsh-hermit-intro' DialogueScript (startNodeId at line 100); fog-marsh.ts:136 'whispering-stones' DialogueScript currently has NO portraitId (verifies optional case will be honoured). DialogueNode at types.ts:27-33 and DialogueScript at 35-39 — adding optional portraitId?: string to both is a single line each. Phase classification still server/schema/cross-cutting; investigation done in task 2 already pre-cleared this work item. Queued task 5 — single coherent unit: schema change in types.ts + wiring in two area files (small surface, fully audited)."
+    result: pass
+    notes: continued investigation; ready to wire types + scripts
+    tokens: ~5000
+  - task: 5
+    time: "2026-04-25T01:10:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — implemented dialogue schema portraitId + NPC wiring. Added optional portraitId?: string to DialogueNode and DialogueScript in src/data/areas/types.ts (one line each). Wired portraitId: 'old-man' on 'old-man-intro' DialogueScript in ashen-isle.ts (between startNodeId and nodes). Wired portraitId: 'marsh-hermit' on 'marsh-hermit-intro' in fog-marsh.ts at the same position. Whispering Stones script in fog-marsh.ts left untouched (no portraitId — verifies the optional-case spec criterion). Verify (tsc + build) passes; no regressions vs baseline. Quality checks pass (no test files, no try/except, no endpoint additions; AGENTS.md not yet updated but is queued as a [phase] task). Story gate: US-56 schema/data criteria now met — pending GameScene preload + LINEAR filter override + AGENTS.md updates before US-56 closes."
+    result: pass
+    notes: schema + data wiring complete; US-56 partially advanced
+    tokens: ~5000
+  - task: 6
+    time: "2026-04-25T01:20:00Z"
+    type: investigate
+    story: US-56
+    description: "Branch B — re-investigated. Verify still passes. Done-when walk: schema + data + registry + asset criteria met; remaining US-56 criteria are GameScene preload iteration over portrait registry, LINEAR filter override for old-man, AGENTS.md updates, editor sync. Read GameScene.ts:54-92 — preload structure follows the same pattern (iterate getNpcSpriteIds(), load by key). Plan for task 7: insert a portrait-load loop right after the NPC sprite preload block (after line 91) iterating getNpcPortraitIds() and loading 'npc-portrait-<id>' from `npc/<id>/<def.file>`; add a one-time `this.load.once('complete', ...)` callback inside preload that walks NPC_PORTRAITS and calls setFilter(LINEAR) for entries with filter: 'linear'. Spec allows either preload-callback or create()-time filter application — preload callback chosen because it co-locates the filter override with the load (single concern in one spot). NPC_PORTRAITS is already imported into npcSprites.ts; GameScene already imports NPC_SPRITES + helpers from that module. Queued task 7."
+    result: pass
+    notes: ready to wire portrait preload + LINEAR filter override
+    tokens: ~5000
+  - task: 7
+    time: "2026-04-25T01:30:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — wired portrait preload + LINEAR filter override in src/scenes/GameScene.ts. Imported NPC_PORTRAITS + getNpcPortraitIds. Added portrait-load loop after the NPC sprite block: iterate getNpcPortraitIds(), this.load.image('npc-portrait-<id>', `npc/<id>/<def.file>`). Registered this.load.once('complete', ...) which iterates NPC_PORTRAITS and calls textures.get(...).setFilter(Phaser.Textures.FilterMode.LINEAR) ONLY for entries with filter: 'linear'. nearest entries inherit global pixelArt:true default — no per-texture override. Verify (tsc + build) passes; only bundle-hash + size delta + build-time differ from baseline. No regressions. Quality checks pass. Story gate: most US-56 criteria met (assets, registry, schema, wiring, preload, filter); pending — AGENTS.md Directory layout + editor sync; US-56 variant baseline depends on US-57 rendering work. Adding-a-third-NPC criterion satisfied: ANY new NPC portrait is now (asset file + registry entry + dialogue script portraitId) — zero edits to GameScene/DialogueSystem."
+    result: pass
+    notes: portrait preload pipeline complete; rendering side (US-57) is next
+    tokens: ~5000
+  - task: 8
+    time: "2026-04-25T01:40:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — re-investigated AGENTS.md vs current code. Findings — Directory layout (lines 80-87) lists marsh-hermit/old-man with idle/walk/static subtrees but does NOT mention portrait.png. File ownership row for systems/npcSprites.ts (line 119) describes the sprite registry but not the new NPC_PORTRAITS registry. These are tagged [US-56] (Directory layout) and [phase] (npcSprites file-ownership row) per phase-goal.md. Other AGENTS.md updates ([phase]) — File ownership row for systems/dialogue.ts (portrait rendering), Behavior rules Dialogue entry (optional portraitId, anchored, mobile clamp), Scaling tuning guide (PORTRAIT_DESIGN_SIZE, PORTRAIT_MOBILE_WIDTH_FRACTION) — are deferred until US-57 implementation lands. Queued task 9 — AGENTS.md updates for the portrait registry/asset additions that are now true: directory layout adds portrait.png under each NPC, npcSprites.ts file-ownership row mentions NPC_PORTRAITS + helpers."
+    result: pass
+    notes: AGENTS.md edits scoped to what is currently true; dialogue/scaling sections deferred
+    tokens: ~5000
+  - task: 9
+    time: "2026-04-25T01:50:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — updated AGENTS.md per queued plan. Directory layout: added portrait.png line under each NPC subtree (marsh-hermit pixel-art/nearest, old-man painterly/linear noted in inline comments). File ownership row for systems/npcSprites.ts extended to mention NPC_PORTRAITS registry, NpcPortraitDefinition shape (square-aspect 1024×1024 assumed), hasNpcPortrait + getNpcPortraitIds. Verify (tsc + build) passes; no regressions. AGENTS.md sections deliberately NOT touched yet: file ownership row for dialogue.ts (portrait rendering not yet shipped), Behavior rules Dialogue entry, Scaling tuning guide. Those are queued for after US-57 lands so the docs match shipped behavior."
+    result: pass
+    notes: AGENTS.md now consistent with shipped portrait registry + assets
+    tokens: ~3000
+  - task: 10
+    time: "2026-04-25T02:00:00Z"
+    type: investigate
+    story: US-57
+    description: "Branch B — Read full src/systems/dialogue.ts (587 lines). DialogueSystem owns boxGraphics, speakerText, dialogueText, choiceTexts/choiceBgs, confirmBg/confirmLabel, continueHint as nullable private fields with consistent lifecycle: createBox() at line 418 builds the basic UI in start(); showNode() at line 195 transitions per-node; redrawBox() at 458 repositions on resize+choice expansion; handleResize() at 483 wraps redrawBox + choice rows; close() at 550 destroys all UI elements + resets state; clearChoices() at 525 destroys choice-only UI. ignoreOnMainCamera helper at 572. Plan for the US-57 implement task: add PORTRAIT_DESIGN_SIZE=96 and PORTRAIT_MOBILE_WIDTH_FRACTION=0.22 module constants; portraitImage: Image|null + currentPortraitId: string|null fields; resolvePortraitId(node) helper (node.portraitId ?? script.portraitId ?? null); applyPortrait(id) with four-branch guard (null→null no-op, null→id create, id→same no-op, id→other setTexture swap, *→missing-id error log + destroy fallback); repositionPortrait() (pos = (s(BOX_PADDING), boxY) at origin (0,1), display size = min(s(PORTRAIT_DESIGN_SIZE), canvasWidth*PORTRAIT_MOBILE_WIDTH_FRACTION)) and repositionSpeakerLabel() (conditional offset right of portrait when active). Wire applyPortrait + repositionSpeakerLabel into showNode (after node assignment, after redrawBox); into redrawBox (after speaker reposition — speaker label needs the conditional offset); into handleResize via redrawBox path; into close() for cleanup. Existing start() idempotency guard (line 103: if (active) return) prevents double-create. NPC_PORTRAITS + hasNpcPortrait imported from npcSprites for registry validation. Queued task 11 — single coherent commit since the changes are tightly coupled (helpers + lifecycle hooks + speaker conditional offset) and splitting would leave broken intermediate states (e.g. portraitImage created but speaker not offset)."
+    result: pass
+    notes: ready to implement US-57 dialogue rendering as one coherent commit
+    tokens: ~7000
+  - task: 11
+    time: "2026-04-25T02:15:00Z"
+    type: implement
+    story: US-57
+    description: "Branch A — implemented DialogueSystem portrait rendering. Imported hasNpcPortrait from npcSprites. Added module constants PORTRAIT_DESIGN_SIZE=96, PORTRAIT_MOBILE_WIDTH_FRACTION=0.22 with inline tuning-knob comment. Added portraitImage: Image|null and currentPortraitId: string|null fields. Helpers added near s()/boxY/canvasWidth: resolvePortraitId(node) (node.portraitId ?? script.portraitId ?? null), getPortraitRenderSize() (min of s(96) and canvasWidth*0.22), applyPortrait(id) with the spec's four-branch guard (id===current no-op, null destroys, unknown-id error+fallback, missing-texture error+fallback, null→id creates Image at depth 200 + origin (0,1) + scrollFactor 0 + ignoreOnMainCamera, id→other setTexture swap), repositionPortrait() (pos s(BOX_PADDING),boxY + display square size from getPortraitRenderSize), repositionSpeakerLabel() (conditional x offset right of portrait+s(8) when active else s(BOX_PADDING)). Wiring: showNode() now calls applyPortrait(resolvePortraitId(node)) after redrawBox + before speakerText.setText so the speaker label re-positions correctly. redrawBox() now calls repositionPortrait + repositionSpeakerLabel (replacing the direct speaker setPosition) so portrait + speaker label both track box position changes. close() destroys portraitImage + nulls both portrait fields. clearChoices() left untouched (portrait persists across choice transitions per spec). handleResize() flows through redrawBox so portrait pos+size recompute on resize. Verify (tsc + build) passes; bundle +2.27kB minified (expected — new render path). No regressions. Quality checks: error-path-coverage satisfied (unknown id + missing texture both logged + graceful fallback). Golden-principle audit: setTexture only fires on portrait-id change (4-branch guard); portrait creation in start/showNode only (not update); depth 200 reused. Story gate — most US-57 source-read criteria met; per-NPC + per-surface + mobile-responsiveness + reads-as criteria require manual verification (will be captured in the manual-verify doc)."
+    result: pass
+    notes: US-57 source criteria met; manual verification doc + AGENTS.md updates pending
+    tokens: ~10000
+  - task: 12
+    time: "2026-04-25T02:25:00Z"
+    type: implement
+    story: US-56
+    description: "Branch B+A — editor sync. Verified that 'cd tools/editor && npm run build' succeeds with the new optional portraitId fields (TypeScript accepts the optional addition without any editor change). Added a one-line accommodation: tools/editor/src/dialogueRenderer.ts now forwards node.portraitId ?? script.portraitId ?? null through showDetail so the editor's node-detail panel exposes the resolved portrait id when one is wired. Single-paragraph comment near the imports documents that a richer in-graph annotation ('[portrait: <id>]' on the node label) is intentionally deferred — detail-panel exposure is enough for editor users to audit wiring without crowding the graph view. Spec criterion 'either accommodates ... OR deliberately deferred with a one-line comment' satisfied via partial accommodation + comment. Both editor build and main verify pass; no regressions. Investigation pre-cleared in task 10 — work was atomic and small, executed in same iteration."
+    result: pass
+    notes: editor sync done; both build targets pass
+    tokens: ~3000
+  - task: 13
+    time: "2026-04-25T02:35:00Z"
+    type: implement
+    story: phase
+    description: "Branch B+A — AGENTS.md remaining phase-tagged updates. Edited four sections: (1) File ownership row for scenes/GameScene.ts — appended portrait preload + load.complete LINEAR filter override description. (2) File ownership row for systems/dialogue.ts — replaced terse 'Dialogue UI...' with extended description covering portrait id resolution (`node.portraitId ?? script.portraitId ?? null`), anchored origin (0,1), mobile clamp, conditional speaker offset, four-branch setTexture guard, error fallback, lifecycle parity. (3) Behavior rules Dialogue entry — appended portrait paragraph describing optional portraitId on script and node, anchored render, mobile-width clamp, speaker conditional offset, no-portrait fallback unchanged, EP-01 no-flicker guarantee. (4) Scaling tuning guide — appended PORTRAIT_DESIGN_SIZE and PORTRAIT_MOBILE_WIDTH_FRACTION to the dialogue.ts tuning-knob list. Verify (tsc + build) passes; no regressions. AGENTS.md is now consistent with shipped portrait code."
+    result: pass
+    notes: AGENTS.md fully consistent with shipped portrait phase
+    tokens: ~5000
+  - task: 14
+    time: "2026-04-25T02:45:00Z"
+    type: implement
+    story: phase
+    description: "Branch B+A — wrote docs/plan/npc-portraits-manual-verify.md modeled on tileset-manual-verify.md. Captures every criterion in phase-goal.md that calls 'verified manually' or 'verified via observer note': asset serving (network panel 200s for both portraits), Old Man + Marsh Hermit per-NPC end-to-end, Whispering Stones no-portrait regression, mobile responsiveness (375×667 + 1280×720 + rotation + choice expansion), per-surface variant baseline (desktop/mobile × no-choices/with-choices/no-portrait), reads-as observer notes (Old Man + Marsh Hermit + anchored), error-path mistyped-id DEV check, 60-second smoke run, post-merge deploy verification. The doc is the durable artefact for the human reviewer to tick off after merge — every checkbox traces back to a phase-goal.md done-when criterion."
+    result: pass
+    notes: manual-verify checklist covers every visual criterion; ready for phase completion gate
+    tokens: ~6000
+  - task: 15
+    time: "2026-04-25T03:00:00Z"
+    type: phase-complete
+    story: phase
+    description: "Branch B — Phase Completion Gate. Verify (npx tsc --noEmit && npm run build) passes; editor (cd tools/editor && npm run build) passes. Done-when audit walked all 79 criteria — every criterion has either source-read evidence (assets exist on disk; types/registry/preload/renderer match spec) or is captured as a manual checkbox in docs/plan/npc-portraits-manual-verify.md (per-NPC, per-surface, mobile responsiveness, reads-as observer notes, error-path mistype check, deploy verification post-merge). AGENTS.md consistency check: directory layout matches assets/npc/<id>/portrait.png on disk; file ownership rows for systems/dialogue.ts and scenes/GameScene.ts and systems/npcSprites.ts match shipped code; behavior rules Dialogue describes optional portraitId resolution + anchored render + mobile clamp + conditional speaker offset; scaling tuning guide lists PORTRAIT_DESIGN_SIZE + PORTRAIT_MOBILE_WIDTH_FRACTION. Error-path spot check: no new endpoints — N/A. Story milestone commits produced upstream (feat(US-56) @ 811f7d0, feat(US-57) @ 8a0d931). Evidence summary: assets — 2 portrait.png files copied; registry — NPC_PORTRAITS in src/systems/npcSprites.ts; types — DialogueScript/DialogueNode optional portraitId; data — old-man-intro + marsh-hermit-intro wired, whispering-stones unchanged; preload — getNpcPortraitIds loop in GameScene; filter override — load.complete callback applies LINEAR for old-man only; render — DialogueSystem.applyPortrait() with four-branch guard, anchored at (BOX_PADDING, boxY) origin (0,1), mobile clamp via canvasWidth*0.22, conditional speaker offset, lifecycle hooks in showNode/redrawBox/handleResize/close; error paths — registry-miss + missing-texture both log + fallback to no portrait; AGENTS.md — five sections updated; editor — dialogueRenderer surfaces portraitId in node detail; manual-verify doc — 87-line checklist for human pass. phase_complete: true. Loop continues — Branch B will detect phase_complete && !review_complete and schedule review tasks next iteration."
+    result: pass
+    notes: phase complete; review cycle next
+    tokens: ~10000
+  - task: 16
+    time: "2026-04-25T03:10:00Z"
+    type: review
+    story: phase
+    description: "Branch B — phase_complete && !review_complete && review_stage null. Pushed branch to origin. Created PR https://github.com/Jaxsbr/emberpath/pull/15 via gh pr create (base main, head build/npc-portraits). Body summarises both stories, files touched, done-when evidence, and a manual-verify test plan for the reviewer. pr_number: 15 stored. review_stage advanced to pr_created. Queued [review] review-pr pr=15 auto=true for next iteration."
+    result: pass
+    notes: PR #15 created
+    tokens: ~3000
+  - task: 17
+    time: "2026-04-25T03:20:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed sabs:review-pr pr=15 auto=true. Review posted as COMMENT event (auto mode). Triage — critical: 0; concerns: 2 (applyPortrait registry-miss/missing-texture branch logs once per node transition with same bad id — could cache lastFailedId; redrawBox→applyPortrait double-runs the speaker/portrait reposition pair on every node transition); nits: 1 (editor deferral comment is six lines vs 'one-line' spec wording). Inline comments could not be attached at exact line+sha (GitHub line-could-not-be-resolved) — full review body posted as a single summary comment instead, with file/line ranges referenced inline. Positives highlighted: registry-driven preload + per-portrait LINEAR filter, four-branch setTexture guard (EP-01), error fallback paths, anchored render math, AGENTS.md kept consistent, single-formula mobile clamp. review_stage advanced to review_posted. Queued [review] handle-pr-review for next iteration."
+    result: pass
+    notes: 2 concerns + 1 nit posted as a summary review comment
+    tokens: ~6000
+  - task: 18
+    time: "2026-04-25T03:25:00Z"
+    type: review
+    story: phase
+    description: "Branch B — phase_complete && review_stage=review_posted → queued [review] handle-pr-review pr=15 auto=true. review_stage stays at review_posted until the handle task executes."
+    result: pass
+    notes: queued handle-pr-review
+    tokens: ~1000
+  - task: 19
+    time: "2026-04-25T03:30:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed sabs:handle-pr-review pr=15 auto=true. GraphQL reviewThreads query returned 0 inline threads (the review-pr task posted findings as a single summary body comment because GitHub returned 'Line could not be resolved' on the inline comment attempt). Triaged the body-summary findings instead: Concern 1 (registry-miss/missing-texture log noise on repeat invalid id) → Skip per the reviewer's explicit 'Open to leaving as-is for simplicity' hedge — log noise only fires during a typo-fix cycle, not in production. Concern 2 (redrawBox→applyPortrait double-runs reposition pair) → Skip — reviewer noted 'visually invisible (sync code; nothing renders between calls)' and the reposition methods are O(1) updates. Nit (editor deferral comment six lines vs 'one-line') → Skip per reviewer's 'Skip if you prefer the longer rationale for future maintainers' hedge — the comment serves a maintenance purpose. No code fixes applied. Re-ran verify (npx tsc --noEmit && npm run build) + editor build — both pass post-triage. review_complete set to true. Posted phase-review-complete summary comment to PR 15."
+    result: pass
+    notes: 0 fixed, 3 skipped (all 3 explicitly hedged); review cycle closed
+    tokens: ~5000
+# Each entry: {task, time, story, description, result, notes, tokens}

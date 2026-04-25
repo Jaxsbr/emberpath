@@ -1,6 +1,12 @@
 import type { AreaDefinition, DialogueScript, DialogueNode } from '@game/data/areas/types';
 import { showDetail } from './main';
 
+// Note: DialogueScript.portraitId and DialogueNode.portraitId (optional) are
+// surfaced in the node-detail panel below. A richer in-graph annotation
+// ("[portrait: <id>]" on the node label) is intentionally deferred — the
+// detail-panel exposure is enough for editor users to inspect and audit
+// portrait wiring without crowding the graph view.
+
 const NODE_W = 220;
 const NODE_H = 60;
 const H_GAP = 40;
@@ -241,6 +247,7 @@ export function renderDialogue(container: HTMLElement, area: AreaDefinition): vo
           text: ln.node.text,
           nextId: ln.node.nextId ?? null,
           choices: ln.node.choices ?? null,
+          portraitId: ln.node.portraitId ?? script.portraitId ?? null,
           isStart: ln.isStart,
           isTerminal: ln.isTerminal,
         });

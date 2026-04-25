@@ -13,7 +13,7 @@ import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
-import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite } from '../systems/npcSprites';
+import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS, getNpcPortraitIds } from '../systems/npcSprites';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { setFlag } from '../triggers/flags';
 
@@ -89,6 +89,22 @@ export class GameScene extends Phaser.Scene {
         this.load.image(`npc-${spriteId}-static-${dir}`, `npc/${spriteId}/static/${dir}.png`);
       }
     }
+
+    // Portraits — registry-driven; one image per dialogue-capable NPC. Per-portrait
+    // filter mode is applied after load so painterly portraits (filter: 'linear')
+    // override the global pixelArt: true nearest-neighbor default.
+    for (const portraitId of getNpcPortraitIds()) {
+      const def = NPC_PORTRAITS[portraitId];
+      this.load.image(`npc-portrait-${portraitId}`, `npc/${portraitId}/${def.file}`);
+    }
+    this.load.once('complete', () => {
+      for (const portraitId of getNpcPortraitIds()) {
+        const def = NPC_PORTRAITS[portraitId];
+        if (def.filter === 'linear') {
+          this.textures.get(`npc-portrait-${portraitId}`).setFilter(Phaser.Textures.FilterMode.LINEAR);
+        }
+      }
+    });
   }
 
   create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {

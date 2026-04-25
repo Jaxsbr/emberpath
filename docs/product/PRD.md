@@ -48,4 +48,5 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | sprite-animation | Shipped | US-42, US-43, US-44, US-45 | [phases/sprite-animation.md](phases/sprite-animation.md) |
 | sprite-refresh | Shipped | US-46, US-47 | [phases/sprite-refresh.md](phases/sprite-refresh.md) |
 | tileset | Shipped | US-48, US-49, US-50, US-51 | [phases/tileset.md](phases/tileset.md) |
-| npc-behavior | Draft | US-52, US-53, US-54, US-55 | [phases/npc-behavior.md](phases/npc-behavior.md) |
+| npc-behavior | Shipped | US-52, US-53, US-54, US-55 | [phases/npc-behavior.md](phases/npc-behavior.md) |
+| npc-portraits | Shipped | US-56, US-57 | [phases/npc-portraits.md](phases/npc-portraits.md) |
