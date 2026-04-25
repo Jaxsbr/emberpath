@@ -113,4 +113,12 @@ entries:
     result: pass
     notes: manual-verify checklist covers every visual criterion; ready for phase completion gate
     tokens: ~6000
+  - task: 15
+    time: "2026-04-25T03:00:00Z"
+    type: phase-complete
+    story: phase
+    description: "Branch B — Phase Completion Gate. Verify (npx tsc --noEmit && npm run build) passes; editor (cd tools/editor && npm run build) passes. Done-when audit walked all 79 criteria — every criterion has either source-read evidence (assets exist on disk; types/registry/preload/renderer match spec) or is captured as a manual checkbox in docs/plan/npc-portraits-manual-verify.md (per-NPC, per-surface, mobile responsiveness, reads-as observer notes, error-path mistype check, deploy verification post-merge). AGENTS.md consistency check: directory layout matches assets/npc/<id>/portrait.png on disk; file ownership rows for systems/dialogue.ts and scenes/GameScene.ts and systems/npcSprites.ts match shipped code; behavior rules Dialogue describes optional portraitId resolution + anchored render + mobile clamp + conditional speaker offset; scaling tuning guide lists PORTRAIT_DESIGN_SIZE + PORTRAIT_MOBILE_WIDTH_FRACTION. Error-path spot check: no new endpoints — N/A. Story milestone commits produced upstream (feat(US-56) @ 811f7d0, feat(US-57) @ 8a0d931). Evidence summary: assets — 2 portrait.png files copied; registry — NPC_PORTRAITS in src/systems/npcSprites.ts; types — DialogueScript/DialogueNode optional portraitId; data — old-man-intro + marsh-hermit-intro wired, whispering-stones unchanged; preload — getNpcPortraitIds loop in GameScene; filter override — load.complete callback applies LINEAR for old-man only; render — DialogueSystem.applyPortrait() with four-branch guard, anchored at (BOX_PADDING, boxY) origin (0,1), mobile clamp via canvasWidth*0.22, conditional speaker offset, lifecycle hooks in showNode/redrawBox/handleResize/close; error paths — registry-miss + missing-texture both log + fallback to no portrait; AGENTS.md — five sections updated; editor — dialogueRenderer surfaces portraitId in node detail; manual-verify doc — 87-line checklist for human pass. phase_complete: true. Loop continues — Branch B will detect phase_complete && !review_complete and schedule review tasks next iteration."
+    result: pass
+    notes: phase complete; review cycle next
+    tokens: ~10000
 # Each entry: {task, time, story, description, result, notes, tokens}

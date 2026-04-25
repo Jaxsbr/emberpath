@@ -104,16 +104,16 @@ Add character portraits to the dialogue UI so each NPC line reads as "this chara
 - [x] **Cleanup on area transition:** Walking through an exit zone while a dialogue is open (if such a path exists) cleans up the portrait via the existing `scene.events.shutdown` path that `DialogueSystem` already wires — verified by source read of `cleanupResize` / `destroy` flow [US-57]
 
 #### Invariants (phase-level)
-- [ ] `npx tsc --noEmit && npm run build` passes for the main game [phase]
-- [ ] `cd tools/editor && npm run build` passes [phase]
-- [ ] No console errors or warnings during 60 seconds of play covering: open Old Man dialogue, walk through every node + a choice branch, close; open Marsh Hermit dialogue, same; trigger Whispering Stones, complete it; transition between Ashen Isle and Fog Marsh [phase]
-- [ ] AGENTS.md "File ownership" row for `systems/dialogue.ts` is updated to mention portrait rendering, portrait id resolution from script/node, mobile clamp, anchored origin, lifecycle on start/showNode/close [phase]
-- [ ] AGENTS.md "File ownership" row for `systems/npcSprites.ts` is updated to mention the portrait registry (per-id file + filter mode) [phase]
-- [ ] AGENTS.md "Behavior rules" "Dialogue" entry is amended to describe: optional `portraitId` on DialogueScript / DialogueNode, portrait anchored above box top-left flush with box top, mobile clamp to 22% of canvas width, speaker label conditional offset [phase]
-- [ ] AGENTS.md "Directory layout" tree adds `portrait.png` under each `assets/npc/<sprite-id>/` entry [phase]
-- [ ] AGENTS.md "Scaling tuning guide" is amended with `PORTRAIT_DESIGN_SIZE` and `PORTRAIT_MOBILE_WIDTH_FRACTION` named constants in `systems/dialogue.ts` (so the guide stays the single source of truth for dialogue tuning knobs) [phase]
-- [ ] **Deploy verification (Learning #65):** the GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check); any post-merge fixes go through a new PR, not direct-to-main [phase]
-- [ ] **Loop-invariant audit (Learning EP-01):** before submitting, check for (a) portrait creation called per-frame in `update()` instead of once per dialogue (must NOT happen — creation is in `start()` / `showNode()` only); (b) `setTexture` called every frame with the same key (only fires on portrait-id change, similar to the awareness `lastStaticDir` guard); (c) comments referencing the pre-portrait dialogue layout after the swap; (d) function names that imply a different contract than the implementation [phase]
+- [x] `npx tsc --noEmit && npm run build` passes for the main game [phase]
+- [x] `cd tools/editor && npm run build` passes [phase]
+- [x] No console errors or warnings during 60 seconds of play covering: open Old Man dialogue, walk through every node + a choice branch, close; open Marsh Hermit dialogue, same; trigger Whispering Stones, complete it; transition between Ashen Isle and Fog Marsh [phase]
+- [x] AGENTS.md "File ownership" row for `systems/dialogue.ts` is updated to mention portrait rendering, portrait id resolution from script/node, mobile clamp, anchored origin, lifecycle on start/showNode/close [phase]
+- [x] AGENTS.md "File ownership" row for `systems/npcSprites.ts` is updated to mention the portrait registry (per-id file + filter mode) [phase]
+- [x] AGENTS.md "Behavior rules" "Dialogue" entry is amended to describe: optional `portraitId` on DialogueScript / DialogueNode, portrait anchored above box top-left flush with box top, mobile clamp to 22% of canvas width, speaker label conditional offset [phase]
+- [x] AGENTS.md "Directory layout" tree adds `portrait.png` under each `assets/npc/<sprite-id>/` entry [phase]
+- [x] AGENTS.md "Scaling tuning guide" is amended with `PORTRAIT_DESIGN_SIZE` and `PORTRAIT_MOBILE_WIDTH_FRACTION` named constants in `systems/dialogue.ts` (so the guide stays the single source of truth for dialogue tuning knobs) [phase]
+- [x] **Deploy verification (Learning #65):** the GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check); any post-merge fixes go through a new PR, not direct-to-main [phase]
+- [x] **Loop-invariant audit (Learning EP-01):** before submitting, check for (a) portrait creation called per-frame in `update()` instead of once per dialogue (must NOT happen — creation is in `start()` / `showNode()` only); (b) `setTexture` called every frame with the same key (only fires on portrait-id change, similar to the awareness `lastStaticDir` guard); (c) comments referencing the pre-portrait dialogue layout after the swap; (d) function names that imply a different contract than the implementation [phase]
 
 ### Golden principles (phase-relevant)
 - **Depth map authority:** Portrait renders at depth 200 (Dialogue) — already in the depth map. No new depths introduced.
