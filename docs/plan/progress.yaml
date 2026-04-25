@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-57] Implement DialogueSystem portrait rendering in src/systems/dialogue.ts. Additions: (a) module constants PORTRAIT_DESIGN_SIZE=96 and PORTRAIT_MOBILE_WIDTH_FRACTION=0.22 near other UI constants. (b) imports — NPC_PORTRAITS, hasNpcPortrait from '../systems/npcSprites'. (c) fields — portraitImage: Phaser.GameObjects.Image | null = null; currentPortraitId: string | null = null. (d) helpers — resolvePortraitId(node) returns node.portraitId ?? this.script?.portraitId ?? null; applyPortrait(id) with four-branch guard (null→null no-op, null→id create+position+filter+depth+scrollFactor+ignoreOnMainCamera, id→same no-op, id→other setTexture swap+reposition, error path on unknown id or missing texture: console.error + destroy + null state); repositionPortrait() sets origin (0,1), position (s(BOX_PADDING), boxY), displaySize min(s(PORTRAIT_DESIGN_SIZE), canvasWidth*PORTRAIT_MOBILE_WIDTH_FRACTION) square; repositionSpeakerLabel() — speaker x = s(BOX_PADDING) + (portraitImage ? portraitImage.displayWidth + s(8) : 0). (e) wiring — call applyPortrait(resolvePortraitId(node)) at the top of showNode AFTER currentNode assignment; replace direct speaker setPosition in redrawBox with a call to repositionSpeakerLabel after portrait reposition; close() destroys portraitImage and nulls both portrait fields; clearChoices() left untouched (portrait persists across choice transitions). Verify (npx tsc --noEmit && npm run build) must pass. Do NOT update AGENTS.md or editor in this task — those are queued separately."
+  task_number: 12
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

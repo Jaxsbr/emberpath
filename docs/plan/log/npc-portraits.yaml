@@ -81,4 +81,12 @@ entries:
     result: pass
     notes: ready to implement US-57 dialogue rendering as one coherent commit
     tokens: ~7000
+  - task: 11
+    time: "2026-04-25T02:15:00Z"
+    type: implement
+    story: US-57
+    description: "Branch A — implemented DialogueSystem portrait rendering. Imported hasNpcPortrait from npcSprites. Added module constants PORTRAIT_DESIGN_SIZE=96, PORTRAIT_MOBILE_WIDTH_FRACTION=0.22 with inline tuning-knob comment. Added portraitImage: Image|null and currentPortraitId: string|null fields. Helpers added near s()/boxY/canvasWidth: resolvePortraitId(node) (node.portraitId ?? script.portraitId ?? null), getPortraitRenderSize() (min of s(96) and canvasWidth*0.22), applyPortrait(id) with the spec's four-branch guard (id===current no-op, null destroys, unknown-id error+fallback, missing-texture error+fallback, null→id creates Image at depth 200 + origin (0,1) + scrollFactor 0 + ignoreOnMainCamera, id→other setTexture swap), repositionPortrait() (pos s(BOX_PADDING),boxY + display square size from getPortraitRenderSize), repositionSpeakerLabel() (conditional x offset right of portrait+s(8) when active else s(BOX_PADDING)). Wiring: showNode() now calls applyPortrait(resolvePortraitId(node)) after redrawBox + before speakerText.setText so the speaker label re-positions correctly. redrawBox() now calls repositionPortrait + repositionSpeakerLabel (replacing the direct speaker setPosition) so portrait + speaker label both track box position changes. close() destroys portraitImage + nulls both portrait fields. clearChoices() left untouched (portrait persists across choice transitions per spec). handleResize() flows through redrawBox so portrait pos+size recompute on resize. Verify (tsc + build) passes; bundle +2.27kB minified (expected — new render path). No regressions. Quality checks: error-path-coverage satisfied (unknown id + missing texture both logged + graceful fallback). Golden-principle audit: setTexture only fires on portrait-id change (4-branch guard); portrait creation in start/showNode only (not update); depth 200 reused. Story gate — most US-57 source-read criteria met; per-NPC + per-surface + mobile-responsiveness + reads-as criteria require manual verification (will be captured in the manual-verify doc)."
+    result: pass
+    notes: US-57 source criteria met; manual verification doc + AGENTS.md updates pending
+    tokens: ~10000
 # Each entry: {task, time, story, description, result, notes, tokens}
