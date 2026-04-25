@@ -407,7 +407,7 @@ export const ashenIsle: AreaDefinition = {
       width: 4,
       height: 1,
       destinationAreaId: 'fog-marsh',
-      entryPoint: { col: 2, row: 12 },
+      entryPoint: { col: 14, row: 21 },
     },
   ],
   visual: { floorColor: 0x4a6741, wallColor: 0x2c2c3a },

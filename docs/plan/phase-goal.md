@@ -45,15 +45,15 @@ The Tiny Town and Tiny Dungeon Kenney atlases already contain the needed houses,
 
 #### Structural — Fog Marsh redesign (US-60)
 
-- [ ] Visible distinction between wet ground (most of FLOOR cells) and dry path (decoration overlay on a connected route) [US-60]
-- [ ] Ruin corner (3-5 tiles) using Tiny Dungeon brick frames, placed in one corner [US-60]
-- [ ] At least 8 reed/vegetation decorations in wet ground area, none on the dry path [US-60]
-- [ ] At least one full edge is impassable wet/reed-wall composition (WALL cells with marsh-edge decoration) [US-60]
-- [ ] Marsh Hermit spawn `(col, row)` is on the dry path adjacent to the ruin [US-60]
-- [ ] EXIT zone reaches the dry path (verified by walking from the entry point to the exit on path tiles only — no need to step into wet ground) [US-60]
-- [ ] Round-trip legibility: exiting Ashen Isle's dock → entering Fog Marsh lands on the dry path; exiting Fog Marsh → returning to Ashen Isle lands on the dock decoration (verified manually for both directions) [US-60]
-- [ ] Whispering Stones trigger renders adjacent to or on the path (visible to a player following the path) [US-60]
-- [ ] All existing `fog-marsh` triggers fire on the same flag keys after redesign [US-60]
+- [x] Visible distinction between wet ground (most of FLOOR cells) and dry path (decoration overlay on a connected route) [US-60]
+- [x] Ruin corner (3-5 tiles) using Tiny Dungeon brick frames, placed in one corner [US-60]
+- [x] At least 8 reed/vegetation decorations in wet ground area, none on the dry path [US-60]
+- [x] At least one full edge is impassable wet/reed-wall composition (WALL cells with marsh-edge decoration) [US-60]
+- [x] Marsh Hermit spawn `(col, row)` is on the dry path adjacent to the ruin [US-60]
+- [x] EXIT zone reaches the dry path (verified by walking from the entry point to the exit on path tiles only — no need to step into wet ground) [US-60]
+- [x] Round-trip legibility: exiting Ashen Isle's dock → entering Fog Marsh lands on the dry path; exiting Fog Marsh → returning to Ashen Isle lands on the dock decoration (verified manually for both directions) [US-60]
+- [x] Whispering Stones trigger renders adjacent to or on the path (visible to a player following the path) [US-60]
+- [x] All existing `fog-marsh` triggers fire on the same flag keys after redesign [US-60]
 
 #### Structural — vocabulary docs (US-61)
 
