@@ -29,6 +29,7 @@ type AtlasId = keyof typeof ATLAS_GRID;
 // renderMap call so the decoration layer paints in as soon as it can.
 const atlases: Record<string, HTMLImageElement> = {};
 let lastRender: { container: HTMLElement; area: AreaDefinition } | null = null;
+const warnedTilesets = new Set<string>();
 
 for (const [id, info] of Object.entries(ATLAS_GRID)) {
   const img = new Image();
@@ -114,6 +115,14 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
   // depth 3, with triggers/exits as editor-only annotations on top).
   const atlasInfo = (ATLAS_GRID as Record<string, { url: string; cols: number; frameSize: number }>)[area.tileset];
   const atlasImg = atlases[area.tileset];
+  if (!atlasInfo && area.decorations.length > 0 && !warnedTilesets.has(area.tileset)) {
+    console.warn(
+      `[editor mapRenderer] Tileset '${area.tileset}' has no entry in ATLAS_GRID; ` +
+        `decorations on area '${area.id}' will not render in the editor (they will still render in the game). ` +
+        `Add a row to ATLAS_GRID in tools/editor/src/mapRenderer.ts.`,
+    );
+    warnedTilesets.add(area.tileset);
+  }
   if (atlasInfo && atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0) {
     for (const dec of area.decorations) {
       const frameIdx = Number(dec.spriteFrame);
