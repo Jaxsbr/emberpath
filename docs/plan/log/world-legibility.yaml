@@ -65,4 +65,12 @@ entries:
     result: pass
     notes: US-59 complete — Ashen Isle reads as coastal village
     tokens: ~3000
+  - task: 9
+    time: "2026-04-26T00:05:00Z"
+    type: implement
+    story: US-60
+    description: "Branch A — rebuilt src/data/areas/fog-marsh.ts to match the world-legibility schematic, plus src/maps/tilesets.ts edit (allowed per US-60 Consumer adaptation note). tilesets.ts: changed tiny-dungeon FLOOR frames from ['48','49','50','51'] (tan dungeon floor) to ['36','37','38','39'] (wet/moss variants per visual atlas inspection — provisional, documented inline) so the marsh base layer reads as wet ground; the prior tan frames are now overlaid as the dry-path decoration. fog-marsh.ts: replaced the 24×30 ASCII map with buildFogMarshMap() composing W at outer perimeter, reinforced north (row 1) and south (row 22 except cols 13-16 EXIT) impassable bands, and ruin walls in NE corner (rows 3-9 cols 21-27) with door FLOOR at (24, 9). Decorations array via the same builder helpers as ashen-isle.ts (rect/hline/vline/rectVariants, intentionally duplicated to keep each area file self-contained). FRAME table at top documents Tiny Dungeon's lack of native water/reed/marsh-edge frames and the chosen substitutes. Path: vline col 14 rows 10-21 + hline cols 15-24 row 10 → ends at Marsh Hermit's stoop next to ruin door. Ruin walls: 7-wide × 7-tall brick decoration outline with FRAME.DOOR at (24,9). Reeds: 10 entries scattered across wet ground, all explicitly off-path. Edge: marsh-edge decoration over cols 0-1 rows 1-22. Whispering Stones decoration at (13, 16) and matching trigger relocated. Marsh Hermit moved to (24, 10). Round-trip: fog-marsh.ts exit-to-ashen entryPoint (24, 4); also updated ashen-isle.ts exit-to-fog entryPoint to (14, 21). Triggers preserved (fog-entry-thought, marsh-vision, whispering-stones) by id/actionRef/condition. Game tsc+build pass; editor build passes (still uses tiny-dungeon atlas which is loaded the same way regardless of FLOOR mapping). Story Completion Gate: ALL US-60 source criteria met → checked off all US-60 boxes in phase-goal.md, added US-60 to completed_stories, produced feat(US-60) story milestone commit. Manual-runtime criteria deferred to manual-verify doc."
+    result: pass
+    notes: US-60 complete — Fog Marsh reads as wet marsh with ruin; round-trip wired
+    tokens: ~14000
 # Each entry: {task, time, story, description, result, notes, tokens}
