@@ -78,13 +78,14 @@ assets/
       License.txt      # CC0 attribution
     tiny-dungeon/      # Kenney Tiny Dungeon CC0 — 16×16 packed (132 frames, 12×11), Fog Marsh (tomb/dungeon aesthetic)
   npc/
-    marsh-hermit/      # PixelLab-generated NPC sprite — 72 PNGs
+    marsh-hermit/      # PixelLab-generated NPC sprite — 72 sprite PNGs + 1 portrait
       idle/            # 8 directions × 4 frames each
         north/north-east/east/south-east/south/south-west/west/north-west/  frame_000..003.png
       walk/            # 8 directions × 4 frames each
         north/north-east/east/south-east/south/south-west/west/north-west/  frame_000..003.png
       static/          # 8 single-frame PNGs: north.png / north-east.png / ... / north-west.png
-    old-man/           # Same shape as marsh-hermit
+      portrait.png     # 1024×1024 dialogue-UI portrait (pixel-art; nearest-filter)
+    old-man/           # Same shape as marsh-hermit; portrait.png is painterly (linear-filter)
 tools/
   editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
     src/
@@ -116,7 +117,7 @@ tools/
 | `systems/conditions.ts` | Shared condition evaluation — flag-based AND logic with comparison operators |
 | `systems/animation.ts` | AnimationSystem — 8-direction fox-pip sprite animation state machine (idle/walk), current speed provider. Octant math lives in `systems/direction.ts` — AnimationSystem is a consumer, not an owner |
 | `systems/direction.ts` | DIRECTIONS (iteration order north..north-west), Direction type, vectorToDirection/velocityToDirection — single source of octant math, consumed by AnimationSystem + NpcBehaviorSystem |
-| `systems/npcSprites.ts` | NPC sprite registry — NPC_SPRITES keyed by sprite id with per-sprite {idleFrameCount, walkFrameCount}, hasNpcSprite(id) predicate, getNpcSpriteIds() for preload/anim-reg iteration |
+| `systems/npcSprites.ts` | NPC sprite registry — NPC_SPRITES keyed by sprite id with per-sprite {idleFrameCount, walkFrameCount}, hasNpcSprite(id) predicate, getNpcSpriteIds() for preload/anim-reg iteration. ALSO portrait registry — NPC_PORTRAITS keyed by sprite id with per-id {file, filter: 'nearest'\|'linear'} (square-aspect 1024×1024 assumed), hasNpcPortrait(id) predicate, getNpcPortraitIds() for preload + per-portrait filter override |
 | `systems/npcBehavior.ts` | NpcBehaviorSystem — per-NPC state machine (idle/walk/aware/dialogue); Chebyshev-bounded random wander off spawn tile with pre-step path sampling for wall collision; awareness gate halts the NPC and applies the `static/{dir}.png` texture only when the quantised facing direction changes (lastStaticDir guard, Learning EP-01); enterDialogue/exitDialogue idempotent hooks; getLivePositions exposes centre-of-bounding-box coords to collision + npcInteraction; scene.events.shutdown handler clears per-NPC state |
 | `systems/debugOverlay.ts` | F3-toggled debug overlay — trigger zones, exit zones, NPC interaction radius (solid yellow), NPC wander radius (dashed green), NPC awareness radius (dashed yellow) in world space; draw order documented inline as the deterministic z-order |
 | `data/areas/types.ts` | All shared types — AreaDefinition (includes required `tileset: string` and `props: PropDefinition[]`; `visual.floorColor/wallColor` retained for editor), ExitDefinition, NpcDefinition (required `sprite: string`, `wanderRadius: number`, `awarenessRadius: number`; `color` retained for editor map-overview), PropDefinition, TriggerDefinition, DialogueScript, StorySceneDefinition |
