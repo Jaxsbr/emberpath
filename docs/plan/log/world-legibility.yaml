@@ -1,0 +1,4 @@
+phase: "world-legibility"
+started: "2026-04-25T22:30:00Z"
+entries:
+# Each entry: {task, time, story, description, result, notes, tokens}
