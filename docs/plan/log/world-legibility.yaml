@@ -1,4 +1,12 @@
 phase: "world-legibility"
 started: "2026-04-25T22:30:00Z"
 entries:
+  - task: 1
+    time: "2026-04-25T22:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — phase start. Read AGENTS.md (current; reflects npc-portraits shipping incl. portrait registry, dialogue portrait rendering, depth map). Read phase-goal.md (US-58/59/60/61, 4 stories, full done-when transposed from docs/product/phases/world-legibility.md). Verify (npx tsc --noEmit && npm run build) passes — establishes baseline. Initialised test-baseline.txt as 'verify pass — build ok, no test runner' (no test framework in this project). Phase classified server/schema/cross-cutting (US-58 modifies shared AreaDefinition schema in src/data/areas/types.ts AND adds renderDecorations to src/scenes/GameScene.ts cross-cutting render pipeline + camera ignore list; US-59/US-60 are data-only but depend on US-58 schema). Per investigate-first mandate, queued an investigate task (not implement) to confirm: (a) DecorationDefinition is exactly { col, row, spriteFrame } mirroring PropDefinition minus id, (b) required-field rollout means empty decorations:[] in ashen-isle.ts and fog-marsh.ts in the SAME commit as the type addition (no transitional state per the spec's 'no silent breaking changes' golden principle), (c) renderDecorations slots between renderTileMap (depth 0) and renderProps (depth 3) at depth 2, (d) warn-skip-on-missing-frame mirrors renderProps exactly, (e) out-of-bounds guard chosen behaviour documented inline, (f) camera ignore list in setupCamera() needs decorationSprites added alongside tileLayer/propSprites/player/npcEntities."
+    result: pass
+    notes: phase classified server/schema/cross-cutting; investigate-first enforced; baseline established
+    tokens: ~22000
 # Each entry: {task, time, story, description, result, notes, tokens}

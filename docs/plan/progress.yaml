@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-58] Investigate decoration layer engine integration — confirm DecorationDefinition shape (col, row, spriteFrame), required-field rollout (ashen-isle + fog-marsh stub with empty arrays in same commit so type addition compiles), renderDecorations placement in create() between renderTileMap and renderProps with depth 2, warn-skip-on-missing-frame mirroring renderProps, out-of-bounds guard behaviour, camera ignore list update; produce concrete diff plan for the next implement task"
   last_result: pass
   consecutive_fails: 0
 
