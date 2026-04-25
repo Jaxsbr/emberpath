@@ -129,4 +129,12 @@ entries:
     result: pass
     notes: PR #15 created
     tokens: ~3000
+  - task: 17
+    time: "2026-04-25T03:20:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed sabs:review-pr pr=15 auto=true. Review posted as COMMENT event (auto mode). Triage — critical: 0; concerns: 2 (applyPortrait registry-miss/missing-texture branch logs once per node transition with same bad id — could cache lastFailedId; redrawBox→applyPortrait double-runs the speaker/portrait reposition pair on every node transition); nits: 1 (editor deferral comment is six lines vs 'one-line' spec wording). Inline comments could not be attached at exact line+sha (GitHub line-could-not-be-resolved) — full review body posted as a single summary comment instead, with file/line ranges referenced inline. Positives highlighted: registry-driven preload + per-portrait LINEAR filter, four-branch setTexture guard (EP-01), error fallback paths, anchored render math, AGENTS.md kept consistent, single-formula mobile clamp. review_stage advanced to review_posted. Queued [review] handle-pr-review for next iteration."
+    result: pass
+    notes: 2 concerns + 1 nit posted as a summary review comment
+    tokens: ~6000
 # Each entry: {task, time, story, description, result, notes, tokens}
