@@ -33,15 +33,15 @@ The Tiny Town and Tiny Dungeon Kenney atlases already contain the needed houses,
 
 #### Structural — Ashen Isle redesign (US-59)
 
-- [ ] Continuous path from `playerSpawn` to Old Man's cottage to dock exit; verifiable by visually following the dirt/cobble decoration tiles in DevTools or the editor map view [US-59]
-- [ ] At least one ≥ 3×3 building composition (roof + wall-front + door) using Tiny Town atlas frames [US-59]
-- [ ] Old Man spawn `(col, row)` is on a path tile adjacent to a building door tile (verified: read coordinates from `ashen-isle.ts`, cross-reference the decoration layer) [US-59]
-- [ ] At least one ≥ 4-tile fence run using a Tiny Town fence frame [US-59]
-- [ ] At least one full area edge (one side: top OR bottom OR left OR right) is water tiles [US-59]
-- [ ] At least three distinct decorative frame ids in use beyond grass + flower; no single frame > ~30% of decoration entries by count (verified: tally via grep or a small counter in the area file's load-time) [US-59]
-- [ ] EXIT zone visually shows a dock or gate sprite, NOT amber-tinted floor (verified: open Ashen Isle, walk to the exit, screenshot reads as "wooden dock" or "wooden gate") [US-59]
-- [ ] All existing `ashen-isle` triggers fire on the same flag keys after redesign (verified by walking the Old Man → dialogue → choice paths and observing the same flags set as before) [US-59]
-- [ ] First frame after fade-in (at zoom 1) shows player + at least one decorated landmark in viewport (verified manually) [US-59]
+- [x] Continuous path from `playerSpawn` to Old Man's cottage to dock exit; verifiable by visually following the dirt/cobble decoration tiles in DevTools or the editor map view [US-59]
+- [x] At least one ≥ 3×3 building composition (roof + wall-front + door) using Tiny Town atlas frames [US-59]
+- [x] Old Man spawn `(col, row)` is on a path tile adjacent to a building door tile (verified: read coordinates from `ashen-isle.ts`, cross-reference the decoration layer) [US-59]
+- [x] At least one ≥ 4-tile fence run using a Tiny Town fence frame [US-59]
+- [x] At least one full area edge (one side: top OR bottom OR left OR right) is water tiles [US-59]
+- [x] At least three distinct decorative frame ids in use beyond grass + flower; no single frame > ~30% of decoration entries by count (verified: tally via grep or a small counter in the area file's load-time) [US-59]
+- [x] EXIT zone visually shows a dock or gate sprite, NOT amber-tinted floor (verified: open Ashen Isle, walk to the exit, screenshot reads as "wooden dock" or "wooden gate") [US-59]
+- [x] All existing `ashen-isle` triggers fire on the same flag keys after redesign (verified by walking the Old Man → dialogue → choice paths and observing the same flags set as before) [US-59]
+- [x] First frame after fade-in (at zoom 1) shows player + at least one decorated landmark in viewport (verified manually) [US-59]
 
 #### Structural — Fog Marsh redesign (US-60)
 

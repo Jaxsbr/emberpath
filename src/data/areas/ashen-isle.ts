@@ -219,10 +219,10 @@ const ashenDecorations: DecorationDefinition[] = [
   // Old Man's fenced yard perimeter at rows 23-31 cols 35-44, gate at (39, 23).
   ...fencePerimeter(35, 44, 23, 31, FRAME.FENCE, { col: 39, row: 23 }),
 
-  // Cottage-stoop path tile inside Old Man's yard — places the Old Man on a
-  // path tile adjacent to his door (US-59 done-when), without filling the
-  // whole yard with path.
-  { col: 40, row: 29, spriteFrame: FRAME.PATH },
+  // Yard-interior path inside Old Man's yard — runs from the gate at (39, 23)
+  // south to the Old Man's stoop at (39, 28), placing him on a path tile
+  // adjacent to his door at (40, 28) (US-59 done-when).
+  ...vline(39, 24, 28, FRAME.PATH),
 
   // Scattered decorations across open grass — sign by the dock plus a mix of
   // bushes, trees, and flowers in the bands away from the path so no single
@@ -246,9 +246,10 @@ export const ashenIsle: AreaDefinition = {
   tileset: 'tiny-town',
   map: buildAshenMap(),
   npcs: [
-    // Old Man stands on the path immediately south of his cottage door at
-    // (40, 28); his spawn at (40, 29) is the path tile adjacent to the door.
-    { id: 'old-man', name: 'Old Man', col: 40, row: 29, color: 0x8b6914, sprite: 'old-man', wanderRadius: 1, awarenessRadius: 3 },
+    // Old Man stands on the yard-interior path one step west of his cottage
+    // door at (40, 28); his spawn at (39, 28) is the path tile adjacent to
+    // the door.
+    { id: 'old-man', name: 'Old Man', col: 39, row: 28, color: 0x8b6914, sprite: 'old-man', wanderRadius: 1, awarenessRadius: 3 },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; props are
   // intentionally empty during the world-legibility phase — the prior
