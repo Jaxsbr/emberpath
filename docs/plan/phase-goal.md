@@ -9,23 +9,23 @@ Add character portraits to the dialogue UI so each NPC line reads as "this chara
 ### Done-when (observable)
 
 #### Structural — assets & data
-- [ ] `assets/npc/marsh-hermit/portrait.png` exists (verified: file present, ≥ 1 byte) [US-56]
-- [ ] `assets/npc/old-man/portrait.png` exists [US-56]
-- [ ] `vite.config.ts` `publicDir: 'assets'` continues to serve the new portraits without additional config — sample URL `/npc/old-man/portrait.png` returns 200 in `npm run dev` (verified manually) [US-56]
-- [ ] AGENTS.md "Directory layout" tree is updated to include `assets/npc/<sprite-id>/portrait.png` next to the existing `idle/walk/static/` entries [US-56]
-- [ ] Portrait registry exists (in `src/systems/npcSprites.ts` or a sibling module) and exposes per-id `{ file, filter }` (or equivalent) for both `marsh-hermit` and `old-man` (verified: source read) [US-56]
-- [ ] Registry entry for `marsh-hermit` declares `filter: 'nearest'`; entry for `old-man` declares `filter: 'linear'` (verified: source read + matches the per-asset rationale in US-56 design rationale) [US-56]
-- [ ] Both registered portraits are square aspect (source 1024×1024). Registry documents this assumption inline (e.g. a comment on the registry interface stating "square aspect — non-square portraits are not supported in this phase; render math in DialogueSystem treats portraits as 1:1"). Future non-square portrait support is explicitly out-of-scope and noted as such. [US-56]
-- [ ] `DialogueScript` in `src/data/areas/types.ts` has optional `portraitId?: string` (verified: source read) [US-56]
-- [ ] `DialogueNode` in `src/data/areas/types.ts` has optional `portraitId?: string` (verified: source read) [US-56]
-- [ ] `src/data/areas/ashen-isle.ts` Old Man dialogue script has `portraitId: 'old-man'` at script level [US-56]
-- [ ] `src/data/areas/fog-marsh.ts` Marsh Hermit dialogue script has `portraitId: 'marsh-hermit'` at script level [US-56]
-- [ ] `src/data/areas/fog-marsh.ts` Whispering Stones script does NOT set `portraitId` (verifies optional case) [US-56]
+- [x] `assets/npc/marsh-hermit/portrait.png` exists (verified: file present, ≥ 1 byte) [US-56]
+- [x] `assets/npc/old-man/portrait.png` exists [US-56]
+- [x] `vite.config.ts` `publicDir: 'assets'` continues to serve the new portraits without additional config — sample URL `/npc/old-man/portrait.png` returns 200 in `npm run dev` (verified manually) [US-56]
+- [x] AGENTS.md "Directory layout" tree is updated to include `assets/npc/<sprite-id>/portrait.png` next to the existing `idle/walk/static/` entries [US-56]
+- [x] Portrait registry exists (in `src/systems/npcSprites.ts` or a sibling module) and exposes per-id `{ file, filter }` (or equivalent) for both `marsh-hermit` and `old-man` (verified: source read) [US-56]
+- [x] Registry entry for `marsh-hermit` declares `filter: 'nearest'`; entry for `old-man` declares `filter: 'linear'` (verified: source read + matches the per-asset rationale in US-56 design rationale) [US-56]
+- [x] Both registered portraits are square aspect (source 1024×1024). Registry documents this assumption inline (e.g. a comment on the registry interface stating "square aspect — non-square portraits are not supported in this phase; render math in DialogueSystem treats portraits as 1:1"). Future non-square portrait support is explicitly out-of-scope and noted as such. [US-56]
+- [x] `DialogueScript` in `src/data/areas/types.ts` has optional `portraitId?: string` (verified: source read) [US-56]
+- [x] `DialogueNode` in `src/data/areas/types.ts` has optional `portraitId?: string` (verified: source read) [US-56]
+- [x] `src/data/areas/ashen-isle.ts` Old Man dialogue script has `portraitId: 'old-man'` at script level [US-56]
+- [x] `src/data/areas/fog-marsh.ts` Marsh Hermit dialogue script has `portraitId: 'marsh-hermit'` at script level [US-56]
+- [x] `src/data/areas/fog-marsh.ts` Whispering Stones script does NOT set `portraitId` (verifies optional case) [US-56]
 
 #### Structural — preload & filter
-- [ ] `GameScene.preload()` iterates the portrait registry and loads each portrait under key `npc-portrait-<id>` (verified: source reads from registry, not hardcoded id list) [US-56]
-- [ ] After preload, for each portrait registry entry with `filter: 'linear'`, `texture.setFilter(Phaser.Textures.FilterMode.LINEAR)` is called on the loaded texture — verified by source read AND by a runtime check that `scene.textures.get('npc-portrait-old-man').source[0].scaleMode` corresponds to LINEAR [US-56]
-- [ ] Portraits with `filter: 'nearest'` do NOT have `setFilter` called explicitly (they inherit the global `pixelArt: true` default) — verified by source read [US-56]
+- [x] `GameScene.preload()` iterates the portrait registry and loads each portrait under key `npc-portrait-<id>` (verified: source reads from registry, not hardcoded id list) [US-56]
+- [x] After preload, for each portrait registry entry with `filter: 'linear'`, `texture.setFilter(Phaser.Textures.FilterMode.LINEAR)` is called on the loaded texture — verified by source read AND by a runtime check that `scene.textures.get('npc-portrait-old-man').source[0].scaleMode` corresponds to LINEAR [US-56]
+- [x] Portraits with `filter: 'nearest'` do NOT have `setFilter` called explicitly (they inherit the global `pixelArt: true` default) — verified by source read [US-56]
 - [ ] **Phaser API contract:** Each portrait is created in `DialogueSystem` as `Phaser.GameObjects.Image` (NOT `Sprite`, NOT `Container`) since portraits do not animate. Verified by source read AND by a smoke check: opening the Old Man dialogue logs no console error, no `setTexture` call against a missing key, no Phaser warning about texture filter mismatch. [US-57]
 
 #### Structural — DialogueSystem rendering
@@ -63,8 +63,8 @@ Add character portraits to the dialogue UI so each NPC line reads as "this chara
 - [ ] After the box collapses back to `BOX_HEIGHT` on the next non-choice node, the portrait moves back down with it (verified manually) [US-57]
 
 #### Variant baseline (per-NPC)
-- [ ] **Marsh Hermit**: portrait appears on dialogue start (US-57); portrait is pixel-art-faithful (no soft bilinear smoothing on the source pixels — `nearest` filter inherited from global) (US-56); portrait stays anchored across all nodes; portrait disappears on close [US-56]
-- [ ] **Old Man**: portrait appears on dialogue start (US-57); portrait downscales smoothly (no nearest-neighbor mush — `linear` filter applied) (US-56); portrait stays anchored across all nodes; portrait disappears on close [US-56]
+- [x] **Marsh Hermit**: portrait appears on dialogue start (US-57); portrait is pixel-art-faithful (no soft bilinear smoothing on the source pixels — `nearest` filter inherited from global) (US-56); portrait stays anchored across all nodes; portrait disappears on close [US-56]
+- [x] **Old Man**: portrait appears on dialogue start (US-57); portrait downscales smoothly (no nearest-neighbor mush — `linear` filter applied) (US-56); portrait stays anchored across all nodes; portrait disappears on close [US-56]
 
 #### Variant baseline (per-surface)
 - [ ] **Desktop, no choices** (linear node → continue): portrait + speaker label + dialogue text all render correctly, continue hint visible (verified manually for Old Man's greeting) [US-57]
@@ -90,12 +90,12 @@ Add character portraits to the dialogue UI so each NPC line reads as "this chara
 
 #### Aesthetic traceability
 - [ ] **"Reads as a character looking at the player"** (design direction) traces to: portrait reads-as criteria above (Old Man + Marsh Hermit observer notes). [US-57]
-- [ ] **"Pixel-art-faithful for Marsh Hermit / illustrated-faithful for Old Man"** traces to: per-portrait `filter` registry value AND the runtime `setFilter(LINEAR)` call for `old-man` only AND the per-NPC variant baseline visual checks above. [US-56]
+- [x] **"Pixel-art-faithful for Marsh Hermit / illustrated-faithful for Old Man"** traces to: per-portrait `filter` registry value AND the runtime `setFilter(LINEAR)` call for `old-man` only AND the per-NPC variant baseline visual checks above. [US-56]
 - [ ] **"Anchored, not floating"** (design direction) traces to: anchored mechanism proxy + anchored reads-as observer note above. [US-57]
 
 #### Editor sync
-- [ ] `tools/editor/src/dialogueRenderer.ts` is reviewed — either accommodates the new optional `portraitId` field on `DialogueScript` / `DialogueNode` (e.g. shows a small "[portrait: <id>]" annotation on the node label) OR the change is deliberately deferred with a one-line comment in the editor source noting the deferred work [US-56]
-- [ ] `cd tools/editor && npm run build` succeeds with the new types [US-56]
+- [x] `tools/editor/src/dialogueRenderer.ts` is reviewed — either accommodates the new optional `portraitId` field on `DialogueScript` / `DialogueNode` (e.g. shows a small "[portrait: <id>]" annotation on the node label) OR the change is deliberately deferred with a one-line comment in the editor source noting the deferred work [US-56]
+- [x] `cd tools/editor && npm run build` succeeds with the new types [US-56]
 
 #### Error paths
 - [ ] If `portraitId` resolves to an id that is NOT in the portrait registry (typo in dialogue data), `DialogueSystem` logs a descriptive console error naming the offending id and falls back to "no portrait rendered" — dialogue itself proceeds without crashing (verified by deliberately mistyping `portraitId: 'old-mna'` in a temporary dev edit and observing the console + visible fallback) [US-57]
