@@ -25,4 +25,12 @@ entries:
     result: pass
     notes: portrait infrastructure in place; registry consumers still pending
     tokens: ~6000
+  - task: 4
+    time: "2026-04-25T01:00:00Z"
+    type: investigate
+    story: US-56
+    description: "Branch B — re-investigated state. Verify still passes; portrait registry + assets in place from task 3. Done-when walk: structural assets/registry criteria met (3 done); types/wiring/preload/AGENTS.md still pending. Confirmed the three relevant dialogue scripts in source: ashen-isle.ts:112 'old-man-intro' DialogueScript (startNodeId at line 114; portraitId belongs between id+startNodeId and nodes); fog-marsh.ts:98 'marsh-hermit-intro' DialogueScript (startNodeId at line 100); fog-marsh.ts:136 'whispering-stones' DialogueScript currently has NO portraitId (verifies optional case will be honoured). DialogueNode at types.ts:27-33 and DialogueScript at 35-39 — adding optional portraitId?: string to both is a single line each. Phase classification still server/schema/cross-cutting; investigation done in task 2 already pre-cleared this work item. Queued task 5 — single coherent unit: schema change in types.ts + wiring in two area files (small surface, fully audited)."
+    result: pass
+    notes: continued investigation; ready to wire types + scripts
+    tokens: ~5000
 # Each entry: {task, time, story, description, result, notes, tokens}
