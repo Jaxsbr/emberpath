@@ -84,6 +84,17 @@ export interface PropDefinition {
   spriteFrame: string;
 }
 
+// Tile-snapped decoration overlay. Distinct from PropDefinition: decorations are
+// strictly 1×1 atlas frames composed by area authors to build visual vocabulary
+// (paths, building walls/roofs, fences, water edges, doors-as-decoration). They
+// render at depth 2 — above base tiles, below props — and contribute zero to
+// collision (the underlying FLOOR/WALL cell still controls walkability).
+export interface DecorationDefinition {
+  col: number;
+  row: number;
+  spriteFrame: string;
+}
+
 export interface AreaDefinition {
   id: string;
   name: string;
@@ -93,6 +104,7 @@ export interface AreaDefinition {
   tileset: string;
   npcs: NpcDefinition[];
   props: PropDefinition[];
+  decorations: DecorationDefinition[];
   triggers: TriggerDefinition[];
   dialogues: Record<string, DialogueScript>;
   storyScenes: Record<string, StorySceneDefinition>;

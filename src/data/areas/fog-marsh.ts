@@ -58,6 +58,7 @@ export const fogMarsh: AreaDefinition = {
     { id: 'candle-s1', col: 14, row: 19, spriteFrame: '65' },
     { id: 'barrel-s1', col: 22, row: 19, spriteFrame: '66' },
   ],
+  decorations: [],
   triggers: [
     // Thought trigger — entering the foggy open area
     {

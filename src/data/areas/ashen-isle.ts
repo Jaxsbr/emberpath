@@ -75,6 +75,7 @@ export const ashenIsle: AreaDefinition = {
     { id: 'tree-s2', col: 7, row: 29, spriteFrame: '10' },
     { id: 'bush-s1', col: 28, row: 29, spriteFrame: '28' },
   ],
+  decorations: [],
   triggers: [
     {
       id: 'start-thought',
