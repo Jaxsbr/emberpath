@@ -17,4 +17,12 @@ entries:
     result: pass
     notes: investigation produced concrete diff plan; engine integration is one commit
     tokens: ~6000
+  - task: 3
+    time: "2026-04-25T22:55:00Z"
+    type: implement
+    story: US-58
+    description: "Branch A — implemented decoration layer engine. (1) types.ts: added DecorationDefinition interface with inline comment documenting depth 2, no collision contribution; added required decorations: DecorationDefinition[] field to AreaDefinition between props and triggers. (2) ashen-isle.ts + fog-marsh.ts: added decorations: [] alongside props so the required field compiles. (3) GameScene.ts: added private decorationSprites field; added renderDecorations() method mirroring renderProps with per-entry texture.has + console.warn (naming (col,row) and missing frame) + skip; sprite at (col*TILE_SIZE,row*TILE_SIZE) origin (0,0) displaySize TILE_SIZE depth 2; wired into create() between renderTileMap and renderProps; uiCam.ignore() updated to include decorationSprites alongside tileLayer/propSprites. Inline comment in renderDecorations documents out-of-bounds behaviour: Phaser accepts arbitrary world coords without error so the decoration renders off-grid harmlessly (matches the spec's allowed behaviour). Verify (npx tsc --noEmit && npm run build) passes; editor (cd tools/editor && npm run build) passes — new types compile in editor too. No regressions vs baseline. Quality checks: no-silent-pass + no-bare-except + error-path-coverage all satisfied (warn-skip on missing frame is the error path); agents-consistency: AGENTS.md doesn't yet describe decorations layer but is not contradictory — depth map / file ownership / behavior rules updates queued as a follow-up [phase] task. Story gate: US-58 still has unmet criteria (AGENTS.md depth map row [US-58], editor mapRenderer decoration pass [US-58, US-59], deliberate-bogus-frame manual verify) — not closing US-58 yet."
+    result: pass
+    notes: engine in place; editor mapRenderer + AGENTS.md updates pending
+    tokens: ~6000
 # Each entry: {task, time, story, description, result, notes, tokens}

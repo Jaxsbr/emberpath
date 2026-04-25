@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-58] Implement decoration layer engine — single coherent commit: (1) src/data/areas/types.ts: add DecorationDefinition { col: number; row: number; spriteFrame: string } and required field decorations: DecorationDefinition[] on AreaDefinition (placed between props and triggers in declaration order); (2) src/data/areas/ashen-isle.ts and src/data/areas/fog-marsh.ts: add decorations: [] alongside props (no transitional state — required field must compile from the start, US-59/US-60 fill in content); (3) src/scenes/GameScene.ts: add private decorationSprites: Phaser.GameObjects.Sprite[] = []; field, add private renderDecorations() method mirroring renderProps shape (atlas check, per-decoration texture.has guard with console.warn naming (col,row) and missing frame, sprite at (col*TILE_SIZE,row*TILE_SIZE) origin (0,0) display size TILE_SIZE depth 2; add inline comment documenting out-of-bounds behaviour — decorations outside (mapCols,mapRows) render harmlessly off-grid since Phaser handles negative/oversized coords without error; no collision contribution); call renderDecorations() in create() between renderTileMap and renderProps; update setupCamera() uiCam.ignore() list to include this.decorationSprites; (4) leave AGENTS.md depth-map / behavior-rules / file-ownership updates for a separate [phase] task — those are tagged [phase] in done-when and not gated by US-58 itself"
+  task_number: 4
+  next_task: "[US-58] Investigate editor mapRenderer decoration layer rendering — read tools/editor/src/mapRenderer.ts fully (canvas-based render pipeline; need to know exact draw order: tiles, NPCs, triggers/exits) to find the correct insertion point for the decoration pass (after base tile grid, before NPC circles + trigger overlays); confirm whether the editor needs to load tileset images for sprite rendering or if a flat-color stand-in mirroring the prop overlay is sufficient (matches existing prop handling — check what the editor does for props today); produce the diff plan"
   last_result: pass
   consecutive_fails: 0
 
