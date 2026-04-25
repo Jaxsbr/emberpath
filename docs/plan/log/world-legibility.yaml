@@ -41,4 +41,12 @@ entries:
     result: pass
     notes: editor mapRenderer decoration sprites done; AGENTS.md depth-map row pending
     tokens: ~5000
+  - task: 6
+    time: "2026-04-25T23:25:00Z"
+    type: implement
+    story: US-58
+    description: "Branch A — AGENTS.md updates for decoration layer. Inserted 'Decorations | 2 | main' row in depth map between Tiles and Props with description covering paths, building walls, fences, water edges, doorways, no collision contribution. Added 'Decorations (tile-snapped, non-blocking)' behavior-rules entry mirroring 'Decorative props (non-blocking)' — describes DecorationDefinition shape (no id distinguishes from props at type level), depth 2 between Tiles and Props, atlas-frame literal (no resolveFrame variant picking, fully deterministic), warn-and-skip on missing frame naming (col,row), zero collision contribution, out-of-bounds renders off-grid harmlessly, created once at area load (EP-01). Updated file ownership rows: GameScene.ts row mentions renderDecorations at depth 2 between renderTileMap and renderProps + uiCam.ignore extension; types.ts row mentions DecorationDefinition and AreaDefinition.decorations; ashen-isle/fog-marsh rows mention decorations alongside props; tools/editor/src/mapRenderer.ts row covers atlas-image cache, drawImage source-rect math, lastRender re-render hook, and clickables integration. Verify (npx tsc --noEmit && npm run build) passes; editor (cd tools/editor && npm run build) passes. No regressions vs baseline. Quality checks pass (doc-only edit). Story Completion Gate: ALL US-58 source criteria met (engine, editor, depth map, file ownership, behavior rules, error paths source-read confirmed) → checked off boxes in phase-goal.md, added US-58 to completed_stories, produced feat(US-58) story milestone commit."
+    result: pass
+    notes: US-58 complete — decoration layer end-to-end (engine + editor + AGENTS.md)
+    tokens: ~6000
 # Each entry: {task, time, story, description, result, notes, tokens}
