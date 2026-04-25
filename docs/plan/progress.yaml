@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-56] Copy portrait source files to assets/npc/marsh-hermit/portrait.png and assets/npc/old-man/portrait.png; extend src/systems/npcSprites.ts with NpcPortraitDefinition interface ({ file: string; filter: 'nearest' | 'linear' }) including a 'square aspect 1024×1024 — non-square not supported this phase' inline comment, NPC_PORTRAITS record (marsh-hermit→nearest, old-man→linear), hasNpcPortrait(id) predicate, and getNpcPortraitIds() iterator. No changes to GameScene/dialogue/types/area data in this task — those follow in subsequent tasks."
+  task_number: 4
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 

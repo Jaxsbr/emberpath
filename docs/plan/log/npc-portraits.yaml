@@ -17,4 +17,12 @@ entries:
     result: pass
     notes: investigation produced concrete diff plan for tasks 3-N
     tokens: ~12000
+  - task: 3
+    time: "2026-04-25T00:50:00Z"
+    type: implement
+    story: US-56
+    description: "Branch A — implemented portrait registry + asset copy. cp /Users/jacobusbrink/Jaxs/assets/emberpath/npc/{marsh-hermit,old-man}/portrait.png -> assets/npc/<id>/portrait.png (868KB + 2.4MB, 1024x1024 each). Extended src/systems/npcSprites.ts: added NpcPortraitDefinition { file: string; filter: 'nearest'|'linear' } interface, NPC_PORTRAITS record (marsh-hermit→nearest, old-man→linear), hasNpcPortrait() + getNpcPortraitIds() helpers. Inline comment on the registry block documents the 1024×1024 square-aspect assumption + non-square out-of-scope. Verify (tsc + build) passes. No regression vs baseline (only bundle hash + build time differ). Quality checks: no-silent-pass + no-bare-except + error-path-coverage + agents-consistency — none applicable to this task; AGENTS.md is incomplete (portrait registry not yet documented) but not contradictory — that update is queued as its own [phase] task per phase-goal.md. Story gate: US-56 has many criteria still unmet (types, script wiring, preload, AGENTS.md). Not closing US-56 yet."
+    result: pass
+    notes: portrait infrastructure in place; registry consumers still pending
+    tokens: ~6000
 # Each entry: {task, time, story, description, result, notes, tokens}
