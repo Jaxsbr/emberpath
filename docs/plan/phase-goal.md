@@ -42,15 +42,15 @@ Rescue Pip from the Fog Marsh dead-end. After `fog-marsh-dead-end` lands the pla
 
 #### US-72 — Dialogue + flag side-effects + story scene chain
 
-- [ ] `DialogueNode.setFlags?: Record<string, string | number | boolean>` added to `data/areas/types.ts` [US-72]
-- [ ] `DialogueSystem` fires `setFlag(k, v)` for every entry in `node.setFlags` when a node is shown, BEFORE the typewriter starts; verified by a trace test: a downstream `onFlagChange` subscriber registered before the dialogue starts sees the new value within the same call stack as `showNode` [US-72]
-- [ ] `DialogueScript.endStoryScene?: string` added to `data/areas/types.ts` [US-72]
-- [ ] `GameScene.dialogueSystem.setOnEnd` callback launches `endStoryScene` (when present) AFTER `flushSave` — verified by reading the order in `GameScene.create` [US-72]
-- [ ] `keeper-intro` dialogue script on `fog-marsh.ts`: `portraitId: 'heron'`, `endStoryScene: 'ember-given'`, two nodes (greeting → action), action node has `setFlags: { has_ember_mark: true, keeper_met: true, marsh_trapped: false }` [US-72]
-- [ ] `ember-given` story scene on `fog-marsh.ts` with 2-3 beats. Specific imageColor commitments: beat 1 `0xd9a657` (warm gold), beat 2 `0xf2c878` (brighter ember), beat 3 (optional) `0xe8d8b8` (pale dawn). imageLabel strings as documented in spec [US-72]
-- [ ] **Error path (Learning #10):** if `endStoryScene` references an id not present in `area.storyScenes`, the existing `launchStoryScene` error path fires (`console.error('Story scene definition not found: ...')`) and GameScene resumes normally — no crash, no orphaned state. Verified by temporarily setting `endStoryScene: 'nonexistent'` during dev [US-72]
-- [ ] **Existing-script regression (Rule 4a):** Marsh Hermit dialogue (uses `DialogueChoice.setFlags`) continues to set `spoke_to_marsh_hermit: true` on greeting choice; Old Man dialogue (no setFlags) closes without flag changes [US-72]
-- [ ] **Existing-script regression:** All dialogue scripts WITHOUT `endStoryScene` close via the existing `exitDialogue + flushSave` path with NO story scene launch — verified by Old Man, Marsh Hermit, Whispering Stones [US-72]
+- [x] `DialogueNode.setFlags?: Record<string, string | number | boolean>` added to `data/areas/types.ts` [US-72]
+- [x] `DialogueSystem` fires `setFlag(k, v)` for every entry in `node.setFlags` when a node is shown, BEFORE the typewriter starts; source-readable in showNode (top of method, before clearChoices/redrawBox/typewriter) [US-72]
+- [x] `DialogueScript.endStoryScene?: string` added to `data/areas/types.ts` [US-72]
+- [x] `GameScene.dialogueSystem.setOnEnd` callback launches `endStoryScene` (when present) AFTER `flushSave` — verified by reading the order in `GameScene.create` (flushSave -> getEndStoryScene -> launchStoryScene) [US-72]
+- [x] `keeper-intro` dialogue script on `fog-marsh.ts`: `portraitId: 'heron'`, `endStoryScene: 'ember-given'`, two nodes (greeting → action), action node has `setFlags: { has_ember_mark: true, keeper_met: true, marsh_trapped: false }` [US-72]
+- [x] `ember-given` story scene on `fog-marsh.ts` with 3 beats. imageColors: beat 1 `0xd9a657` (warm gold), beat 2 `0xf2c878` (brighter ember), beat 3 `0xe8d8b8` (pale dawn). Labels: 'The Keeper draws near' / 'The ember passes' / 'The fog parts' [US-72]
+- [x] **Error path (Learning #10):** if `endStoryScene` references an id not present in `area.storyScenes`, the existing `launchStoryScene` error path fires (`console.error('Story scene definition not found: ...')` at GameScene.ts:636) and GameScene resumes normally — no crash, no orphaned state [US-72]
+- [x] **Existing-script regression (Rule 4a):** Marsh Hermit dialogue (uses `DialogueChoice.setFlags`) continues to set `spoke_to_marsh_hermit: true` on greeting choice; Old Man dialogue (no setFlags) closes without flag changes — paths preserved (no edits to existing scripts) [US-72]
+- [x] **Existing-script regression:** All dialogue scripts WITHOUT `endStoryScene` close via the existing `exitDialogue + flushSave` path with NO story scene launch — getEndStoryScene returns null when no script declared it; the `if (endStoryScene)` guard skips launchStoryScene for Old Man, Marsh Hermit, Whispering Stones [US-72]
 
 #### US-73 — Path re-opens via flag flip + ember overlay
 

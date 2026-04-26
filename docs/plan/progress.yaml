@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: "[US-72] Implement: add DialogueNode.setFlags + DialogueScript.endStoryScene to types.ts; in dialogue.ts showNode, fire setFlags BEFORE typewriter starts; expose getEndStoryScene() on DialogueSystem; in GameScene.setOnEnd callback, after flushSave, launchStoryScene(getEndStoryScene()) if present; add keeper-intro dialogue script (heron portrait, 2 nodes, action node setFlags) + ember-given story scene (3 beats with warm imageColors) to fog-marsh.ts"
+  task_number: 10
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-70, US-71]
+  completed_stories: [US-70, US-71, US-72]
