@@ -553,6 +553,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderNpcs(): void {
+    // Reset across scene.restart — instance fields persist between restarts so
+    // stale Phaser sprite references (already destroyed by the previous scene's
+    // shutdown) would otherwise survive. spawnNpcSprite's idempotency guard
+    // (if (npcSpritesById.has(id)) return null) would then SKIP creating a
+    // fresh sprite on re-entry, and NpcBehaviorSystem's constructor would read
+    // the destroyed sprite from the map and crash on .play() at the next tick.
+    this.npcEntities = [];
+    this.npcSpritesById.clear();
     for (const npc of this.activeNpcs) {
       this.spawnNpcSprite(npc);
     }
