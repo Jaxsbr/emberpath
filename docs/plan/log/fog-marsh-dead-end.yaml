@@ -97,3 +97,11 @@ entries:
     result: pass
     notes: docs + AGENTS.md updates committed; phase-completion gate prerequisites satisfied (deploy criteria deferred to post-merge by convention)
     tokens: ~5500
+  - task: 13
+    time: "2026-04-26T09:00:00Z"
+    type: phase_complete
+    story: phase
+    description: "Branch B — Phase Completion Gate. Re-ran verify (npx tsc --noEmit && npm run build) — pass. Re-ran editor build (cd tools/editor && npm run build) — pass. Done-when audit: 65 of 65 criteria ticked in phase-goal.md (0 unchecked). AGENTS.md consistency check: types.ts/fog-marsh.ts/GameScene.ts/flags.ts/triggerZone.ts file ownership rows all reflect what shipped; Behavior rules entries 'Conditional exits and decorations' + 'Trigger flag side-effects' present and accurate; Directory layout includes the new manual-verify doc. Error-path spot check: row 22 walking-into-walled-cells (no crash), tampered marsh_trapped (state restored), tampered escape_attempts (mutual exclusion holds), Reset Progress while trapped (atomic via resetAllFlags) — all source-readable + documented in manual-verify. All four stories US-66/US-67/US-68/US-69 in completed_stories. Evidence summary: marsh-deepens trigger commits 3199bb1 (US-66), exit closure + flag-change subscriber 177e96f (US-67), conditional decorations 1202f30 (US-68), escape feedback 5fd8d72 (US-69), AGENTS.md + manual-verify doc 02ff46a. Phase complete."
+    result: pass
+    notes: phase complete; all 65 done-when criteria met; ready for PR creation in next iteration via Branch B review-task scheduling
+    tokens: ~3000
