@@ -1,6 +1,6 @@
 import { TILE_SIZE } from '../maps/constants';
 import { TriggerDefinition } from '../data/areas/types';
-import { getFlag, setFlag } from '../triggers/flags';
+import { getFlag, setFlag, incrementFlag } from '../triggers/flags';
 import { evaluateCondition } from './conditions';
 
 export interface TriggerCallbacks {
@@ -70,6 +70,19 @@ export class TriggerZoneSystem {
     // Mark one-shot triggers as fired
     if (!trigger.repeatable) {
       setFlag(`_trigger_fired_${trigger.id}`, true);
+    }
+
+    // Apply optional flag side-effects BEFORE the dispatch so a downstream
+    // callback reading the flag in the same frame sees the new value.
+    if (trigger.setFlags) {
+      for (const [name, value] of Object.entries(trigger.setFlags)) {
+        setFlag(name, value);
+      }
+    }
+    if (trigger.incrementFlags) {
+      for (const name of trigger.incrementFlags) {
+        incrementFlag(name);
+      }
     }
 
     // Dispatch by type

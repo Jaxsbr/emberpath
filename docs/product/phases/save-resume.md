@@ -1,6 +1,6 @@
 # Phase: save-resume
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -29,7 +29,7 @@ This phase introduces no API endpoints, no user text input fields, and no query 
 
 ## Stories
 
-### US-62 — Save state module: schema, IO, validation, reset
+### US-62 — Save state module: schema, IO, validation, reset [Shipped]
 
 As a player whose tab might close at any moment, I want the engine to have a single dedicated module that knows what "the world save" is, how to read and write it from localStorage, how to recognise a corrupt or missing save, and how to wipe it cleanly, so that every other system (Title screen, autosave on transition, reset button) calls one well-defined surface instead of duplicating localStorage logic.
 
@@ -57,7 +57,7 @@ As a player whose tab might close at any moment, I want the engine to have a sin
 
 ---
 
-### US-63 — Autosave on world walk + area transition + clean dialogue/story close
+### US-63 — Autosave on world walk + area transition + clean dialogue/story close [Shipped]
 
 As a player who closed the tab without warning, I want the game to have already written my last position recently enough that I wake up where I left off, so that resuming feels continuous instead of "I lost the last several minutes."
 
@@ -85,7 +85,7 @@ As a player who closed the tab without warning, I want the game to have already 
 
 ---
 
-### US-64 — Title screen Continue / New Game
+### US-64 — Title screen Continue / New Game [Shipped]
 
 As a returning player, I want the Title screen to offer me "Continue" (resuming where I left off) or "New Game" (a fresh start that wipes my save), so that I never lose progress to a misclick AND I'm never blocked from starting over.
 
@@ -116,7 +116,7 @@ As a returning player, I want the Title screen to offer me "Continue" (resuming 
 
 ---
 
-### US-65 — World-save reset: button + URL param + clear-on-fresh-tab regression check
+### US-65 — World-save reset: button + URL param + clear-on-fresh-tab regression check [Shipped]
 
 As a tester (and as a kid who pressed all the buttons), I want a fast, reliable way to wipe the world save without inspecting localStorage by hand, so that QA runs and "I want to start over" both work without dev-tools.
 

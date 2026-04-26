@@ -1,169 +1,142 @@
 ## Phase goal
 
-Make the player's progress survive a closed tab. Today, every refresh sends the player back to Ashen Isle's `playerSpawn` regardless of where they were when the tab closed; only `triggers/flags.ts` persists, so a session that walked through the dock to Fog Marsh, talked to the Marsh Hermit, and stepped a third of the way back across the path is reduced on reload to "you are once again standing at the player-cottage gate." This phase adds the missing **world-walking layer** to localStorage — current `areaId` plus the player's tile/pixel position — and wires the Title screen to read it: a "Continue" entry resumes the saved area at the saved position; "New Game" wipes the save and starts fresh on the default area's `playerSpawn`. Mid-dialogue and mid-StoryScene resume are explicitly out of scope: if the tab closes during a conversation, the conversation closes on resume and the player wakes up on the path with whatever flags had committed. The phase ends when (a) closing the tab anywhere on the world layer of either area and reopening returns the player to the same area at the same position, (b) Title's "Continue" and "New Game" branch correctly based on save presence, (c) "Reset Progress" / a dev URL param clears both flags AND save atomically so a tester can wipe the world cheaply between QA runs.
+Make Fog Marsh felt-mechanically inescapable. Today the player walks into the marsh, talks to the Marsh Hermit, optionally triggers the Whispering Stones and the marsh-vision story scene, then walks freely back south to Ashen Isle — the hermit's line "Through? There is no through. Only deeper" is currently flavour text without consequence. This phase makes that line true: the player walks deeper than the hermit, crosses a fog threshold that snaps shut behind them, and discovers the south path is gone. Walking against the closed exit reads as fog/water with no walkable surface, and a sequence of thought bubbles graduates from "the path is gone" to "I cannot do this alone." The phase ends at the felt-bottom of beat 2 — the player is stuck, knows they're stuck, and the rescue scaffolding (`marsh_trapped: true`, `escape_attempts >= 4`) is in place for `keeper-rescue` to consume. **The Keeper does not appear in this phase.**
 
 ### Design direction
 
-**Invisible when it works, observable when it breaks.** Save IO is infrastructure — the player should not see "saving…" indicators or save-slot UI. The visible surface is exactly two Title labels (Continue, New Game) and the "Reset Progress" affordance that already exists. Concretely:
+**Mechanical truth, not warning labels.** From `master-prd.md`: "the Fog Marsh dead-end makes grace felt, not told." The player should feel "the path is gone," not see "Path closed!" UI text.
 
-- **One implicit save slot.** No named slots, no save-game manager. Save = `localStorage['emberpath_save']`. There is exactly one resume point per browser, like a checkpoint.
-- **Save writes are bounded, not chatty.** Position writes throttle to at most once every `SAVE_THROTTLE_MS` (proposal: 1000 ms). Area transitions and clean dialogue/story closes flush immediately so the resume point is current within one second of the last meaningful event. No write per frame, ever.
-- **Continue is the default when a save exists.** If there's a save, "Continue" is the visually-primary label; "New Game" is the secondary label. If there's no save, only "New Game" is visible (no greyed-out Continue). The hierarchy matches what the player most likely wants on each session.
-- **Reset is one click and atomic.** "Reset Progress" wipes flags AND save in the same call. After reset, "Continue" disappears on the same frame; the player can `?reset=1` from the URL to do the same without clicking, for tester convenience.
-- **Failures degrade gracefully.** Private-mode Safari and iframe sandboxes can throw `QuotaExceededError` or block localStorage entirely. The game must still play through; resume just won't survive the session. Failures are logged once, not every frame.
+- **Visual closure dominates the message.** The exit cells, currently `PATH_VARIANTS` plank tiles, are replaced by `EDGE_VARIANTS` deep-water tiles when `marsh_trapped` flips. Same authoring vocabulary; no special-case rendering. The player sees the path was, and now isn't.
+- **Trigger threshold has a place, not just a flag.** The threshold is north of the Marsh Hermit, on the dry path the hermit's line ("only deeper") points to. Crossing it is the player's choice, not a forced cutscene.
+- **Escape-attempt feedback escalates.** First bump: "The fog has swallowed the way back." Third bump+: "I cannot do this alone." This pacing primes the rescue without naming it.
+- **Closed is closed — no jiggle, no "almost works."** Walking into the closed exit is identical to walking into any wall. No half-second pause, no fade: collision is collision. The fog/water rendering is what tells the story.
 
-The build-loop's `frontend-design` skill applies to the Title screen layout work in US-64 (Continue/New Game pairing visual hierarchy).
-
-### Dependencies
-- world-legibility
+The build-loop's `frontend-design` skill does NOT apply — this phase introduces zero UI.
 
 ### Stories in scope
-- US-62 — Save state module: schema, IO, validation, reset
-- US-63 — Autosave on world walk + area transition + clean dialogue/story close
-- US-64 — Title screen Continue / New Game
-- US-65 — World-save reset: button + URL param + clear-on-fresh-tab regression check
+
+- US-66 — Threshold: marsh-deepens trigger sets `marsh_trapped: true`
+- US-67 — Exit closure mechanic: south exit becomes inert when `marsh_trapped: true`
+- US-68 — Visual closure: exit decorations switch from PATH to EDGE when `marsh_trapped == true`
+- US-69 — Escape-attempt feedback: thought escalation on bumping the closed exit
+
+### Safety criteria
+
+This phase introduces no API endpoints, no user-text fields, no query interpolation, no LLM output. It does introduce a new optional `condition?: string` field on `DecorationDefinition` and a new optional `setFlags` field on `TriggerDefinition` — `evaluateCondition` already handles malformed or missing flag references gracefully, but the new fields must use that path consistently.
+
+- [x] `ExitDefinition.condition` (existing) and `DecorationDefinition.condition` (new) are both routed through the existing `systems/conditions.ts:evaluateCondition` function — no parallel parser, no string interpolation [US-67, US-68]
+- [x] An `ExitDefinition.condition` referring to an unset flag (`'marsh_trapped == false'` when `marsh_trapped` has never been set) evaluates such that the exit fires as today — no console error, no false-trap (verified: source read of `evaluateCondition` semantics + manual on a fresh game) [US-67]
+- [x] A `DecorationDefinition.condition` evaluating to `false` results in the decoration NOT being added to the scene (or its `visible` set to `false`) — never half-rendered [US-68]
+- [x] Tampering with `emberpath_flags` in DevTools to set `marsh_trapped: true` from a fresh tab restores the trapped state correctly on Fog Marsh load — does NOT crash, does NOT half-render decorations [US-67, US-68]
 
 ### Done-when (observable)
 
-#### Structural — save module (US-62)
+#### Structural — threshold trigger (US-66)
 
-- [x] `src/triggers/saveState.ts` exists and exports `loadSave`, `writeSave`, `clearSave`, `hasSave`, `resetWorld` (verified: source read) [US-62]
-- [x] `SaveState` type is `{ version: 1; areaId: string; position: { x: number; y: number } }` (verified: source read) [US-62]
-- [x] `STORAGE_KEY` constant is `'emberpath_save'`, distinct from `triggers/flags.ts`'s `'emberpath_flags'` (verified: grep both files) [US-62]
-- [x] `loadSave()` returns `null` on JSON parse failure AND calls `clearSave()` to scrub the corrupt entry (verified by setting `localStorage.emberpath_save = '{not json'` in DevTools, reloading, observing one warn + the entry removed) [US-62]
-- [x] `loadSave()` validates `version === 1`, `areaId` is a known registry id (consults `getAllAreaIds()`), and `position.x/y` are finite numbers; failure returns `null` and clears (verified: source read of the validation branch + a temp tampered `areaId: 'nonexistent'` round-trip) [US-62]
-- [x] `writeSave()` wraps `setItem` in `try/catch`; quota / unavailable failures log exactly once per session via a module-level `writeFailureLogged` flag and otherwise silently continue (verified: source read; manual quota test by repeatedly stuffing localStorage to > 5 MB then triggering an autosave) [US-62]
-- [x] `clearSave()` is idempotent and wraps `removeItem` in `try/catch` (verified: source read + calling twice in a row) [US-62]
-- [x] `hasSave()` returns true iff `loadSave()` is non-null (verified: source read of the relationship; correctness via DevTools toggling) [US-62]
-- [x] `resetAllFlags()` in `triggers/flags.ts` calls `clearSave()` from `saveState.ts` so reset is atomic — wipes flags AND world save in one call (verified: source read; manual: set a flag, set a save, click Reset Progress, observe both gone) [US-62]
-- [x] No call site outside `saveState.ts` and `flags.ts` reads or writes `'emberpath_save'` or `'emberpath_flags'` directly (verified: grep `localStorage` across `src/`) [US-62]
-- [x] A `version: 2` save (manually written in DevTools) loads as `null` and is cleared — the version field is a real gate, not cosmetic (verified by tampered round-trip) [US-62]
+- [x] `data/areas/fog-marsh.ts` declares a new trigger `id: 'marsh-deepens'`, type `thought`, position `(col 14, row 5)`, `width: 1, height: 2`, `repeatable: false` (verified: source read) [US-66]
+- [x] `TriggerDefinition` in `data/areas/types.ts` has a new optional `setFlags?: Record<string, string | number | boolean>` field (verified: source read; field shape mirrors existing `DialogueChoice.setFlags`) [US-66]
+- [x] `TriggerZoneSystem` consumes `trigger.setFlags` on fire, iterating entries and calling `setFlag(key, value)` for each (verified: source read of the fire path in `triggerZone.ts`) [US-66]
+- [x] The new trigger sets `setFlags: { marsh_trapped: true }`; manual: walk through, observe DevTools `localStorage['emberpath_flags']` contains `marsh_trapped: true` [US-66]
+- [x] The thought text in `actionRef` is exactly `"The fog rolls in behind me. The path is gone."` (verified: source read) [US-66]
+- [x] Loading Fog Marsh directly with `playerSpawn (14, 12)` does NOT fire `marsh-deepens` on area load — only player-walked entry into the trigger band fires it (verified manually) [US-66]
+- [x] After firing, `marsh_trapped` is `true` after a page refresh (existing localStorage persistence — regression check) [US-66]
+- [x] **Variant baseline:** the existing `fog-entry-thought` trigger (no `setFlags`) continues to fire identically (regression: `marsh_trapped` does NOT get set as a side effect; only the new trigger sets it) [US-66]
 
-#### Structural — autosave write (US-63)
+#### Structural — exit closure (US-67)
 
-- [x] `GameScene` declares named module-level constants `SAVE_THROTTLE_MS = 1000` and `SAVE_MIN_DELTA_PX = 2` (verified: source read) [US-63]
-- [x] `GameScene` has a private method `maybeAutosave()` that owns the throttle bookkeeping (last-write timestamp, last-write x/y) and is called once per frame at the END of the world-walk branch in `update()` — NOT inside the dialogue early-return, NOT inside the transition early-return (verified: source read of the call site location) [US-63]
-- [x] `maybeAutosave()` returns early (zero localStorage work; no `JSON.stringify`) when (a) elapsed since last write < `SAVE_THROTTLE_MS`, OR (b) position delta from last write < `SAVE_MIN_DELTA_PX`. Verified: source read of both guards before the build-payload step. **(Loop-invariant audit, Learning EP-01.)** [US-63]
-- [x] `transitionToArea()` calls `writeSave({ areaId: destinationAreaId, position: <entryPoint resolved to pixels> })` BEFORE `scene.restart` (verified: source read of the call order; manual: trigger a transition, force-close mid-fade, reopen, Continue lands on the destination's entry tile) [US-63]
-- [x] `DialogueSystem.setOnEnd` consumer in `GameScene` flushes the save (verified: source read; manual: open Old Man dialogue, run through to its natural close, force-close tab, reopen, Continue lands at the position the player was in when dialogue closed) [US-63]
-- [x] StoryScene close path triggers a save flush back in `GameScene` (verified: source read of whichever resume-from-StoryScene hook GameScene already owns; manual: same pattern as dialogue close) [US-63]
-- [x] `AreaDefinition` has `id: string` (added if missing); `data/areas/registry.ts` keys agree with the per-area `id` value (verified: source read + a small grep that registry key === area.id for ashen-isle and fog-marsh) [US-63]
-- [x] During `transitionInProgress === true`, `maybeAutosave()` returns without writing (verified: source read of the guard) — only the explicit transition flush writes during a transition [US-63]
-- [x] No `writeSave` call inside `update()`'s tight loop on frames where the throttle did not fire (verified: source read; on-frame logging temporarily added during dev confirms zero writes on idle frames) [US-63]
+- [x] `ExitDefinition.condition` is the existing field at `types.ts:67`; this story does NOT re-add it (verified: source read pre-phase) [US-67]
+- [x] `fog-to-ashen` exit on `fog-marsh.ts` has `condition: 'marsh_trapped == false'` set (verified: source read) [US-67]
+- [x] When `marsh_trapped == true`, cells at row 22 cols 13-16 are treated as walls by `collidesWithWall` — verified: source read of the collision flip (either `area.map` in-place mutation OR a flag-aware overlay in `systems/collision.ts`); manual: walk into the cells, player stops as if hitting a wall [US-67]
+- [x] The collision flip happens on the same frame as the threshold trigger — no `scene.restart()`, no black flash (verified by walking through the threshold and immediately walking south to the old exit) [US-67]
+- [x] A flag-change detection mechanism exists for `marsh_trapped` (subscriber API in `flags.ts` OR per-frame polling guarded by Learning EP-01); the same mechanism is reused by US-68 for decoration re-rendering (verified: source read; one shared mechanism, not two) [US-67, US-68]
+- [x] When `marsh_trapped == false` (fresh game), the exit fires and transitions to Ashen Isle as today (regression check) [US-67]
+- [x] `cd tools/editor && npm run build` passes; `flowRenderer` renders the conditional exit (verified pre-phase that `flowRenderer` reads the `condition` field; if the visible treatment was missing, this story adds a one-line dashed-arrow or label) [US-67]
 
-#### Structural — Title Continue / New Game (US-64)
+#### Structural — visual closure (US-68)
 
-- [x] `TitleScene.create()` calls `hasSave()` exactly once on entry (verified: source read) [US-64]
-- [x] When `hasSave()` is true, two labels render: a primary "Continue" near the current Start position; a secondary "New Game" below it (smaller font or muted color) (verified: source read + visual screenshot) [US-64]
-- [x] When `hasSave()` is false, no "Continue" label is created — not even greyed out (verified: source read of the conditional branch; visual screenshot in fresh-tab incognito) [US-64]
-- [x] Tapping "Continue" calls `loadSave()` and starts `GameScene` with `{ areaId, resumePosition: save.position }`; the `entryPoint` field is undefined on this path (verified: source read) [US-64]
-- [x] Tapping "New Game" calls `clearSave()` + `resetAllFlags()` THEN starts `GameScene` with no boot data (verified: source read of the call order) [US-64]
-- [x] `GameScene.create` accepts an optional `resumePosition?: { x: number; y: number }` field on its boot data (verified: source read of the type annotation) [US-64]
-- [x] When `data.resumePosition` is set AND `data.entryPoint` is absent, `createPlayer()` uses `resumePosition` directly as the pixel position; when both are set, `entryPoint` wins and `resumePosition` is ignored (verified: source read of the precedence branch + an inline comment documenting the rule) [US-64]
-- [x] The fade-in branch covers both Continue loads AND transition loads — `if (data?.entryPoint || data?.resumePosition)` (verified: source read) [US-64]
-- [x] If `loadSave()` returns a save whose `areaId` is unknown to the registry, the Continue tap falls back to a fresh start (clears save, logs a single warn, starts GameScene with no boot data) — first click is responsive, no second click needed (verified by tampered `areaId` round-trip) [US-64]
-- [x] If `loadSave().position` resolves to coordinates outside the destination area's pixel bounds (`x < 0 || x > mapCols * TILE_SIZE || y < 0 || y > mapRows * TILE_SIZE`) OR onto a WALL tile, Continue falls back to the area's `playerSpawn`, clears the stale save entry, and logs a single warn. Verified by tampered round-trip with `position: { x: 99999, y: 99999 }` AND with `position` set to a known WALL-tile pixel coord on Ashen Isle. [US-64]
-- [x] Continue label font size is at least 1.5× the New Game label font size on desktop (verified: source read of the two `fontSize` strings; visual screenshot at 1280×720) — encodes the "Continue is the default when a save exists" design direction as a measurable target. [US-64]
+- [x] `DecorationDefinition` in `data/areas/types.ts` has an optional `condition?: string` field (verified: source read) [US-68]
+- [x] `GameScene.renderDecorations()` (or the sibling re-render hook) evaluates per-decoration condition and sets sprite visibility accordingly (verified: source read) [US-68]
+- [x] `fog-marsh.ts` declares paired decorations at row 22 cols 13-16: PATH variants conditioned on `marsh_trapped == false`, EDGE variants conditioned on `marsh_trapped == true` (verified: source read) [US-68]
+- [x] When `marsh_trapped` flips, the visible decoration on row 22 cols 13-16 swaps from PATH to EDGE on the same frame as the collision update (verified: manual + dev observation) [US-68]
+- [x] Decoration re-evaluation runs ONLY on flag change, NOT per-frame full re-render (verified: source read; loop-invariant audit per Learning EP-01) [US-68]
+- [x] **Atlas frame-pick verification (compounded):** PATH and EDGE frames are the existing `tiny-dungeon` indices already verified during `tileset` and `world-legibility` (`FRAME.PATH_A = '36'`, `PATH_B = '37'`, `EDGE_A = '33'`, `EDGE_B = '34'`, `EDGE_C = '35'`); no new atlas indices introduced. If any new index is needed, a labeled atlas preview is generated and visually verified before commit: `python3 tools/atlas-preview.py assets/tilesets/tiny-dungeon/tilemap.png /tmp/tiny-dungeon-preview.png && open /tmp/tiny-dungeon-preview.png` [US-68]
+- [x] `tools/editor/src/mapRenderer.ts` either renders all conditional decorations regardless of condition OR has a documented behaviour for conditional decorations (verified: editor inspection + brief inline comment) [US-68]
 
-#### Structural — reset mechanism (US-65)
+#### Structural — escape-attempt feedback (US-69)
 
-- [x] TitleScene "Reset Progress" click wipes flags AND save together via `resetWorld()` from `saveState.ts` (verified: source read; manual: set a flag in DevTools, set a save, click reset, both gone) [US-65]
-- [x] On Reset confirmation, the "Continue" label is removed (or the layout re-runs in the no-save state) on the same frame so the player doesn't see a stale Continue button while the "Progress Reset!" confirmation is up (verified: source read + screenshot before/after) [US-65]
-- [x] `?reset=1` URL query param triggers a one-shot wipe in `TitleScene.init()` or `create()` BEFORE `hasSave()` is consulted; the Title renders in the no-save state on the same frame (verified: source read + manual via `http://localhost:5173/?reset=1`) [US-65]
-- [x] After `?reset=1`, `history.replaceState` removes the query param so a manual refresh does not re-trigger the wipe (verified: source read; manual: load the URL, observe the URL cleans, refresh, no second wipe log) [US-65]
-- [x] `?clearSave=1` URL query param wipes ONLY the save; flags remain intact (verified: manually set `oldman_greeted: true` flag, save a position, load `?clearSave=1`, observe Continue absent and the flag still present in DevTools) [US-65]
-- [x] `resetWorld()` exported from `saveState.ts` calls `clearSave()` THEN `resetAllFlags()` in that order (verified: source read of the sequence) [US-65]
-- [x] `resetWorld` re-exported from `triggers/flags.ts` for backward import compat at the call site — existing `resetAllFlags` consumers still work without import edits (verified: source read of the re-export AND that the existing `TitleScene` reset-progress import line did not need to change) [US-65]
-- [x] AGENTS.md "Controls" (or new "Dev / testing" subsection) documents `?reset=1` and `?clearSave=1` (verified: source read of AGENTS.md after build-loop reconciliation) [US-65]
-- [x] `docs/plan/save-resume-manual-verify.md` exists with the full checklist enumerated in US-65 acceptance criteria (verified: file present + grep for each named scenario) [US-65]
+- [x] Three new triggers on `fog-marsh.ts` at row 21 cols 13-16, each `width: 4, height: 1`, type `thought`, `repeatable: true`, with mutually-exclusive `escape_attempts` band conditions (verified: source read) [US-69]
+- [x] Each trigger fires its named thought (`"The fog has swallowed the way back."` / `"I tried this path. It's gone."` / `"I cannot do this alone."`) — texts verified against source [US-69]
+- [x] `TriggerDefinition` gains an optional `incrementFlags?: string[]` field; each escape trigger uses `incrementFlags: ['escape_attempts']`; `TriggerZoneSystem` calls `incrementFlag(name)` for each entry on fire (verified: source read of types.ts + triggerZone.ts; manual: bump the band repeatedly, observe `escape_attempts` increase in DevTools localStorage) [US-69]
+- [x] The bands are mutually exclusive at all `escape_attempts` values (0, 1 → first only; 2, 3 → second only; 4, 5, 6+ → third only) (verified: source read of the conditions) [US-69]
+- [x] After 4 distinct entries, `escape_attempts >= 4` AND the despair thought has fired at least once (verified manually) [US-69]
+- [x] Standing still on the band does NOT infinite-fire — existing repeatable semantics require exit-and-re-enter (verified: source read of repeatable semantics + manual) [US-69]
+- [x] `evaluateCondition` supports `<` and `>=` operators (verified: source read of `systems/conditions.ts`; if not supported pre-phase, this phase adds them with a focused done-when criterion stating `evaluateCondition('escape_attempts >= 4')` returns `true` when `escape_attempts === 4` and `false` when `escape_attempts === 3`, and similar for `<`) [US-69]
 
-#### Behavior — resume correctness (US-63 + US-64)
+#### Behavior — full sequence (US-66 + US-67 + US-68 + US-69)
 
-- [x] **Ashen Isle resume**: walk the player from the cottage gate to a distinct, identifiable position (e.g. east of the path next to the Old Man's fence). Force-close the tab. Reopen. Tap Continue. Player appears within `SAVE_THROTTLE_MS / 2` worth of pixel distance (i.e. half a second of walked distance, ~32 px) of where they were when the tab closed. Camera follows. No double-fade. No console errors. (verified: manual-verify checklist) [US-63, US-64]
-- [x] **Fog Marsh resume**: same protocol on Fog Marsh's dry path. Player resumes on Fog Marsh, on the path, near the prior position. (verified: manual) [US-63, US-64]
-- [x] **Mid-transition resume**: walk to Ashen Isle's dock. Cross. While the fade-out + fade-in is in progress, force-close the tab. Reopen. Tap Continue. Player lands on Fog Marsh's entry tile (the destination flush from the transition write), NOT on Ashen Isle's exit-zone tile (which would re-fire the transition on entry). (verified: manual) [US-63]
-- [x] **Mid-dialogue resume**: open Old Man dialogue. Mid-conversation, force-close the tab. Reopen. Tap Continue. The dialogue is closed (we did not save dialogue state). The player is on the world layer at the position of the most recent walk-frame autosave (i.e. roughly where they were when they pressed Space, since dialogue freezes movement). Flags committed before the close are still set. (verified: manual) [US-63, US-64]
-- [x] **New Game wipes save**: with a save present from the resume tests above, return to Title (refresh page). Tap "New Game." Player lands on Ashen Isle's `playerSpawn`. Refresh page → "Continue" is absent (save was wiped at the New Game click). (verified: manual) [US-64]
+- [x] **Trap closes**: spawn on Fog Marsh from a transition or load; walk to Marsh Hermit; talk through to "only deeper"; walk north past him; cross the threshold trigger. Observe in order: (a) thought "The fog rolls in behind me. The path is gone.", (b) `marsh_trapped` becomes `true` in DevTools localStorage, (c) within the same frame the south exit cells become wall-collision, (d) PATH→EDGE decoration swap on the south exit cells. Verified manually. [US-66, US-67, US-68]
+- [x] **Escape escalation**: with `marsh_trapped == true`, walk south to row 21, north out of the band, south back into the band — repeat ≥ 4 times. Each visit fires a thought; the thoughts escalate from "The fog has swallowed the way back." to "I cannot do this alone." Verified manually. [US-69]
+- [x] **No regression on Ashen Isle**: New Game → Ashen Isle → Old Man dialogue → dock-to-fog transition still works; arriving on Fog Marsh, walking south back through the still-open exit (BEFORE the threshold) still transitions back to Ashen Isle. Verified manually. [US-67]
+- [x] **Save / resume parity**: with `marsh_trapped == true`, force-close the tab and reopen, tap Continue — the closed-exit collision and EDGE decoration are restored on resume (the flag persists; collision and decoration state rebuilds from the flag at area-load time). Verified manually. [US-67, US-68; integration with `save-resume`]
 
-#### Class baseline — autosave parity across save trigger points
+#### Class baseline — every area's exits behave consistently
 
-The save module joins the class of "world-state writers" that already includes `flags.ts`. Every shared behaviour is verified explicitly:
+- [x] Ashen Isle's `exit-to-fog` exit (no `condition` set) still fires unconditionally as today (verified: source read + manual New Game playthrough) [US-67]
+- [x] Fog Marsh's `fog-to-ashen` exit (`condition` set) gates on `marsh_trapped == false` (verified: source read + manual at both flag states) [US-67]
 
-- [x] Both modules use `try/catch` around `localStorage` reads AND writes (verified: source read of both modules) [US-62]
-- [x] Both modules log on failure exactly once per session (not on every call) — `flags.ts` may not currently log; if so, US-62 brings parity by adding a once-per-session warn for write failures (verified: source read) [US-62]
-- [x] Both modules' `reset` paths are idempotent (verified: calling `resetAllFlags()` twice in a row + `clearSave()` twice in a row neither throw nor produce duplicate logs) [US-62]
+#### Variant baseline — conditional decorations on every area variant
 
-#### Variant baseline — every save trigger point fires for every area
-
-The autosave write path has three trigger points (throttled walk, transition flush, dialogue/story close) and the game has two areas. Per-area verification per trigger:
-
-- [x] **Ashen Isle, throttled walk**: walking continuously updates the save within ≤ 1 s of any position change (verified by polling DevTools localStorage during walk) [US-63]
-- [x] **Ashen Isle, transition flush**: stepping into the dock writes a save with `areaId: 'fog-marsh'` and the destination entry-pixel position BEFORE the scene restart (verified by checking DevTools localStorage during the fade-out) [US-63]
-- [x] **Ashen Isle, dialogue close flush**: closing Old Man dialogue writes a save with the post-dialogue player position (verified by polling DevTools localStorage on dialogue close) [US-63]
-- [x] **Fog Marsh, throttled walk**: same protocol on Fog Marsh [US-63]
-- [x] **Fog Marsh, transition flush**: stepping into the door writes a save with `areaId: 'ashen-isle'` and the Ashen Isle entry-pixel position [US-63]
-- [x] **Fog Marsh, dialogue close flush**: closing Marsh Hermit dialogue writes a save with the post-dialogue position [US-63]
-- [x] **Fog Marsh, StoryScene close flush** (Whispering Stones triggers a story scene): closing the StoryScene writes a save with the post-story player position (verified by polling DevTools localStorage on StoryScene close) [US-63]
-
-#### Variant baseline — every reset mechanism wipes both stores when intended
-
-- [x] **Reset Progress button**: wipes flags AND save together (verified manually) [US-65]
-- [x] **`?reset=1` URL param**: wipes flags AND save together; URL cleans (verified manually) [US-65]
-- [x] **`?clearSave=1` URL param**: wipes save ONLY; flags persist (verified manually) [US-65]
-- [x] **New Game button**: wipes flags AND save together (same call path as Reset; verified manually) [US-64, US-65]
+- [x] Ashen Isle (no conditional decorations introduced): renders identically to today; visual screenshot at New Game spawn matches pre-phase baseline [US-68]
+- [x] Fog Marsh in `marsh_trapped == false`: PATH frames render at row 22 cols 13-16 (verified: screenshot) [US-68]
+- [x] Fog Marsh in `marsh_trapped == true`: EDGE frames render at row 22 cols 13-16 (verified: screenshot) [US-68]
 
 #### Behavior — reads-as
 
-Each reads-as is paired with an objective mechanism proxy.
-
-- [x] **"Continue" reads-as "the game remembers me"**: a first-time observer (someone who played a session, closed the tab, and returned without prior knowledge of save/load) given the question "what does Continue do?" answers "it picks up where I left off" — NOT "it just starts the game" or "I don't know." (verified via the manual-verify observer note) [US-64]
-- [x] **Continue mechanism proxy**: tap → `loadSave()` returns the stored payload → `scene.start('GameScene', { areaId, resumePosition })` → `createPlayer()` uses `resumePosition`. Verified by source read of the call sequence. [US-64]
-- [x] **"Reset Progress" reads-as "I am wiped"**: a first-time observer who clicks Reset Progress and then refreshes can describe the state as "fresh start, like I never played" — NOT "I think it kept some things." (verified via observer note) [US-65]
-- [x] **Reset mechanism proxy**: click → `resetWorld()` → `clearSave()` + `resetAllFlags()` both fire → `hasSave()` returns false → Title re-layouts to no-save state. Verified by source read. [US-65]
+- [x] **"The path is gone" reads-as "I can't go back the way I came"**: a first-time observer who watches the threshold fire and sees the EDGE swap describes the south exit as "no longer walkable; the marsh is too deep there now" — NOT "I think the path is hidden." (verified via observer note in manual-verify doc) [US-66, US-68]
+- [x] **Closure mechanism proxy**: threshold sets `marsh_trapped: true` → exit-resolution pass evaluates `condition` and skips transition → `area.map` mutation (or overlay) makes cells wall → `renderDecorations` flips PATH to EDGE. Verified by source read of the call sequence. [US-66, US-67, US-68]
+- [x] **"I cannot do this alone" reads-as "this is hopeless"**: a first-time observer who triggers the third thought describes the player's situation as "stuck, no way out, doesn't know what to do" — NOT "the player will figure it out" or "this is just flavour text." (verified via observer note) [US-69]
+- [x] **Escalation mechanism proxy**: each band entry → `incrementFlag('escape_attempts')` → next band's condition evaluates true → next thought displays. Verified by source read of the increment + condition gate. [US-69]
 
 #### Error paths
 
-- [x] **Corrupt JSON in localStorage** (`emberpath_save = "not json"`): on Title boot, `hasSave()` returns false, the entry is removed from localStorage, exactly one `console.warn` fires, no crash (verified manually) [US-62]
-- [x] **Tampered shape** (`emberpath_save = '{"version":1,"areaId":"nonexistent","position":{"x":0,"y":0}}'`): on Title boot, `hasSave()` returns false, the entry is removed, exactly one warn fires (verified manually) [US-62]
-- [x] **Wrong version** (`emberpath_save = '{"version":2,...}'`): same handling — null-treated and cleared (verified manually) [US-62]
-- [x] **Continue with stale `areaId`** (e.g. saved on `'old-name'` after an area rename): tapping Continue triggers fallback to a fresh start; first click is responsive (verified manually) [US-64]
-- [x] **localStorage unavailable / blocked** (Safari private mode iframe sandbox): the game runs end-to-end without crash; Continue stays absent across reloads; exactly one warn fires per session for save-write failure (verified in iOS Safari private tab) [US-62]
-- [x] **Quota exceeded** (localStorage stuffed > 5 MB by a co-resident origin): same handling as private mode — game runs, single warn, Continue may stay absent (verified by manual quota stuffing) [US-62]
-- [x] **`?reset=1` and `?clearSave=1` together**: the wipe is total (both clear), URL cleans both params (verified manually) [US-65]
+- [x] **Walking onto the now-walled exit cells**: collision is normal; no crash; no console error (verified manually) [US-67]
+- [x] **Tampered flag** (DevTools sets `marsh_trapped: true` from a fresh tab): on Fog Marsh load, the trap state is restored — exit is closed, EDGE decorations render — without the threshold trigger having fired this session. No console errors. (verified manually) [US-67, US-68]
+- [x] **Reset Progress while trapped**: clicking Reset Progress (existing TitleScene affordance) wipes `marsh_trapped` along with all flags via `resetAllFlags`; next session, Fog Marsh loads with the path open. (verified manually) [save-resume integration]
+- [x] **Tampered `escape_attempts`** (DevTools sets `escape_attempts: 99`): walking onto the band fires only the third (despair) thought, not multiple thoughts; mutual exclusion holds. (verified manually) [US-69]
 
 #### Editor sync
 
-- [x] `tools/editor/` is unaffected by this phase (the editor reads area definitions, not save state). `cd tools/editor && npm run build` passes after `AreaDefinition.id` is added. (verified) [US-63]
+- [x] `tools/editor/` builds and renders Fog Marsh's new conditional triggers, exit, and decorations visibly — area author can see what's new (verified) [US-66, US-67, US-69]
 
 #### Aesthetic traceability
 
-- [x] **"Invisible when it works"** (design direction) traces to: zero new HUD elements; only Title labels change; in-game frame has zero per-frame localStorage work on idle frames (loop-invariant audit). [phase]
-- [x] **"Continue is the default when a save exists"** (design direction) traces to: Title layout branch on `hasSave()`; primary visual weight on Continue; New Game smaller. [US-64]
-- [x] **"Reset is one click and atomic"** (design direction) traces to: `resetWorld()` calls `clearSave` + `resetAllFlags` synchronously; Continue button removal is on the same frame as reset confirmation. [US-65]
-- [x] **"Failures degrade gracefully"** (design direction) traces to: every error-path criterion above; once-per-session warn flag in saveState. [US-62]
+- [x] **"Mechanical truth, not warning labels"** (design direction) traces to: no UI text saying "Path closed!"; the closure is collision + decoration only [phase]
+- [x] **"Visual closure dominates the message"** (design direction) traces to: PATH→EDGE decoration swap on the same frame as collision; no fade [US-68]
+- [x] **"Escape-attempt feedback escalates"** (design direction) traces to: three thought triggers in escalating bands [US-69]
+- [x] **"Closed is closed"** (design direction) traces to: exit cells become walls; same `collidesWithWall` path as any wall [US-67]
 
 #### Invariants
 
 - [x] `npx tsc --noEmit && npm run build` passes [phase]
 - [x] `cd tools/editor && npm run build` passes [phase]
-- [x] No console errors during 90 seconds of play covering: New Game on Ashen Isle, walk path to Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk to Marsh Hermit, full dialogue, Whispering Stones story scene, return to Ashen Isle, force-close tab, reopen, Continue, walk again [phase]
-- [x] AGENTS.md "Directory layout" tree updated to include `src/triggers/saveState.ts` [phase]
-- [x] AGENTS.md "File ownership" rows updated for: `triggers/saveState.ts` (new — schema + IO + reset surface), `triggers/flags.ts` (now also clears save via `resetAllFlags`), `scenes/TitleScene.ts` (Continue/New Game branching, URL-param reset handling), `scenes/GameScene.ts` (`maybeAutosave`, transition flush, dialogue/story close flush, `resumePosition` boot field), `data/areas/types.ts` (added `AreaDefinition.id`) [phase]
-- [x] AGENTS.md "Behavior rules" gains a "Save / resume" entry covering: throttle constants, three trigger points, atomic reset semantics, Continue precedence rule (`entryPoint` wins over `resumePosition`), URL-param reset behaviour [phase]
-- [x] AGENTS.md "Controls" gains a "Dev / testing" subsection (or appendix) covering `?reset=1` and `?clearSave=1` [phase]
-- [x] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame `JSON.stringify`, no per-frame `localStorage.setItem`, no `setTexture`-style identical re-writes; the throttle returns before any IO when not eligible [phase]
+- [x] No console errors during 90 seconds of play covering: New Game on Ashen Isle, walk to Old Man dialogue, walk to dock, transition to Fog Marsh, walk to Marsh Hermit, full dialogue, walk north past hermit, cross threshold, walk south, bump exit ≥ 4 times, force-close, reopen, Continue, observe state restored [phase]
+- [x] AGENTS.md "Behavior rules" gains a "Conditional exits and decorations" entry describing the shared `condition` field semantics (load-time and runtime evaluation, flag-change re-render contract, no-scene-restart rule) [phase]
+- [x] AGENTS.md "File ownership" rows updated for: `data/areas/types.ts` (added `TriggerDefinition.setFlags`, `TriggerDefinition.incrementFlags`, `DecorationDefinition.condition`), `data/areas/fog-marsh.ts` (threshold + escape triggers + conditional exit/decorations), `scenes/GameScene.ts` (decoration condition evaluation + flag-change re-render hook + collision flip), `triggers/flags.ts` (flag-change subscriber API or equivalent), `systems/triggerZone.ts` (consumes setFlags + incrementFlags) [phase]
+- [x] AGENTS.md "Directory layout" updated to add `docs/plan/fog-marsh-dead-end-manual-verify.md` [phase]
+- [x] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame full decoration re-render; the flag-change hook only fires when the flag actually changed; no per-frame `evaluateCondition` for unconditional decorations; no per-frame `setTexture` with identical inputs [phase]
+- [x] **Atlas frame-pick verification (compounded):** PATH and EDGE frames reuse the existing `tiny-dungeon` indices verified during `tileset` and `world-legibility` phases; no new indices introduced [phase]
 - [x] **Deploy verification (Learning #65):** GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check) [phase]
-- [x] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, play a short session that walks at least 100 px, refresh, verify Continue is present AND tapping it resumes at the prior position — confirms localStorage works on the deployed origin (different from `localhost:5173`) [phase]
+- [x] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, walk past the threshold, refresh, verify trap state is restored on Continue (closed exit collision + EDGE decoration both present) [phase]
 
 ### Golden principles (phase-relevant)
 
-- **Parameterized systems:** `saveState.ts` is engine-agnostic — it does not import Phaser, does not reach into `GameScene`, does not know area names beyond consulting the registry. Two consumers (TitleScene reads, GameScene writes); every other call site is a violation.
-- **No silent breaking changes:** `version: 1` on the save payload from day one. A future `version: 2` change must update the load path's switch arm, not retroactively interpret v1 saves as a different shape. `resetAllFlags` keeps its exported name; the new `clearSave()` call inside it is additive.
-- **From LEARNINGS EP-01 (loop invariants):** autosave must not call `JSON.stringify` or `setItem` per frame. The throttle + position-delta guard fires BEFORE any IO; idle frames cost zero. Mirror the props/decoration "create once" pattern, applied here as "write at most once per second + only when something changed."
-- **From LEARNINGS #57 (depth-map authority):** no new visual layers; this phase touches no depths.
-- **Zone-level mutual exclusion (LEARNINGS #56):** autosave is suppressed during dialogue, StoryScene, and transitions — same exclusion zones already in force for movement and triggers. The flush-on-close paths re-arm autosave the moment the exclusion lifts.
-- **Invisible when it works:** UI surface is exactly two Title labels and one existing Reset link. No "saving..." indicator, no save slot manager, no toast. Failures log once and degrade silently — the game stays playable.
+- **Parameterized systems:** the new conditional fields on `DecorationDefinition` and the new `setFlags`/`incrementFlags` fields on `TriggerDefinition` reuse `evaluateCondition` and `setFlag`/`incrementFlag` from existing modules — no new condition syntax, no parallel parser, no parallel flag store.
+- **No silent breaking changes:** existing exits, decorations, and triggers without the new optional fields continue to behave as today (unconditional / no flag side-effect). The new fields are additive.
+- **From LEARNINGS EP-01 (loop invariants):** flag-change-driven re-renders, not per-frame re-evaluation. The hook fires once per flag change. Conditional decorations re-evaluate visibility only when their referenced flags change.
+- **From LEARNINGS #57 (depth-map authority):** no new visual layers; decorations remain at depth 2.
+- **Zone-level mutual exclusion (LEARNINGS #56):** triggers and exits are already suppressed during dialogue / transitions / StoryScene; the new threshold trigger and escape bands inherit the same suppression.
+- **Mechanical truth (`master-prd.md` Gospel Integration Principles):** the trap is collision and decoration, not UI text. The player doesn't read "you are stuck" — they walk into water that wasn't water.
 
 ### Reference
 
-Full spec, story bodies, design rationale, and AGENTS.md sections affected: `docs/product/phases/save-resume.md`.
+Full spec, story bodies, design rationale, and AGENTS.md sections affected: `docs/product/phases/fog-marsh-dead-end.md`.

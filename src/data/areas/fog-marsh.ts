@@ -182,6 +182,20 @@ const fogMarshDecorations: DecorationDefinition[] = [
   // the path, sitting beside the trigger zone at (13, 16) so the player sees
   // it as they walk past on the path.
   { col: 13, row: 16, spriteFrame: FRAME.STONES },
+
+  // South-exit closure (US-68). Paired conditional decorations sit on row 22
+  // cols 13-16: PATH frames render when marsh_trapped == false (the way home
+  // is open) and EDGE deep-water frames render when marsh_trapped == true (the
+  // way home is gone). GameScene applies the same flag-change subscriber that
+  // flips collision (US-67) — one shared mechanism, on the same frame.
+  { col: 13, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
+  { col: 14, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
+  { col: 15, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
+  { col: 16, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
+  { col: 13, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
+  { col: 14, row: 22, spriteFrame: FRAME.EDGE_B, condition: 'marsh_trapped == true' },
+  { col: 15, row: 22, spriteFrame: FRAME.EDGE_C, condition: 'marsh_trapped == true' },
+  { col: 16, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
 ];
 
 export const fogMarsh: AreaDefinition = {
@@ -239,6 +253,62 @@ export const fogMarsh: AreaDefinition = {
       type: 'dialogue',
       actionRef: 'whispering-stones',
       repeatable: true,
+    },
+    {
+      // Threshold north of the Marsh Hermit (10, 24) — crossing this band sets
+      // marsh_trapped, which closes the south exit (US-67) and swaps the path
+      // decorations to deep-water EDGE frames (US-68). One-shot; player-walked
+      // entry only — direct loads at playerSpawn (14, 12) do not fire it.
+      id: 'marsh-deepens',
+      col: 14,
+      row: 5,
+      width: 1,
+      height: 2,
+      type: 'thought',
+      actionRef: 'The fog rolls in behind me. The path is gone.',
+      repeatable: false,
+      setFlags: { marsh_trapped: true },
+    },
+    // Escape-attempt feedback bands (US-69). Each band sits one tile north of
+    // the now-walled south exit (row 21 cols 13-16). Repeatable; each entry
+    // increments escape_attempts and fires the thought matching its band.
+    // Bands are mutually exclusive at every escape_attempts value
+    // (0,1 → first only; 2,3 → second only; 4+ → third only).
+    {
+      id: 'escape-attempt-1',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: 'The fog has swallowed the way back.',
+      condition: 'marsh_trapped == true AND escape_attempts < 2',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
+    },
+    {
+      id: 'escape-attempt-2',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: "I tried this path. It's gone.",
+      condition: 'marsh_trapped == true AND escape_attempts >= 2 AND escape_attempts < 4',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
+    },
+    {
+      id: 'escape-attempt-3',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: 'I cannot do this alone.',
+      condition: 'marsh_trapped == true AND escape_attempts >= 4',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
     },
   ],
   dialogues: {
@@ -323,7 +393,10 @@ export const fogMarsh: AreaDefinition = {
   exits: [
     {
       // Walk south off the dry path into the EXIT zone at row 22 cols 13-16
-      // and arrive on Ashen Isle just south of the dock.
+      // and arrive on Ashen Isle just south of the dock. Gated on the trap
+      // flag — once marsh-deepens fires (col 14, row 5) and sets
+      // marsh_trapped: true, this exit becomes inert AND the cells flip from
+      // FLOOR to WALL via GameScene.applyMarshTrappedState (US-67).
       id: 'fog-to-ashen',
       col: 13,
       row: 22,
@@ -331,6 +404,7 @@ export const fogMarsh: AreaDefinition = {
       height: 1,
       destinationAreaId: 'ashen-isle',
       entryPoint: { col: 24, row: 4 },
+      condition: 'marsh_trapped == false',
     },
   ],
   visual: { floorColor: 0x3a4a3a, wallColor: 0x1a2a1a },

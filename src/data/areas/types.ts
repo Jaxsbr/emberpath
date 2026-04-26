@@ -63,6 +63,15 @@ export interface TriggerDefinition {
   type: TriggerType;
   actionRef: string;
   condition?: string;
+  // Optional flag side-effects fired AFTER the one-shot bookkeeping and
+  // condition gate, BEFORE the type dispatch — so a downstream callback that
+  // reads the flag in the same frame sees the new value. Mirrors the
+  // DialogueChoice.setFlags shape so the authoring vocabulary is consistent.
+  setFlags?: Record<string, string | number | boolean>;
+  // Optional flag counters incremented on every fire. Each entry calls
+  // incrementFlag(name) — used by repeatable triggers that need to advance a
+  // counter (e.g. escape_attempts band escalation in fog-marsh).
+  incrementFlags?: string[];
   repeatable: boolean;
 }
 
@@ -93,6 +102,12 @@ export interface DecorationDefinition {
   col: number;
   row: number;
   spriteFrame: string;
+  // Optional flag-driven visibility gate. When present, the decoration sprite
+  // is created at scene start but its visibility tracks evaluateCondition.
+  // GameScene re-evaluates conditional decorations only on flag-change events
+  // (Learning EP-01: no per-frame full re-render). Existing decorations without
+  // a condition render unconditionally as today.
+  condition?: string;
 }
 
 export interface AreaDefinition {
