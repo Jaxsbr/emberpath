@@ -97,3 +97,11 @@ entries:
     result: pass
     notes: US-73 milestone complete; story commit 70c2410; all four stories shipped; remaining work is phase-level reconciliation (manual-verify doc + AGENTS.md sweep) + phase completion gate + PR + review
     tokens: ~7500
+  - task: 13
+    time: "2026-04-26T11:30:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. All four stories shipped; remaining 11 unchecked criteria are phase-tagged: 1 manual-verify doc creation, 1 AGENTS.md sweep, 1 build-pass (already pass), 1 atlas-frame-pick (N/A — circle, not atlas frame), 1 deploy verify (post-merge), 6 manual checklist scenarios documented in the manual-verify doc, 2 safety criteria (source-true on inspection). Combined docs reconciliation task: create the manual-verify doc + supplement AGENTS.md Dialogue rule with the new schema fields. Queued."
+    result: pass
+    notes: docs reconciliation queued as a single combined task
+    tokens: ~1500

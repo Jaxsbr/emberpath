@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 13
-  next_task: null
+  task_number: 14
+  next_task: "[phase] Docs reconciliation: create docs/plan/keeper-rescue-manual-verify.md (full-arc + save/resume + reset + keeper one-shot guard + 6-row variant baseline checklist); supplement AGENTS.md to mention DialogueNode.setFlags + DialogueScript.endStoryScene in the existing Dialogue rule (Conditional NPC spawn + Player ember overlay already added in US-71/US-73 commits); tick the remaining phase-level criteria"
   last_result: pass
   consecutive_fails: 0
 
