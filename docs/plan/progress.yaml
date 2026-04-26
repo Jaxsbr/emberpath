@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 10
-  next_task: null
+  task_number: 11
+  next_task: "[US-65] Investigate: produce concrete diff plan for URL-param reset (?reset=1 / ?clearSave=1 with history.replaceState) in TitleScene, manual-verify doc creation at docs/plan/save-resume-manual-verify.md, and AGENTS.md updates (Directory layout, File ownership rows for saveState/flags/TitleScene/GameScene, new Behavior rule 'Save / resume', new Controls 'Dev / testing' subsection). Confirm placement: URL parsing in TitleScene.create() BEFORE renderTitleLayout so the post-reset Title renders in no-save state on the same frame. Determine the order: parse search → branch (reset=1 / clearSave=1 / neither) → history.replaceState to drop the consumed param while preserving others → info log → renderTitleLayout."
 
   # --- Review (owner: iterator) ---
   review_stage: null
