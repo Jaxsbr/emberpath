@@ -51,7 +51,7 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | npc-behavior | Shipped | US-52, US-53, US-54, US-55 | [phases/npc-behavior.md](phases/npc-behavior.md) |
 | npc-portraits | Shipped | US-56, US-57 | [phases/npc-portraits.md](phases/npc-portraits.md) |
 | world-legibility | Shipped | US-58, US-59, US-60, US-61 | [phases/world-legibility.md](phases/world-legibility.md) |
-| save-resume | Draft | US-62, US-63, US-64, US-65 | [phases/save-resume.md](phases/save-resume.md) |
+| save-resume | Shipped | US-62, US-63, US-64, US-65 | [phases/save-resume.md](phases/save-resume.md) |
 
 ## Next up
 
