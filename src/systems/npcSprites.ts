@@ -8,6 +8,7 @@ export interface NpcSpriteDefinition {
 export const NPC_SPRITES: Record<string, NpcSpriteDefinition> = {
   'marsh-hermit': { idleFrameCount: 4, walkFrameCount: 4 },
   'old-man': { idleFrameCount: 4, walkFrameCount: 4 },
+  'heron': { idleFrameCount: 4, walkFrameCount: 4 },
 };
 
 export function hasNpcSprite(id: string): boolean {
@@ -33,6 +34,7 @@ export interface NpcPortraitDefinition {
 export const NPC_PORTRAITS: Record<string, NpcPortraitDefinition> = {
   'marsh-hermit': { file: 'portrait.png', filter: 'nearest' },
   'old-man': { file: 'portrait.png', filter: 'linear' },
+  'heron': { file: 'portrait.png', filter: 'linear' },
 };
 
 export function hasNpcPortrait(id: string): boolean {

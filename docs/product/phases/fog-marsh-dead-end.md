@@ -1,6 +1,6 @@
 # Phase: fog-marsh-dead-end
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -28,7 +28,7 @@ This phase introduces no API endpoints, no user-text fields, no query interpolat
 
 ## Stories
 
-### US-66 — Threshold: marsh-deepens trigger sets `marsh_trapped: true`
+### US-66 — Threshold: marsh-deepens trigger sets `marsh_trapped: true` [Shipped]
 
 As Pip following the Marsh Hermit's hint deeper north into the marsh, I want a single one-shot moment when I cross from "near the hermit" to "past the hermit," so that the trap closing has a felt cause-effect and isn't a random mid-walk surprise.
 
@@ -55,7 +55,7 @@ As Pip following the Marsh Hermit's hint deeper north into the marsh, I want a s
 
 ---
 
-### US-67 — Exit closure mechanic: south exit becomes inert when `marsh_trapped: true`
+### US-67 — Exit closure mechanic: south exit becomes inert when `marsh_trapped: true` [Shipped]
 
 As Pip stuck in the marsh, I want the south exit (back to Ashen Isle) to no longer carry me out, so that the closure is a real mechanical fact and not just a sad-faced sign.
 
@@ -82,7 +82,7 @@ As Pip stuck in the marsh, I want the south exit (back to Ashen Isle) to no long
 
 ---
 
-### US-68 — Visual closure: exit decorations switch from PATH to EDGE when `marsh_trapped == true`
+### US-68 — Visual closure: exit decorations switch from PATH to EDGE when `marsh_trapped == true` [Shipped]
 
 As Pip looking at where the path used to be, I want to see fog/deep water where the planks were, so that the closure is visible, not just felt as collision.
 
@@ -109,7 +109,7 @@ As Pip looking at where the path used to be, I want to see fog/deep water where 
 
 ---
 
-### US-69 — Escape-attempt feedback: thought escalation on bumping the closed exit
+### US-69 — Escape-attempt feedback: thought escalation on bumping the closed exit [Shipped]
 
 As Pip walking back south to find the path is gone, I want the marsh to give me an honest reading of "you can't go back that way," and as I keep trying, I want it to graduate from informational to despairing, so that the trap feels like a closing window, not a stuck door.
 

@@ -53,7 +53,7 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | world-legibility | Shipped | US-58, US-59, US-60, US-61 | [phases/world-legibility.md](phases/world-legibility.md) |
 | save-resume | Shipped | US-62, US-63, US-64, US-65 | [phases/save-resume.md](phases/save-resume.md) |
 | fog-marsh-dead-end | Shipped | US-66, US-67, US-68, US-69 | [phases/fog-marsh-dead-end.md](phases/fog-marsh-dead-end.md) |
-| keeper-rescue | Planned | US-70, US-71, US-72, US-73 | [phases/keeper-rescue.md](phases/keeper-rescue.md) |
+| keeper-rescue | Shipped | US-70, US-71, US-72, US-73 | [phases/keeper-rescue.md](phases/keeper-rescue.md) |
 
 ## Next up
 

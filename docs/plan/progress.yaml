@@ -22,23 +22,23 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: fog-marsh-dead-end
+  phase: keeper-rescue
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 14
-  next_task: "[review] review-pr pr=18 auto=true"
+  task_number: 17
+  next_task: "[review] review-pr pr=19 auto=true"
   last_result: pass
   consecutive_fails: 0
 
   # --- Review (owner: iterator) ---
   review_stage: pr_created
   review_complete: false
-  pr_number: 18
+  pr_number: 19
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-66, US-67, US-68, US-69]
+  completed_stories: [US-70, US-71, US-72, US-73]

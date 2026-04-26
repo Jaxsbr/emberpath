@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { TILESETS, resolveFrame, hasTileset } from '../maps/tilesets';
-import { AreaDefinition } from '../data/areas/types';
+import { AreaDefinition, NpcDefinition } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
@@ -20,6 +20,22 @@ import { writeSave } from '../triggers/saveState';
 
 const TARGET_VISIBLE_TILES = 10;
 const FADE_DURATION = 400;
+// Conditional NPC spawn fade (US-71). Sprite alpha tweens from 0 to 1 over
+// KEEPER_FADE_DURATION_MS so the appearance reads as "light breaks in" rather
+// than a pop-in. Player input is suspended for KEEPER_INPUT_SUSPEND_MS — the
+// fade itself is 500ms but the input lock holds 1000ms so the player has a
+// beat to register the appearance before regaining control.
+const KEEPER_FADE_DURATION_MS = 500;
+const KEEPER_INPUT_SUSPEND_MS = 1000;
+// Player ember overlay (US-73). Vertical offset from the player's centre to
+// the ember's centre — placed above the head silhouette without z-fighting
+// the body sprite. The overlay renders at depth 5.5 (literal fractional
+// depth between Entities at 5 and Thoughts at 8) so it always shows above
+// the player but below thought bubbles.
+const EMBER_OFFSET_Y = -28;
+const EMBER_RADIUS = 6;
+const EMBER_COLOR = 0xf2c878;
+const EMBER_DEPTH = 5.5;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.
@@ -60,6 +76,22 @@ export class GameScene extends Phaser.Scene {
   private lastSaveX = 0;
   private lastSaveY = 0;
   private marshTrappedUnsubscribe: (() => void) | null = null;
+  // Per-flag unsubscribes for NPC spawnCondition watchers (US-71). Collected as
+  // GameScene parses each conditional NPC's condition for flag names; invoked
+  // from cleanupResize. activeNpcs is the filtered list passed to subsystems
+  // (renderNpcs, NpcBehaviorSystem, NpcInteractionSystem, moveWithCollision) —
+  // a Keeper that hasn't yet spawned is absent from this array so the player
+  // doesn't collide with or interact with an invisible NPC.
+  private spawnConditionUnsubscribes: (() => void)[] = [];
+  private spawnInProgress = false;
+  private activeNpcs: NpcDefinition[] = [];
+  // Player ember overlay (US-73). Created when has_ember_mark flips true OR
+  // when the flag is already true on scene create (covers area transitions
+  // and Continue-from-save). Destroyed when the flag is unset (Reset Progress
+  // notifies via resetAllFlags). The unsubscribe handle is invoked on
+  // cleanupResize.
+  private emberOverlay: Phaser.GameObjects.Arc | null = null;
+  private hasEmberMarkUnsubscribe: (() => void) | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -147,12 +179,22 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
+    // Filter NPCs by spawnCondition so a Keeper whose flags haven't fired yet
+    // is fully absent from the scene — no sprite, no behavior runtime, no
+    // interaction prompt, no collision. activeNpcs is mutated post-spawn (push)
+    // and the same array reference is held by all subsystems so they pick up
+    // the new entry automatically.
+    this.activeNpcs = this.area.npcs.filter(
+      (n) => !n.spawnCondition || evaluateCondition(n.spawnCondition),
+    );
+    this.subscribeToConditionalSpawns();
+
     this.renderTileMap();
     this.renderDecorations();
     this.renderProps();
     this.registerAnimations();
     this.renderNpcs();
-    this.npcBehavior = new NpcBehaviorSystem(this, this.area.npcs, this.area.map, this.npcSpritesById);
+    this.npcBehavior = new NpcBehaviorSystem(this, this.activeNpcs, this.area.map, this.npcSpritesById);
     this.activeDialogueNpcId = null;
     this.createPlayer(data?.entryPoint, data?.resumePosition);
     this.setupCamera();
@@ -181,7 +223,7 @@ export class GameScene extends Phaser.Scene {
       },
     });
     this.triggerZone.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
-    this.npcInteraction = new NpcInteractionSystem(this, this.area.npcs);
+    this.npcInteraction = new NpcInteractionSystem(this, this.activeNpcs);
     this.npcInteraction.setLivePositionsProvider(() => this.npcBehavior.getLivePositions());
     this.npcInteraction.setInteractionCallback((npc) => {
       const script = this.area.dialogues[`${npc.id}-intro`];
@@ -210,6 +252,13 @@ export class GameScene extends Phaser.Scene {
       // Dialogue exit returns the player to the world layer — checkpoint here so
       // a tab close immediately after a conversation resumes at the same spot.
       this.flushSave();
+      // Chain a story scene if the script declared endStoryScene (US-72:
+      // keeper-intro chains ember-given). flushSave runs FIRST so the world
+      // state is checkpointed before launchStoryScene pauses GameScene.
+      const endStoryScene = this.dialogueSystem.getEndStoryScene();
+      if (endStoryScene) {
+        this.launchStoryScene(endStoryScene);
+      }
     });
     this.dialogueSystem.setOnChoice((choice) => {
       if (choice.setFlags) {
@@ -226,11 +275,46 @@ export class GameScene extends Phaser.Scene {
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —
     // the player is back on the world layer so this is a safe checkpoint.
     this.events.on('resume', this.flushSave, this);
+
+    // Player ember overlay (US-73). Created on flag flip OR if the flag is
+    // already true on scene create (covers area transitions to Ashen Isle
+    // post-rescue and Continue-from-save). Destroyed on flag unset (Reset
+    // Progress notifies via resetAllFlags).
+    if (getFlag('has_ember_mark') === true) this.maybeCreateEmberOverlay();
+    this.hasEmberMarkUnsubscribe = onFlagChange('has_ember_mark', (_, value) => {
+      if (value === true) this.maybeCreateEmberOverlay();
+      else this.destroyEmberOverlay();
+    });
+  }
+
+  // Idempotent — returns early when the overlay already exists. Created at
+  // EMBER_DEPTH (5.5) so it draws above the player (Entities, depth 5) and
+  // below thought bubbles (depth 8). Added to uiCam.ignore so the UI camera
+  // does not double-render the world-space ember.
+  private maybeCreateEmberOverlay(): void {
+    if (this.emberOverlay) return;
+    if (!this.player) return;
+    this.emberOverlay = this.add.circle(
+      this.player.x,
+      this.player.y + EMBER_OFFSET_Y,
+      EMBER_RADIUS,
+      EMBER_COLOR,
+    );
+    this.emberOverlay.setDepth(EMBER_DEPTH);
+    this.cameras.getCamera('ui')?.ignore(this.emberOverlay);
+  }
+
+  private destroyEmberOverlay(): void {
+    this.emberOverlay?.destroy();
+    this.emberOverlay = null;
   }
 
   update(_time: number, delta: number): void {
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
+    // Suppress during conditional NPC spawn fade (US-71) — same zone-level
+    // mutual exclusion pattern as transitionInProgress.
+    if (this.spawnInProgress) return;
 
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
@@ -270,7 +354,7 @@ export class GameScene extends Phaser.Scene {
       delta,
       {
         map: this.area.map,
-        npcs: this.area.npcs,
+        npcs: this.activeNpcs,
         npcLivePositions: this.npcBehavior.getLivePositions(),
       },
     );
@@ -288,6 +372,14 @@ export class GameScene extends Phaser.Scene {
     this.debugOverlay.update();
 
     this.maybeAutosave();
+
+    // Ember overlay tracks the player's centre minus a fixed Y offset.
+    // Loop-invariant EP-01: single setPosition call, no allocations, no
+    // object literals — the overlay is reused frame-to-frame, only its
+    // position vector changes.
+    if (this.emberOverlay) {
+      this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
+    }
   }
 
   // Throttled walk-frame autosave. Returns before any localStorage IO when the
@@ -461,23 +553,97 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderNpcs(): void {
+    // Reset across scene.restart — instance fields persist between restarts so
+    // stale Phaser sprite references (already destroyed by the previous scene's
+    // shutdown) would otherwise survive. spawnNpcSprite's idempotency guard
+    // (if (npcSpritesById.has(id)) return null) would then SKIP creating a
+    // fresh sprite on re-entry, and NpcBehaviorSystem's constructor would read
+    // the destroyed sprite from the map and crash on .play() at the next tick.
+    this.npcEntities = [];
+    this.npcSpritesById.clear();
+    for (const npc of this.activeNpcs) {
+      this.spawnNpcSprite(npc);
+    }
+  }
+
+  // Create the NPC sprite + push to npcEntities + register with the sprite map.
+  // Used both at scene create (renderNpcs) and at runtime (evaluateConditionalSpawns).
+  // Idempotent — calling for an NPC already in npcSpritesById is a no-op.
+  private spawnNpcSprite(npc: NpcDefinition): Phaser.GameObjects.Sprite | null {
+    if (this.npcSpritesById.has(npc.id)) return null;
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
+    const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
+    const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
+    if (hasNpcSprite(npc.sprite)) {
+      const sprite = this.add.sprite(cx, cy, `npc-${npc.sprite}-idle-south-0`);
+      sprite.setDepth(5);
+      sprite.play(`npc-${npc.sprite}-idle-south`);
+      this.npcEntities.push(sprite);
+      this.npcSpritesById.set(npc.id, sprite);
+      return sprite;
+    }
+    console.error(`NPC '${npc.id}' references unknown sprite id '${npc.sprite}' — falling back to rectangle render.`);
+    const rect = this.add.rectangle(cx - NPC_SIZE / 2, cy - NPC_SIZE / 2, NPC_SIZE, NPC_SIZE, npc.color);
+    rect.setOrigin(0, 0);
+    rect.setDepth(5);
+    this.npcEntities.push(rect);
+    return null;
+  }
+
+  // Subscribe to every flag named in any NPC's spawnCondition. The regex
+  // extracts flag names from clauses like "marsh_trapped == true" (matches:
+  // marsh_trapped). De-duplicated so two NPCs sharing a flag register one
+  // listener per flag, not two. Each listener calls evaluateConditionalSpawns
+  // which is safely re-entrant (idempotency guard).
+  private subscribeToConditionalSpawns(): void {
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
     for (const npc of this.area.npcs) {
-      const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
-      const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
-      if (hasNpcSprite(npc.sprite)) {
-        const sprite = this.add.sprite(cx, cy, `npc-${npc.sprite}-idle-south-0`);
-        sprite.setDepth(5);
-        sprite.play(`npc-${npc.sprite}-idle-south`);
-        this.npcEntities.push(sprite);
-        this.npcSpritesById.set(npc.id, sprite);
-      } else {
-        console.error(`NPC '${npc.id}' references unknown sprite id '${npc.sprite}' — falling back to rectangle render.`);
-        const rect = this.add.rectangle(cx - NPC_SIZE / 2, cy - NPC_SIZE / 2, NPC_SIZE, NPC_SIZE, npc.color);
-        rect.setOrigin(0, 0);
-        rect.setDepth(5);
-        this.npcEntities.push(rect);
+      if (!npc.spawnCondition) continue;
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(npc.spawnCondition)) !== null) {
+        flagNames.add(match[1]);
       }
+    }
+    for (const name of flagNames) {
+      this.spawnConditionUnsubscribes.push(
+        onFlagChange(name, () => this.evaluateConditionalSpawns()),
+      );
+    }
+  }
+
+  // Walk every conditional NPC; spawn any whose condition is now true and that
+  // is not yet in the scene. Idempotent — already-spawned NPCs are skipped via
+  // npcSpritesById check inside spawnNpcSprite. The fade tween is 500ms; player
+  // input is suspended for 1000ms total via spawnInProgress.
+  private evaluateConditionalSpawns(): void {
+    let anySpawned = false;
+    for (const npc of this.area.npcs) {
+      if (!npc.spawnCondition) continue;
+      if (this.npcSpritesById.has(npc.id)) continue;
+      if (!evaluateCondition(npc.spawnCondition)) continue;
+      const sprite = this.spawnNpcSprite(npc);
+      this.activeNpcs.push(npc);
+      // Behavior runtime requires a Phaser.GameObjects.Sprite — skip when the
+      // sprite id was unknown (rectangle fallback path). The rectangle still
+      // shows so the player sees something; behavior just stays inert.
+      if (sprite) {
+        this.npcBehavior?.registerNpc(npc, sprite);
+        sprite.setAlpha(0);
+        this.tweens.add({
+          targets: sprite,
+          alpha: { from: 0, to: 1 },
+          duration: KEEPER_FADE_DURATION_MS,
+        });
+      }
+      anySpawned = true;
+    }
+    if (anySpawned) {
+      this.spawnInProgress = true;
+      this.time.delayedCall(KEEPER_INPUT_SUSPEND_MS, () => {
+        this.spawnInProgress = false;
+      });
     }
   }
 
@@ -608,6 +774,13 @@ export class GameScene extends Phaser.Scene {
       this.marshTrappedUnsubscribe();
       this.marshTrappedUnsubscribe = null;
     }
+    for (const unsub of this.spawnConditionUnsubscribes) unsub();
+    this.spawnConditionUnsubscribes = [];
+    if (this.hasEmberMarkUnsubscribe) {
+      this.hasEmberMarkUnsubscribe();
+      this.hasEmberMarkUnsubscribe = null;
+    }
+    this.destroyEmberOverlay();
   }
 
   // Reflect the marsh_trapped flag on Fog Marsh: when true, the south-exit
