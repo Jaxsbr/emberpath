@@ -1,5 +1,12 @@
 phase: "save-resume"
 started: "2026-04-26T02:45:00Z"
+reconciliation_status:
+  r0: done
+  r1: done
+  r2: done
+  r3: done
+  r4: done
+  r5: pending
 entries:
   - task: 1
     time: "2026-04-26T02:50:00Z"
