@@ -22,12 +22,12 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: world-legibility
+  phase: save-resume
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 15
+  task_number: 20
   next_task: null
   last_result: pass
   consecutive_fails: 0
@@ -35,10 +35,10 @@ state:
   # --- Review (owner: iterator) ---
   review_stage: review_posted
   review_complete: true
-  pr_number: 16
+  pr_number: 17
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-58, US-59, US-60, US-61]
+  completed_stories: [US-62, US-63, US-64, US-65]
