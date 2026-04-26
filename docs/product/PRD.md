@@ -51,9 +51,10 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | npc-behavior | Shipped | US-52, US-53, US-54, US-55 | [phases/npc-behavior.md](phases/npc-behavior.md) |
 | npc-portraits | Shipped | US-56, US-57 | [phases/npc-portraits.md](phases/npc-portraits.md) |
 | world-legibility | Shipped | US-58, US-59, US-60, US-61 | [phases/world-legibility.md](phases/world-legibility.md) |
+| save-resume | Draft | US-62, US-63, US-64, US-65 | [phases/save-resume.md](phases/save-resume.md) |
 
 ## Next up
 
-**`world-legibility`** is the next phase. The current placeholder tiles are not just rough — they're illegible: a coastal village reads as a green field with random stone pens, and a marsh reads as a brown box bordered by silver shapes. Wayfinding, save/resume, and the Fog Marsh dead-end mechanic all assume the player can read the world; that assumption isn't yet true. This phase introduces a tile-decoration layer (US-58) and rebuilds Ashen Isle (US-59) and Fog Marsh (US-60) as legible compositions — paths, houses, fences, water edges, dry-vs-wet ground, diegetic exits — using the existing Kenney CC0 tilesets without any AI-art uplift. Tileset vocabulary docs (US-61) keep future area authoring cheap. See [phases/world-legibility.md](phases/world-legibility.md) for the full spec.
+**`save-resume`** is the next phase. Today, only `triggers/flags.ts` persists — area + player position do not, so every refresh teleports the player back to Ashen Isle's `playerSpawn` regardless of where they were. This phase adds the world-walking save layer (current `areaId` + pixel position) to localStorage (US-62), wires `GameScene` to autosave on throttled walk + transition + dialogue/story close (US-63), wires the Title screen to a "Continue" / "New Game" branching based on save presence (US-64), and hardens the reset story with a single atomic `resetWorld()` plus `?reset=1` and `?clearSave=1` URL params for testing (US-65). Mid-dialogue and mid-StoryScene resume are explicitly out of scope — that infrastructure is deferred to a later `pause-menu` phase. See [phases/save-resume.md](phases/save-resume.md) for the full spec.
 
-After `world-legibility` ships, the planned ordering is `save-resume` → `fog-marsh-dead-end` → `wayfinding` → `audio-pass-1`.
+After `save-resume` ships, the planned ordering is `fog-marsh-dead-end` → `wayfinding` → `audio-pass-1`.

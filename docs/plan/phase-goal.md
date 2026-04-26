@@ -1,113 +1,169 @@
 ## Phase goal
 
-Make the two POC areas read as **places**, not as random debug grids. Today, Ashen Isle is a green field with orange-pip wallpaper and stone walls forming arbitrary rectangles around the Old Man; Fog Marsh is a brown box bordered by silver tomb-tile shapes. A first-time player cannot identify a building, a path, an island edge, or an exit — and that illegibility blocks every downstream phase (`save-resume`, `fog-marsh-dead-end`, `wayfinding`). This phase introduces a tile-decoration layer, expands the visual vocabulary used by each area, and rebuilds Ashen Isle and Fog Marsh as legible compositions: a coastal village on Ashen Isle (path, houses, fence, water edge, dock-as-exit) and a wet marsh with a dry path and a ruin corner on Fog Marsh. Same Kenney CC0 tilesets — the placeholder *art* stays placeholder, but the placeholder *layout* becomes communicative. The phase ends when a fresh observer, given no instructions, can correctly point at the player's house, the path, the island edge, and the way to leave the area, on both Ashen Isle and Fog Marsh.
+Make the player's progress survive a closed tab. Today, every refresh sends the player back to Ashen Isle's `playerSpawn` regardless of where they were when the tab closed; only `triggers/flags.ts` persists, so a session that walked through the dock to Fog Marsh, talked to the Marsh Hermit, and stepped a third of the way back across the path is reduced on reload to "you are once again standing at the player-cottage gate." This phase adds the missing **world-walking layer** to localStorage — current `areaId` plus the player's tile/pixel position — and wires the Title screen to read it: a "Continue" entry resumes the saved area at the saved position; "New Game" wipes the save and starts fresh on the default area's `playerSpawn`. Mid-dialogue and mid-StoryScene resume are explicitly out of scope: if the tab closes during a conversation, the conversation closes on resume and the player wakes up on the path with whatever flags had committed. The phase ends when (a) closing the tab anywhere on the world layer of either area and reopening returns the player to the same area at the same position, (b) Title's "Continue" and "New Game" branch correctly based on save presence, (c) "Reset Progress" / a dev URL param clears both flags AND save atomically so a tester can wipe the world cheaply between QA runs.
 
 ### Design direction
 
-**Communicative, not pretty.** This is still placeholder art. The bar is "a 6-12yo can read where they are and what's around them," not "shippable polish." Concretely:
+**Invisible when it works, observable when it breaks.** Save IO is infrastructure — the player should not see "saving…" indicators or save-slot UI. The visible surface is exactly two Title labels (Continue, New Game) and the "Reset Progress" affordance that already exists. Concretely:
 
-- A vocabulary, not a noise field — each area uses a small, intentional set of tile meanings (ground, path, building wall, building roof, fence, water/edge, doorway, decoration).
-- Buildings read as buildings — house has roof + wall-side + door, oriented top-down, multi-tile, NOT a 1×1 stone block.
-- The path is the wayfinding — a visible cobble or dirt path connects every important thing on Ashen Isle (player spawn → Old Man's cottage → dock exit).
-- Edges read as edges — Ashen Isle has at least one water/cliff edge (a coast); Fog Marsh has at least one impassable wet edge.
-- Exits are diegetic — wooden gate, dock, or doorway sign, NOT a floor tile tinted amber.
+- **One implicit save slot.** No named slots, no save-game manager. Save = `localStorage['emberpath_save']`. There is exactly one resume point per browser, like a checkpoint.
+- **Save writes are bounded, not chatty.** Position writes throttle to at most once every `SAVE_THROTTLE_MS` (proposal: 1000 ms). Area transitions and clean dialogue/story closes flush immediately so the resume point is current within one second of the last meaningful event. No write per frame, ever.
+- **Continue is the default when a save exists.** If there's a save, "Continue" is the visually-primary label; "New Game" is the secondary label. If there's no save, only "New Game" is visible (no greyed-out Continue). The hierarchy matches what the player most likely wants on each session.
+- **Reset is one click and atomic.** "Reset Progress" wipes flags AND save in the same call. After reset, "Continue" disappears on the same frame; the player can `?reset=1` from the URL to do the same without clicking, for tester convenience.
+- **Failures degrade gracefully.** Private-mode Safari and iframe sandboxes can throw `QuotaExceededError` or block localStorage entirely. The game must still play through; resume just won't survive the session. Failures are logged once, not every frame.
 
-The Tiny Town and Tiny Dungeon Kenney atlases already contain the needed houses, roofs, doors, gates, signs, fences, water, paths, bushes, gravestones. The phase is about *using* them — not generating new art.
+The build-loop's `frontend-design` skill applies to the Title screen layout work in US-64 (Continue/New Game pairing visual hierarchy).
+
+### Dependencies
+- world-legibility
 
 ### Stories in scope
-- US-58 — Decoration layer (engine)
-- US-59 — Ashen Isle as a legible coastal village
-- US-60 — Fog Marsh as a legible wet marsh with a ruin
-- US-61 — Tileset vocabulary doc
+- US-62 — Save state module: schema, IO, validation, reset
+- US-63 — Autosave on world walk + area transition + clean dialogue/story close
+- US-64 — Title screen Continue / New Game
+- US-65 — World-save reset: button + URL param + clear-on-fresh-tab regression check
 
 ### Done-when (observable)
 
-#### Structural — engine (US-58)
+#### Structural — save module (US-62)
 
-- [x] `AreaDefinition.decorations: DecorationDefinition[]` exists in `src/data/areas/types.ts` (verified: source read) [US-58]
-- [x] `DecorationDefinition` has exactly `{ col, row, spriteFrame }` (verified: source read) [US-58]
-- [x] `GameScene.renderDecorations()` exists and is called in area-load order after `renderTileMap` and before `renderProps` (or alongside; depth ordering is what matters) [US-58]
-- [x] Decoration sprites render at depth 2; depth map in AGENTS.md is updated to insert "Decorations | 2 | main" between "Tiles | 0" and "Props | 3" [US-58]
-- [x] Missing-frame decoration logs a warning naming `(col, row)` and the missing frame, then skips (verified: source read of the warn-and-skip branch + a deliberate dev test entry with a bogus frame) [US-58]
-- [x] No collision contribution from decorations — `collision.ts` is not consulted for decoration cells (verified: source read; player walks through a decoration tile placed on a FLOOR cell) [US-58]
+- [ ] `src/triggers/saveState.ts` exists and exports `loadSave`, `writeSave`, `clearSave`, `hasSave`, `resetWorld` (verified: source read) [US-62]
+- [ ] `SaveState` type is `{ version: 1; areaId: string; position: { x: number; y: number } }` (verified: source read) [US-62]
+- [ ] `STORAGE_KEY` constant is `'emberpath_save'`, distinct from `triggers/flags.ts`'s `'emberpath_flags'` (verified: grep both files) [US-62]
+- [ ] `loadSave()` returns `null` on JSON parse failure AND calls `clearSave()` to scrub the corrupt entry (verified by setting `localStorage.emberpath_save = '{not json'` in DevTools, reloading, observing one warn + the entry removed) [US-62]
+- [ ] `loadSave()` validates `version === 1`, `areaId` is a known registry id (consults `getAllAreaIds()`), and `position.x/y` are finite numbers; failure returns `null` and clears (verified: source read of the validation branch + a temp tampered `areaId: 'nonexistent'` round-trip) [US-62]
+- [ ] `writeSave()` wraps `setItem` in `try/catch`; quota / unavailable failures log exactly once per session via a module-level `writeFailureLogged` flag and otherwise silently continue (verified: source read; manual quota test by repeatedly stuffing localStorage to > 5 MB then triggering an autosave) [US-62]
+- [ ] `clearSave()` is idempotent and wraps `removeItem` in `try/catch` (verified: source read + calling twice in a row) [US-62]
+- [ ] `hasSave()` returns true iff `loadSave()` is non-null (verified: source read of the relationship; correctness via DevTools toggling) [US-62]
+- [ ] `resetAllFlags()` in `triggers/flags.ts` calls `clearSave()` from `saveState.ts` so reset is atomic — wipes flags AND world save in one call (verified: source read; manual: set a flag, set a save, click Reset Progress, observe both gone) [US-62]
+- [ ] No call site outside `saveState.ts` and `flags.ts` reads or writes `'emberpath_save'` or `'emberpath_flags'` directly (verified: grep `localStorage` across `src/`) [US-62]
+- [ ] A `version: 2` save (manually written in DevTools) loads as `null` and is cleared — the version field is a real gate, not cosmetic (verified by tampered round-trip) [US-62]
 
-#### Structural — Ashen Isle redesign (US-59)
+#### Structural — autosave write (US-63)
 
-- [x] Continuous path from `playerSpawn` to Old Man's cottage to dock exit; verifiable by visually following the dirt/cobble decoration tiles in DevTools or the editor map view [US-59]
-- [x] At least one ≥ 3×3 building composition (roof + wall-front + door) using Tiny Town atlas frames [US-59]
-- [x] Old Man spawn `(col, row)` is on a path tile adjacent to a building door tile (verified: read coordinates from `ashen-isle.ts`, cross-reference the decoration layer) [US-59]
-- [x] At least one ≥ 4-tile fence run using a Tiny Town fence frame [US-59]
-- [x] At least one full area edge (one side: top OR bottom OR left OR right) is water tiles [US-59]
-- [x] At least three distinct decorative frame ids in use beyond grass + flower; no single frame > ~30% of decoration entries by count (verified: tally via grep or a small counter in the area file's load-time) [US-59]
-- [x] EXIT zone visually shows a dock or gate sprite, NOT amber-tinted floor (verified: open Ashen Isle, walk to the exit, screenshot reads as "wooden dock" or "wooden gate") [US-59]
-- [x] All existing `ashen-isle` triggers fire on the same flag keys after redesign (verified by walking the Old Man → dialogue → choice paths and observing the same flags set as before) [US-59]
-- [x] First frame after fade-in (at zoom 1) shows player + at least one decorated landmark in viewport (verified manually) [US-59]
+- [ ] `GameScene` declares named module-level constants `SAVE_THROTTLE_MS = 1000` and `SAVE_MIN_DELTA_PX = 2` (verified: source read) [US-63]
+- [ ] `GameScene` has a private method `maybeAutosave()` that owns the throttle bookkeeping (last-write timestamp, last-write x/y) and is called once per frame at the END of the world-walk branch in `update()` — NOT inside the dialogue early-return, NOT inside the transition early-return (verified: source read of the call site location) [US-63]
+- [ ] `maybeAutosave()` returns early (zero localStorage work; no `JSON.stringify`) when (a) elapsed since last write < `SAVE_THROTTLE_MS`, OR (b) position delta from last write < `SAVE_MIN_DELTA_PX`. Verified: source read of both guards before the build-payload step. **(Loop-invariant audit, Learning EP-01.)** [US-63]
+- [ ] `transitionToArea()` calls `writeSave({ areaId: destinationAreaId, position: <entryPoint resolved to pixels> })` BEFORE `scene.restart` (verified: source read of the call order; manual: trigger a transition, force-close mid-fade, reopen, Continue lands on the destination's entry tile) [US-63]
+- [ ] `DialogueSystem.setOnEnd` consumer in `GameScene` flushes the save (verified: source read; manual: open Old Man dialogue, run through to its natural close, force-close tab, reopen, Continue lands at the position the player was in when dialogue closed) [US-63]
+- [ ] StoryScene close path triggers a save flush back in `GameScene` (verified: source read of whichever resume-from-StoryScene hook GameScene already owns; manual: same pattern as dialogue close) [US-63]
+- [ ] `AreaDefinition` has `id: string` (added if missing); `data/areas/registry.ts` keys agree with the per-area `id` value (verified: source read + a small grep that registry key === area.id for ashen-isle and fog-marsh) [US-63]
+- [ ] During `transitionInProgress === true`, `maybeAutosave()` returns without writing (verified: source read of the guard) — only the explicit transition flush writes during a transition [US-63]
+- [ ] No `writeSave` call inside `update()`'s tight loop on frames where the throttle did not fire (verified: source read; on-frame logging temporarily added during dev confirms zero writes on idle frames) [US-63]
 
-#### Structural — Fog Marsh redesign (US-60)
+#### Structural — Title Continue / New Game (US-64)
 
-- [x] Visible distinction between wet ground (most of FLOOR cells) and dry path (decoration overlay on a connected route) [US-60]
-- [x] Ruin corner (3-5 tiles) using Tiny Dungeon brick frames, placed in one corner [US-60]
-- [x] At least 8 reed/vegetation decorations in wet ground area, none on the dry path [US-60]
-- [x] At least one full edge is impassable wet/reed-wall composition (WALL cells with marsh-edge decoration) [US-60]
-- [x] Marsh Hermit spawn `(col, row)` is on the dry path adjacent to the ruin [US-60]
-- [x] EXIT zone reaches the dry path (verified by walking from the entry point to the exit on path tiles only — no need to step into wet ground) [US-60]
-- [x] Round-trip legibility: exiting Ashen Isle's dock → entering Fog Marsh lands on the dry path; exiting Fog Marsh → returning to Ashen Isle lands on the dock decoration (verified manually for both directions) [US-60]
-- [x] Whispering Stones trigger renders adjacent to or on the path (visible to a player following the path) [US-60]
-- [x] All existing `fog-marsh` triggers fire on the same flag keys after redesign [US-60]
+- [ ] `TitleScene.create()` calls `hasSave()` exactly once on entry (verified: source read) [US-64]
+- [ ] When `hasSave()` is true, two labels render: a primary "Continue" near the current Start position; a secondary "New Game" below it (smaller font or muted color) (verified: source read + visual screenshot) [US-64]
+- [ ] When `hasSave()` is false, no "Continue" label is created — not even greyed out (verified: source read of the conditional branch; visual screenshot in fresh-tab incognito) [US-64]
+- [ ] Tapping "Continue" calls `loadSave()` and starts `GameScene` with `{ areaId, resumePosition: save.position }`; the `entryPoint` field is undefined on this path (verified: source read) [US-64]
+- [ ] Tapping "New Game" calls `clearSave()` + `resetAllFlags()` THEN starts `GameScene` with no boot data (verified: source read of the call order) [US-64]
+- [ ] `GameScene.create` accepts an optional `resumePosition?: { x: number; y: number }` field on its boot data (verified: source read of the type annotation) [US-64]
+- [ ] When `data.resumePosition` is set AND `data.entryPoint` is absent, `createPlayer()` uses `resumePosition` directly as the pixel position; when both are set, `entryPoint` wins and `resumePosition` is ignored (verified: source read of the precedence branch + an inline comment documenting the rule) [US-64]
+- [ ] The fade-in branch covers both Continue loads AND transition loads — `if (data?.entryPoint || data?.resumePosition)` (verified: source read) [US-64]
+- [ ] If `loadSave()` returns a save whose `areaId` is unknown to the registry, the Continue tap falls back to a fresh start (clears save, logs a single warn, starts GameScene with no boot data) — first click is responsive, no second click needed (verified by tampered `areaId` round-trip) [US-64]
+- [ ] If `loadSave().position` resolves to coordinates outside the destination area's pixel bounds (`x < 0 || x > mapCols * TILE_SIZE || y < 0 || y > mapRows * TILE_SIZE`) OR onto a WALL tile, Continue falls back to the area's `playerSpawn`, clears the stale save entry, and logs a single warn. Verified by tampered round-trip with `position: { x: 99999, y: 99999 }` AND with `position` set to a known WALL-tile pixel coord on Ashen Isle. [US-64]
+- [ ] Continue label font size is at least 1.5× the New Game label font size on desktop (verified: source read of the two `fontSize` strings; visual screenshot at 1280×720) — encodes the "Continue is the default when a save exists" design direction as a measurable target. [US-64]
 
-#### Structural — vocabulary docs (US-61)
+#### Structural — reset mechanism (US-65)
 
-- [x] `docs/tilesets/tiny-town.md` exists with frame table covering all Ashen Isle decorations + a Reserved-for-future appendix [US-61]
-- [x] `docs/tilesets/tiny-dungeon.md` exists with frame table covering all Fog Marsh decorations + a Reserved-for-future appendix [US-61]
-- [x] Each doc explains the atlas grid math (frame = row × cols + col) [US-61]
-- [x] AGENTS.md "Directory layout" tree includes `docs/tilesets/` [US-61]
+- [ ] TitleScene "Reset Progress" click wipes flags AND save together via `resetWorld()` from `saveState.ts` (verified: source read; manual: set a flag in DevTools, set a save, click reset, both gone) [US-65]
+- [ ] On Reset confirmation, the "Continue" label is removed (or the layout re-runs in the no-save state) on the same frame so the player doesn't see a stale Continue button while the "Progress Reset!" confirmation is up (verified: source read + screenshot before/after) [US-65]
+- [ ] `?reset=1` URL query param triggers a one-shot wipe in `TitleScene.init()` or `create()` BEFORE `hasSave()` is consulted; the Title renders in the no-save state on the same frame (verified: source read + manual via `http://localhost:5173/?reset=1`) [US-65]
+- [ ] After `?reset=1`, `history.replaceState` removes the query param so a manual refresh does not re-trigger the wipe (verified: source read; manual: load the URL, observe the URL cleans, refresh, no second wipe log) [US-65]
+- [ ] `?clearSave=1` URL query param wipes ONLY the save; flags remain intact (verified: manually set `oldman_greeted: true` flag, save a position, load `?clearSave=1`, observe Continue absent and the flag still present in DevTools) [US-65]
+- [ ] `resetWorld()` exported from `saveState.ts` calls `clearSave()` THEN `resetAllFlags()` in that order (verified: source read of the sequence) [US-65]
+- [ ] `resetWorld` re-exported from `triggers/flags.ts` for backward import compat at the call site — existing `resetAllFlags` consumers still work without import edits (verified: source read of the re-export AND that the existing `TitleScene` reset-progress import line did not need to change) [US-65]
+- [ ] AGENTS.md "Controls" (or new "Dev / testing" subsection) documents `?reset=1` and `?clearSave=1` (verified: source read of AGENTS.md after build-loop reconciliation) [US-65]
+- [ ] `docs/plan/save-resume-manual-verify.md` exists with the full checklist enumerated in US-65 acceptance criteria (verified: file present + grep for each named scenario) [US-65]
 
-#### Behavior — reads-as (legibility)
+#### Behavior — resume correctness (US-63 + US-64)
 
-Each reads-as is paired with a mechanism proxy, per phase rule.
+- [ ] **Ashen Isle resume**: walk the player from the cottage gate to a distinct, identifiable position (e.g. east of the path next to the Old Man's fence). Force-close the tab. Reopen. Tap Continue. Player appears within `SAVE_THROTTLE_MS / 2` worth of pixel distance (i.e. half a second of walked distance, ~32 px) of where they were when the tab closed. Camera follows. No double-fade. No console errors. (verified: manual-verify checklist) [US-63, US-64]
+- [ ] **Fog Marsh resume**: same protocol on Fog Marsh's dry path. Player resumes on Fog Marsh, on the path, near the prior position. (verified: manual) [US-63, US-64]
+- [ ] **Mid-transition resume**: walk to Ashen Isle's dock. Cross. While the fade-out + fade-in is in progress, force-close the tab. Reopen. Tap Continue. Player lands on Fog Marsh's entry tile (the destination flush from the transition write), NOT on Ashen Isle's exit-zone tile (which would re-fire the transition on entry). (verified: manual) [US-63]
+- [ ] **Mid-dialogue resume**: open Old Man dialogue. Mid-conversation, force-close the tab. Reopen. Tap Continue. The dialogue is closed (we did not save dialogue state). The player is on the world layer at the position of the most recent walk-frame autosave (i.e. roughly where they were when they pressed Space, since dialogue freezes movement). Flags committed before the close are still set. (verified: manual) [US-63, US-64]
+- [ ] **New Game wipes save**: with a save present from the resume tests above, return to Title (refresh page). Tap "New Game." Player lands on Ashen Isle's `playerSpawn`. Refresh page → "Continue" is absent (save was wiped at the New Game click). (verified: manual) [US-64]
 
-- [x] **Ashen Isle reads-as a coastal village**: a first-time observer (someone who has never seen Ashen Isle before) given the question "where are you, and what are the things around you?" can identify (a) "I'm in / next to a village", (b) "that's a path", (c) "that's a house", (d) "that's the water / the edge of the island", (e) "that's the way out (the dock/gate)". At least 4 of 5 identifications correct = pass. [US-59]
-- [x] **Ashen Isle mechanism proxy**: every legibility element is structurally present per the US-59 acceptance criteria above. [US-59]
-- [x] **Fog Marsh reads-as a wet marsh with a ruin**: same observer test. Identifications: (a) "I'm in a marsh / wetland / swamp", (b) "the dry strip is the path", (c) "that broken-walls thing is a ruin / shrine / tomb", (d) "the edges are too thick / wet to cross", (e) "the door at the end is the way through". At least 4 of 5 = pass. [US-60]
-- [x] **Fog Marsh mechanism proxy**: every legibility element is structurally present per the US-60 acceptance criteria. [US-60]
-- [x] **Diegetic exit reads-as a thing you walk through**: same observer can point at the dock/gate on Ashen Isle and the door on Fog Marsh and say "that's the way out" — without seeing the player ever walk through them. [US-59, US-60]
+#### Class baseline — autosave parity across save trigger points
 
-#### Variant baseline (per-area verification)
+The save module joins the class of "world-state writers" that already includes `flags.ts`. Every shared behaviour is verified explicitly:
 
-- [x] **Ashen Isle**: redesigned area loads, fade-in from TitleScene shows the new layout, all NPC + trigger interactions still work end-to-end, exit to Fog Marsh works [US-59]
-- [x] **Fog Marsh**: redesigned area loads via the Ashen Isle exit, all NPC + trigger interactions still work end-to-end, exit back to Ashen Isle works [US-60]
-- [x] **Round-trip**: Ashen Isle → Fog Marsh → Ashen Isle, three full transitions, no orphan sprites, no console warnings, flags persist across transitions [US-59, US-60]
+- [ ] Both modules use `try/catch` around `localStorage` reads AND writes (verified: source read of both modules) [US-62]
+- [ ] Both modules log on failure exactly once per session (not on every call) — `flags.ts` may not currently log; if so, US-62 brings parity by adding a once-per-session warn for write failures (verified: source read) [US-62]
+- [ ] Both modules' `reset` paths are idempotent (verified: calling `resetAllFlags()` twice in a row + `clearSave()` twice in a row neither throw nor produce duplicate logs) [US-62]
 
-#### Editor sync
+#### Variant baseline — every save trigger point fires for every area
 
-- [x] `tools/editor/src/mapRenderer.ts` renders the decoration layer on top of the base tile grid, before NPC circles and trigger overlays. Verified by opening the editor and seeing the redesigned Ashen Isle layout (path, houses, fence, water edge, dock) match what the game shows. [US-58, US-59]
-- [x] `cd tools/editor && npm run build` succeeds with the new types [US-58]
+The autosave write path has three trigger points (throttled walk, transition flush, dialogue/story close) and the game has two areas. Per-area verification per trigger:
+
+- [ ] **Ashen Isle, throttled walk**: walking continuously updates the save within ≤ 1 s of any position change (verified by polling DevTools localStorage during walk) [US-63]
+- [ ] **Ashen Isle, transition flush**: stepping into the dock writes a save with `areaId: 'fog-marsh'` and the destination entry-pixel position BEFORE the scene restart (verified by checking DevTools localStorage during the fade-out) [US-63]
+- [ ] **Ashen Isle, dialogue close flush**: closing Old Man dialogue writes a save with the post-dialogue player position (verified by polling DevTools localStorage on dialogue close) [US-63]
+- [ ] **Fog Marsh, throttled walk**: same protocol on Fog Marsh [US-63]
+- [ ] **Fog Marsh, transition flush**: stepping into the door writes a save with `areaId: 'ashen-isle'` and the Ashen Isle entry-pixel position [US-63]
+- [ ] **Fog Marsh, dialogue close flush**: closing Marsh Hermit dialogue writes a save with the post-dialogue position [US-63]
+- [ ] **Fog Marsh, StoryScene close flush** (Whispering Stones triggers a story scene): closing the StoryScene writes a save with the post-story player position (verified by polling DevTools localStorage on StoryScene close) [US-63]
+
+#### Variant baseline — every reset mechanism wipes both stores when intended
+
+- [ ] **Reset Progress button**: wipes flags AND save together (verified manually) [US-65]
+- [ ] **`?reset=1` URL param**: wipes flags AND save together; URL cleans (verified manually) [US-65]
+- [ ] **`?clearSave=1` URL param**: wipes save ONLY; flags persist (verified manually) [US-65]
+- [ ] **New Game button**: wipes flags AND save together (same call path as Reset; verified manually) [US-64, US-65]
+
+#### Behavior — reads-as
+
+Each reads-as is paired with an objective mechanism proxy.
+
+- [ ] **"Continue" reads-as "the game remembers me"**: a first-time observer (someone who played a session, closed the tab, and returned without prior knowledge of save/load) given the question "what does Continue do?" answers "it picks up where I left off" — NOT "it just starts the game" or "I don't know." (verified via the manual-verify observer note) [US-64]
+- [ ] **Continue mechanism proxy**: tap → `loadSave()` returns the stored payload → `scene.start('GameScene', { areaId, resumePosition })` → `createPlayer()` uses `resumePosition`. Verified by source read of the call sequence. [US-64]
+- [ ] **"Reset Progress" reads-as "I am wiped"**: a first-time observer who clicks Reset Progress and then refreshes can describe the state as "fresh start, like I never played" — NOT "I think it kept some things." (verified via observer note) [US-65]
+- [ ] **Reset mechanism proxy**: click → `resetWorld()` → `clearSave()` + `resetAllFlags()` both fire → `hasSave()` returns false → Title re-layouts to no-save state. Verified by source read. [US-65]
 
 #### Error paths
 
-- [x] A decoration with a bogus `spriteFrame` does NOT crash the area load — only logs a warning and skips (verified by adding a deliberate temp entry with `spriteFrame: 'bogus'`, observing console + visible missing decoration, then removing it) [US-58]
-- [x] A decoration on a coordinate outside `(mapCols, mapRows)` is not crashing — either ignored with a warning OR rendered off-grid harmlessly. Document the chosen behaviour in `renderDecorations` source comment. [US-58]
+- [ ] **Corrupt JSON in localStorage** (`emberpath_save = "not json"`): on Title boot, `hasSave()` returns false, the entry is removed from localStorage, exactly one `console.warn` fires, no crash (verified manually) [US-62]
+- [ ] **Tampered shape** (`emberpath_save = '{"version":1,"areaId":"nonexistent","position":{"x":0,"y":0}}'`): on Title boot, `hasSave()` returns false, the entry is removed, exactly one warn fires (verified manually) [US-62]
+- [ ] **Wrong version** (`emberpath_save = '{"version":2,...}'`): same handling — null-treated and cleared (verified manually) [US-62]
+- [ ] **Continue with stale `areaId`** (e.g. saved on `'old-name'` after an area rename): tapping Continue triggers fallback to a fresh start; first click is responsive (verified manually) [US-64]
+- [ ] **localStorage unavailable / blocked** (Safari private mode iframe sandbox): the game runs end-to-end without crash; Continue stays absent across reloads; exactly one warn fires per session for save-write failure (verified in iOS Safari private tab) [US-62]
+- [ ] **Quota exceeded** (localStorage stuffed > 5 MB by a co-resident origin): same handling as private mode — game runs, single warn, Continue may stay absent (verified by manual quota stuffing) [US-62]
+- [ ] **`?reset=1` and `?clearSave=1` together**: the wipe is total (both clear), URL cleans both params (verified manually) [US-65]
+
+#### Editor sync
+
+- [ ] `tools/editor/` is unaffected by this phase (the editor reads area definitions, not save state). `cd tools/editor && npm run build` passes after `AreaDefinition.id` is added. (verified) [US-63]
+
+#### Aesthetic traceability
+
+- [ ] **"Invisible when it works"** (design direction) traces to: zero new HUD elements; only Title labels change; in-game frame has zero per-frame localStorage work on idle frames (loop-invariant audit). [phase]
+- [ ] **"Continue is the default when a save exists"** (design direction) traces to: Title layout branch on `hasSave()`; primary visual weight on Continue; New Game smaller. [US-64]
+- [ ] **"Reset is one click and atomic"** (design direction) traces to: `resetWorld()` calls `clearSave` + `resetAllFlags` synchronously; Continue button removal is on the same frame as reset confirmation. [US-65]
+- [ ] **"Failures degrade gracefully"** (design direction) traces to: every error-path criterion above; once-per-session warn flag in saveState. [US-62]
 
 #### Invariants
 
-- [x] `npx tsc --noEmit - [ ] `npx tsc --noEmit && npm run build` passes- [ ] `npx tsc --noEmit && npm run build` passes npm run build` passes [phase]
-- [x] `cd tools/editor - [ ] `cd tools/editor && npm run build` passes [phase]- [ ] `cd tools/editor && npm run build` passes [phase] npm run build` passes [phase]
-- [x] No console errors during 60 seconds of play covering: spawn on Ashen Isle, walk the path to the Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk path to Marsh Hermit, full dialogue, Whispering Stones, return to Ashen Isle [phase]
-- [x] AGENTS.md "Directory layout" tree updated to include `docs/tilesets/` [phase]
-- [x] AGENTS.md "Depth map" updated to insert "Decorations | 2 | main" row between Tiles and Props [phase]
-- [x] AGENTS.md "File ownership" rows updated for: `data/areas/types.ts` (`AreaDefinition.decorations`, `DecorationDefinition`), `scenes/GameScene.ts` (`renderDecorations()`), `data/areas/ashen-isle.ts` and `fog-marsh.ts` (mention the redesigned compositions), `tools/editor/src/mapRenderer.ts` (decoration layer rendering) [phase]
-- [x] AGENTS.md "Behavior rules" gains a "Decorations" entry mirroring the existing "Decorative props (non-blocking)" entry — describing tile-snapped, depth 2, atlas-frame literal, no collision contribution, missing-frame warn-and-skip [phase]
-- [x] **Loop-invariant audit (Learning EP-01):** decorations are created once at area load, not per-frame; no `update()` work added [phase]
+- [ ] `npx tsc --noEmit && npm run build` passes [phase]
+- [ ] `cd tools/editor && npm run build` passes [phase]
+- [ ] No console errors during 90 seconds of play covering: New Game on Ashen Isle, walk path to Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk to Marsh Hermit, full dialogue, Whispering Stones story scene, return to Ashen Isle, force-close tab, reopen, Continue, walk again [phase]
+- [ ] AGENTS.md "Directory layout" tree updated to include `src/triggers/saveState.ts` [phase]
+- [ ] AGENTS.md "File ownership" rows updated for: `triggers/saveState.ts` (new — schema + IO + reset surface), `triggers/flags.ts` (now also clears save via `resetAllFlags`), `scenes/TitleScene.ts` (Continue/New Game branching, URL-param reset handling), `scenes/GameScene.ts` (`maybeAutosave`, transition flush, dialogue/story close flush, `resumePosition` boot field), `data/areas/types.ts` (added `AreaDefinition.id`) [phase]
+- [ ] AGENTS.md "Behavior rules" gains a "Save / resume" entry covering: throttle constants, three trigger points, atomic reset semantics, Continue precedence rule (`entryPoint` wins over `resumePosition`), URL-param reset behaviour [phase]
+- [ ] AGENTS.md "Controls" gains a "Dev / testing" subsection (or appendix) covering `?reset=1` and `?clearSave=1` [phase]
+- [ ] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame `JSON.stringify`, no per-frame `localStorage.setItem`, no `setTexture`-style identical re-writes; the throttle returns before any IO when not eligible [phase]
+- [ ] **Deploy verification (Learning #65):** GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check) [phase]
+- [ ] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, play a short session that walks at least 100 px, refresh, verify Continue is present AND tapping it resumes at the prior position — confirms localStorage works on the deployed origin (different from `localhost:5173`) [phase]
 
 ### Golden principles (phase-relevant)
 
-- **Depth map authority:** Decorations land at depth 2 — a new entry, but explicit. Ad-hoc depths still prohibited.
-- **Parameterized systems:** All redesigned-area work happens in data files. The engine (US-58) is generic; it doesn't know about Ashen Isle or Fog Marsh specifically.
-- **No silent breaking changes:** `decorations` is required from the start, but every existing area definition is updated in this same phase, so no transitional state with missing fields hits `main`.
-- **From LEARNINGS EP-01 (loop invariants):** decoration sprites are created once at area load; no per-frame creation, no per-frame `setTexture`. Mirror the props pattern.
-- **From LEARNINGS #57 (depth-map authority):** the new depth 2 row must be added to the AGENTS.md depth map in the same PR that introduces it.
-- **Communicative-not-pretty:** placeholder art stays placeholder. Any work that spends time on "make this look nicer" rather than "make this read more clearly" is out-of-scope and bumped to a later art-pass phase.
+- **Parameterized systems:** `saveState.ts` is engine-agnostic — it does not import Phaser, does not reach into `GameScene`, does not know area names beyond consulting the registry. Two consumers (TitleScene reads, GameScene writes); every other call site is a violation.
+- **No silent breaking changes:** `version: 1` on the save payload from day one. A future `version: 2` change must update the load path's switch arm, not retroactively interpret v1 saves as a different shape. `resetAllFlags` keeps its exported name; the new `clearSave()` call inside it is additive.
+- **From LEARNINGS EP-01 (loop invariants):** autosave must not call `JSON.stringify` or `setItem` per frame. The throttle + position-delta guard fires BEFORE any IO; idle frames cost zero. Mirror the props/decoration "create once" pattern, applied here as "write at most once per second + only when something changed."
+- **From LEARNINGS #57 (depth-map authority):** no new visual layers; this phase touches no depths.
+- **Zone-level mutual exclusion (LEARNINGS #56):** autosave is suppressed during dialogue, StoryScene, and transitions — same exclusion zones already in force for movement and triggers. The flush-on-close paths re-arm autosave the moment the exclusion lifts.
+- **Invisible when it works:** UI surface is exactly two Title labels and one existing Reset link. No "saving..." indicator, no save slot manager, no toast. Failures log once and degrade silently — the game stays playable.
 
 ### Reference
 
-Full spec, schematic layouts, story design rationale, and AGENTS.md sections affected: `docs/product/phases/world-legibility.md`.
+Full spec, story bodies, design rationale, and AGENTS.md sections affected: `docs/product/phases/save-resume.md`.
