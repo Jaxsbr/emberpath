@@ -25,3 +25,11 @@ entries:
     result: pass
     notes: US-70 complete; story milestone commit 2fe573e; test-baseline.txt promoted; spec path drift noted (dist/npc/heron/ not dist/assets/npc/heron/)
     tokens: ~5500
+  - task: 4
+    time: "2026-04-26T09:55:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-70 shipped; story milestone 2fe573e. Unmet criteria: US-71 (12 + class baseline + idempotency + error path + AGENTS.md row + named constants), US-72 (9 + error path + 2 regression), US-73 (12 incl. AGENTS.md depth + behavior rules), phase-level (full-arc manual verify, save/resume parity, reset parity, keeper one-shot guard, manual-verify checklist, atlas verification, build pass, AGENTS.md, deploy verify), 2 safety criteria. Priority: US-71 next — it provides the spawn mechanism US-72's dialogue depends on (player must be able to interact with the Keeper before US-72's keeper-intro fires). US-72 then closes the rescue (flag flip + story scene); US-73 closes the loop (path re-opens via the existing Phase 1 mechanism + ember overlay). Cached server/schema/cross-cutting classification (task 1) — investigate-first mandated. GameScene context (lines 142-148): existing onFlagChange('marsh_trapped') subscriber pre-existed for US-67's collision flip + US-68's decoration swap; the new generalised subscription is ADDITIVE — preserved verbatim per spec. Existing unsubscribe pattern: marshTrappedUnsubscribe + cleanupResize. Queued [US-71] investigate to design the generalised subscriber API + the spawn render path + the input-suspend mechanism."
+    result: pass
+    notes: US-71 next; investigate-first enforced; subscriber generalisation API to be designed in task 5
+    tokens: ~3500

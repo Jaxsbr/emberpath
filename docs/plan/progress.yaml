@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: null
+  task_number: 5
+  next_task: "[US-71] Investigate: read full GameScene.renderNpcs path (line 463+) + the existing onFlagChange('marsh_trapped') subscriber wiring (lines 142-148) + cleanupResize unsub pattern (line 594+); read systems/conditions.ts for evaluateCondition surface; design the generalised spawn-condition subscriber API (per-flag onFlagChange registration parsed from regex /\\b([a-z_][a-z0-9_]*)\\s*(==|!=|>=|>|<=|<)/gi); confirm Phaser tween signature for alpha 0->1 over 500ms; identify the input-suspend mechanism (transitionInProgress equivalent) for the 1000ms post-spawn window; plan the Keeper NPC entry on fog-marsh.ts at (col 14, row 8). Produce a focused diff plan for the next implement task."
   last_result: pass
   consecutive_fails: 0
 
