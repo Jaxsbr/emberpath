@@ -1,8 +1,241 @@
 import { TileType } from '../../maps/constants';
-import { AreaDefinition } from './types';
+import { AreaDefinition, DecorationDefinition, StoredTile } from './types';
 
 const F = TileType.FLOOR;
 const W = TileType.WALL;
+
+// Tiny Town atlas frame vocabulary used by Ashen Isle. Verified against the
+// labeled atlas (see docs/tilesets/tiny-town.md). Topology is authoritative;
+// individual frames can be swapped one-line at a time without touching map
+// or composition shape.
+const FRAME = {
+  CLIFF_A: '120',        // light grey stone block (variant A) — substitutes for water (Tiny Town has no water tiles)
+  CLIFF_B: '121',        // light grey stone block (variant B) — keeps no single cliff frame above 30% of decoration count
+  CLIFF_C: '122',        // light grey stone block (variant C)
+  PATH: '51',            // tan dirt path with grass border — clear "trodden" surface
+  DOCK: '55',            // green cobblestone — distinct surface marking the exit zone
+  FENCE: '80',           // horizontal wooden plank — fence panel
+  ROOF: '64',            // red roof segment with white pattern
+  WALL_FRONT: '72',      // brown wall middle — pairs with red roof
+  DOOR: '97',            // brown wall with brown wooden door
+  BUSH: '30',            // green bush cluster
+  FLOWER: '22',          // yellow mushroom — substitute for flower (no true flower clusters in atlas)
+  SIGN: '95',            // sign post
+  TREE: '6',             // pine tree
+} as const;
+
+// Builder helpers — keep the decorations array readable. Each helper returns
+// a flat DecorationDefinition[] that can be spread into the main array.
+
+function rect(col0: number, col1: number, row0: number, row1: number, frame: string): DecorationDefinition[] {
+  const out: DecorationDefinition[] = [];
+  for (let r = row0; r <= row1; r++) {
+    for (let c = col0; c <= col1; c++) {
+      out.push({ col: c, row: r, spriteFrame: frame });
+    }
+  }
+  return out;
+}
+
+function hline(col0: number, col1: number, row: number, frame: string): DecorationDefinition[] {
+  return rect(col0, col1, row, row, frame);
+}
+
+function vline(col: number, row0: number, row1: number, frame: string): DecorationDefinition[] {
+  return rect(col, col, row0, row1, frame);
+}
+
+// Filled rectangle that cycles through a frame palette per cell so no single
+// frame dominates the decoration tally (US-59 done-when ≤30% per frame).
+function rectVariants(
+  col0: number,
+  col1: number,
+  row0: number,
+  row1: number,
+  frames: string[],
+): DecorationDefinition[] {
+  const out: DecorationDefinition[] = [];
+  let i = 0;
+  for (let r = row0; r <= row1; r++) {
+    for (let c = col0; c <= col1; c++) {
+      out.push({ col: c, row: r, spriteFrame: frames[i % frames.length] });
+      i++;
+    }
+  }
+  return out;
+}
+
+// Fenced rectangle perimeter (no infill), with optional gate cell skipped.
+function fencePerimeter(
+  col0: number,
+  col1: number,
+  row0: number,
+  row1: number,
+  frame: string,
+  gate?: { col: number; row: number },
+): DecorationDefinition[] {
+  const out: DecorationDefinition[] = [];
+  const isGate = (c: number, r: number) => gate?.col === c && gate?.row === r;
+  for (let c = col0; c <= col1; c++) {
+    if (!isGate(c, row0)) out.push({ col: c, row: row0, spriteFrame: frame });
+    if (!isGate(c, row1)) out.push({ col: c, row: row1, spriteFrame: frame });
+  }
+  for (let r = row0 + 1; r <= row1 - 1; r++) {
+    if (!isGate(col0, r)) out.push({ col: col0, row: r, spriteFrame: frame });
+    if (!isGate(col1, r)) out.push({ col: col1, row: r, spriteFrame: frame });
+  }
+  return out;
+}
+
+// =============================================================================
+// Map (collision data) — composed programmatically rather than as a 38×50 ASCII
+// grid, so the structural intent (cliff coast, building outlines, fence runs,
+// door / gate gaps) reads in code instead of dot-arithmetic. The decoration
+// layer below renders the visible representation; the map only controls
+// walkability.
+// =============================================================================
+
+function buildAshenMap(): StoredTile[][] {
+  const m: StoredTile[][] = [];
+  for (let r = 0; r < 38; r++) {
+    m.push(new Array<StoredTile>(50).fill(F));
+  }
+
+  // Outer perimeter — keep all 4 map edges as WALL so the player can never
+  // step off the world even if a downstream phase removes a coast row.
+  for (let r = 0; r < 38; r++) {
+    m[r][0] = W;
+    m[r][49] = W;
+  }
+  for (let c = 0; c < 50; c++) {
+    m[0][c] = W;
+    m[37][c] = W;
+  }
+
+  // North coast cliff — rows 1-3 are WALL (cliff face) with two FLOOR breaks:
+  // (a) row 2 cols 23-26 carry the dock / exit zone, (b) row 3 cols 24-25
+  // carry the path coming south off the dock.
+  for (let c = 0; c < 50; c++) {
+    m[1][c] = W;
+    m[2][c] = W;
+    m[3][c] = W;
+  }
+  for (let c = 23; c <= 26; c++) m[2][c] = F;
+  for (let c = 24; c <= 25; c++) m[3][c] = F;
+
+  // Player's cottage — rows 12-15 cols 8-12 are WALL except the door cell at
+  // (10, 15) which stays FLOOR so dialogue can pose the player in the doorway.
+  for (let r = 12; r <= 15; r++) {
+    for (let c = 8; c <= 12; c++) {
+      m[r][c] = W;
+    }
+  }
+  m[15][10] = F;
+
+  // Player's fenced yard — perimeter at rows 11-19 cols 5-14 with gate at
+  // (9, 19) to the south path branch.
+  for (let c = 5; c <= 14; c++) {
+    m[11][c] = W;
+    m[19][c] = W;
+  }
+  for (let r = 12; r <= 18; r++) {
+    m[r][5] = W;
+    m[r][14] = W;
+  }
+  m[19][9] = F;
+
+  // Old Man's cottage — rows 24-28 cols 38-42 WALL with door at (40, 28) FLOOR.
+  for (let r = 24; r <= 28; r++) {
+    for (let c = 38; c <= 42; c++) {
+      m[r][c] = W;
+    }
+  }
+  m[28][40] = F;
+
+  // Old Man's fenced yard — perimeter at rows 23-31 cols 35-44 with gate at
+  // (39, 23) to the east path branch.
+  for (let c = 35; c <= 44; c++) {
+    m[23][c] = W;
+    m[31][c] = W;
+  }
+  for (let r = 24; r <= 30; r++) {
+    m[r][35] = W;
+    m[r][44] = W;
+  }
+  m[23][39] = F;
+
+  return m;
+}
+
+// =============================================================================
+// Decorations — visible vocabulary composed over the collision map.
+// =============================================================================
+
+const CLIFF_VARIANTS = [FRAME.CLIFF_A, FRAME.CLIFF_B, FRAME.CLIFF_C];
+
+const ashenDecorations: DecorationDefinition[] = [
+  // North coast — cliff (substituting for water) on rows 0-3 with dock /
+  // path breaks. Rows 0-1 are full-width cliff (the open water beyond the
+  // shore); rows 2-3 are cliff on either side of the dock/path break so the
+  // dock reads as cutting through the rocky shore.
+  ...rectVariants(0, 49, 0, 1, CLIFF_VARIANTS),
+  ...rectVariants(0, 22, 2, 3, CLIFF_VARIANTS),
+  ...rectVariants(27, 49, 2, 3, CLIFF_VARIANTS),
+
+  // Dock at exit zone — wooden boardwalk reads as the way off the island.
+  ...hline(23, 26, 2, FRAME.DOCK),
+
+  // Main vertical path — cols 24 + 25 from the dock down to the south edge.
+  ...vline(24, 4, 36, FRAME.PATH),
+  ...vline(25, 4, 36, FRAME.PATH),
+
+  // West branch — row 20 cols 10-23, joining the player's gate to the main path.
+  ...hline(10, 23, 20, FRAME.PATH),
+
+  // East branch — row 22 cols 26-41, joining the main path to the Old Man's gate.
+  ...hline(26, 41, 22, FRAME.PATH),
+
+  // Player's cottage — 5×4 building at rows 12-15 cols 8-12.
+  ...hline(8, 12, 12, FRAME.ROOF),
+  ...hline(8, 12, 13, FRAME.ROOF),
+  ...hline(8, 12, 14, FRAME.WALL_FRONT),
+  ...hline(8, 9, 15, FRAME.WALL_FRONT),
+  { col: 10, row: 15, spriteFrame: FRAME.DOOR },
+  ...hline(11, 12, 15, FRAME.WALL_FRONT),
+
+  // Player's fenced yard perimeter at rows 11-19 cols 5-14, gate at (9, 19).
+  ...fencePerimeter(5, 14, 11, 19, FRAME.FENCE, { col: 9, row: 19 }),
+
+  // Old Man's cottage — 5×4 building at rows 24-28 cols 38-42.
+  ...hline(38, 42, 24, FRAME.ROOF),
+  ...hline(38, 42, 25, FRAME.ROOF),
+  ...hline(38, 42, 26, FRAME.WALL_FRONT),
+  ...hline(38, 42, 27, FRAME.WALL_FRONT),
+  ...hline(38, 39, 28, FRAME.WALL_FRONT),
+  { col: 40, row: 28, spriteFrame: FRAME.DOOR },
+  ...hline(41, 42, 28, FRAME.WALL_FRONT),
+
+  // Old Man's fenced yard perimeter at rows 23-31 cols 35-44, gate at (39, 23).
+  ...fencePerimeter(35, 44, 23, 31, FRAME.FENCE, { col: 39, row: 23 }),
+
+  // Yard-interior path inside Old Man's yard — runs from the gate at (39, 23)
+  // south to the Old Man's stoop at (39, 28), placing him on a path tile
+  // adjacent to his door at (40, 28) (US-59 done-when).
+  ...vline(39, 24, 28, FRAME.PATH),
+
+  // Scattered decorations across open grass — sign by the dock plus a mix of
+  // bushes, trees, and flowers in the bands away from the path so no single
+  // frame dominates the decoration vocabulary.
+  { col: 26, row: 5, spriteFrame: FRAME.SIGN },
+  { col: 8, row: 6, spriteFrame: FRAME.TREE },
+  { col: 36, row: 7, spriteFrame: FRAME.TREE },
+  { col: 3, row: 9, spriteFrame: FRAME.TREE },
+  { col: 28, row: 10, spriteFrame: FRAME.FLOWER },
+  { col: 12, row: 32, spriteFrame: FRAME.TREE },
+  { col: 6, row: 34, spriteFrame: FRAME.FLOWER },
+  { col: 44, row: 25, spriteFrame: FRAME.BUSH },
+  { col: 30, row: 33, spriteFrame: FRAME.BUSH },
+];
 
 export const ashenIsle: AreaDefinition = {
   id: 'ashen-isle',
@@ -10,87 +243,39 @@ export const ashenIsle: AreaDefinition = {
   mapCols: 50,
   mapRows: 38,
   tileset: 'tiny-town',
-  map: [
-    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,W,W,W,F,F,W,F,F,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,W,W,W,W,W,F,F,W],
-    [W,F,F,W,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,W,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W,F,F,F,W,F,F,W],
-    [W,F,F,W,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W,F,F,F,W,F,F,W],
-    [W,F,F,W,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,W,W,F,W,W,F,F,F,F,F,F,F,F,F,W,F,F,F,W,F,F,W],
-    [W,F,F,W,W,F,W,W,F,F,F,F,F,F,F,F,F,F,F,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,F,W,W,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,W,W,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,W,W,W,F,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,F,W,W,W,W,W,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,F,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,W,W,W,W,W,F,F,F,F,F,F,W,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W,W,F,F,F,F,F,F,W,W,W,W,F,F,W],
-    [W,F,F,W,F,F,F,W,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,W,F,F,W,F,F,W],
-    [W,F,F,W,F,F,F,W,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,W,F,F,W,F,F,W],
-    [W,F,F,W,F,F,F,W,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,W,F,F,W,F,F,W],
-    [W,F,F,W,W,F,W,W,F,F,F,F,F,F,W,W,W,F,W,W,W,F,F,F,F,F,F,F,F,F,W,W,W,F,W,W,W,F,F,F,F,F,F,W,W,F,W,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,W,W,W,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,W,W,W,W,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,F,F,F,F,F,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,F,F,F,F,F,F,W,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,W,W,W,F,W,W,W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W,W,W,W,F,W,W,W,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,F,W],
-    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
-  ],
+  map: buildAshenMap(),
   npcs: [
-    { id: 'old-man', name: 'Old Man', col: 13, row: 12, color: 0x8b6914, sprite: 'old-man', wanderRadius: 2, awarenessRadius: 3 },
+    // Old Man stands on the yard-interior path one step west of his cottage
+    // door at (40, 28); his spawn at (39, 28) is the path tile adjacent to
+    // the door.
+    { id: 'old-man', name: 'Old Man', col: 39, row: 28, color: 0x8b6914, sprite: 'old-man', wanderRadius: 1, awarenessRadius: 3 },
   ],
-  props: [
-    // Scattered decoration across open grass bands — bushes, stones, trees, flowers, signs, fences.
-    // Frames drawn from docs/plan/tileset-frame-analysis.md (tiny-town shortlist).
-    { id: 'bush-n1', col: 6, row: 1, spriteFrame: '29' },
-    { id: 'sign-n1', col: 20, row: 1, spriteFrame: '27' },
-    { id: 'flower-n1', col: 30, row: 1, spriteFrame: '26' },
-    { id: 'tree-n1', col: 40, row: 1, spriteFrame: '6' },
-    { id: 'stone-n1', col: 45, row: 1, spriteFrame: '13' },
-    { id: 'tree-m1', col: 12, row: 8, spriteFrame: '7' },
-    { id: 'flower-m1', col: 28, row: 8, spriteFrame: '11' },
-    { id: 'bush-m1', col: 35, row: 8, spriteFrame: '28' },
-    { id: 'stone-m1', col: 43, row: 8, spriteFrame: '25' },
-    { id: 'tree-c1', col: 6, row: 15, spriteFrame: '8' },
-    { id: 'bush-c1', col: 15, row: 15, spriteFrame: '29' },
-    { id: 'sign-c1', col: 25, row: 15, spriteFrame: '27' },
-    { id: 'flower-c1', col: 35, row: 15, spriteFrame: '11' },
-    { id: 'tree-s1', col: 6, row: 22, spriteFrame: '9' },
-    { id: 'stone-s1', col: 13, row: 22, spriteFrame: '13' },
-    { id: 'flower-s1', col: 28, row: 22, spriteFrame: '26' },
-    { id: 'tree-s2', col: 7, row: 29, spriteFrame: '10' },
-    { id: 'bush-s1', col: 28, row: 29, spriteFrame: '28' },
-  ],
+  // Tile-snapped layout vocabulary lives in `decorations` below; props are
+  // intentionally empty during the world-legibility phase — the prior
+  // scattered prop list assumed the old "stone pen" map and would now sit on
+  // top of cliff or fence cells. Future props can return as the world grows.
+  props: [],
+  decorations: ashenDecorations,
   triggers: [
     {
+      // Fires as the player takes their first eastward step on the west path
+      // branch — the spawn-adjacent grass-thought from the original layout.
       id: 'start-thought',
-      col: 8,
-      row: 8,
+      col: 11,
+      row: 20,
       width: 3,
-      height: 2,
+      height: 1,
       type: 'thought',
       actionRef: 'Where am I? Everything feels... grey.',
       repeatable: false,
     },
     {
+      // South interior — fires only after the player has spoken with the
+      // Old Man, so the story scene caps the conversational thread.
       id: 'ashen-isle-vision',
-      col: 33,
-      row: 32,
-      width: 3,
+      col: 24,
+      row: 33,
+      width: 2,
       height: 2,
       type: 'story',
       actionRef: 'ashen-isle-intro',
@@ -98,9 +283,10 @@ export const ashenIsle: AreaDefinition = {
       repeatable: false,
     },
     {
+      // South-west — repeatable ambient thought as the player explores.
       id: 'room-echo',
-      col: 4,
-      row: 25,
+      col: 3,
+      row: 32,
       width: 2,
       height: 2,
       type: 'thought',
@@ -207,16 +393,20 @@ export const ashenIsle: AreaDefinition = {
       ],
     },
   },
-  playerSpawn: { col: 2, row: 2 },
+  playerSpawn: { col: 9, row: 20 },
   exits: [
     {
+      // Dock at the north coast — leaves Ashen Isle by walking onto the
+      // boardwalk decoration. Fog Marsh's reciprocal entryPoint will move
+      // onto its own dry path during US-60; for now players still arrive at
+      // the existing fog-marsh entry tile.
       id: 'ashen-to-fog',
-      col: 47,
-      row: 17,
-      width: 2,
+      col: 23,
+      row: 2,
+      width: 4,
       height: 1,
       destinationAreaId: 'fog-marsh',
-      entryPoint: { col: 2, row: 12 },
+      entryPoint: { col: 14, row: 21 },
     },
   ],
   visual: { floorColor: 0x4a6741, wallColor: 0x2c2c3a },

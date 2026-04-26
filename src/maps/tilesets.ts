@@ -17,7 +17,10 @@ export const TILESETS: Record<string, TilesetDefinition> = {
   'tiny-dungeon': {
     atlasKey: 'tileset-tiny-dungeon',
     tileFrames: {
-      // Tan/orange dungeon floor (row 4 start — clearly distinct from brick walls).
+      // Tan dungeon floor (row 4 start). Tiny Dungeon has no native wet/marsh
+      // frames; the wet-vs-dry contrast in fog-marsh.ts is achieved by overlaying
+      // wooden-plank decoration ('36'/'37') as a dry path on top of this base
+      // tan floor. See docs/tilesets/tiny-dungeon.md for the substitution.
       [TileType.FLOOR]: ['48', '49', '50', '51'],
       // Brown dark brick wall tops (row 0 start — strong color contrast with tan floor).
       [TileType.WALL]: ['0', '1', '2'],

@@ -39,6 +39,7 @@ export class GameScene extends Phaser.Scene {
   private animationSystem!: AnimationSystem;
   private player!: Phaser.GameObjects.Sprite;
   private tileLayer: Phaser.GameObjects.GameObject[] = [];
+  private decorationSprites: Phaser.GameObjects.Sprite[] = [];
   private propSprites: Phaser.GameObjects.Sprite[] = [];
   private npcEntities: Phaser.GameObjects.GameObject[] = [];
   private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
@@ -118,6 +119,7 @@ export class GameScene extends Phaser.Scene {
     this.area = area;
 
     this.renderTileMap();
+    this.renderDecorations();
     this.renderProps();
     this.registerAnimations();
     this.renderNpcs();
@@ -292,6 +294,35 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private renderDecorations(): void {
+    this.decorationSprites = [];
+    if (!hasTileset(this.area.tileset)) return;
+    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    const texture = this.textures.get(atlasKey);
+    // Out-of-bounds (col,row) outside (mapCols,mapRows) is not crashed-on:
+    // Phaser accepts arbitrary world coords and the decoration renders off-grid
+    // harmlessly. Authors see the misplaced decoration on visual inspection.
+    for (const dec of this.area.decorations) {
+      if (!texture.has(dec.spriteFrame)) {
+        console.warn(
+          `[GameScene] Decoration at (${dec.col},${dec.row}) references missing frame ` +
+            `'${dec.spriteFrame}' on tileset '${this.area.tileset}'; skipping.`,
+        );
+        continue;
+      }
+      const sprite = this.add.sprite(
+        dec.col * TILE_SIZE,
+        dec.row * TILE_SIZE,
+        atlasKey,
+        dec.spriteFrame,
+      );
+      sprite.setOrigin(0, 0);
+      sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
+      sprite.setDepth(2);
+      this.decorationSprites.push(sprite);
+    }
+  }
+
   private renderProps(): void {
     this.propSprites = [];
     if (!hasTileset(this.area.tileset)) return;
@@ -370,7 +401,7 @@ export class GameScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([...this.tileLayer, ...this.propSprites, this.player, ...this.npcEntities]);
+    uiCam.ignore([...this.tileLayer, ...this.decorationSprites, ...this.propSprites, this.player, ...this.npcEntities]);
 
     this.scale.on('resize', this.handleResize, this);
 
