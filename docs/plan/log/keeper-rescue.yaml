@@ -49,3 +49,11 @@ entries:
     result: pass
     notes: US-71 milestone complete; story commit fd5bb9e; AGENTS.md row landed in same commit so US-71's [US-71, phase]-tagged AGENTS criterion ticks here; phase-level Keeper-one-shot-guard criterion folded into spawnCondition third clause
     tokens: ~12000
+  - task: 7
+    time: "2026-04-26T10:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-70 + US-71 shipped; story milestones 2fe573e + fd5bb9e. Unmet criteria: US-72 (9 + error path + 2 regression), US-73 (12 incl. 2 AGENTS.md rows + tag [US-73, phase]), phase-level (full-arc manual verify, save/resume parity, reset parity, manual-verify checklist, atlas verification, AGENTS.md sweep, deploy verify), 2 safety criteria. Priority: US-72 next — provides the dialogue mechanism that lets the player interact with the spawned Keeper, and the flag flips that close the trap (marsh_trapped: false) and grant the ember (has_ember_mark: true). US-73 then closes the loop (overlay + path re-open via Phase 1 mechanism). Cached server/schema/cross-cutting classification — investigate-first mandated. Queued [US-72] investigate to confirm DialogueSystem.showNode injection point + endStoryScene exposure mechanism + keeper-intro/ember-given content authoring."
+    result: pass
+    notes: US-72 next; investigate-first enforced
+    tokens: ~2500
