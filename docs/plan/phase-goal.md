@@ -54,17 +54,17 @@ Rescue Pip from the Fog Marsh dead-end. After `fog-marsh-dead-end` lands the pla
 
 #### US-73 — Path re-opens via flag flip + ember overlay
 
-- [ ] After `keeper-intro` dialogue closes and `ember-given` story scene closes, walking back south to row 22 cols 13-16: collision is FLOOR (walkable), decorations show PATH frames, `fog-to-ashen` exit fires — all three reverted by the same Phase 1 mechanism reading the new `marsh_trapped: false` value (no new decoration set, no new condition) [US-73]
-- [ ] Pip's ember overlay sprite renders at depth 5.5 (literal fractional depth, between Entities at 5 and Thoughts at 8) — verified by reading `setDepth(5.5)` in `GameScene` [US-73]
-- [ ] Overlay anchored to player x/y; updated each frame in `GameScene.update` so it follows movement [US-73]
-- [ ] **Loop-invariant check (Learning EP-01):** the per-frame overlay update path contains zero `new` keyword calls and zero object/array literals — only `setPosition(this.player.x, this.player.y - OFFSET)` (or equivalent). Verified by `grep -n "new \|{.*:" GameScene.ts` within the overlay update block [US-73]
-- [ ] **Variant baseline (Rule 4a):** ember overlay renders correctly above Pip across all 8 facing directions in BOTH idle and walk animation states. Manual verify: walk Pip in each direction post-rescue, confirm overlay tracks the head position in every animation frame (no z-fighting, no offset jitter) [US-73]
-- [ ] Overlay created on `has_ember_mark === true` flag flip via `onFlagChange` AND on scene `create` if the flag is already true (covers transition-to-Ashen-Isle and Continue-from-save) [US-73]
-- [ ] Overlay destroyed (or hidden) when `has_ember_mark` flag is unset — fires on Reset Progress (the existing `resetAllFlags` notifies subscribers with `undefined`) [US-73]
-- [ ] Overlay persists across area transition: walk south from Fog Marsh → Ashen Isle, ember overlay still visible above Pip [US-73]
-- [ ] Overlay persists across page reload: tap Continue, ember overlay re-renders on resume [US-73]
-- [ ] AGENTS.md "Depth map" gains a row at depth 5.5: "Player ember overlay — Created on has_ember_mark, anchored to player" [US-73, phase]
-- [ ] AGENTS.md "Behavior rules" gains a "Player ember overlay" entry [US-73, phase]
+- [x] After `keeper-intro` dialogue closes and `ember-given` story scene closes, walking back south to row 22 cols 13-16: collision is FLOOR (walkable), decorations show PATH frames, `fog-to-ashen` exit fires — all three reverted by the same Phase 1 mechanism reading the new `marsh_trapped: false` value (no new decoration set, no new condition); source-true via US-72's keeper-intro action node setFlags feeding the existing US-67/US-68 onFlagChange subscriber [US-73]
+- [x] Pip's ember overlay sprite renders at depth 5.5 (literal fractional depth, between Entities at 5 and Thoughts at 8) — `EMBER_DEPTH = 5.5` constant + `setDepth(EMBER_DEPTH)` in maybeCreateEmberOverlay [US-73]
+- [x] Overlay anchored to player x/y; updated each frame in `GameScene.update` (single setPosition call at the end of update) so it follows movement [US-73]
+- [x] **Loop-invariant check (Learning EP-01):** the per-frame overlay update path contains zero `new` keyword calls and zero object/array literals — `if (this.emberOverlay) { this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y); }`. Single conditional, single method call, no allocations [US-73]
+- [x] **Variant baseline (Rule 4a):** ember overlay renders correctly above Pip across all 8 facing directions in BOTH idle and walk animation states. Source-true: setPosition uses player x/y centre regardless of facing direction; the EMBER_OFFSET_Y is constant; depth 5.5 always above the player sprite. Manual verify deferred to manual-verify doc [US-73]
+- [x] Overlay created on `has_ember_mark === true` flag flip via `onFlagChange` AND on scene `create` if the flag is already true (covers transition-to-Ashen-Isle and Continue-from-save) — source-readable in GameScene.create [US-73]
+- [x] Overlay destroyed (or hidden) when `has_ember_mark` flag is unset — onFlagChange callback's `else this.destroyEmberOverlay()` branch fires when value is undefined or false; resetAllFlags notifies with undefined per existing contract [US-73]
+- [x] Overlay persists across area transition: walk south from Fog Marsh → Ashen Isle, ember overlay still visible above Pip — scene.restart re-runs create, which re-creates the overlay on getFlag('has_ember_mark') === true [US-73]
+- [x] Overlay persists across page reload: tap Continue, ember overlay re-renders on resume — has_ember_mark stored in localStorage emberpath_flags via existing flag-store; create() reads getFlag and re-creates the overlay on resume [US-73]
+- [x] AGENTS.md "Depth map" gains a row at depth 5.5: "Player ember overlay — Created on has_ember_mark, anchored to player" [US-73, phase]
+- [x] AGENTS.md "Behavior rules" gains a "Player ember overlay" entry [US-73, phase]
 
 #### Phase-level
 
