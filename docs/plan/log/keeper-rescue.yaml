@@ -9,3 +9,11 @@ entries:
     result: pass
     notes: phase classified server/schema/cross-cutting; investigate-first enforced; baseline verify passes; heron source assets confirmed
     tokens: ~14000
+  - task: 2
+    time: "2026-04-26T09:40:00Z"
+    type: investigate
+    story: US-70
+    description: "Branch A — executed queued [US-70] investigate. Source review: src/systems/npcSprites.ts (54 lines) — NPC_SPRITES + NPC_PORTRAITS are flat record literals; adding 'heron' is two parallel inline entries (no helper changes; no schema changes). The portrait `linear` filter mirrors 'old-man' (painterly portrait downscale; matches the spec criterion for the Keeper as 'allegorically other'). vite.config.ts line 5: `publicDir: 'assets'` — Vite copies the entire assets/ tree into dist/ on build, so once the heron folder is on disk under assets/npc/heron/, `dist/assets/npc/heron/` materialises automatically with no build script changes. Asset copy plan: `cp -R /Users/jacobusbrink/Jaxs/assets/emberpath/npc/heron/{idle,walk,static,portrait.png,prompt.md} <repo>/assets/npc/heron/` — explicitly enumerate sub-paths to exclude `fireball/` (out-of-scope this phase per spec). Existing assets/npc/marsh-hermit + assets/npc/old-man tree match this layout (idle: 8 dirs × 4 frames = 32; walk: 8 dirs × 4 frames = 32; static: 8 single-frame PNGs at root; portrait.png at root). Diff plan for next iteration's implement: (1) `mkdir -p assets/npc/heron` then `cp -R` from source. (2) Add the two registry entries between the existing 'marsh-hermit' and 'old-man' rows in NPC_SPRITES + NPC_PORTRAITS. (3) Verify: `npx tsc --noEmit && npm run build` then `find dist/assets/npc/heron -type f | wc -l` to confirm ≥ 73 files (32 idle + 32 walk + 8 static + portrait.png + prompt.md = 74). Story Completion Gate after implement: 5 of 5 [US-70] criteria met by source/dist read."
+    result: pass
+    notes: investigation complete; concrete cp + registry diff plan recorded; one-concern enforced (US-70 is a single-task implement)
+    tokens: ~3500

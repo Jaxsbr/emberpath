@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-70] Investigate: confirm heron source asset structure at ~/Jaxs/assets/emberpath/npc/heron/, plan cp -R target assets/npc/heron/, identify exact NPC_SPRITES / NPC_PORTRAITS additions in src/systems/npcSprites.ts, confirm Vite publicDir copies assets/ to dist/assets on build"
+  task_number: 3
+  next_task: "[US-70] Implement: cp -R ~/Jaxs/assets/emberpath/npc/heron/ assets/npc/heron/ (excluding fireball/), add NPC_SPRITES['heron'] = { idleFrameCount: 4, walkFrameCount: 4 } and NPC_PORTRAITS['heron'] = { file: 'portrait.png', filter: 'linear' } to src/systems/npcSprites.ts, run verify, confirm dist/assets/npc/heron/ ≥ 73 files post-build"
   last_result: pass
   consecutive_fails: 0
 
