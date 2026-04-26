@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-73] Investigate: confirm Phaser.GameObjects.Arc surface for the ember dot at depth 5.5; identify the per-frame setPosition call site at the END of GameScene.update (no allocations); plan onFlagChange('has_ember_mark') subscriber lifecycle (create on flip true, destroy on flip undefined); plan AGENTS.md depth-map row + Behavior rules entry"
+  task_number: 12
+  next_task: "[US-73] Implement: add EMBER_OFFSET_Y constant, emberOverlay + hasEmberMarkUnsubscribe fields to GameScene; create overlay (Phaser.GameObjects.Arc warm gold 0xf2c878, depth 5.5) on scene create when getFlag('has_ember_mark') === true; subscribe onFlagChange('has_ember_mark') — create on truthy, destroy on undefined/false; per-frame setPosition in update() with no allocations; AGENTS.md depth-map row + Behavior rules entry"
   last_result: pass
   consecutive_fails: 0
 
