@@ -57,3 +57,11 @@ entries:
     result: pass
     notes: US-72 next; investigate-first enforced
     tokens: ~2500
+  - task: 8
+    time: "2026-04-26T10:42:00Z"
+    type: investigate
+    story: US-72
+    description: "Branch A — executed queued [US-72] investigate. Source review: systems/dialogue.ts (678 lines): showNode (line 278) is called from start (line 197) and from advance/branch (lines 271, 497) — every node display routes here. Right injection point for setFlags: at the very TOP of showNode after `this.currentNode = node` and before redrawBox/applyPortrait/typewriter — fires BEFORE the typewriter starts so a downstream onFlagChange subscriber registered before dialogue.start sees the new value within the same call stack. Need to import setFlag from triggers/flags. close() (line ~640+) destroys UI then calls onEndCallback (line 659) — endStoryScene needs to be readable AT onEndCallback time, BEFORE this.script = null fires. Add private accessor getEndStoryScene() that returns this.script?.endStoryScene — but cache the value on close() before nulling, OR expose script.endStoryScene as a separate field that survives close. Cleaner: add an 'endStoryScene: string | null' field and capture it from the script in start(); reset in close(). GameScene.setOnEnd (line 205): existing callback runs exitDialogue + flushSave; we add `const endStoryScene = this.dialogueSystem.getEndStoryScene(); if (endStoryScene) this.launchStoryScene(endStoryScene);` AFTER flushSave (per spec criterion order). The existing launchStoryScene already errors gracefully when the id is unknown (line 636 'Story scene definition not found') — error path satisfied. fog-marsh story scene shape (line 380): { id, beats: [{ text, imageColor, imageLabel }] } — straightforward content authoring. Diff plan finalised."
+    result: pass
+    notes: showNode top-of-method injection point for setFlags; endStoryScene captured at start() into a private field (survives close); GameScene callback adds launchStoryScene call AFTER flushSave
+    tokens: ~5000
