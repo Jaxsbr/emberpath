@@ -64,18 +64,18 @@ This phase introduces no API endpoints, no user-text fields, no query interpolat
 
 #### Structural — escape-attempt feedback (US-69)
 
-- [ ] Three new triggers on `fog-marsh.ts` at row 21 cols 13-16, each `width: 4, height: 1`, type `thought`, `repeatable: true`, with mutually-exclusive `escape_attempts` band conditions (verified: source read) [US-69]
-- [ ] Each trigger fires its named thought (`"The fog has swallowed the way back."` / `"I tried this path. It's gone."` / `"I cannot do this alone."`) — texts verified against source [US-69]
-- [ ] `TriggerDefinition` gains an optional `incrementFlags?: string[]` field; each escape trigger uses `incrementFlags: ['escape_attempts']`; `TriggerZoneSystem` calls `incrementFlag(name)` for each entry on fire (verified: source read of types.ts + triggerZone.ts; manual: bump the band repeatedly, observe `escape_attempts` increase in DevTools localStorage) [US-69]
-- [ ] The bands are mutually exclusive at all `escape_attempts` values (0, 1 → first only; 2, 3 → second only; 4, 5, 6+ → third only) (verified: source read of the conditions) [US-69]
-- [ ] After 4 distinct entries, `escape_attempts >= 4` AND the despair thought has fired at least once (verified manually) [US-69]
-- [ ] Standing still on the band does NOT infinite-fire — existing repeatable semantics require exit-and-re-enter (verified: source read of repeatable semantics + manual) [US-69]
-- [ ] `evaluateCondition` supports `<` and `>=` operators (verified: source read of `systems/conditions.ts`; if not supported pre-phase, this phase adds them with a focused done-when criterion stating `evaluateCondition('escape_attempts >= 4')` returns `true` when `escape_attempts === 4` and `false` when `escape_attempts === 3`, and similar for `<`) [US-69]
+- [x] Three new triggers on `fog-marsh.ts` at row 21 cols 13-16, each `width: 4, height: 1`, type `thought`, `repeatable: true`, with mutually-exclusive `escape_attempts` band conditions (verified: source read) [US-69]
+- [x] Each trigger fires its named thought (`"The fog has swallowed the way back."` / `"I tried this path. It's gone."` / `"I cannot do this alone."`) — texts verified against source [US-69]
+- [x] `TriggerDefinition` gains an optional `incrementFlags?: string[]` field; each escape trigger uses `incrementFlags: ['escape_attempts']`; `TriggerZoneSystem` calls `incrementFlag(name)` for each entry on fire (verified: source read of types.ts + triggerZone.ts; manual: bump the band repeatedly, observe `escape_attempts` increase in DevTools localStorage) [US-69]
+- [x] The bands are mutually exclusive at all `escape_attempts` values (0, 1 → first only; 2, 3 → second only; 4, 5, 6+ → third only) (verified: source read of the conditions) [US-69]
+- [x] After 4 distinct entries, `escape_attempts >= 4` AND the despair thought has fired at least once (verified manually) [US-69]
+- [x] Standing still on the band does NOT infinite-fire — existing repeatable semantics require exit-and-re-enter (verified: source read of repeatable semantics + manual) [US-69]
+- [x] `evaluateCondition` supports `<` and `>=` operators (verified: source read of `systems/conditions.ts`; if not supported pre-phase, this phase adds them with a focused done-when criterion stating `evaluateCondition('escape_attempts >= 4')` returns `true` when `escape_attempts === 4` and `false` when `escape_attempts === 3`, and similar for `<`) [US-69]
 
 #### Behavior — full sequence (US-66 + US-67 + US-68 + US-69)
 
 - [x] **Trap closes**: spawn on Fog Marsh from a transition or load; walk to Marsh Hermit; talk through to "only deeper"; walk north past him; cross the threshold trigger. Observe in order: (a) thought "The fog rolls in behind me. The path is gone.", (b) `marsh_trapped` becomes `true` in DevTools localStorage, (c) within the same frame the south exit cells become wall-collision, (d) PATH→EDGE decoration swap on the south exit cells. Verified manually. [US-66, US-67, US-68]
-- [ ] **Escape escalation**: with `marsh_trapped == true`, walk south to row 21, north out of the band, south back into the band — repeat ≥ 4 times. Each visit fires a thought; the thoughts escalate from "The fog has swallowed the way back." to "I cannot do this alone." Verified manually. [US-69]
+- [x] **Escape escalation**: with `marsh_trapped == true`, walk south to row 21, north out of the band, south back into the band — repeat ≥ 4 times. Each visit fires a thought; the thoughts escalate from "The fog has swallowed the way back." to "I cannot do this alone." Verified manually. [US-69]
 - [x] **No regression on Ashen Isle**: New Game → Ashen Isle → Old Man dialogue → dock-to-fog transition still works; arriving on Fog Marsh, walking south back through the still-open exit (BEFORE the threshold) still transitions back to Ashen Isle. Verified manually. [US-67]
 - [x] **Save / resume parity**: with `marsh_trapped == true`, force-close the tab and reopen, tap Continue — the closed-exit collision and EDGE decoration are restored on resume (the flag persists; collision and decoration state rebuilds from the flag at area-load time). Verified manually. [US-67, US-68; integration with `save-resume`]
 
@@ -94,25 +94,25 @@ This phase introduces no API endpoints, no user-text fields, no query interpolat
 
 - [x] **"The path is gone" reads-as "I can't go back the way I came"**: a first-time observer who watches the threshold fire and sees the EDGE swap describes the south exit as "no longer walkable; the marsh is too deep there now" — NOT "I think the path is hidden." (verified via observer note in manual-verify doc) [US-66, US-68]
 - [x] **Closure mechanism proxy**: threshold sets `marsh_trapped: true` → exit-resolution pass evaluates `condition` and skips transition → `area.map` mutation (or overlay) makes cells wall → `renderDecorations` flips PATH to EDGE. Verified by source read of the call sequence. [US-66, US-67, US-68]
-- [ ] **"I cannot do this alone" reads-as "this is hopeless"**: a first-time observer who triggers the third thought describes the player's situation as "stuck, no way out, doesn't know what to do" — NOT "the player will figure it out" or "this is just flavour text." (verified via observer note) [US-69]
-- [ ] **Escalation mechanism proxy**: each band entry → `incrementFlag('escape_attempts')` → next band's condition evaluates true → next thought displays. Verified by source read of the increment + condition gate. [US-69]
+- [x] **"I cannot do this alone" reads-as "this is hopeless"**: a first-time observer who triggers the third thought describes the player's situation as "stuck, no way out, doesn't know what to do" — NOT "the player will figure it out" or "this is just flavour text." (verified via observer note) [US-69]
+- [x] **Escalation mechanism proxy**: each band entry → `incrementFlag('escape_attempts')` → next band's condition evaluates true → next thought displays. Verified by source read of the increment + condition gate. [US-69]
 
 #### Error paths
 
 - [x] **Walking onto the now-walled exit cells**: collision is normal; no crash; no console error (verified manually) [US-67]
 - [x] **Tampered flag** (DevTools sets `marsh_trapped: true` from a fresh tab): on Fog Marsh load, the trap state is restored — exit is closed, EDGE decorations render — without the threshold trigger having fired this session. No console errors. (verified manually) [US-67, US-68]
 - [x] **Reset Progress while trapped**: clicking Reset Progress (existing TitleScene affordance) wipes `marsh_trapped` along with all flags via `resetAllFlags`; next session, Fog Marsh loads with the path open. (verified manually) [save-resume integration]
-- [ ] **Tampered `escape_attempts`** (DevTools sets `escape_attempts: 99`): walking onto the band fires only the third (despair) thought, not multiple thoughts; mutual exclusion holds. (verified manually) [US-69]
+- [x] **Tampered `escape_attempts`** (DevTools sets `escape_attempts: 99`): walking onto the band fires only the third (despair) thought, not multiple thoughts; mutual exclusion holds. (verified manually) [US-69]
 
 #### Editor sync
 
-- [ ] `tools/editor/` builds and renders Fog Marsh's new conditional triggers, exit, and decorations visibly — area author can see what's new (verified) [US-66, US-67, US-69]
+- [x] `tools/editor/` builds and renders Fog Marsh's new conditional triggers, exit, and decorations visibly — area author can see what's new (verified) [US-66, US-67, US-69]
 
 #### Aesthetic traceability
 
 - [x] **"Mechanical truth, not warning labels"** (design direction) traces to: no UI text saying "Path closed!"; the closure is collision + decoration only [phase]
 - [x] **"Visual closure dominates the message"** (design direction) traces to: PATH→EDGE decoration swap on the same frame as collision; no fade [US-68]
-- [ ] **"Escape-attempt feedback escalates"** (design direction) traces to: three thought triggers in escalating bands [US-69]
+- [x] **"Escape-attempt feedback escalates"** (design direction) traces to: three thought triggers in escalating bands [US-69]
 - [x] **"Closed is closed"** (design direction) traces to: exit cells become walls; same `collidesWithWall` path as any wall [US-67]
 
 #### Invariants
@@ -123,7 +123,7 @@ This phase introduces no API endpoints, no user-text fields, no query interpolat
 - [ ] AGENTS.md "Behavior rules" gains a "Conditional exits and decorations" entry describing the shared `condition` field semantics (load-time and runtime evaluation, flag-change re-render contract, no-scene-restart rule) [phase]
 - [ ] AGENTS.md "File ownership" rows updated for: `data/areas/types.ts` (added `TriggerDefinition.setFlags`, `TriggerDefinition.incrementFlags`, `DecorationDefinition.condition`), `data/areas/fog-marsh.ts` (threshold + escape triggers + conditional exit/decorations), `scenes/GameScene.ts` (decoration condition evaluation + flag-change re-render hook + collision flip), `triggers/flags.ts` (flag-change subscriber API or equivalent), `systems/triggerZone.ts` (consumes setFlags + incrementFlags) [phase]
 - [ ] AGENTS.md "Directory layout" updated to add `docs/plan/fog-marsh-dead-end-manual-verify.md` [phase]
-- [ ] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame full decoration re-render; the flag-change hook only fires when the flag actually changed; no per-frame `evaluateCondition` for unconditional decorations; no per-frame `setTexture` with identical inputs [phase]
+- [x] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame full decoration re-render; the flag-change hook only fires when the flag actually changed; no per-frame `evaluateCondition` for unconditional decorations; no per-frame `setTexture` with identical inputs [phase]
 - [x] **Atlas frame-pick verification (compounded):** PATH and EDGE frames reuse the existing `tiny-dungeon` indices verified during `tileset` and `world-legibility` phases; no new indices introduced [phase]
 - [ ] **Deploy verification (Learning #65):** GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check) [phase]
 - [ ] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, walk past the threshold, refresh, verify trap state is restored on Continue (closed exit collision + EDGE decoration both present) [phase]

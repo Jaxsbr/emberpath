@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: "[US-69] Investigate-and-implement: investigate folded into implement (sources read in tasks 1+2 already; evaluateCondition supports <, >=, AND combinator pre-phase). (a) src/data/areas/types.ts — add optional `incrementFlags?: string[]` to TriggerDefinition (additive; mirrors setFlags shape). (b) src/systems/triggerZone.ts — in tryFire, AFTER the setFlags loop and BEFORE the type-dispatch switch, iterate `trigger.incrementFlags ?? []` calling incrementFlag(name) for each entry; import incrementFlag from '../triggers/flags' alongside existing setFlag. (c) src/data/areas/fog-marsh.ts — append three escape-band triggers at row 21 cols 13-16, each width 4 height 1, type 'thought', repeatable: true, incrementFlags: ['escape_attempts'], with conditions and actionRefs: 'marsh_trapped == true AND escape_attempts < 2' → 'The fog has swallowed the way back.'; 'marsh_trapped == true AND escape_attempts >= 2 AND escape_attempts < 4' → 'I tried this path. It''s gone.'; 'marsh_trapped == true AND escape_attempts >= 4' → 'I cannot do this alone.'. NOTE: AND combinator is the literal string 'AND' (capital, with spaces) per evaluateCondition's parser — NOT '&&' as the spec body informally wrote. Mutual exclusion at all values: 0,1 → only first matches; 2,3 → only second; 4+ → only third. Verify: npx tsc --noEmit && npm run build pass; cd tools/editor && npm run build passes."
+  task_number: 11
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-66, US-67, US-68]
+  completed_stories: [US-66, US-67, US-68, US-69]
