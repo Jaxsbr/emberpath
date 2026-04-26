@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-70] Implement: cp -R ~/Jaxs/assets/emberpath/npc/heron/ assets/npc/heron/ (excluding fireball/), add NPC_SPRITES['heron'] = { idleFrameCount: 4, walkFrameCount: 4 } and NPC_PORTRAITS['heron'] = { file: 'portrait.png', filter: 'linear' } to src/systems/npcSprites.ts, run verify, confirm dist/assets/npc/heron/ ≥ 73 files post-build"
+  task_number: 4
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: []
+  completed_stories: [US-70]

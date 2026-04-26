@@ -19,11 +19,11 @@ Rescue Pip from the Fog Marsh dead-end. After `fog-marsh-dead-end` lands the pla
 
 #### US-70 — Heron assets + registry
 
-- [ ] `assets/npc/heron/{idle,walk,static,portrait.png,prompt.md}` exists in repo with the expected file counts (idle: 32, walk: 32, static: 8, portrait: 1, prompt.md: 1) [US-70]
-- [ ] `NPC_SPRITES['heron'] = { idleFrameCount: 4, walkFrameCount: 4 }` registered; `hasNpcSprite('heron')` returns true [US-70]
-- [ ] `NPC_PORTRAITS['heron'] = { file: 'portrait.png', filter: 'linear' }` registered; `hasNpcPortrait('heron')` returns true [US-70]
-- [ ] `npx tsc --noEmit && npm run build` passes [US-70]
-- [ ] Production bundle `dist/assets/npc/heron/` includes idle, walk, static, portrait.png (verify via `find dist/assets/npc/heron -type f | wc -l` — expected ≥ 73) [US-70]
+- [x] `assets/npc/heron/{idle,walk,static,portrait.png,prompt.md}` exists in repo with the expected file counts (idle: 32, walk: 32, static: 8, portrait: 1, prompt.md: 1) [US-70]
+- [x] `NPC_SPRITES['heron'] = { idleFrameCount: 4, walkFrameCount: 4 }` registered; `hasNpcSprite('heron')` returns true [US-70]
+- [x] `NPC_PORTRAITS['heron'] = { file: 'portrait.png', filter: 'linear' }` registered; `hasNpcPortrait('heron')` returns true [US-70]
+- [x] `npx tsc --noEmit && npm run build` passes [US-70]
+- [x] Production bundle `dist/npc/heron/` includes idle, walk, static, portrait.png (verify via `find dist/npc/heron -type f | wc -l` — actual 74; spec drift: Vite `publicDir: 'assets'` copies to dist/ root, not dist/assets) [US-70]
 
 #### US-71 — Conditional spawn + generalised flag-change subscriber
 
