@@ -25,3 +25,11 @@ entries:
     result: pass
     notes: US-66 source criteria met; story milestone commit deferred (combined [US-66, US-67, US-68] criteria pending); next task selection by Branch B
     tokens: ~7000
+  - task: 4
+    time: "2026-04-26T07:48:43Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-66 source code shipped (task 3); story milestone deferred until US-67 + US-68. Unmet criteria grouped: US-67 (8 structural + 1 class baseline + 1 error path + reads-as combined), US-68 (7 structural + 3 variant baseline + reads-as combined), US-69 (7 structural + 2 reads-as + 1 error path), full-sequence behavior (4 combined), invariants (10 phase-tagged including AGENTS.md updates + manual-verify doc + deploy verification). Priority: US-67 next — it owns the south exit closure mechanic AND the flag-change detection mechanism that US-68 reuses (one shared mechanism per the spec criterion '...one shared mechanism, not two'). US-68 depends on US-67's subscriber API. Per cached server/schema/cross-cutting classification (task 1) — investigate-first mandated. Queued [US-67] investigate."
+    result: pass
+    notes: US-67 next; investigate-first enforced; subscriber API for flag-change to be designed in task 5
+    tokens: ~2500

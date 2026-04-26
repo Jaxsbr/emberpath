@@ -28,7 +28,7 @@ state:
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 4
-  next_task: null
+  next_task: "[US-67] Investigate: produce a concrete diff plan for exit closure + collision flip + flag-change detection. Read (a) src/scenes/GameScene.ts exit-resolution path — find where exit conditions are evaluated and where transition is initiated; confirm if the existing condition gate at GameScene.ts:525 (per save-resume task 4 notes) only skips the transition without flipping collision; (b) src/systems/collision.ts — collidesWithWall signature and how it consumes area.map; (c) src/triggers/flags.ts — pre-phase shape (no subscriber API yet); design a minimal onFlagChange(name, cb): unsubscribe API integrated into setFlag so listeners fire only when the value actually changes (Learning EP-01 — once per change, not per setFlag call), and the unsubscribe handle is returned for cleanup in scene shutdown. Plan the collision flip approach: prefer area.map in-place mutation at rows 22 cols 13-16 (cheapest, requires invalidating any cached collision state) OR a flag-aware overlay queried by collidesWithWall. Plan how the GameScene subscribes during create() and unsubscribes on shutdown. Confirm tools/editor flowRenderer renders the conditional exit and decide whether a one-line dashed-arrow or label is needed (US-67 criterion: 'if the visible treatment was missing, this story adds a one-line dashed-arrow or label'). One concern this iteration: NOT yet implementing US-68's decoration condition; the flag-change subscriber API designed here is shared but only the exit collision consumer is wired now."
   last_result: pass
   consecutive_fails: 0
 
