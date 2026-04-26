@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 14
-  next_task: "[US-65, phase] AGENTS.md reconciliation — final phase update batched in one commit: (a) Directory layout: add `triggers/saveState.ts` line under `triggers/` and `save-resume-manual-verify.md` under `docs/plan/`. (b) File ownership: new row for `triggers/saveState.ts`; updated rows for `triggers/flags.ts` (atomic clear via resetAllFlags + once-per-session warn parity), `scenes/TitleScene.ts` (Continue/New Game branching + URL-param reset + renderTitleLayout re-render on Reset), `scenes/GameScene.ts` (maybeAutosave + transition flush + dialogue close flush + StoryScene close flush + resumePosition boot field with entryPoint-wins precedence + lastSaveX/Y bookkeeping seeded in createPlayer). (c) Behavior rules: new 'Save / resume' bullet (throttle constants 1000ms / 2px; three trigger points; atomic reset; Continue precedence; URL-param reset). (d) Controls: new 'Dev / testing' subsection for ?reset=1 and ?clearSave=1. After commit, tick all remaining [US-65] + [phase] boxes; check Story Completion Gate for US-65 + Phase Completion Gate."
+  task_number: 15
+  next_task: null
 
   # --- Review (owner: iterator) ---
   review_stage: null
