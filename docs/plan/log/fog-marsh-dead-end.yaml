@@ -81,3 +81,11 @@ entries:
     result: pass
     notes: US-69 milestone complete; all four stories shipped; remaining work is AGENTS.md reconciliation + manual-verify doc + phase completion gate + PR + review
     tokens: ~6500
+  - task: 11
+    time: "2026-04-26T08:50:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. All four stories shipped; remaining done-when criteria are phase-tagged: AGENTS.md updates (behavior rules + file ownership + directory layout), manual-verify doc creation, full-play console-errors check (manual), deploy verification (post-merge). Queued combined docs reconciliation task — manual-verify doc creation + AGENTS.md updates fit one coherent commit (they reference each other). After that, the phase-completion gate runs, then PR creation."
+    result: pass
+    notes: docs reconciliation + AGENTS.md updates queued as one combined task
+    tokens: ~1500
