@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: "[US-71] Implement: add NpcDefinition.spawnCondition; gate renderNpcs by spawnCondition; add NpcBehaviorSystem.registerNpc; add KEEPER_FADE_DURATION_MS + KEEPER_INPUT_SUSPEND_MS constants; add spawnConditionUnsubscribes + spawnInProgress fields; add subscribeToConditionalSpawns + evaluateConditionalSpawns + spawnSingleNpc; suspend input via spawnInProgress in update(); add Keeper NPC to fog-marsh.ts with spawnCondition 'marsh_trapped == true AND escape_attempts >= 4 AND keeper_met == false' (one-shot guard on keeper_met covers the phase-level criterion)"
+  task_number: 7
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-70]
+  completed_stories: [US-70, US-71]
