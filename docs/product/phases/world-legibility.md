@@ -1,6 +1,6 @@
 # Phase: world-legibility
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
@@ -24,7 +24,7 @@ N/A — this phase introduces no API endpoints, no user text input, no query int
 
 ## Stories
 
-### US-58 — Decoration layer (engine)
+### US-58 — Decoration layer (engine) [Shipped]
 
 As an area author, I want to author a per-area list of tile-snapped decoration overrides on top of the base FLOOR/WALL grid, so that I can compose buildings, paths, and edges from specific tileset frames without expanding the collision enum or creating one Sprite-per-decoration as a prop.
 
@@ -45,7 +45,7 @@ As an area author, I want to author a per-area list of tile-snapped decoration o
 
 ---
 
-### US-59 — Ashen Isle as a legible coastal village
+### US-59 — Ashen Isle as a legible coastal village [Shipped]
 
 As a player, I want Ashen Isle to read as a small fishing-village on the edge of an island, so that on first arrival I can identify a path, at least one house, the Old Man's location relative to the path, and the way off the island, without being told.
 
@@ -71,7 +71,7 @@ As a player, I want Ashen Isle to read as a small fishing-village on the edge of
 
 ---
 
-### US-60 — Fog Marsh as a legible wet marsh with a ruin
+### US-60 — Fog Marsh as a legible wet marsh with a ruin [Shipped]
 
 As a player, I want Fog Marsh to read as a wet, enclosing marsh with a dry path winding through it and an ancient stone ruin in one corner, so that on entry I feel the change of biome from Ashen Isle and can read the marsh's geometry — the dry path is where I walk, the wet ground is what surrounds me, the ruin is the only built thing here.
 
@@ -97,7 +97,7 @@ As a player, I want Fog Marsh to read as a wet, enclosing marsh with a dry path 
 
 ---
 
-### US-61 — Tileset vocabulary doc
+### US-61 — Tileset vocabulary doc [Shipped]
 
 As a future area author (or the same author returning in a month), I want a one-page reference per tileset listing which frame index means "house roof corner top-left," "fence horizontal," "dock," "gate," "sign," "wet ground," etc., so that composing a new area is a vocabulary lookup, not a pixel-hunt through `tilemap.png`.
 
