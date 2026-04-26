@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-70] Investigate: confirm heron source asset structure at ~/Jaxs/assets/emberpath/npc/heron/, plan cp -R target assets/npc/heron/, identify exact NPC_SPRITES / NPC_PORTRAITS additions in src/systems/npcSprites.ts, confirm Vite publicDir copies assets/ to dist/assets on build"
   last_result: pass
   consecutive_fails: 0
 

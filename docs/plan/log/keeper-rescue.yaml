@@ -1,3 +1,11 @@
 phase: "keeper-rescue"
 started: "2026-04-26T09:30:00Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-26T09:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — phase start. Read AGENTS.md fully (current; reflects fog-marsh-dead-end shipping incl. Conditional exits and decorations + Trigger flag side-effects behavior rules; existing onFlagChange API on triggers/flags.ts; existing applyMarshTrappedState + updateConditionalDecorations + conditionalDecorations subscriber on GameScene). Read docs/plan/phase-goal.md (US-70/71/72/73; 4 stories; full done-when transposed). Read docs/product/phases/keeper-rescue.md spec for story bodies + design rationale + drift reconciliation notes (AND-only condition parser, heron assets-on-disk, DialogueNode.setFlags, generalised flag-change subscriber). Confirmed heron source assets at ~/Jaxs/assets/emberpath/npc/heron/: idle 32 PNGs, walk 32 PNGs, static 8 PNGs, portrait.png, prompt.md (also a fireball/ folder out-of-scope this phase). Confirmed src/systems/npcSprites.ts shape: NPC_SPRITES exposes 'marsh-hermit' + 'old-man' { idleFrameCount: 4, walkFrameCount: 4 }; NPC_PORTRAITS exposes those two with file: 'portrait.png' and filter 'nearest'/'linear'. Confirmed assets/npc/ has marsh-hermit + old-man; need to add heron/. Verify (npx tsc --noEmit && npm run build) passes — baseline established (dist/index.html + 1542 KB bundle). Phase classified server/schema/cross-cutting: US-71 adds NpcDefinition.spawnCondition + GameScene generalised flag-change subscriber + conditional spawn render path; US-72 adds DialogueNode.setFlags + DialogueScript.endStoryScene to data/areas/types.ts and showNode side-effect in dialogue system; US-73 adds depth-5.5 ember overlay to GameScene update loop. Investigate-first mandated for each implement task. Story priority: US-70 first (asset/registry foundation; US-71's heron sprite requires it, US-72's portrait requires it). Per investigate-first mandate, queued task 2 as [US-70] investigate (registry + asset-copy plan)."
+    result: pass
+    notes: phase classified server/schema/cross-cutting; investigate-first enforced; baseline verify passes; heron source assets confirmed
+    tokens: ~14000
