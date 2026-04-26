@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-66] Investigate: confirm TriggerZoneSystem.tryFire is the correct injection point for new optional setFlags + incrementFlags fields on TriggerDefinition. Produce concrete diff plan for (a) types.ts adding TriggerDefinition.setFlags?: Record<string, string|number|boolean> + incrementFlags?: string[] (additive — no breaking change); (b) triggerZone.ts iterating both fields on fire AFTER condition check + AFTER one-shot setFlag bookkeeping but BEFORE the type-dispatch switch (so the flag side-effect lands before the thought/dialogue/story callback so any consumer that reads marsh_trapped during the same callback frame sees true); (c) fog-marsh.ts adding trigger id 'marsh-deepens' at (col 14, row 5), width 1, height 2, type 'thought', actionRef 'The fog rolls in behind me. The path is gone.', repeatable false, setFlags { marsh_trapped: true }. Verify the existing fog-entry-thought trigger continues to fire without setFlags side-effects (variant baseline)"
   last_result: pass
   consecutive_fails: 0
 
