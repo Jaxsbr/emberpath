@@ -15,7 +15,7 @@ import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
 import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS, getNpcPortraitIds } from '../systems/npcSprites';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
-import { setFlag } from '../triggers/flags';
+import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
 const TARGET_VISIBLE_TILES = 10;
@@ -56,6 +56,7 @@ export class GameScene extends Phaser.Scene {
   private lastSaveTime = 0;
   private lastSaveX = 0;
   private lastSaveY = 0;
+  private marshTrappedUnsubscribe: (() => void) | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -130,6 +131,17 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.area = area;
+
+    // Apply trap state BEFORE the tile/decoration render passes consume area.map,
+    // so a Continue-resume on Fog Marsh with marsh_trapped already true rebuilds
+    // the wall cells before the player can walk on them. Subscribe to flag changes
+    // so the in-session threshold trigger flips collision on the same frame.
+    this.applyMarshTrappedState();
+    if (this.area.id === 'fog-marsh') {
+      this.marshTrappedUnsubscribe = onFlagChange('marsh_trapped', () => {
+        this.applyMarshTrappedState();
+      });
+    }
 
     this.renderTileMap();
     this.renderDecorations();
@@ -572,6 +584,26 @@ export class GameScene extends Phaser.Scene {
     this.events.off('resume', this.flushSave, this);
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
+    if (this.marshTrappedUnsubscribe) {
+      this.marshTrappedUnsubscribe();
+      this.marshTrappedUnsubscribe = null;
+    }
+  }
+
+  // Reflect the marsh_trapped flag on Fog Marsh: when true, the south-exit
+  // cells (row 22 cols 13-16) flip from FLOOR to WALL so collision treats them
+  // like any other wall; when false, they restore to FLOOR. Idempotent — runs
+  // on scene create AND on every flag-change notification (US-67). Scoped to
+  // fog-marsh so other areas' maps are never mutated.
+  private applyMarshTrappedState(): void {
+    if (this.area.id !== 'fog-marsh') return;
+    const trapped = getFlag('marsh_trapped') === true;
+    const tile = trapped ? TileType.WALL : TileType.FLOOR;
+    const map = this.area.map;
+    if (map.length <= 22) return;
+    for (let c = 13; c <= 16; c++) {
+      map[22][c] = tile;
+    }
   }
 
   showThought(text: string, duration?: number): void {

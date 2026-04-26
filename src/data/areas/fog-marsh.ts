@@ -338,7 +338,10 @@ export const fogMarsh: AreaDefinition = {
   exits: [
     {
       // Walk south off the dry path into the EXIT zone at row 22 cols 13-16
-      // and arrive on Ashen Isle just south of the dock.
+      // and arrive on Ashen Isle just south of the dock. Gated on the trap
+      // flag — once marsh-deepens fires (col 14, row 5) and sets
+      // marsh_trapped: true, this exit becomes inert AND the cells flip from
+      // FLOOR to WALL via GameScene.applyMarshTrappedState (US-67).
       id: 'fog-to-ashen',
       col: 13,
       row: 22,
@@ -346,6 +349,7 @@ export const fogMarsh: AreaDefinition = {
       height: 1,
       destinationAreaId: 'ashen-isle',
       entryPoint: { col: 24, row: 4 },
+      condition: 'marsh_trapped == false',
     },
   ],
   visual: { floorColor: 0x3a4a3a, wallColor: 0x1a2a1a },
