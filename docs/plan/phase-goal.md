@@ -41,15 +41,15 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 
 #### Structural — autosave write (US-63)
 
-- [ ] `GameScene` declares named module-level constants `SAVE_THROTTLE_MS = 1000` and `SAVE_MIN_DELTA_PX = 2` (verified: source read) [US-63]
-- [ ] `GameScene` has a private method `maybeAutosave()` that owns the throttle bookkeeping (last-write timestamp, last-write x/y) and is called once per frame at the END of the world-walk branch in `update()` — NOT inside the dialogue early-return, NOT inside the transition early-return (verified: source read of the call site location) [US-63]
-- [ ] `maybeAutosave()` returns early (zero localStorage work; no `JSON.stringify`) when (a) elapsed since last write < `SAVE_THROTTLE_MS`, OR (b) position delta from last write < `SAVE_MIN_DELTA_PX`. Verified: source read of both guards before the build-payload step. **(Loop-invariant audit, Learning EP-01.)** [US-63]
-- [ ] `transitionToArea()` calls `writeSave({ areaId: destinationAreaId, position: <entryPoint resolved to pixels> })` BEFORE `scene.restart` (verified: source read of the call order; manual: trigger a transition, force-close mid-fade, reopen, Continue lands on the destination's entry tile) [US-63]
-- [ ] `DialogueSystem.setOnEnd` consumer in `GameScene` flushes the save (verified: source read; manual: open Old Man dialogue, run through to its natural close, force-close tab, reopen, Continue lands at the position the player was in when dialogue closed) [US-63]
-- [ ] StoryScene close path triggers a save flush back in `GameScene` (verified: source read of whichever resume-from-StoryScene hook GameScene already owns; manual: same pattern as dialogue close) [US-63]
-- [ ] `AreaDefinition` has `id: string` (added if missing); `data/areas/registry.ts` keys agree with the per-area `id` value (verified: source read + a small grep that registry key === area.id for ashen-isle and fog-marsh) [US-63]
-- [ ] During `transitionInProgress === true`, `maybeAutosave()` returns without writing (verified: source read of the guard) — only the explicit transition flush writes during a transition [US-63]
-- [ ] No `writeSave` call inside `update()`'s tight loop on frames where the throttle did not fire (verified: source read; on-frame logging temporarily added during dev confirms zero writes on idle frames) [US-63]
+- [x] `GameScene` declares named module-level constants `SAVE_THROTTLE_MS = 1000` and `SAVE_MIN_DELTA_PX = 2` (verified: source read) [US-63]
+- [x] `GameScene` has a private method `maybeAutosave()` that owns the throttle bookkeeping (last-write timestamp, last-write x/y) and is called once per frame at the END of the world-walk branch in `update()` — NOT inside the dialogue early-return, NOT inside the transition early-return (verified: source read of the call site location) [US-63]
+- [x] `maybeAutosave()` returns early (zero localStorage work; no `JSON.stringify`) when (a) elapsed since last write < `SAVE_THROTTLE_MS`, OR (b) position delta from last write < `SAVE_MIN_DELTA_PX`. Verified: source read of both guards before the build-payload step. **(Loop-invariant audit, Learning EP-01.)** [US-63]
+- [x] `transitionToArea()` calls `writeSave({ areaId: destinationAreaId, position: <entryPoint resolved to pixels> })` BEFORE `scene.restart` (verified: source read of the call order; manual: trigger a transition, force-close mid-fade, reopen, Continue lands on the destination's entry tile) [US-63]
+- [x] `DialogueSystem.setOnEnd` consumer in `GameScene` flushes the save (verified: source read; manual: open Old Man dialogue, run through to its natural close, force-close tab, reopen, Continue lands at the position the player was in when dialogue closed) [US-63]
+- [x] StoryScene close path triggers a save flush back in `GameScene` (verified: source read of whichever resume-from-StoryScene hook GameScene already owns; manual: same pattern as dialogue close) [US-63]
+- [x] `AreaDefinition` has `id: string` (added if missing); `data/areas/registry.ts` keys agree with the per-area `id` value (verified: source read + a small grep that registry key === area.id for ashen-isle and fog-marsh) [US-63]
+- [x] During `transitionInProgress === true`, `maybeAutosave()` returns without writing (verified: source read of the guard) — only the explicit transition flush writes during a transition [US-63]
+- [x] No `writeSave` call inside `update()`'s tight loop on frames where the throttle did not fire (verified: source read; on-frame logging temporarily added during dev confirms zero writes on idle frames) [US-63]
 
 #### Structural — Title Continue / New Game (US-64)
 
@@ -81,7 +81,7 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 
 - [ ] **Ashen Isle resume**: walk the player from the cottage gate to a distinct, identifiable position (e.g. east of the path next to the Old Man's fence). Force-close the tab. Reopen. Tap Continue. Player appears within `SAVE_THROTTLE_MS / 2` worth of pixel distance (i.e. half a second of walked distance, ~32 px) of where they were when the tab closed. Camera follows. No double-fade. No console errors. (verified: manual-verify checklist) [US-63, US-64]
 - [ ] **Fog Marsh resume**: same protocol on Fog Marsh's dry path. Player resumes on Fog Marsh, on the path, near the prior position. (verified: manual) [US-63, US-64]
-- [ ] **Mid-transition resume**: walk to Ashen Isle's dock. Cross. While the fade-out + fade-in is in progress, force-close the tab. Reopen. Tap Continue. Player lands on Fog Marsh's entry tile (the destination flush from the transition write), NOT on Ashen Isle's exit-zone tile (which would re-fire the transition on entry). (verified: manual) [US-63]
+- [x] **Mid-transition resume**: walk to Ashen Isle's dock. Cross. While the fade-out + fade-in is in progress, force-close the tab. Reopen. Tap Continue. Player lands on Fog Marsh's entry tile (the destination flush from the transition write), NOT on Ashen Isle's exit-zone tile (which would re-fire the transition on entry). (verified: manual) [US-63]
 - [ ] **Mid-dialogue resume**: open Old Man dialogue. Mid-conversation, force-close the tab. Reopen. Tap Continue. The dialogue is closed (we did not save dialogue state). The player is on the world layer at the position of the most recent walk-frame autosave (i.e. roughly where they were when they pressed Space, since dialogue freezes movement). Flags committed before the close are still set. (verified: manual) [US-63, US-64]
 - [ ] **New Game wipes save**: with a save present from the resume tests above, return to Title (refresh page). Tap "New Game." Player lands on Ashen Isle's `playerSpawn`. Refresh page → "Continue" is absent (save was wiped at the New Game click). (verified: manual) [US-64]
 
@@ -97,13 +97,13 @@ The save module joins the class of "world-state writers" that already includes `
 
 The autosave write path has three trigger points (throttled walk, transition flush, dialogue/story close) and the game has two areas. Per-area verification per trigger:
 
-- [ ] **Ashen Isle, throttled walk**: walking continuously updates the save within ≤ 1 s of any position change (verified by polling DevTools localStorage during walk) [US-63]
-- [ ] **Ashen Isle, transition flush**: stepping into the dock writes a save with `areaId: 'fog-marsh'` and the destination entry-pixel position BEFORE the scene restart (verified by checking DevTools localStorage during the fade-out) [US-63]
-- [ ] **Ashen Isle, dialogue close flush**: closing Old Man dialogue writes a save with the post-dialogue player position (verified by polling DevTools localStorage on dialogue close) [US-63]
-- [ ] **Fog Marsh, throttled walk**: same protocol on Fog Marsh [US-63]
-- [ ] **Fog Marsh, transition flush**: stepping into the door writes a save with `areaId: 'ashen-isle'` and the Ashen Isle entry-pixel position [US-63]
-- [ ] **Fog Marsh, dialogue close flush**: closing Marsh Hermit dialogue writes a save with the post-dialogue position [US-63]
-- [ ] **Fog Marsh, StoryScene close flush** (Whispering Stones triggers a story scene): closing the StoryScene writes a save with the post-story player position (verified by polling DevTools localStorage on StoryScene close) [US-63]
+- [x] **Ashen Isle, throttled walk**: walking continuously updates the save within ≤ 1 s of any position change (verified by polling DevTools localStorage during walk) [US-63]
+- [x] **Ashen Isle, transition flush**: stepping into the dock writes a save with `areaId: 'fog-marsh'` and the destination entry-pixel position BEFORE the scene restart (verified by checking DevTools localStorage during the fade-out) [US-63]
+- [x] **Ashen Isle, dialogue close flush**: closing Old Man dialogue writes a save with the post-dialogue player position (verified by polling DevTools localStorage on dialogue close) [US-63]
+- [x] **Fog Marsh, throttled walk**: same protocol on Fog Marsh [US-63]
+- [x] **Fog Marsh, transition flush**: stepping into the door writes a save with `areaId: 'ashen-isle'` and the Ashen Isle entry-pixel position [US-63]
+- [x] **Fog Marsh, dialogue close flush**: closing Marsh Hermit dialogue writes a save with the post-dialogue position [US-63]
+- [x] **Fog Marsh, StoryScene close flush** (Whispering Stones triggers a story scene): closing the StoryScene writes a save with the post-story player position (verified by polling DevTools localStorage on StoryScene close) [US-63]
 
 #### Variant baseline — every reset mechanism wipes both stores when intended
 
@@ -133,7 +133,7 @@ Each reads-as is paired with an objective mechanism proxy.
 
 #### Editor sync
 
-- [ ] `tools/editor/` is unaffected by this phase (the editor reads area definitions, not save state). `cd tools/editor && npm run build` passes after `AreaDefinition.id` is added. (verified) [US-63]
+- [x] `tools/editor/` is unaffected by this phase (the editor reads area definitions, not save state). `cd tools/editor && npm run build` passes after `AreaDefinition.id` is added. (verified) [US-63]
 
 #### Aesthetic traceability
 
