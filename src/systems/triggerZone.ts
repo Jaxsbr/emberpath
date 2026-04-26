@@ -72,6 +72,14 @@ export class TriggerZoneSystem {
       setFlag(`_trigger_fired_${trigger.id}`, true);
     }
 
+    // Apply optional flag side-effects BEFORE the dispatch so a downstream
+    // callback reading the flag in the same frame sees the new value.
+    if (trigger.setFlags) {
+      for (const [name, value] of Object.entries(trigger.setFlags)) {
+        setFlag(name, value);
+      }
+    }
+
     // Dispatch by type
     switch (trigger.type) {
       case 'dialogue':

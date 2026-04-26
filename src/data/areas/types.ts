@@ -63,6 +63,11 @@ export interface TriggerDefinition {
   type: TriggerType;
   actionRef: string;
   condition?: string;
+  // Optional flag side-effects fired AFTER the one-shot bookkeeping and
+  // condition gate, BEFORE the type dispatch — so a downstream callback that
+  // reads the flag in the same frame sees the new value. Mirrors the
+  // DialogueChoice.setFlags shape so the authoring vocabulary is consistent.
+  setFlags?: Record<string, string | number | boolean>;
   repeatable: boolean;
 }
 

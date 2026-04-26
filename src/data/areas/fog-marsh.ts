@@ -240,6 +240,21 @@ export const fogMarsh: AreaDefinition = {
       actionRef: 'whispering-stones',
       repeatable: true,
     },
+    {
+      // Threshold north of the Marsh Hermit (10, 24) — crossing this band sets
+      // marsh_trapped, which closes the south exit (US-67) and swaps the path
+      // decorations to deep-water EDGE frames (US-68). One-shot; player-walked
+      // entry only — direct loads at playerSpawn (14, 12) do not fire it.
+      id: 'marsh-deepens',
+      col: 14,
+      row: 5,
+      width: 1,
+      height: 2,
+      type: 'thought',
+      actionRef: 'The fog rolls in behind me. The path is gone.',
+      repeatable: false,
+      setFlags: { marsh_trapped: true },
+    },
   ],
   dialogues: {
     'marsh-hermit-intro': {
