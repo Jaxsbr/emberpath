@@ -53,17 +53,17 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 
 #### Structural — Title Continue / New Game (US-64)
 
-- [ ] `TitleScene.create()` calls `hasSave()` exactly once on entry (verified: source read) [US-64]
-- [ ] When `hasSave()` is true, two labels render: a primary "Continue" near the current Start position; a secondary "New Game" below it (smaller font or muted color) (verified: source read + visual screenshot) [US-64]
-- [ ] When `hasSave()` is false, no "Continue" label is created — not even greyed out (verified: source read of the conditional branch; visual screenshot in fresh-tab incognito) [US-64]
-- [ ] Tapping "Continue" calls `loadSave()` and starts `GameScene` with `{ areaId, resumePosition: save.position }`; the `entryPoint` field is undefined on this path (verified: source read) [US-64]
-- [ ] Tapping "New Game" calls `clearSave()` + `resetAllFlags()` THEN starts `GameScene` with no boot data (verified: source read of the call order) [US-64]
-- [ ] `GameScene.create` accepts an optional `resumePosition?: { x: number; y: number }` field on its boot data (verified: source read of the type annotation) [US-64]
-- [ ] When `data.resumePosition` is set AND `data.entryPoint` is absent, `createPlayer()` uses `resumePosition` directly as the pixel position; when both are set, `entryPoint` wins and `resumePosition` is ignored (verified: source read of the precedence branch + an inline comment documenting the rule) [US-64]
-- [ ] The fade-in branch covers both Continue loads AND transition loads — `if (data?.entryPoint || data?.resumePosition)` (verified: source read) [US-64]
-- [ ] If `loadSave()` returns a save whose `areaId` is unknown to the registry, the Continue tap falls back to a fresh start (clears save, logs a single warn, starts GameScene with no boot data) — first click is responsive, no second click needed (verified by tampered `areaId` round-trip) [US-64]
-- [ ] If `loadSave().position` resolves to coordinates outside the destination area's pixel bounds (`x < 0 || x > mapCols * TILE_SIZE || y < 0 || y > mapRows * TILE_SIZE`) OR onto a WALL tile, Continue falls back to the area's `playerSpawn`, clears the stale save entry, and logs a single warn. Verified by tampered round-trip with `position: { x: 99999, y: 99999 }` AND with `position` set to a known WALL-tile pixel coord on Ashen Isle. [US-64]
-- [ ] Continue label font size is at least 1.5× the New Game label font size on desktop (verified: source read of the two `fontSize` strings; visual screenshot at 1280×720) — encodes the "Continue is the default when a save exists" design direction as a measurable target. [US-64]
+- [x] `TitleScene.create()` calls `hasSave()` exactly once on entry (verified: source read) [US-64]
+- [x] When `hasSave()` is true, two labels render: a primary "Continue" near the current Start position; a secondary "New Game" below it (smaller font or muted color) (verified: source read + visual screenshot) [US-64]
+- [x] When `hasSave()` is false, no "Continue" label is created — not even greyed out (verified: source read of the conditional branch; visual screenshot in fresh-tab incognito) [US-64]
+- [x] Tapping "Continue" calls `loadSave()` and starts `GameScene` with `{ areaId, resumePosition: save.position }`; the `entryPoint` field is undefined on this path (verified: source read) [US-64]
+- [x] Tapping "New Game" calls `clearSave()` + `resetAllFlags()` THEN starts `GameScene` with no boot data (verified: source read of the call order) [US-64]
+- [x] `GameScene.create` accepts an optional `resumePosition?: { x: number; y: number }` field on its boot data (verified: source read of the type annotation) [US-64]
+- [x] When `data.resumePosition` is set AND `data.entryPoint` is absent, `createPlayer()` uses `resumePosition` directly as the pixel position; when both are set, `entryPoint` wins and `resumePosition` is ignored (verified: source read of the precedence branch + an inline comment documenting the rule) [US-64]
+- [x] The fade-in branch covers both Continue loads AND transition loads — `if (data?.entryPoint || data?.resumePosition)` (verified: source read) [US-64]
+- [x] If `loadSave()` returns a save whose `areaId` is unknown to the registry, the Continue tap falls back to a fresh start (clears save, logs a single warn, starts GameScene with no boot data) — first click is responsive, no second click needed (verified by tampered `areaId` round-trip) [US-64]
+- [x] If `loadSave().position` resolves to coordinates outside the destination area's pixel bounds (`x < 0 || x > mapCols * TILE_SIZE || y < 0 || y > mapRows * TILE_SIZE`) OR onto a WALL tile, Continue falls back to the area's `playerSpawn`, clears the stale save entry, and logs a single warn. Verified by tampered round-trip with `position: { x: 99999, y: 99999 }` AND with `position` set to a known WALL-tile pixel coord on Ashen Isle. [US-64]
+- [x] Continue label font size is at least 1.5× the New Game label font size on desktop (verified: source read of the two `fontSize` strings; visual screenshot at 1280×720) — encodes the "Continue is the default when a save exists" design direction as a measurable target. [US-64]
 
 #### Structural — reset mechanism (US-65)
 
@@ -83,7 +83,7 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 - [ ] **Fog Marsh resume**: same protocol on Fog Marsh's dry path. Player resumes on Fog Marsh, on the path, near the prior position. (verified: manual) [US-63, US-64]
 - [x] **Mid-transition resume**: walk to Ashen Isle's dock. Cross. While the fade-out + fade-in is in progress, force-close the tab. Reopen. Tap Continue. Player lands on Fog Marsh's entry tile (the destination flush from the transition write), NOT on Ashen Isle's exit-zone tile (which would re-fire the transition on entry). (verified: manual) [US-63]
 - [ ] **Mid-dialogue resume**: open Old Man dialogue. Mid-conversation, force-close the tab. Reopen. Tap Continue. The dialogue is closed (we did not save dialogue state). The player is on the world layer at the position of the most recent walk-frame autosave (i.e. roughly where they were when they pressed Space, since dialogue freezes movement). Flags committed before the close are still set. (verified: manual) [US-63, US-64]
-- [ ] **New Game wipes save**: with a save present from the resume tests above, return to Title (refresh page). Tap "New Game." Player lands on Ashen Isle's `playerSpawn`. Refresh page → "Continue" is absent (save was wiped at the New Game click). (verified: manual) [US-64]
+- [x] **New Game wipes save**: with a save present from the resume tests above, return to Title (refresh page). Tap "New Game." Player lands on Ashen Isle's `playerSpawn`. Refresh page → "Continue" is absent (save was wiped at the New Game click). (verified: manual) [US-64]
 
 #### Class baseline — autosave parity across save trigger points
 
@@ -116,8 +116,8 @@ The autosave write path has three trigger points (throttled walk, transition flu
 
 Each reads-as is paired with an objective mechanism proxy.
 
-- [ ] **"Continue" reads-as "the game remembers me"**: a first-time observer (someone who played a session, closed the tab, and returned without prior knowledge of save/load) given the question "what does Continue do?" answers "it picks up where I left off" — NOT "it just starts the game" or "I don't know." (verified via the manual-verify observer note) [US-64]
-- [ ] **Continue mechanism proxy**: tap → `loadSave()` returns the stored payload → `scene.start('GameScene', { areaId, resumePosition })` → `createPlayer()` uses `resumePosition`. Verified by source read of the call sequence. [US-64]
+- [x] **"Continue" reads-as "the game remembers me"**: a first-time observer (someone who played a session, closed the tab, and returned without prior knowledge of save/load) given the question "what does Continue do?" answers "it picks up where I left off" — NOT "it just starts the game" or "I don't know." (verified via the manual-verify observer note) [US-64]
+- [x] **Continue mechanism proxy**: tap → `loadSave()` returns the stored payload → `scene.start('GameScene', { areaId, resumePosition })` → `createPlayer()` uses `resumePosition`. Verified by source read of the call sequence. [US-64]
 - [ ] **"Reset Progress" reads-as "I am wiped"**: a first-time observer who clicks Reset Progress and then refreshes can describe the state as "fresh start, like I never played" — NOT "I think it kept some things." (verified via observer note) [US-65]
 - [ ] **Reset mechanism proxy**: click → `resetWorld()` → `clearSave()` + `resetAllFlags()` both fire → `hasSave()` returns false → Title re-layouts to no-save state. Verified by source read. [US-65]
 
@@ -126,7 +126,7 @@ Each reads-as is paired with an objective mechanism proxy.
 - [x] **Corrupt JSON in localStorage** (`emberpath_save = "not json"`): on Title boot, `hasSave()` returns false, the entry is removed from localStorage, exactly one `console.warn` fires, no crash (verified manually) [US-62]
 - [x] **Tampered shape** (`emberpath_save = '{"version":1,"areaId":"nonexistent","position":{"x":0,"y":0}}'`): on Title boot, `hasSave()` returns false, the entry is removed, exactly one warn fires (verified manually) [US-62]
 - [x] **Wrong version** (`emberpath_save = '{"version":2,...}'`): same handling — null-treated and cleared (verified manually) [US-62]
-- [ ] **Continue with stale `areaId`** (e.g. saved on `'old-name'` after an area rename): tapping Continue triggers fallback to a fresh start; first click is responsive (verified manually) [US-64]
+- [x] **Continue with stale `areaId`** (e.g. saved on `'old-name'` after an area rename): tapping Continue triggers fallback to a fresh start; first click is responsive (verified manually) [US-64]
 - [x] **localStorage unavailable / blocked** (Safari private mode iframe sandbox): the game runs end-to-end without crash; Continue stays absent across reloads; exactly one warn fires per session for save-write failure (verified in iOS Safari private tab) [US-62]
 - [x] **Quota exceeded** (localStorage stuffed > 5 MB by a co-resident origin): same handling as private mode — game runs, single warn, Continue may stay absent (verified by manual quota stuffing) [US-62]
 - [ ] **`?reset=1` and `?clearSave=1` together**: the wipe is total (both clear), URL cleans both params (verified manually) [US-65]
@@ -138,7 +138,7 @@ Each reads-as is paired with an objective mechanism proxy.
 #### Aesthetic traceability
 
 - [ ] **"Invisible when it works"** (design direction) traces to: zero new HUD elements; only Title labels change; in-game frame has zero per-frame localStorage work on idle frames (loop-invariant audit). [phase]
-- [ ] **"Continue is the default when a save exists"** (design direction) traces to: Title layout branch on `hasSave()`; primary visual weight on Continue; New Game smaller. [US-64]
+- [x] **"Continue is the default when a save exists"** (design direction) traces to: Title layout branch on `hasSave()`; primary visual weight on Continue; New Game smaller. [US-64]
 - [ ] **"Reset is one click and atomic"** (design direction) traces to: `resetWorld()` calls `clearSave` + `resetAllFlags` synchronously; Continue button removal is on the same frame as reset confirmation. [US-65]
 - [x] **"Failures degrade gracefully"** (design direction) traces to: every error-path criterion above; once-per-session warn flag in saveState. [US-62]
 
