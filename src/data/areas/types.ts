@@ -16,6 +16,15 @@ export interface NpcDefinition {
   sprite: string;
   wanderRadius: number;
   awarenessRadius: number;
+  // Optional flag-driven spawn gate. NPCs without a spawnCondition spawn
+  // unconditionally on area load (existing behavior). NPCs with a spawnCondition
+  // spawn only when evaluateCondition returns true at area load OR when a
+  // referenced flag changes value mid-session. GameScene parses each
+  // spawnCondition for flag names and subscribes per-flag via onFlagChange;
+  // when any subscribed flag changes, the conditional-spawn pass re-evaluates
+  // and any newly-eligible NPC fades in (alpha 0 -> 1, KEEPER_FADE_DURATION_MS).
+  // Idempotent — already-spawned NPCs are skipped on re-evaluation.
+  spawnCondition?: string;
 }
 
 export interface DialogueChoice {

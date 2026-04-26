@@ -84,6 +84,28 @@ export class NpcBehaviorSystem {
     this.scene.events.on('destroy', this.shutdownBound);
   }
 
+  // Register a runtime for an NPC that spawned post-construction (US-71
+  // conditional spawn). Idempotent — calling for an already-registered id is a
+  // no-op. Mirrors the constructor seed shape.
+  registerNpc(def: NpcDefinition, sprite: Phaser.GameObjects.Sprite): void {
+    if (this.runtimes.has(def.id)) return;
+    const offset = (TILE_SIZE - NPC_SIZE) / 2;
+    const cx = def.col * TILE_SIZE + offset + NPC_SIZE / 2;
+    const cy = def.row * TILE_SIZE + offset + NPC_SIZE / 2;
+    this.runtimes.set(def.id, {
+      def,
+      sprite,
+      spawnTile: { col: def.col, row: def.row },
+      position: { x: cx, y: cy },
+      state: 'idle',
+      facingDirection: 'south',
+      targetPosition: null,
+      dwellTimer: this.randomDwell(),
+      lastStaticDir: null,
+      currentAnimKey: `npc-${def.sprite}-idle-south`,
+    });
+  }
+
   update(delta: number, playerCenter: { x: number; y: number }): void {
     for (const runtime of this.runtimes.values()) {
       this.stepRuntime(runtime, delta, playerCenter);

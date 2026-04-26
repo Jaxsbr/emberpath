@@ -209,6 +209,14 @@ export const fogMarsh: AreaDefinition = {
     // Marsh Hermit on the dry path immediately south of the ruin's door at
     // (24, 9); his spawn at (24, 10) is the path tile adjacent to the door.
     { id: 'marsh-hermit', name: 'Marsh Hermit', col: 24, row: 10, color: 0x5a7a6b, sprite: 'marsh-hermit', wanderRadius: 1, awarenessRadius: 3 },
+    // The Keeper (white heron) — appears mid-marsh once Pip has crossed the
+    // threshold (marsh_trapped == true) AND bumped the closed exit at least
+    // four times (escape_attempts >= 4). The 'keeper_met == false' clause is
+    // the one-shot guard — once US-72's keeper-intro dialogue fires keeper_met,
+    // the Keeper never re-spawns even if the player resets escape_attempts.
+    // wanderRadius 0 (stationary). awarenessRadius 2 so he turns to face Pip
+    // when Pip approaches. Linear-filter portrait via NPC_PORTRAITS registry.
+    { id: 'keeper', name: 'The Keeper', col: 14, row: 8, color: 0xfff5d6, sprite: 'heron', wanderRadius: 0, awarenessRadius: 2, spawnCondition: 'marsh_trapped == true AND escape_attempts >= 4 AND keeper_met == false' },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; the prior
   // dungeon-prop list assumed the old "stone pen" map and would now sit on
