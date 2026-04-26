@@ -16,9 +16,15 @@ import { DIRECTIONS } from '../systems/direction';
 import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS, getNpcPortraitIds } from '../systems/npcSprites';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { setFlag } from '../triggers/flags';
+import { writeSave } from '../triggers/saveState';
 
 const TARGET_VISIBLE_TILES = 10;
 const FADE_DURATION = 400;
+// Autosave write throttle. The world-walk-frame autosave path returns before any
+// localStorage IO when either guard fails — Learning EP-01 (loop invariants):
+// no per-frame JSON.stringify, no per-frame setItem.
+const SAVE_THROTTLE_MS = 1000;
+const SAVE_MIN_DELTA_PX = 2;
 // Source tilesets are 16×16; game tile size is 32×32 — sprites are scaled to TILE_SIZE on render.
 const TILESET_SOURCE_SIZE = 16;
 
@@ -47,6 +53,9 @@ export class GameScene extends Phaser.Scene {
   private activeDialogueNpcId: string | null = null;
   private boundWindowResize: (() => void) | null = null;
   private transitionInProgress = false;
+  private lastSaveTime = 0;
+  private lastSaveX = 0;
+  private lastSaveY = 0;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -178,6 +187,9 @@ export class GameScene extends Phaser.Scene {
         this.npcBehavior.exitDialogue(this.activeDialogueNpcId);
         this.activeDialogueNpcId = null;
       }
+      // Dialogue exit returns the player to the world layer — checkpoint here so
+      // a tab close immediately after a conversation resumes at the same spot.
+      this.flushSave();
     });
     this.dialogueSystem.setOnChoice((choice) => {
       if (choice.setFlags) {
@@ -189,6 +201,11 @@ export class GameScene extends Phaser.Scene {
     this.debugOverlay = new DebugOverlaySystem(this);
     this.debugOverlay.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.debugOverlay.loadArea(this.area);
+
+    // StoryScene close path: GameScene is paused on launchStoryScene and resumed
+    // when StoryScene stops itself. Flushing here mirrors the dialogue close —
+    // the player is back on the world layer so this is a safe checkpoint.
+    this.events.on('resume', this.flushSave, this);
   }
 
   update(_time: number, delta: number): void {
@@ -249,6 +266,45 @@ export class GameScene extends Phaser.Scene {
     this.triggerZone.update(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.checkExitZones(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.debugOverlay.update();
+
+    this.maybeAutosave();
+  }
+
+  // Throttled walk-frame autosave. Returns before any localStorage IO when the
+  // throttle or position-delta guard fails (Learning EP-01). Suppressed during
+  // transitions and dialogue — those paths flush explicitly.
+  private maybeAutosave(): void {
+    if (this.transitionInProgress) return;
+    if (this.dialogueSystem?.isActive) return;
+    const now = performance.now();
+    if (now - this.lastSaveTime < SAVE_THROTTLE_MS) return;
+    const dx = this.player.x - this.lastSaveX;
+    const dy = this.player.y - this.lastSaveY;
+    if (Math.abs(dx) < SAVE_MIN_DELTA_PX && Math.abs(dy) < SAVE_MIN_DELTA_PX) return;
+    writeSave({
+      version: 1,
+      areaId: this.area.id,
+      position: { x: this.player.x, y: this.player.y },
+    });
+    this.lastSaveTime = now;
+    this.lastSaveX = this.player.x;
+    this.lastSaveY = this.player.y;
+  }
+
+  // Unconditional flush from a checkpoint event (dialogue close, StoryScene
+  // resume). Suppressed during transitions so the destination flush in
+  // transitionToArea is the sole writer mid-fade.
+  private flushSave(): void {
+    if (this.transitionInProgress) return;
+    if (!this.area || !this.player) return;
+    writeSave({
+      version: 1,
+      areaId: this.area.id,
+      position: { x: this.player.x, y: this.player.y },
+    });
+    this.lastSaveTime = performance.now();
+    this.lastSaveX = this.player.x;
+    this.lastSaveY = this.player.y;
   }
 
   private renderTileMap(): void {
@@ -480,6 +536,19 @@ export class GameScene extends Phaser.Scene {
 
     this.transitionInProgress = true;
 
+    // Flush the destination payload BEFORE scene.restart so a tab-close mid-fade
+    // resumes on the destination's entry tile, not on this area's exit-zone tile
+    // (which would re-fire the transition on entry). Same pixel formula as
+    // createPlayer to avoid a half-step offset.
+    const destOffset = (TILE_SIZE - PLAYER_SIZE) / 2;
+    const destX = entryPoint.col * TILE_SIZE + destOffset + PLAYER_SIZE / 2;
+    const destY = entryPoint.row * TILE_SIZE + destOffset + PLAYER_SIZE / 2;
+    writeSave({
+      version: 1,
+      areaId,
+      position: { x: destX, y: destY },
+    });
+
     this.cameras.main.fadeOut(FADE_DURATION, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.scene.restart({ areaId, entryPoint });
@@ -496,6 +565,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras?.main?.removeAllListeners('camerafadeoutcomplete');
     // Clean up player sprite
     this.player?.destroy();
+    this.events.off('resume', this.flushSave, this);
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
   }
