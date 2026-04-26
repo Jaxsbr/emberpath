@@ -97,3 +97,11 @@ entries:
     result: pass
     notes: URL-param reset shipped; US-65 partially advanced; story milestone deferred until manual-verify + AGENTS.md updates land
     tokens: ~4000
+  - task: 13
+    time: "2026-04-26T04:45:00Z"
+    type: docs
+    story: US-65
+    description: "Branch A — created docs/plan/save-resume-manual-verify.md mirroring world-legibility-manual-verify.md shape. Sections: Setup (npm run dev + DevTools Local Storage inspection); Reads-as observer tests (Continue 'remembers me' + Reset 'I am wiped' with 6-12yo-friendly questions); Per-area resume — autosave correctness with 4 sub-checks each for Ashen Isle (walk / transition / dialogue / resume) and 5 for Fog Marsh (the 4 plus StoryScene close); Mid-edge cases (mid-transition close → destination entry tile, mid-dialogue close → world-layer at last walk-frame autosave, New Game wipes save); Reset mechanism (button + ?reset=1 + ?clearSave=1 + both-together with explicit Local Storage observation); Error paths (corrupt JSON, tampered shape, wrong version 2, stale areaId, out-of-bounds 99999/99999, WALL-tile coord computed from any perimeter wall, private mode, quota stuffing); Deploy smoke (Learning #65 — jaxsbr.github.io/emberpath/ refresh-and-Continue). Each criterion is tagged with the originating story id ([US-62]/[US-63]/[US-64]/[US-65]) to keep traceability tight. Verify: doc-only edit, builds untouched. Story Completion Gate deferred — US-65 still has 1 unmet structural criterion (AGENTS.md Controls Dev/testing subsection) plus 7 [phase] AGENTS.md updates queued for the next iteration."
+    result: pass
+    notes: manual-verify doc created; US-65 unmet criteria remaining is the AGENTS.md surface; phase invariants queued in next task
+    tokens: ~5000
