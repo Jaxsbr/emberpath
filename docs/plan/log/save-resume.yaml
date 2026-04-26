@@ -89,3 +89,11 @@ entries:
     result: pass
     notes: investigation produced concrete diff plan; one coherent implement commit covers TitleScene URL params + manual-verify.md + AGENTS.md updates
     tokens: ~5000
+  - task: 12
+    time: "2026-04-26T04:35:00Z"
+    type: implement
+    story: US-65
+    description: "Branch A — implemented ?reset=1 + ?clearSave=1 URL-param reset in TitleScene. Added private applyUrlReset() called as the first line of create() — BEFORE 'Emberpath' label, BEFORE Reset Progress label, BEFORE renderTitleLayout — so the post-reset Title renders in the no-save state on the same frame. Method parses URLSearchParams from window.location.search; if reset === '1' → resetWorld() + console.info('emberpath: ?reset=1 — flags + save wiped') + params.delete('reset') + mark mutated; if clearSave === '1' → clearSave() + console.info('emberpath: ?clearSave=1 — save wiped') + params.delete('clearSave') + mark mutated; both branches process independently so the both-params-together case wipes everything and cleans both. After processing, if mutated: history.replaceState({}, '', `${pathname}${remaining ? '?' + remaining : ''}${hash}`) — preserves any other query params like utm_*, so this is safe in a deployed origin. Verify: npx tsc --noEmit + npm run build pass. Quality checks: no try/catch (URLSearchParams + window.history are standard APIs without obvious failure modes here — if they did fail, the app crash would be loud not silent which is the right error path for boot logic); no-bare-except clean; error-path-coverage acceptable (ours is the failure-loud path for unrecoverable boot conditions). Scope: only src/scenes/TitleScene.ts modified ✓. Secrets: none ✓. Story Completion Gate: US-65 still has 6 unmet criteria — manual-verify.md doc creation, AGENTS.md Controls Dev/testing subsection, plus the 4 variant baseline runtime checks captured by the manual-verify doc itself. So US-65 is NOT closed yet — defer the story milestone commit to the iteration that ships the manual-verify doc + AGENTS.md updates."
+    result: pass
+    notes: URL-param reset shipped; US-65 partially advanced; story milestone deferred until manual-verify + AGENTS.md updates land
+    tokens: ~4000
