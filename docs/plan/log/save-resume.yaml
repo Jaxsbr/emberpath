@@ -145,3 +145,11 @@ entries:
     result: pass
     notes: handle-pr-review queued
     tokens: ~1000
+  - task: 19
+    time: "2026-04-26T05:50:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed [review] handle-pr-review pr=17 auto=true. Fetched unresolved review threads via GraphQL: one unresolved thread at src/scenes/TitleScene.ts:101 raising the bounds-check half-open-inequality concern from the auto self-review. Triage: Fix (1) — valid concern, the suggested change is the right fix and trivial to apply. Applied: changed `x > maxX || y > maxY` to `x >= maxX || y >= maxY` so any tampered save with x === maxX exactly is rejected at the bounds step (instead of falling through to the WALL-tile guard where the out-of-array-bounds index returns undefined and slips past the !== WALL check). Verify: npx tsc --noEmit + npm run build pass. Pushed build/save-resume → origin (commit 2967cf5). Resolved the GraphQL thread PRRT_kwDOR8wiCc59oUf3 via resolveReviewThread mutation. Posted handle-pr-review summary comment (commit 2967cf5 referenced) AND the phase-review-complete summary per the build-loop's post-review-summary template. Set review_complete: true. Loop will exit on next iteration via guard rail 4."
+    result: pass
+    notes: 1 fix applied, 0 challenged, 0 skipped; thread resolved; summaries posted
+    tokens: ~6000
