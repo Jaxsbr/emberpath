@@ -38,7 +38,7 @@ state:
   pr_number: 16
 
   # --- Retrospective (owner: retro) ---
-  retro_complete: false
+  retro_complete: true
 
   # --- Tracking (owner: iterator) ---
   completed_stories: [US-58, US-59, US-60, US-61]
