@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-66] Investigate: confirm TriggerZoneSystem.tryFire is the correct injection point for new optional setFlags + incrementFlags fields on TriggerDefinition. Produce concrete diff plan for (a) types.ts adding TriggerDefinition.setFlags?: Record<string, string|number|boolean> + incrementFlags?: string[] (additive — no breaking change); (b) triggerZone.ts iterating both fields on fire AFTER condition check + AFTER one-shot setFlag bookkeeping but BEFORE the type-dispatch switch (so the flag side-effect lands before the thought/dialogue/story callback so any consumer that reads marsh_trapped during the same callback frame sees true); (c) fog-marsh.ts adding trigger id 'marsh-deepens' at (col 14, row 5), width 1, height 2, type 'thought', actionRef 'The fog rolls in behind me. The path is gone.', repeatable false, setFlags { marsh_trapped: true }. Verify the existing fog-entry-thought trigger continues to fire without setFlags side-effects (variant baseline)"
+  task_number: 3
+  next_task: "[US-66] Implement: (a) src/data/areas/types.ts — extend TriggerDefinition with optional `setFlags?: Record<string, string | number | boolean>` (mirrors DialogueChoice.setFlags shape at line 23; additive; ordering: insert AFTER condition?, BEFORE repeatable). (b) src/systems/triggerZone.ts — in tryFire, AFTER the one-shot setFlag bookkeeping (line 72) and BEFORE the type-dispatch switch (line 76), iterate `trigger.setFlags ?? {}` calling setFlag(key,value) for each entry. Existing imports already cover setFlag. (c) src/data/areas/fog-marsh.ts — append a new trigger to the triggers array: { id: 'marsh-deepens', col: 14, row: 5, width: 1, height: 2, type: 'thought', actionRef: 'The fog rolls in behind me. The path is gone.', repeatable: false, setFlags: { marsh_trapped: true } }. Verify: npx tsc --noEmit && npm run build pass; cd tools/editor && npm run build passes (incidental — schema add is a typescript-passive shape extension; editor inspects condition + repeatable already)."
   last_result: pass
   consecutive_fails: 0
 
