@@ -117,7 +117,11 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  create(data?: { areaId?: string; entryPoint?: { col: number; row: number } }): void {
+  create(data?: {
+    areaId?: string;
+    entryPoint?: { col: number; row: number };
+    resumePosition?: { x: number; y: number };
+  }): void {
     this.transitionInProgress = false;
     const areaId = data?.areaId ?? getDefaultAreaId();
     const area = getArea(areaId);
@@ -134,10 +138,10 @@ export class GameScene extends Phaser.Scene {
     this.renderNpcs();
     this.npcBehavior = new NpcBehaviorSystem(this, this.area.npcs, this.area.map, this.npcSpritesById);
     this.activeDialogueNpcId = null;
-    this.createPlayer(data?.entryPoint);
+    this.createPlayer(data?.entryPoint, data?.resumePosition);
     this.setupCamera();
-    // Fade in when entering from an area transition
-    if (data?.entryPoint) {
+    // Fade in when entering from an area transition OR a Continue resume
+    if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
     }
     this.inputSystem = new InputSystem(this);
@@ -631,12 +635,27 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private createPlayer(entryPoint?: { col: number; row: number }): void {
-    const spawn = entryPoint ?? this.area.playerSpawn;
+  private createPlayer(
+    entryPoint?: { col: number; row: number },
+    resumePosition?: { x: number; y: number },
+  ): void {
     const offset = (TILE_SIZE - PLAYER_SIZE) / 2;
-    // Position is center of the player's collision tile cell
-    const x = spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
-    const y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
+    // Precedence: transitions are deterministic; resume is opportunistic. When
+    // both entryPoint and resumePosition are present, entryPoint wins so a
+    // mid-transition resume lands cleanly on the destination's entry tile.
+    let x: number;
+    let y: number;
+    if (entryPoint) {
+      x = entryPoint.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
+      y = entryPoint.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
+    } else if (resumePosition) {
+      x = resumePosition.x;
+      y = resumePosition.y;
+    } else {
+      const spawn = this.area.playerSpawn;
+      x = spawn.col * TILE_SIZE + offset + PLAYER_SIZE / 2;
+      y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
+    }
 
     this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
@@ -644,5 +663,13 @@ export class GameScene extends Phaser.Scene {
     // Collision bounding box uses PLAYER_SIZE (24px) in math directly — display size is independent.
     this.player.setScale(1);
     this.animationSystem = new AnimationSystem(this.player);
+
+    // Seed autosave bookkeeping with the player's start position so the first
+    // walk-frame autosave triggers only after a real position change exceeds
+    // SAVE_MIN_DELTA_PX (matches the design direction "save writes are bounded,
+    // not chatty" — no spurious save on a player who never moves).
+    this.lastSaveTime = performance.now();
+    this.lastSaveX = x;
+    this.lastSaveY = y;
   }
 }
