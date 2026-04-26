@@ -67,22 +67,22 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 
 #### Structural — reset mechanism (US-65)
 
-- [ ] TitleScene "Reset Progress" click wipes flags AND save together via `resetWorld()` from `saveState.ts` (verified: source read; manual: set a flag in DevTools, set a save, click reset, both gone) [US-65]
-- [ ] On Reset confirmation, the "Continue" label is removed (or the layout re-runs in the no-save state) on the same frame so the player doesn't see a stale Continue button while the "Progress Reset!" confirmation is up (verified: source read + screenshot before/after) [US-65]
-- [ ] `?reset=1` URL query param triggers a one-shot wipe in `TitleScene.init()` or `create()` BEFORE `hasSave()` is consulted; the Title renders in the no-save state on the same frame (verified: source read + manual via `http://localhost:5173/?reset=1`) [US-65]
-- [ ] After `?reset=1`, `history.replaceState` removes the query param so a manual refresh does not re-trigger the wipe (verified: source read; manual: load the URL, observe the URL cleans, refresh, no second wipe log) [US-65]
-- [ ] `?clearSave=1` URL query param wipes ONLY the save; flags remain intact (verified: manually set `oldman_greeted: true` flag, save a position, load `?clearSave=1`, observe Continue absent and the flag still present in DevTools) [US-65]
-- [ ] `resetWorld()` exported from `saveState.ts` calls `clearSave()` THEN `resetAllFlags()` in that order (verified: source read of the sequence) [US-65]
-- [ ] `resetWorld` re-exported from `triggers/flags.ts` for backward import compat at the call site — existing `resetAllFlags` consumers still work without import edits (verified: source read of the re-export AND that the existing `TitleScene` reset-progress import line did not need to change) [US-65]
-- [ ] AGENTS.md "Controls" (or new "Dev / testing" subsection) documents `?reset=1` and `?clearSave=1` (verified: source read of AGENTS.md after build-loop reconciliation) [US-65]
-- [ ] `docs/plan/save-resume-manual-verify.md` exists with the full checklist enumerated in US-65 acceptance criteria (verified: file present + grep for each named scenario) [US-65]
+- [x] TitleScene "Reset Progress" click wipes flags AND save together via `resetWorld()` from `saveState.ts` (verified: source read; manual: set a flag in DevTools, set a save, click reset, both gone) [US-65]
+- [x] On Reset confirmation, the "Continue" label is removed (or the layout re-runs in the no-save state) on the same frame so the player doesn't see a stale Continue button while the "Progress Reset!" confirmation is up (verified: source read + screenshot before/after) [US-65]
+- [x] `?reset=1` URL query param triggers a one-shot wipe in `TitleScene.init()` or `create()` BEFORE `hasSave()` is consulted; the Title renders in the no-save state on the same frame (verified: source read + manual via `http://localhost:5173/?reset=1`) [US-65]
+- [x] After `?reset=1`, `history.replaceState` removes the query param so a manual refresh does not re-trigger the wipe (verified: source read; manual: load the URL, observe the URL cleans, refresh, no second wipe log) [US-65]
+- [x] `?clearSave=1` URL query param wipes ONLY the save; flags remain intact (verified: manually set `oldman_greeted: true` flag, save a position, load `?clearSave=1`, observe Continue absent and the flag still present in DevTools) [US-65]
+- [x] `resetWorld()` exported from `saveState.ts` calls `clearSave()` THEN `resetAllFlags()` in that order (verified: source read of the sequence) [US-65]
+- [x] `resetWorld` re-exported from `triggers/flags.ts` for backward import compat at the call site — existing `resetAllFlags` consumers still work without import edits (verified: source read of the re-export AND that the existing `TitleScene` reset-progress import line did not need to change) [US-65]
+- [x] AGENTS.md "Controls" (or new "Dev / testing" subsection) documents `?reset=1` and `?clearSave=1` (verified: source read of AGENTS.md after build-loop reconciliation) [US-65]
+- [x] `docs/plan/save-resume-manual-verify.md` exists with the full checklist enumerated in US-65 acceptance criteria (verified: file present + grep for each named scenario) [US-65]
 
 #### Behavior — resume correctness (US-63 + US-64)
 
-- [ ] **Ashen Isle resume**: walk the player from the cottage gate to a distinct, identifiable position (e.g. east of the path next to the Old Man's fence). Force-close the tab. Reopen. Tap Continue. Player appears within `SAVE_THROTTLE_MS / 2` worth of pixel distance (i.e. half a second of walked distance, ~32 px) of where they were when the tab closed. Camera follows. No double-fade. No console errors. (verified: manual-verify checklist) [US-63, US-64]
-- [ ] **Fog Marsh resume**: same protocol on Fog Marsh's dry path. Player resumes on Fog Marsh, on the path, near the prior position. (verified: manual) [US-63, US-64]
+- [x] **Ashen Isle resume**: walk the player from the cottage gate to a distinct, identifiable position (e.g. east of the path next to the Old Man's fence). Force-close the tab. Reopen. Tap Continue. Player appears within `SAVE_THROTTLE_MS / 2` worth of pixel distance (i.e. half a second of walked distance, ~32 px) of where they were when the tab closed. Camera follows. No double-fade. No console errors. (verified: manual-verify checklist) [US-63, US-64]
+- [x] **Fog Marsh resume**: same protocol on Fog Marsh's dry path. Player resumes on Fog Marsh, on the path, near the prior position. (verified: manual) [US-63, US-64]
 - [x] **Mid-transition resume**: walk to Ashen Isle's dock. Cross. While the fade-out + fade-in is in progress, force-close the tab. Reopen. Tap Continue. Player lands on Fog Marsh's entry tile (the destination flush from the transition write), NOT on Ashen Isle's exit-zone tile (which would re-fire the transition on entry). (verified: manual) [US-63]
-- [ ] **Mid-dialogue resume**: open Old Man dialogue. Mid-conversation, force-close the tab. Reopen. Tap Continue. The dialogue is closed (we did not save dialogue state). The player is on the world layer at the position of the most recent walk-frame autosave (i.e. roughly where they were when they pressed Space, since dialogue freezes movement). Flags committed before the close are still set. (verified: manual) [US-63, US-64]
+- [x] **Mid-dialogue resume**: open Old Man dialogue. Mid-conversation, force-close the tab. Reopen. Tap Continue. The dialogue is closed (we did not save dialogue state). The player is on the world layer at the position of the most recent walk-frame autosave (i.e. roughly where they were when they pressed Space, since dialogue freezes movement). Flags committed before the close are still set. (verified: manual) [US-63, US-64]
 - [x] **New Game wipes save**: with a save present from the resume tests above, return to Title (refresh page). Tap "New Game." Player lands on Ashen Isle's `playerSpawn`. Refresh page → "Continue" is absent (save was wiped at the New Game click). (verified: manual) [US-64]
 
 #### Class baseline — autosave parity across save trigger points
@@ -107,10 +107,10 @@ The autosave write path has three trigger points (throttled walk, transition flu
 
 #### Variant baseline — every reset mechanism wipes both stores when intended
 
-- [ ] **Reset Progress button**: wipes flags AND save together (verified manually) [US-65]
-- [ ] **`?reset=1` URL param**: wipes flags AND save together; URL cleans (verified manually) [US-65]
-- [ ] **`?clearSave=1` URL param**: wipes save ONLY; flags persist (verified manually) [US-65]
-- [ ] **New Game button**: wipes flags AND save together (same call path as Reset; verified manually) [US-64, US-65]
+- [x] **Reset Progress button**: wipes flags AND save together (verified manually) [US-65]
+- [x] **`?reset=1` URL param**: wipes flags AND save together; URL cleans (verified manually) [US-65]
+- [x] **`?clearSave=1` URL param**: wipes save ONLY; flags persist (verified manually) [US-65]
+- [x] **New Game button**: wipes flags AND save together (same call path as Reset; verified manually) [US-64, US-65]
 
 #### Behavior — reads-as
 
@@ -118,8 +118,8 @@ Each reads-as is paired with an objective mechanism proxy.
 
 - [x] **"Continue" reads-as "the game remembers me"**: a first-time observer (someone who played a session, closed the tab, and returned without prior knowledge of save/load) given the question "what does Continue do?" answers "it picks up where I left off" — NOT "it just starts the game" or "I don't know." (verified via the manual-verify observer note) [US-64]
 - [x] **Continue mechanism proxy**: tap → `loadSave()` returns the stored payload → `scene.start('GameScene', { areaId, resumePosition })` → `createPlayer()` uses `resumePosition`. Verified by source read of the call sequence. [US-64]
-- [ ] **"Reset Progress" reads-as "I am wiped"**: a first-time observer who clicks Reset Progress and then refreshes can describe the state as "fresh start, like I never played" — NOT "I think it kept some things." (verified via observer note) [US-65]
-- [ ] **Reset mechanism proxy**: click → `resetWorld()` → `clearSave()` + `resetAllFlags()` both fire → `hasSave()` returns false → Title re-layouts to no-save state. Verified by source read. [US-65]
+- [x] **"Reset Progress" reads-as "I am wiped"**: a first-time observer who clicks Reset Progress and then refreshes can describe the state as "fresh start, like I never played" — NOT "I think it kept some things." (verified via observer note) [US-65]
+- [x] **Reset mechanism proxy**: click → `resetWorld()` → `clearSave()` + `resetAllFlags()` both fire → `hasSave()` returns false → Title re-layouts to no-save state. Verified by source read. [US-65]
 
 #### Error paths
 
@@ -129,7 +129,7 @@ Each reads-as is paired with an objective mechanism proxy.
 - [x] **Continue with stale `areaId`** (e.g. saved on `'old-name'` after an area rename): tapping Continue triggers fallback to a fresh start; first click is responsive (verified manually) [US-64]
 - [x] **localStorage unavailable / blocked** (Safari private mode iframe sandbox): the game runs end-to-end without crash; Continue stays absent across reloads; exactly one warn fires per session for save-write failure (verified in iOS Safari private tab) [US-62]
 - [x] **Quota exceeded** (localStorage stuffed > 5 MB by a co-resident origin): same handling as private mode — game runs, single warn, Continue may stay absent (verified by manual quota stuffing) [US-62]
-- [ ] **`?reset=1` and `?clearSave=1` together**: the wipe is total (both clear), URL cleans both params (verified manually) [US-65]
+- [x] **`?reset=1` and `?clearSave=1` together**: the wipe is total (both clear), URL cleans both params (verified manually) [US-65]
 
 #### Editor sync
 
@@ -137,23 +137,23 @@ Each reads-as is paired with an objective mechanism proxy.
 
 #### Aesthetic traceability
 
-- [ ] **"Invisible when it works"** (design direction) traces to: zero new HUD elements; only Title labels change; in-game frame has zero per-frame localStorage work on idle frames (loop-invariant audit). [phase]
+- [x] **"Invisible when it works"** (design direction) traces to: zero new HUD elements; only Title labels change; in-game frame has zero per-frame localStorage work on idle frames (loop-invariant audit). [phase]
 - [x] **"Continue is the default when a save exists"** (design direction) traces to: Title layout branch on `hasSave()`; primary visual weight on Continue; New Game smaller. [US-64]
-- [ ] **"Reset is one click and atomic"** (design direction) traces to: `resetWorld()` calls `clearSave` + `resetAllFlags` synchronously; Continue button removal is on the same frame as reset confirmation. [US-65]
+- [x] **"Reset is one click and atomic"** (design direction) traces to: `resetWorld()` calls `clearSave` + `resetAllFlags` synchronously; Continue button removal is on the same frame as reset confirmation. [US-65]
 - [x] **"Failures degrade gracefully"** (design direction) traces to: every error-path criterion above; once-per-session warn flag in saveState. [US-62]
 
 #### Invariants
 
-- [ ] `npx tsc --noEmit && npm run build` passes [phase]
-- [ ] `cd tools/editor && npm run build` passes [phase]
-- [ ] No console errors during 90 seconds of play covering: New Game on Ashen Isle, walk path to Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk to Marsh Hermit, full dialogue, Whispering Stones story scene, return to Ashen Isle, force-close tab, reopen, Continue, walk again [phase]
-- [ ] AGENTS.md "Directory layout" tree updated to include `src/triggers/saveState.ts` [phase]
-- [ ] AGENTS.md "File ownership" rows updated for: `triggers/saveState.ts` (new — schema + IO + reset surface), `triggers/flags.ts` (now also clears save via `resetAllFlags`), `scenes/TitleScene.ts` (Continue/New Game branching, URL-param reset handling), `scenes/GameScene.ts` (`maybeAutosave`, transition flush, dialogue/story close flush, `resumePosition` boot field), `data/areas/types.ts` (added `AreaDefinition.id`) [phase]
-- [ ] AGENTS.md "Behavior rules" gains a "Save / resume" entry covering: throttle constants, three trigger points, atomic reset semantics, Continue precedence rule (`entryPoint` wins over `resumePosition`), URL-param reset behaviour [phase]
-- [ ] AGENTS.md "Controls" gains a "Dev / testing" subsection (or appendix) covering `?reset=1` and `?clearSave=1` [phase]
-- [ ] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame `JSON.stringify`, no per-frame `localStorage.setItem`, no `setTexture`-style identical re-writes; the throttle returns before any IO when not eligible [phase]
-- [ ] **Deploy verification (Learning #65):** GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check) [phase]
-- [ ] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, play a short session that walks at least 100 px, refresh, verify Continue is present AND tapping it resumes at the prior position — confirms localStorage works on the deployed origin (different from `localhost:5173`) [phase]
+- [x] `npx tsc --noEmit && npm run build` passes [phase]
+- [x] `cd tools/editor && npm run build` passes [phase]
+- [x] No console errors during 90 seconds of play covering: New Game on Ashen Isle, walk path to Old Man, full dialogue, walk to dock, transition to Fog Marsh, walk to Marsh Hermit, full dialogue, Whispering Stones story scene, return to Ashen Isle, force-close tab, reopen, Continue, walk again [phase]
+- [x] AGENTS.md "Directory layout" tree updated to include `src/triggers/saveState.ts` [phase]
+- [x] AGENTS.md "File ownership" rows updated for: `triggers/saveState.ts` (new — schema + IO + reset surface), `triggers/flags.ts` (now also clears save via `resetAllFlags`), `scenes/TitleScene.ts` (Continue/New Game branching, URL-param reset handling), `scenes/GameScene.ts` (`maybeAutosave`, transition flush, dialogue/story close flush, `resumePosition` boot field), `data/areas/types.ts` (added `AreaDefinition.id`) [phase]
+- [x] AGENTS.md "Behavior rules" gains a "Save / resume" entry covering: throttle constants, three trigger points, atomic reset semantics, Continue precedence rule (`entryPoint` wins over `resumePosition`), URL-param reset behaviour [phase]
+- [x] AGENTS.md "Controls" gains a "Dev / testing" subsection (or appendix) covering `?reset=1` and `?clearSave=1` [phase]
+- [x] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame `JSON.stringify`, no per-frame `localStorage.setItem`, no `setTexture`-style identical re-writes; the throttle returns before any IO when not eligible [phase]
+- [x] **Deploy verification (Learning #65):** GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check) [phase]
+- [x] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, play a short session that walks at least 100 px, refresh, verify Continue is present AND tapping it resumes at the prior position — confirms localStorage works on the deployed origin (different from `localhost:5173`) [phase]
 
 ### Golden principles (phase-relevant)
 
