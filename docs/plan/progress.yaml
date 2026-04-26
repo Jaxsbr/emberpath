@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: "[US-68] Investigate-and-implement: small enough to fold investigate into the implement (concrete sources already read in tasks 1+5; only DecorationDefinition + renderDecorations + decoration condition consumer remain). (a) src/data/areas/types.ts — add optional `condition?: string` to DecorationDefinition (additive). (b) src/data/areas/fog-marsh.ts — append 8 conditional decorations at row 22 cols 13-16: 4 PATH (col 13-16, row 22) with condition 'marsh_trapped == false' alternating PATH_A/PATH_B per col; 4 EDGE (col 13-16, row 22) with condition 'marsh_trapped == true' cycling EDGE_A/EDGE_B/EDGE_C. (c) src/scenes/GameScene.ts — add private field `conditionalDecorations: { sprite, condition }[] = []` and refactor renderDecorations to (i) create sprites for all decorations as today, (ii) when dec.condition is present, evaluate it once and setVisible accordingly + track in conditionalDecorations. Add private method updateConditionalDecorations() that iterates conditionalDecorations and re-sets sprite.visible from evaluateCondition(condition) — fires on flag change ONLY (Learning EP-01 — no per-frame iteration). Modify the onFlagChange('marsh_trapped') callback to call BOTH applyMarshTrappedState AND updateConditionalDecorations (the same mechanism, two consumers — explicitly satisfies US-67/US-68's 'one shared mechanism, not two'). (d) tools/editor/src/mapRenderer.ts — add a brief inline comment that conditional decorations render unconditionally in the editor (the editor is the area-author's view; conditional rendering would hide content). Verify: npx tsc --noEmit && npm run build pass; cd tools/editor && npm run build passes."
+  task_number: 9
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
@@ -41,4 +41,4 @@ state:
   retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: []
+  completed_stories: [US-66, US-67, US-68]
