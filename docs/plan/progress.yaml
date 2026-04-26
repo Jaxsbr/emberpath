@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 9
-  next_task: "[US-64] Implement TitleScene Continue/New Game branching + GameScene resumePosition wiring. (a) TitleScene imports: drop resetAllFlags; add {hasSave, loadSave, clearSave, resetWorld} from saveState; {getArea} from registry; {TILE_SIZE, TileType} from constants. (b) Pull layout into renderTitleLayout() method called from create() and from reset confirmation. (c) Branch on hasSave(): true → primary 'Continue' (32px white at width/2,height/2) + secondary 'New Game' (20px #aaaaaa at width/2,height/2+50); false → single 'New Game' at the existing Start position. (d) Continue handler: validate (loadSave non-null → getArea → bounds → tile non-WALL); on any failure clearSave + warn + scene.start('GameScene'); on success scene.start('GameScene', {areaId, resumePosition}). (e) New Game handler: resetWorld() then scene.start('GameScene'). (f) Reset Progress handler: resetWorld() + show 'Progress Reset!' for 1.5s + on confirmation tear down Continue label and re-run renderTitleLayout (US-65 same-frame). (g) GameScene.create signature: add resumePosition?: {x:number;y:number}; (h) createPlayer takes both entryPoint and resumePosition with entryPoint-wins precedence + inline comment; (i) fade-in branch: if (data?.entryPoint || data?.resumePosition); (j) initialise lastSaveX/Y to player start position in createPlayer. Verify: npx tsc --noEmit && npm run build passes."
+  task_number: 10
+  next_task: null
 
   # --- Review (owner: iterator) ---
   review_stage: null
