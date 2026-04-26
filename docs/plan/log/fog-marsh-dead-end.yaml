@@ -49,3 +49,11 @@ entries:
     result: pass
     notes: US-67 source criteria met; combined [US-67, US-68] flag-change-shared-mechanism criterion will tick when US-68 wires its consumer; story milestone deferred
     tokens: ~9500
+  - task: 7
+    time: "2026-04-26T08:12:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-67 shipped; combined criteria still pending US-68. US-68 work is well-bounded by source already read in tasks 1+5 (DecorationDefinition shape, renderDecorations structure, evaluateCondition signature, onFlagChange subscriber pattern from US-67). Read GameScene.renderDecorations (lines 369-396): single pass over area.decorations creating Phaser sprites at depth 2; conditional handling does not exist — that's the gap US-68 closes. Read tilesets.ts: tiny-dungeon EXIT frame is '22' (the wooden door), so row 22 cols 13-16 currently RENDER as door frames (corrects spec body's 'currently PATH_VARIANTS plank tiles' inaccuracy — but the SPEC INTENT holds: the player should see PATH-like decoration overlay pre-trap, EDGE-like overlay post-trap; the door tile underneath is invisible behind the decoration sprite at depth 2). Plan: small enough to fold investigate into implement — queued task 8 as a single implement task covering schema+area+system+editor edits."
+    result: pass
+    notes: US-68 scoped; investigate-and-implement collapsed (one-concern: schema-add + decoration condition consumer + area data — all fit in one coherent commit per spec's mechanic-truth design direction); editor sync covered by an inline comment per mapRenderer
+    tokens: ~3500
