@@ -236,6 +236,13 @@ export class GameScene extends Phaser.Scene {
       // Dialogue exit returns the player to the world layer — checkpoint here so
       // a tab close immediately after a conversation resumes at the same spot.
       this.flushSave();
+      // Chain a story scene if the script declared endStoryScene (US-72:
+      // keeper-intro chains ember-given). flushSave runs FIRST so the world
+      // state is checkpointed before launchStoryScene pauses GameScene.
+      const endStoryScene = this.dialogueSystem.getEndStoryScene();
+      if (endStoryScene) {
+        this.launchStoryScene(endStoryScene);
+      }
     });
     this.dialogueSystem.setOnChoice((choice) => {
       if (choice.setFlags) {

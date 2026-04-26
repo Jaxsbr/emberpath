@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DialogueScript, DialogueNode, DialogueChoice } from '../data/areas/types';
 import { hasNpcPortrait } from './npcSprites';
+import { setFlag } from '../triggers/flags';
 
 const BOX_HEIGHT = 120;
 const BOX_PADDING = 12;
@@ -77,6 +78,11 @@ export class DialogueSystem {
 
   // Callbacks
   private onEndCallback: (() => void) | null = null;
+  // Captured from DialogueScript.endStoryScene at start() so it survives the
+  // close() lifecycle (this.script is nulled BEFORE onEndCallback fires).
+  // Read by getEndStoryScene() from the GameScene.setOnEnd callback to chain
+  // a story scene after dialogue close (US-72).
+  private endStoryScene: string | null = null;
   private onChoiceCallback: ((choice: DialogueChoice) => void) | null = null;
 
   constructor(scene: Phaser.Scene) {
@@ -178,6 +184,14 @@ export class DialogueSystem {
     this.onEndCallback = cb;
   }
 
+  // Returns the active script's endStoryScene, or null when the script has
+  // no chained scene OR when no dialogue is active. Captured at start() so
+  // it remains readable from inside the onEndCallback (close() nulls this.script
+  // before invoking the callback).
+  getEndStoryScene(): string | null {
+    return this.endStoryScene;
+  }
+
   setOnChoice(cb: (choice: DialogueChoice) => void): void {
     this.onChoiceCallback = cb;
   }
@@ -187,6 +201,7 @@ export class DialogueSystem {
     if (this.scene.time.now - this.lastCloseTime < 100) return;
     this.active = true;
     this.script = script;
+    this.endStoryScene = script.endStoryScene ?? null;
     this.currentBoxHeight = BOX_HEIGHT;
     this.createBox();
     const startNode = script.nodes.find(n => n.id === script.startNodeId);
@@ -277,6 +292,15 @@ export class DialogueSystem {
 
   private showNode(node: DialogueNode): void {
     this.currentNode = node;
+    // Fire node.setFlags BEFORE the typewriter starts so a downstream
+    // onFlagChange subscriber sees the new value within the same call stack
+    // as showNode (US-72 Keeper rescue: action node sets has_ember_mark +
+    // keeper_met + marsh_trapped: false atomically).
+    if (node.setFlags) {
+      for (const [name, value] of Object.entries(node.setFlags)) {
+        setFlag(name, value);
+      }
+    }
     this.clearChoices();
 
     // Reset box to normal height when showing a new node
@@ -659,6 +683,9 @@ export class DialogueSystem {
     if (this.onEndCallback) {
       this.onEndCallback();
     }
+    // Reset the captured endStoryScene AFTER the callback fires so
+    // getEndStoryScene() returns the correct value during the callback.
+    this.endStoryScene = null;
   }
 
   private ignoreOnMainCamera(obj: Phaser.GameObjects.GameObject): void {

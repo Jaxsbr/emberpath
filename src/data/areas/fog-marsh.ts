@@ -376,8 +376,60 @@ export const fogMarsh: AreaDefinition = {
         },
       ],
     },
+    // Keeper rescue (US-72). Two-node script: greeting acknowledges Pip's
+    // depth; action grants the Ember Mark and atomically flips marsh_trapped
+    // back to false (US-73 path re-opens via the same Phase 1 mechanism in
+    // reverse). endStoryScene chains 'ember-given' (3 warm-toned beats) so
+    // dialogue close → flushSave → story scene launch in one user-visible
+    // beat. portraitId 'heron' uses the linear-filter painterly portrait
+    // registered in US-70.
+    'keeper-intro': {
+      id: 'keeper-intro',
+      startNodeId: 'greeting',
+      portraitId: 'heron',
+      endStoryScene: 'ember-given',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'The Keeper',
+          text: 'You walked deeper than the path. Most do not.',
+          nextId: 'action',
+        },
+        {
+          id: 'action',
+          speaker: 'The Keeper',
+          text: 'You cannot find the way. I am the way. Take this — and follow.',
+          setFlags: { has_ember_mark: true, keeper_met: true, marsh_trapped: false },
+        },
+      ],
+    },
   },
   storyScenes: {
+    // Keeper rescue chained from keeper-intro dialogue (US-72). Three warm-toned
+    // beats: Keeper draws near (warm gold) -> ember passes (brighter ember) ->
+    // fog parts (pale dawn). All warmer than the surrounding marsh visuals
+    // (marsh-depths uses 0x2a3a2a / 0x3a4a3a — desaturated greens) so the
+    // ember reads as "light breaks in" against the established palette.
+    'ember-given': {
+      id: 'ember-given',
+      beats: [
+        {
+          text: 'The Keeper steps closer through the fog. His feathers catch a light that does not seem to come from any sun.',
+          imageColor: 0xd9a657,
+          imageLabel: 'The Keeper draws near',
+        },
+        {
+          text: 'A spark passes from the Keeper to Pip — small, warm, unmistakable. The ember settles in his chest like it had always been there, just waiting.',
+          imageColor: 0xf2c878,
+          imageLabel: 'The ember passes',
+        },
+        {
+          text: 'For a moment, the fog thins. The path south, dark and gone before, is dim but visible again. The Keeper does not speak. There is no need.',
+          imageColor: 0xe8d8b8,
+          imageLabel: 'The fog parts',
+        },
+      ],
+    },
     'marsh-depths': {
       id: 'marsh-depths',
       beats: [

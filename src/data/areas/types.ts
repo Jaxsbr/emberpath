@@ -40,6 +40,14 @@ export interface DialogueNode {
   nextId?: string;
   choices?: DialogueChoice[];
   portraitId?: string;
+  // Optional flag side-effects fired when the node is shown, BEFORE the
+  // typewriter starts. Mirrors the DialogueChoice.setFlags shape so the
+  // authoring vocabulary stays consistent. Used by US-72 (Keeper rescue) so
+  // the action node atomically sets has_ember_mark, keeper_met, and
+  // marsh_trapped: false in one place — downstream onFlagChange subscribers
+  // (overlay create on has_ember_mark; collision/decoration restore on
+  // marsh_trapped) fire within the same call stack as showNode.
+  setFlags?: Record<string, string | number | boolean>;
 }
 
 export interface DialogueScript {
@@ -47,6 +55,12 @@ export interface DialogueScript {
   startNodeId: string;
   nodes: DialogueNode[];
   portraitId?: string;
+  // Optional story scene id launched on dialogue close. GameScene's setOnEnd
+  // callback reads DialogueSystem.getEndStoryScene() AFTER flushSave (so the
+  // world state is checkpointed before the story scene pauses GameScene) and
+  // calls launchStoryScene with the id. Existing scripts without this field
+  // close as before — no story scene launch.
+  endStoryScene?: string;
 }
 
 export interface StoryBeat {
