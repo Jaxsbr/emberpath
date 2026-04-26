@@ -49,3 +49,11 @@ entries:
     result: pass
     notes: US-63 complete; autosave + transition flush + dialogue close flush + StoryScene close flush shipped; loop-invariant audit pass; both builds pass
     tokens: ~9000
+  - task: 7
+    time: "2026-04-26T04:00:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-62 + US-63 complete (38/60 phase criteria checkable from current source). Unmet stories: US-64 (Title screen Continue/New Game with bound-checking + WALL-tile fallback + 1.5× font ratio + areaId-unknown fallback), US-65 (reset surface — Reset Progress button rebind, ?reset=1 + ?clearSave=1 URL params with history.replaceState, resetWorld export sequence, AGENTS.md Controls subsection, save-resume-manual-verify.md creation). Priority: US-64 next so the manual-verify doc in US-65 can reference Continue button tests; US-65 will close out the phase including the [phase] AGENTS.md updates. Per investigate-first mandate (cached server/schema/cross-cutting classification), queued an investigate task for US-64 covering: (a) TitleScene.ts call-site changes (already read at 40 lines — Phaser text layout pattern using width/height fractions, .on('pointerdown'), delayedCall confirmation pattern); (b) GameScene.create signature extension to accept resumePosition; (c) precedence rule: when both entryPoint and resumePosition are present, entryPoint wins with inline comment; (d) WALL-tile + bounds validation at create time — pixel→tile via Math.floor(x/TILE_SIZE) then check area.map[row][col] === TileType.WALL plus 0 ≤ x ≤ mapCols*TILE_SIZE bounds; (e) areaId-unknown fallback path: getArea returns undefined → call clearSave + warn + start GameScene with no boot data (handle this in TitleScene's Continue handler before scene.start, OR in GameScene.create's getArea undefined branch — the cleanest is the existing GameScene.create branch on line 115 which already logs and returns; need to extend to clearSave + scene.restart with no data on the resume path); (f) fade-in branch extension (line 131): `if (data?.entryPoint || data?.resumePosition)`; (g) Continue label primary/secondary visual hierarchy (font sizes 32/20 → 1.6× ratio satisfies the 1.5× criterion)."
+    result: pass
+    notes: US-64 next; investigate-first enforced; one implement commit will cover Title + GameScene boot wiring
+    tokens: ~3000

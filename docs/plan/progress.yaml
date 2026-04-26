@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: null
+  task_number: 8
+  next_task: "[US-64] Investigate: produce concrete diff plan for TitleScene Continue/New Game + GameScene.create resumePosition wiring. Confirm: (a) TitleScene.create() reads hasSave() once; layout branches on the result; primary 'Continue' near current Start position (font 32 or larger); secondary 'New Game' below (font ~20, secondary color); 'Reset Progress' kept in current position. (b) Continue handler: loadSave(), then scene.start('GameScene', { areaId, resumePosition: save.position }). (c) New Game handler: clearSave() + resetAllFlags() THEN scene.start('GameScene') with no boot data. (d) GameScene.create(data) extended type to include resumePosition?: {x:number;y:number}; precedence: entryPoint wins over resumePosition with inline comment. (e) createPlayer accepts both entryPoint AND resumePosition; if entryPoint set, use existing tile-multiply path; else if resumePosition set, use it as direct pixel coords. (f) Validation in TitleScene Continue handler BEFORE scene.start: if loadSave returns null OR areaId not in registry OR position out-of-bounds OR position on WALL tile → clearSave + warn + scene.start with no boot data. (g) Fade-in branch extends to `if (data?.entryPoint || data?.resumePosition)`. (h) Font ratio ≥ 1.5× criterion satisfied by 32/20 = 1.6×."
 
   # --- Review (owner: iterator) ---
   review_stage: null
