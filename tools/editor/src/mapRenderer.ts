@@ -124,6 +124,10 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     warnedTilesets.add(area.tileset);
   }
   if (atlasInfo && atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0) {
+    // Conditional decorations (DecorationDefinition.condition) render
+    // unconditionally in the editor — the editor is the area-author's view, so
+    // hiding flag-gated content would defeat the point. The flag-gated visibility
+    // applies only at runtime in GameScene.updateConditionalDecorations.
     for (const dec of area.decorations) {
       const frameIdx = Number(dec.spriteFrame);
       if (!Number.isFinite(frameIdx)) continue;

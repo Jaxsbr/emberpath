@@ -98,6 +98,12 @@ export interface DecorationDefinition {
   col: number;
   row: number;
   spriteFrame: string;
+  // Optional flag-driven visibility gate. When present, the decoration sprite
+  // is created at scene start but its visibility tracks evaluateCondition.
+  // GameScene re-evaluates conditional decorations only on flag-change events
+  // (Learning EP-01: no per-frame full re-render). Existing decorations without
+  // a condition render unconditionally as today.
+  condition?: string;
 }
 
 export interface AreaDefinition {

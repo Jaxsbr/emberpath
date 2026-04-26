@@ -182,6 +182,20 @@ const fogMarshDecorations: DecorationDefinition[] = [
   // the path, sitting beside the trigger zone at (13, 16) so the player sees
   // it as they walk past on the path.
   { col: 13, row: 16, spriteFrame: FRAME.STONES },
+
+  // South-exit closure (US-68). Paired conditional decorations sit on row 22
+  // cols 13-16: PATH frames render when marsh_trapped == false (the way home
+  // is open) and EDGE deep-water frames render when marsh_trapped == true (the
+  // way home is gone). GameScene applies the same flag-change subscriber that
+  // flips collision (US-67) — one shared mechanism, on the same frame.
+  { col: 13, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
+  { col: 14, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
+  { col: 15, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
+  { col: 16, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
+  { col: 13, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
+  { col: 14, row: 22, spriteFrame: FRAME.EDGE_B, condition: 'marsh_trapped == true' },
+  { col: 15, row: 22, spriteFrame: FRAME.EDGE_C, condition: 'marsh_trapped == true' },
+  { col: 16, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
 ];
 
 export const fogMarsh: AreaDefinition = {

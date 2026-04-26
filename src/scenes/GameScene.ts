@@ -46,6 +46,9 @@ export class GameScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Sprite;
   private tileLayer: Phaser.GameObjects.GameObject[] = [];
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
+  // Conditional decorations: visibility re-evaluated on flag changes only,
+  // never per-frame (Learning EP-01).
+  private conditionalDecorations: { sprite: Phaser.GameObjects.Sprite; condition: string }[] = [];
   private propSprites: Phaser.GameObjects.Sprite[] = [];
   private npcEntities: Phaser.GameObjects.GameObject[] = [];
   private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
@@ -140,6 +143,7 @@ export class GameScene extends Phaser.Scene {
     if (this.area.id === 'fog-marsh') {
       this.marshTrappedUnsubscribe = onFlagChange('marsh_trapped', () => {
         this.applyMarshTrappedState();
+        this.updateConditionalDecorations();
       });
     }
 
@@ -368,6 +372,7 @@ export class GameScene extends Phaser.Scene {
 
   private renderDecorations(): void {
     this.decorationSprites = [];
+    this.conditionalDecorations = [];
     if (!hasTileset(this.area.tileset)) return;
     const atlasKey = TILESETS[this.area.tileset].atlasKey;
     const texture = this.textures.get(atlasKey);
@@ -392,6 +397,21 @@ export class GameScene extends Phaser.Scene {
       sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
       sprite.setDepth(2);
       this.decorationSprites.push(sprite);
+      if (dec.condition) {
+        sprite.setVisible(evaluateCondition(dec.condition));
+        this.conditionalDecorations.push({ sprite, condition: dec.condition });
+      }
+    }
+  }
+
+  // Re-evaluate conditional decoration visibility. Called from the flag-change
+  // subscriber (one shared mechanism with the collision flip in
+  // applyMarshTrappedState — US-67/US-68 'one shared mechanism, not two').
+  // Iterates only the conditional subset; unconditional decorations are never
+  // re-evaluated (Learning EP-01).
+  private updateConditionalDecorations(): void {
+    for (const entry of this.conditionalDecorations) {
+      entry.sprite.setVisible(evaluateCondition(entry.condition));
     }
   }
 
