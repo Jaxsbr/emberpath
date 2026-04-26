@@ -17,6 +17,12 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Process dev / testing URL params BEFORE any layout decision so the
+    // post-reset Title renders in the no-save state on the same frame and a
+    // refresh after the wipe doesn't re-trigger the wipe (history.replaceState
+    // drops the consumed params).
+    this.applyUrlReset();
+
     const { width, height } = this.scale;
 
     this.add.text(width / 2, height / 3, 'Emberpath', {
@@ -113,5 +119,27 @@ export class TitleScene extends Phaser.Scene {
   private handleNewGame(): void {
     resetWorld();
     this.scene.start('GameScene');
+  }
+
+  private applyUrlReset(): void {
+    const params = new URLSearchParams(window.location.search);
+    let mutated = false;
+    if (params.get('reset') === '1') {
+      resetWorld();
+      console.info('emberpath: ?reset=1 — flags + save wiped');
+      params.delete('reset');
+      mutated = true;
+    }
+    if (params.get('clearSave') === '1') {
+      clearSave();
+      console.info('emberpath: ?clearSave=1 — save wiped');
+      params.delete('clearSave');
+      mutated = true;
+    }
+    if (mutated) {
+      const remaining = params.toString();
+      const cleanedUrl = `${window.location.pathname}${remaining ? '?' + remaining : ''}${window.location.hash}`;
+      window.history.replaceState({}, '', cleanedUrl);
+    }
   }
 }
