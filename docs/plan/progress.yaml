@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-65] Investigate: produce concrete diff plan for URL-param reset (?reset=1 / ?clearSave=1 with history.replaceState) in TitleScene, manual-verify doc creation at docs/plan/save-resume-manual-verify.md, and AGENTS.md updates (Directory layout, File ownership rows for saveState/flags/TitleScene/GameScene, new Behavior rule 'Save / resume', new Controls 'Dev / testing' subsection). Confirm placement: URL parsing in TitleScene.create() BEFORE renderTitleLayout so the post-reset Title renders in no-save state on the same frame. Determine the order: parse search → branch (reset=1 / clearSave=1 / neither) → history.replaceState to drop the consumed param while preserving others → info log → renderTitleLayout."
+  task_number: 12
+  next_task: "[US-65] Implement URL-param reset + manual-verify doc + AGENTS.md updates. (a) TitleScene.applyUrlReset() called first in create(): parse URLSearchParams from window.location.search; if reset==='1' → resetWorld + info log; if clearSave==='1' → clearSave + info log; in either case delete the consumed params and history.replaceState to clean the URL while preserving others; both-together processes both wipes. (b) Create docs/plan/save-resume-manual-verify.md mirroring world-legibility-manual-verify.md: Setup; Reads-as observer (Continue + Reset); Per-area resume checklist (Ashen Isle / Fog Marsh × walk / transition / dialogue close / StoryScene close); Mid-edge cases; Reset mechanism (button + ?reset=1 + ?clearSave=1 + both); Error paths (corrupt / tampered / wrong-version / unknown areaId / private mode / quota / out-of-bounds / WALL); Deploy smoke. (c) Edit AGENTS.md: Directory layout adds triggers/saveState.ts + docs/plan/save-resume-manual-verify.md; File ownership new row saveState + edits to flags/TitleScene/GameScene; Behavior rules new 'Save / resume' bullet; Controls new 'Dev / testing' subsection. Verify both builds pass."
 
   # --- Review (owner: iterator) ---
   review_stage: null
