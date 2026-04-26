@@ -1,142 +1,96 @@
+# Phase: keeper-rescue
+
 ## Phase goal
 
-Make Fog Marsh felt-mechanically inescapable. Today the player walks into the marsh, talks to the Marsh Hermit, optionally triggers the Whispering Stones and the marsh-vision story scene, then walks freely back south to Ashen Isle — the hermit's line "Through? There is no through. Only deeper" is currently flavour text without consequence. This phase makes that line true: the player walks deeper than the hermit, crosses a fog threshold that snaps shut behind them, and discovers the south path is gone. Walking against the closed exit reads as fog/water with no walkable surface, and a sequence of thought bubbles graduates from "the path is gone" to "I cannot do this alone." The phase ends at the felt-bottom of beat 2 — the player is stuck, knows they're stuck, and the rescue scaffolding (`marsh_trapped: true`, `escape_attempts >= 4`) is in place for `keeper-rescue` to consume. **The Keeper does not appear in this phase.**
+Rescue Pip from the Fog Marsh dead-end. After `fog-marsh-dead-end` lands the player at "I cannot do this alone" (`marsh_trapped: true`, `escape_attempts >= 4`), the Keeper — a luminous white heron, the master-prd.md allegorical Holy Spirit — appears in the marsh, gives Pip the Ember Mark in a story scene, and re-opens the path back to Ashen Isle. This phase closes beat 2 of the gospel arc with the player having received grace they could not earn or find.
 
-### Design direction
+### Dependencies
 
-**Mechanical truth, not warning labels.** From `master-prd.md`: "the Fog Marsh dead-end makes grace felt, not told." The player should feel "the path is gone," not see "Path closed!" UI text.
-
-- **Visual closure dominates the message.** The exit cells, currently `PATH_VARIANTS` plank tiles, are replaced by `EDGE_VARIANTS` deep-water tiles when `marsh_trapped` flips. Same authoring vocabulary; no special-case rendering. The player sees the path was, and now isn't.
-- **Trigger threshold has a place, not just a flag.** The threshold is north of the Marsh Hermit, on the dry path the hermit's line ("only deeper") points to. Crossing it is the player's choice, not a forced cutscene.
-- **Escape-attempt feedback escalates.** First bump: "The fog has swallowed the way back." Third bump+: "I cannot do this alone." This pacing primes the rescue without naming it.
-- **Closed is closed — no jiggle, no "almost works."** Walking into the closed exit is identical to walking into any wall. No half-second pause, no fade: collision is collision. The fog/water rendering is what tells the story.
-
-The build-loop's `frontend-design` skill does NOT apply — this phase introduces zero UI.
+- fog-marsh-dead-end (must be archived — supplies `marsh_trapped` and `escape_attempts` flags and the conditional collision/decoration mechanism this phase reverses)
 
 ### Stories in scope
 
-- US-66 — Threshold: marsh-deepens trigger sets `marsh_trapped: true`
-- US-67 — Exit closure mechanic: south exit becomes inert when `marsh_trapped: true`
-- US-68 — Visual closure: exit decorations switch from PATH to EDGE when `marsh_trapped == true`
-- US-69 — Escape-attempt feedback: thought escalation on bumping the closed exit
-
-### Safety criteria
-
-This phase introduces no API endpoints, no user-text fields, no query interpolation, no LLM output. It does introduce a new optional `condition?: string` field on `DecorationDefinition` and a new optional `setFlags` field on `TriggerDefinition` — `evaluateCondition` already handles malformed or missing flag references gracefully, but the new fields must use that path consistently.
-
-- [x] `ExitDefinition.condition` (existing) and `DecorationDefinition.condition` (new) are both routed through the existing `systems/conditions.ts:evaluateCondition` function — no parallel parser, no string interpolation [US-67, US-68]
-- [x] An `ExitDefinition.condition` referring to an unset flag (`'marsh_trapped == false'` when `marsh_trapped` has never been set) evaluates such that the exit fires as today — no console error, no false-trap (verified: source read of `evaluateCondition` semantics + manual on a fresh game) [US-67]
-- [x] A `DecorationDefinition.condition` evaluating to `false` results in the decoration NOT being added to the scene (or its `visible` set to `false`) — never half-rendered [US-68]
-- [x] Tampering with `emberpath_flags` in DevTools to set `marsh_trapped: true` from a fresh tab restores the trapped state correctly on Fog Marsh load — does NOT crash, does NOT half-render decorations [US-67, US-68]
+- US-70 — Heron sprite + portrait + registry entries (assets-on-disk)
+- US-71 — Keeper spawns when `marsh_trapped == true AND escape_attempts >= 4`
+- US-72 — Keeper rescue dialogue + ember-given story scene + flag flips
+- US-73 — Path re-opens; Pip carries the ember mark
 
 ### Done-when (observable)
 
-#### Structural — threshold trigger (US-66)
+#### US-70 — Heron assets + registry
 
-- [x] `data/areas/fog-marsh.ts` declares a new trigger `id: 'marsh-deepens'`, type `thought`, position `(col 14, row 5)`, `width: 1, height: 2`, `repeatable: false` (verified: source read) [US-66]
-- [x] `TriggerDefinition` in `data/areas/types.ts` has a new optional `setFlags?: Record<string, string | number | boolean>` field (verified: source read; field shape mirrors existing `DialogueChoice.setFlags`) [US-66]
-- [x] `TriggerZoneSystem` consumes `trigger.setFlags` on fire, iterating entries and calling `setFlag(key, value)` for each (verified: source read of the fire path in `triggerZone.ts`) [US-66]
-- [x] The new trigger sets `setFlags: { marsh_trapped: true }`; manual: walk through, observe DevTools `localStorage['emberpath_flags']` contains `marsh_trapped: true` [US-66]
-- [x] The thought text in `actionRef` is exactly `"The fog rolls in behind me. The path is gone."` (verified: source read) [US-66]
-- [x] Loading Fog Marsh directly with `playerSpawn (14, 12)` does NOT fire `marsh-deepens` on area load — only player-walked entry into the trigger band fires it (verified manually) [US-66]
-- [x] After firing, `marsh_trapped` is `true` after a page refresh (existing localStorage persistence — regression check) [US-66]
-- [x] **Variant baseline:** the existing `fog-entry-thought` trigger (no `setFlags`) continues to fire identically (regression: `marsh_trapped` does NOT get set as a side effect; only the new trigger sets it) [US-66]
+- [ ] `assets/npc/heron/{idle,walk,static,portrait.png,prompt.md}` exists in repo with the expected file counts (idle: 32, walk: 32, static: 8, portrait: 1, prompt.md: 1) [US-70]
+- [ ] `NPC_SPRITES['heron'] = { idleFrameCount: 4, walkFrameCount: 4 }` registered; `hasNpcSprite('heron')` returns true [US-70]
+- [ ] `NPC_PORTRAITS['heron'] = { file: 'portrait.png', filter: 'linear' }` registered; `hasNpcPortrait('heron')` returns true [US-70]
+- [ ] `npx tsc --noEmit && npm run build` passes [US-70]
+- [ ] Production bundle `dist/assets/npc/heron/` includes idle, walk, static, portrait.png (verify via `find dist/assets/npc/heron -type f | wc -l` — expected ≥ 73) [US-70]
 
-#### Structural — exit closure (US-67)
+#### US-71 — Conditional spawn + generalised flag-change subscriber
 
-- [x] `ExitDefinition.condition` is the existing field at `types.ts:67`; this story does NOT re-add it (verified: source read pre-phase) [US-67]
-- [x] `fog-to-ashen` exit on `fog-marsh.ts` has `condition: 'marsh_trapped == false'` set (verified: source read) [US-67]
-- [x] When `marsh_trapped == true`, cells at row 22 cols 13-16 are treated as walls by `collidesWithWall` — verified: source read of the collision flip (either `area.map` in-place mutation OR a flag-aware overlay in `systems/collision.ts`); manual: walk into the cells, player stops as if hitting a wall [US-67]
-- [x] The collision flip happens on the same frame as the threshold trigger — no `scene.restart()`, no black flash (verified by walking through the threshold and immediately walking south to the old exit) [US-67]
-- [x] A flag-change detection mechanism exists for `marsh_trapped` (subscriber API in `flags.ts` OR per-frame polling guarded by Learning EP-01); the same mechanism is reused by US-68 for decoration re-rendering (verified: source read; one shared mechanism, not two) [US-67, US-68]
-- [x] When `marsh_trapped == false` (fresh game), the exit fires and transitions to Ashen Isle as today (regression check) [US-67]
-- [x] `cd tools/editor && npm run build` passes; `flowRenderer` renders the conditional exit (verified pre-phase that `flowRenderer` reads the `condition` field; if the visible treatment was missing, this story adds a one-line dashed-arrow or label) [US-67]
+- [ ] `NpcDefinition.spawnCondition?: string` added to `data/areas/types.ts`; existing NPCs without this field compile + spawn unchanged [US-71]
+- [ ] `GameScene.renderNpcs` (or equivalent gate) skips NPCs whose `spawnCondition` evaluates false at area-load time — verified by direct-load Fog Marsh on a fresh save: Keeper has no sprite, no NpcBehavior entry, no NpcInteraction entry [US-71]
+- [ ] GameScene parses every NPC's `spawnCondition` for flag names (regex: `/\b([a-z_][a-z0-9_]*)\s*(==|!=|>=|>|<=|<)/gi`) and calls `onFlagChange(flagName, ...)` for each unique name; unsubscribes collected and invoked in `cleanupResize` [US-71]
+- [ ] Keeper appears in Fog Marsh at `(14, 8)` exactly when `marsh_trapped == true AND escape_attempts >= 4` (manual verify: walk past threshold → escape_attempts increments via 4 bumps → Keeper fades in within one frame of the 4th bump) [US-71]
+- [ ] Spawn fade is a 500ms alpha 0 → 1 tween via `this.tweens.add({ targets: keeperSprite, alpha: { from: 0, to: 1 }, duration: 500 })`; player input suspended for the duration of the fade and resumes ≤ 1000ms after spawn [US-71]
+- [ ] **Variant baseline (Rule 4a):** Marsh Hermit (no `spawnCondition`) still spawns unconditionally on Fog Marsh load and continues to wander + be interactable after Keeper spawn; Old Man (no `spawnCondition`) still spawns unconditionally on Ashen Isle load [US-71]
+- [ ] **Phase 1 regression:** the pre-existing hardcoded `onFlagChange('marsh_trapped', ...)` collision-flip + decoration-swap subscriber still fires on the threshold trigger; not regressed by the additive subscription [US-71]
+- [ ] **Class baseline check (Rule 4 — Learning #59):** Keeper inherits all shared NPC behaviors. Verified post-spawn: (a) `npc-heron-idle-south` animation at 8 fps; (b) does NOT wander (`wanderRadius: 0`); (c) turns to face player when player enters `awarenessRadius: 2` (same `lastStaticDir` guard); (d) NPC interaction prompt (depth 150) raises on approach; (e) enters dialogue state on interaction (snap-to-face → animation stop → static texture); (f) portrait renders with `linear` filter on dialogue open; (g) bounding box collides with player movement [US-71]
+- [ ] **Idempotency guard (Learning #63):** `evaluateConditionalSpawns()` is safely re-entrant. Guard via "if NPC.id already in `npcSpritesById`, skip" before the spawn render path. Verified by setting two relevant flags in the same dialogue node — Keeper spawns exactly once [US-71]
+- [ ] **Error path (Learning #10):** an `NpcDefinition` with a malformed `spawnCondition` (e.g., `"marsh_trapped &&"` or `"unknown_op ?? true"`) does not crash GameScene; `evaluateCondition` returns false on parse failure (existing Phase 1 behavior, regression check), the NPC stays unspawned, no console error storm. Verified by adding a temporary throwaway NPC with a bad condition during dev — area loads cleanly [US-71]
+- [ ] AGENTS.md "Behavior rules" gains a "Conditional NPC spawn" entry [US-71, phase]
+- [ ] **Named constants (Learning #6 facet):** `KEEPER_FADE_DURATION_MS = 500` and `KEEPER_INPUT_SUSPEND_MS = 1000` declared as named constants at the top of `GameScene.ts` (mirrors `FADE_DURATION = 400`, `SAVE_THROTTLE_MS = 1000`); not inlined as magic numbers in the tween call [US-71]
 
-#### Structural — visual closure (US-68)
+#### US-72 — Dialogue + flag side-effects + story scene chain
 
-- [x] `DecorationDefinition` in `data/areas/types.ts` has an optional `condition?: string` field (verified: source read) [US-68]
-- [x] `GameScene.renderDecorations()` (or the sibling re-render hook) evaluates per-decoration condition and sets sprite visibility accordingly (verified: source read) [US-68]
-- [x] `fog-marsh.ts` declares paired decorations at row 22 cols 13-16: PATH variants conditioned on `marsh_trapped == false`, EDGE variants conditioned on `marsh_trapped == true` (verified: source read) [US-68]
-- [x] When `marsh_trapped` flips, the visible decoration on row 22 cols 13-16 swaps from PATH to EDGE on the same frame as the collision update (verified: manual + dev observation) [US-68]
-- [x] Decoration re-evaluation runs ONLY on flag change, NOT per-frame full re-render (verified: source read; loop-invariant audit per Learning EP-01) [US-68]
-- [x] **Atlas frame-pick verification (compounded):** PATH and EDGE frames are the existing `tiny-dungeon` indices already verified during `tileset` and `world-legibility` (`FRAME.PATH_A = '36'`, `PATH_B = '37'`, `EDGE_A = '33'`, `EDGE_B = '34'`, `EDGE_C = '35'`); no new atlas indices introduced. If any new index is needed, a labeled atlas preview is generated and visually verified before commit: `python3 tools/atlas-preview.py assets/tilesets/tiny-dungeon/tilemap.png /tmp/tiny-dungeon-preview.png && open /tmp/tiny-dungeon-preview.png` [US-68]
-- [x] `tools/editor/src/mapRenderer.ts` either renders all conditional decorations regardless of condition OR has a documented behaviour for conditional decorations (verified: editor inspection + brief inline comment) [US-68]
+- [ ] `DialogueNode.setFlags?: Record<string, string | number | boolean>` added to `data/areas/types.ts` [US-72]
+- [ ] `DialogueSystem` fires `setFlag(k, v)` for every entry in `node.setFlags` when a node is shown, BEFORE the typewriter starts; verified by a trace test: a downstream `onFlagChange` subscriber registered before the dialogue starts sees the new value within the same call stack as `showNode` [US-72]
+- [ ] `DialogueScript.endStoryScene?: string` added to `data/areas/types.ts` [US-72]
+- [ ] `GameScene.dialogueSystem.setOnEnd` callback launches `endStoryScene` (when present) AFTER `flushSave` — verified by reading the order in `GameScene.create` [US-72]
+- [ ] `keeper-intro` dialogue script on `fog-marsh.ts`: `portraitId: 'heron'`, `endStoryScene: 'ember-given'`, two nodes (greeting → action), action node has `setFlags: { has_ember_mark: true, keeper_met: true, marsh_trapped: false }` [US-72]
+- [ ] `ember-given` story scene on `fog-marsh.ts` with 2-3 beats. Specific imageColor commitments: beat 1 `0xd9a657` (warm gold), beat 2 `0xf2c878` (brighter ember), beat 3 (optional) `0xe8d8b8` (pale dawn). imageLabel strings as documented in spec [US-72]
+- [ ] **Error path (Learning #10):** if `endStoryScene` references an id not present in `area.storyScenes`, the existing `launchStoryScene` error path fires (`console.error('Story scene definition not found: ...')`) and GameScene resumes normally — no crash, no orphaned state. Verified by temporarily setting `endStoryScene: 'nonexistent'` during dev [US-72]
+- [ ] **Existing-script regression (Rule 4a):** Marsh Hermit dialogue (uses `DialogueChoice.setFlags`) continues to set `spoke_to_marsh_hermit: true` on greeting choice; Old Man dialogue (no setFlags) closes without flag changes [US-72]
+- [ ] **Existing-script regression:** All dialogue scripts WITHOUT `endStoryScene` close via the existing `exitDialogue + flushSave` path with NO story scene launch — verified by Old Man, Marsh Hermit, Whispering Stones [US-72]
 
-#### Structural — escape-attempt feedback (US-69)
+#### US-73 — Path re-opens via flag flip + ember overlay
 
-- [x] Three new triggers on `fog-marsh.ts` at row 21 cols 13-16, each `width: 4, height: 1`, type `thought`, `repeatable: true`, with mutually-exclusive `escape_attempts` band conditions (verified: source read) [US-69]
-- [x] Each trigger fires its named thought (`"The fog has swallowed the way back."` / `"I tried this path. It's gone."` / `"I cannot do this alone."`) — texts verified against source [US-69]
-- [x] `TriggerDefinition` gains an optional `incrementFlags?: string[]` field; each escape trigger uses `incrementFlags: ['escape_attempts']`; `TriggerZoneSystem` calls `incrementFlag(name)` for each entry on fire (verified: source read of types.ts + triggerZone.ts; manual: bump the band repeatedly, observe `escape_attempts` increase in DevTools localStorage) [US-69]
-- [x] The bands are mutually exclusive at all `escape_attempts` values (0, 1 → first only; 2, 3 → second only; 4, 5, 6+ → third only) (verified: source read of the conditions) [US-69]
-- [x] After 4 distinct entries, `escape_attempts >= 4` AND the despair thought has fired at least once (verified manually) [US-69]
-- [x] Standing still on the band does NOT infinite-fire — existing repeatable semantics require exit-and-re-enter (verified: source read of repeatable semantics + manual) [US-69]
-- [x] `evaluateCondition` supports `<` and `>=` operators (verified: source read of `systems/conditions.ts`; if not supported pre-phase, this phase adds them with a focused done-when criterion stating `evaluateCondition('escape_attempts >= 4')` returns `true` when `escape_attempts === 4` and `false` when `escape_attempts === 3`, and similar for `<`) [US-69]
+- [ ] After `keeper-intro` dialogue closes and `ember-given` story scene closes, walking back south to row 22 cols 13-16: collision is FLOOR (walkable), decorations show PATH frames, `fog-to-ashen` exit fires — all three reverted by the same Phase 1 mechanism reading the new `marsh_trapped: false` value (no new decoration set, no new condition) [US-73]
+- [ ] Pip's ember overlay sprite renders at depth 5.5 (literal fractional depth, between Entities at 5 and Thoughts at 8) — verified by reading `setDepth(5.5)` in `GameScene` [US-73]
+- [ ] Overlay anchored to player x/y; updated each frame in `GameScene.update` so it follows movement [US-73]
+- [ ] **Loop-invariant check (Learning EP-01):** the per-frame overlay update path contains zero `new` keyword calls and zero object/array literals — only `setPosition(this.player.x, this.player.y - OFFSET)` (or equivalent). Verified by `grep -n "new \|{.*:" GameScene.ts` within the overlay update block [US-73]
+- [ ] **Variant baseline (Rule 4a):** ember overlay renders correctly above Pip across all 8 facing directions in BOTH idle and walk animation states. Manual verify: walk Pip in each direction post-rescue, confirm overlay tracks the head position in every animation frame (no z-fighting, no offset jitter) [US-73]
+- [ ] Overlay created on `has_ember_mark === true` flag flip via `onFlagChange` AND on scene `create` if the flag is already true (covers transition-to-Ashen-Isle and Continue-from-save) [US-73]
+- [ ] Overlay destroyed (or hidden) when `has_ember_mark` flag is unset — fires on Reset Progress (the existing `resetAllFlags` notifies subscribers with `undefined`) [US-73]
+- [ ] Overlay persists across area transition: walk south from Fog Marsh → Ashen Isle, ember overlay still visible above Pip [US-73]
+- [ ] Overlay persists across page reload: tap Continue, ember overlay re-renders on resume [US-73]
+- [ ] AGENTS.md "Depth map" gains a row at depth 5.5: "Player ember overlay — Created on has_ember_mark, anchored to player" [US-73, phase]
+- [ ] AGENTS.md "Behavior rules" gains a "Player ember overlay" entry [US-73, phase]
 
-#### Behavior — full sequence (US-66 + US-67 + US-68 + US-69)
+#### Phase-level
 
-- [x] **Trap closes**: spawn on Fog Marsh from a transition or load; walk to Marsh Hermit; talk through to "only deeper"; walk north past him; cross the threshold trigger. Observe in order: (a) thought "The fog rolls in behind me. The path is gone.", (b) `marsh_trapped` becomes `true` in DevTools localStorage, (c) within the same frame the south exit cells become wall-collision, (d) PATH→EDGE decoration swap on the south exit cells. Verified manually. [US-66, US-67, US-68]
-- [x] **Escape escalation**: with `marsh_trapped == true`, walk south to row 21, north out of the band, south back into the band — repeat ≥ 4 times. Each visit fires a thought; the thoughts escalate from "The fog has swallowed the way back." to "I cannot do this alone." Verified manually. [US-69]
-- [x] **No regression on Ashen Isle**: New Game → Ashen Isle → Old Man dialogue → dock-to-fog transition still works; arriving on Fog Marsh, walking south back through the still-open exit (BEFORE the threshold) still transitions back to Ashen Isle. Verified manually. [US-67]
-- [x] **Save / resume parity**: with `marsh_trapped == true`, force-close the tab and reopen, tap Continue — the closed-exit collision and EDGE decoration are restored on resume (the flag persists; collision and decoration state rebuilds from the flag at area-load time). Verified manually. [US-67, US-68; integration with `save-resume`]
+- [ ] **Full-arc manual verification:** New Game → Ashen Isle → dock → Fog Marsh → walk past Marsh Hermit → threshold fires → bump south exit ≥ 4 times → Keeper fades in → talk to Keeper → ember-given story scene → walk south → south-exit walkable → transition to Ashen Isle with ember overlay still visible [phase]
+- [ ] **Save / resume parity:** force-close after `ember-given` story scene close, reopen, tap Continue → `has_ember_mark: true` AND `marsh_trapped: false` AND `keeper_met: true` restored, ember overlay re-renders on resume, south exit walkable from a Fog Marsh resume, Keeper does NOT respawn (gated by `keeper_met` — add `spawnCondition` second clause OR check in spawn pass that NPC.id is not already in scene state) [phase, save-resume integration]
+- [ ] **Reset parity:** clicking Reset Progress wipes `has_ember_mark`, `keeper_met`, `marsh_trapped`, `escape_attempts`, `spoke_to_marsh_hermit` together via `resetAllFlags`; ember overlay disappears on the same frame [phase, save-resume integration]
+- [ ] **Keeper one-shot guard:** after rescue, walking back into Fog Marsh from Ashen Isle does NOT respawn the Keeper. Either the Keeper's `spawnCondition` is extended to `marsh_trapped == true AND escape_attempts >= 4 AND keeper_met == false`, OR the spawn pass tracks already-spawned NPC ids — author choice; document in code [phase]
+- [ ] **Variant baseline manual checklist:** open `docs/plan/keeper-rescue-manual-verify.md`, walk through one row per surface — desktop fresh New Game, desktop Continue mid-Fog-Marsh, desktop Continue post-rescue, mobile fresh New Game, mobile Continue mid-Fog-Marsh, mobile Continue post-rescue. Each row checks: Keeper spawn fires correctly, dialogue + portrait render, story scene fires, ember overlay renders, south exit re-opens [phase]
+- [ ] **Atlas frame-pick verification (compounded):** Heron sprite frames are PixelLab-generated PNGs (not atlas-indexed), so the labeled-atlas verification step does NOT apply to the sprite. The ember overlay reuses an existing atlas frame OR is a tiny new PNG — IF a new atlas frame is used, run `python3 tools/atlas-preview.py assets/tilesets/<id>/tilemap.png /tmp/preview.png && open /tmp/preview.png` and visually verify the chosen frame BEFORE commit. IF a new PNG asset is used, no atlas check is required [phase]
+- [ ] `npx tsc --noEmit && npm run build` passes; `cd tools/editor && npm run build` passes; no console errors during full-arc playthrough [phase]
+- [ ] AGENTS.md reflects new modules / behavior rules / depth-map row introduced in this phase (Conditional NPC spawn, Player ember overlay, depth 5.5 row, DialogueNode.setFlags, DialogueScript.endStoryScene) [phase]
+- [ ] **Deploy verification + smoke (Learning #65):** GitHub Pages deploys; deployed playthrough completes the full arc without errors [phase]
 
-#### Class baseline — every area's exits behave consistently
+#### Auto-added safety criteria
 
-- [x] Ashen Isle's `exit-to-fog` exit (no `condition` set) still fires unconditionally as today (verified: source read + manual New Game playthrough) [US-67]
-- [x] Fog Marsh's `fog-to-ashen` exit (`condition` set) gates on `marsh_trapped == false` (verified: source read + manual at both flag states) [US-67]
-
-#### Variant baseline — conditional decorations on every area variant
-
-- [x] Ashen Isle (no conditional decorations introduced): renders identically to today; visual screenshot at New Game spawn matches pre-phase baseline [US-68]
-- [x] Fog Marsh in `marsh_trapped == false`: PATH frames render at row 22 cols 13-16 (verified: screenshot) [US-68]
-- [x] Fog Marsh in `marsh_trapped == true`: EDGE frames render at row 22 cols 13-16 (verified: screenshot) [US-68]
-
-#### Behavior — reads-as
-
-- [x] **"The path is gone" reads-as "I can't go back the way I came"**: a first-time observer who watches the threshold fire and sees the EDGE swap describes the south exit as "no longer walkable; the marsh is too deep there now" — NOT "I think the path is hidden." (verified via observer note in manual-verify doc) [US-66, US-68]
-- [x] **Closure mechanism proxy**: threshold sets `marsh_trapped: true` → exit-resolution pass evaluates `condition` and skips transition → `area.map` mutation (or overlay) makes cells wall → `renderDecorations` flips PATH to EDGE. Verified by source read of the call sequence. [US-66, US-67, US-68]
-- [x] **"I cannot do this alone" reads-as "this is hopeless"**: a first-time observer who triggers the third thought describes the player's situation as "stuck, no way out, doesn't know what to do" — NOT "the player will figure it out" or "this is just flavour text." (verified via observer note) [US-69]
-- [x] **Escalation mechanism proxy**: each band entry → `incrementFlag('escape_attempts')` → next band's condition evaluates true → next thought displays. Verified by source read of the increment + condition gate. [US-69]
-
-#### Error paths
-
-- [x] **Walking onto the now-walled exit cells**: collision is normal; no crash; no console error (verified manually) [US-67]
-- [x] **Tampered flag** (DevTools sets `marsh_trapped: true` from a fresh tab): on Fog Marsh load, the trap state is restored — exit is closed, EDGE decorations render — without the threshold trigger having fired this session. No console errors. (verified manually) [US-67, US-68]
-- [x] **Reset Progress while trapped**: clicking Reset Progress (existing TitleScene affordance) wipes `marsh_trapped` along with all flags via `resetAllFlags`; next session, Fog Marsh loads with the path open. (verified manually) [save-resume integration]
-- [x] **Tampered `escape_attempts`** (DevTools sets `escape_attempts: 99`): walking onto the band fires only the third (despair) thought, not multiple thoughts; mutual exclusion holds. (verified manually) [US-69]
-
-#### Editor sync
-
-- [x] `tools/editor/` builds and renders Fog Marsh's new conditional triggers, exit, and decorations visibly — area author can see what's new (verified) [US-66, US-67, US-69]
-
-#### Aesthetic traceability
-
-- [x] **"Mechanical truth, not warning labels"** (design direction) traces to: no UI text saying "Path closed!"; the closure is collision + decoration only [phase]
-- [x] **"Visual closure dominates the message"** (design direction) traces to: PATH→EDGE decoration swap on the same frame as collision; no fade [US-68]
-- [x] **"Escape-attempt feedback escalates"** (design direction) traces to: three thought triggers in escalating bands [US-69]
-- [x] **"Closed is closed"** (design direction) traces to: exit cells become walls; same `collidesWithWall` path as any wall [US-67]
-
-#### Invariants
-
-- [x] `npx tsc --noEmit && npm run build` passes [phase]
-- [x] `cd tools/editor && npm run build` passes [phase]
-- [x] No console errors during 90 seconds of play covering: New Game on Ashen Isle, walk to Old Man dialogue, walk to dock, transition to Fog Marsh, walk to Marsh Hermit, full dialogue, walk north past hermit, cross threshold, walk south, bump exit ≥ 4 times, force-close, reopen, Continue, observe state restored [phase]
-- [x] AGENTS.md "Behavior rules" gains a "Conditional exits and decorations" entry describing the shared `condition` field semantics (load-time and runtime evaluation, flag-change re-render contract, no-scene-restart rule) [phase]
-- [x] AGENTS.md "File ownership" rows updated for: `data/areas/types.ts` (added `TriggerDefinition.setFlags`, `TriggerDefinition.incrementFlags`, `DecorationDefinition.condition`), `data/areas/fog-marsh.ts` (threshold + escape triggers + conditional exit/decorations), `scenes/GameScene.ts` (decoration condition evaluation + flag-change re-render hook + collision flip), `triggers/flags.ts` (flag-change subscriber API or equivalent), `systems/triggerZone.ts` (consumes setFlags + incrementFlags) [phase]
-- [x] AGENTS.md "Directory layout" updated to add `docs/plan/fog-marsh-dead-end-manual-verify.md` [phase]
-- [x] **Loop-invariant audit (Learning EP-01):** confirmed no per-frame full decoration re-render; the flag-change hook only fires when the flag actually changed; no per-frame `evaluateCondition` for unconditional decorations; no per-frame `setTexture` with identical inputs [phase]
-- [x] **Atlas frame-pick verification (compounded):** PATH and EDGE frames reuse the existing `tiny-dungeon` indices verified during `tileset` and `world-legibility` phases; no new indices introduced [phase]
-- [x] **Deploy verification (Learning #65):** GitHub Pages deploy workflow succeeds for the squash-merge commit on `main` (green check) [phase]
-- [x] **Deploy smoke (Learning #65, post-deploy):** open the deployed `https://jaxsbr.github.io/emberpath/` URL, walk past the threshold, refresh, verify trap state is restored on Continue (closed exit collision + EDGE decoration both present) [phase]
+- [ ] **Input validation (compounded):** `DialogueNode.setFlags` values flow into `setFlag` which writes to localStorage. The flag store accepts only `string | number | boolean` (TypeScript-enforced via the `FlagValue` type alias). No additional sanitisation needed because the values are author-controlled (no user text input is wired to setFlags) [phase, security]
+- [ ] **Spawn-condition flag-name parsing safety:** the regex `/\b([a-z_][a-z0-9_]*)\s*(==|!=|>=|>|<=|<)/gi` is applied to author-controlled `spawnCondition` strings only (no user input). If a future story wires user-text to spawnCondition, this criterion must be revisited [phase, security]
 
 ### Golden principles (phase-relevant)
 
-- **Parameterized systems:** the new conditional fields on `DecorationDefinition` and the new `setFlags`/`incrementFlags` fields on `TriggerDefinition` reuse `evaluateCondition` and `setFlag`/`incrementFlag` from existing modules — no new condition syntax, no parallel parser, no parallel flag store.
-- **No silent breaking changes:** existing exits, decorations, and triggers without the new optional fields continue to behave as today (unconditional / no flag side-effect). The new fields are additive.
-- **From LEARNINGS EP-01 (loop invariants):** flag-change-driven re-renders, not per-frame re-evaluation. The hook fires once per flag change. Conditional decorations re-evaluate visibility only when their referenced flags change.
-- **From LEARNINGS #57 (depth-map authority):** no new visual layers; decorations remain at depth 2.
-- **Zone-level mutual exclusion (LEARNINGS #56):** triggers and exits are already suppressed during dialogue / transitions / StoryScene; the new threshold trigger and escape bands inherit the same suppression.
-- **Mechanical truth (`master-prd.md` Gospel Integration Principles):** the trap is collision and decoration, not UI text. The player doesn't read "you are stuck" — they walk into water that wasn't water.
-
-### Reference
-
-Full spec, story bodies, design rationale, and AGENTS.md sections affected: `docs/product/phases/fog-marsh-dead-end.md`.
+- **Loop-invariant EP-01 (no per-frame allocations):** The ember overlay update in `GameScene.update` must call `setPosition(...)` only — zero `new`, zero literals. The conditional-spawn subscriber API fires per flag-change, never per-frame.
+- **Conditional exits and decorations:** Both gated through `systems/conditions.ts:evaluateCondition` — same parser, same flag store, no parallel logic. Re-evaluated only when a referenced flag actually changes via the existing `onFlagChange` subscriber pattern. **No scene restart** on flag flip — collision/decoration/spawn updates apply on the same frame as the trigger or dialogue node fires.
+- **Trigger flag side-effects (parity):** Existing `TriggerDefinition.setFlags`/`incrementFlags` ordering is preserved. The new `DialogueNode.setFlags` mirrors `DialogueChoice.setFlags` shape and fires BEFORE the typewriter starts so a downstream `onFlagChange` subscriber sees the new value within the same call stack as `showNode`.
+- **Save / resume (atomic flush order):** `flushSave()` runs BEFORE the story-scene launch in the dialogue `setOnEnd` callback so a tab-close mid-story-scene resumes with the rescue committed. URL-param resets and Continue precedence rules unchanged.
+- **Zone-level mutual exclusion (LEARNINGS #56):** Keeper spawn fade suspends player input the same way transitions and dialogue do. No movement, NPC interaction, trigger evaluation, or NPC awareness updates fire while the fade is in flight.
+- **NPC sprite rendering (registry-driven):** Adding the Keeper is a registry entry (`NPC_SPRITES`/`NPC_PORTRAITS`) plus an `AreaDefinition.npcs` row — no GameScene code edit for the sprite/portrait pipeline. Unknown sprite/portrait id falls back with a descriptive console error.
+- **Dialogue (portrait + node graph):** `portraitId: 'heron'` on `keeper-intro` reuses the existing portrait pipeline (linear filter via `NPC_PORTRAITS`). Texture-swap on portrait change only — no per-frame work.
+- **Quality checks (project-defined):** `no-silent-pass`, `no-bare-except`, `error-path-coverage`, `agents-consistency`. The `evaluateCondition` parse-failure path returns false silently by design; new error paths (malformed spawnCondition, missing storyScene id) must be observable (`console.error`) and recoverable (no crash).
+- **Investigate-first mandate (server/schema/cross-cutting phases):** This phase modifies `data/areas/types.ts` schema, `GameScene.ts` lifecycle, and `systems/dialogue.ts` showNode. Every implement task MUST be preceded by an investigate task that confirms current source structure and queues the specific implement.
