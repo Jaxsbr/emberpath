@@ -1,6 +1,6 @@
 import { TILE_SIZE } from '../maps/constants';
 import { TriggerDefinition } from '../data/areas/types';
-import { getFlag, setFlag } from '../triggers/flags';
+import { getFlag, setFlag, incrementFlag } from '../triggers/flags';
 import { evaluateCondition } from './conditions';
 
 export interface TriggerCallbacks {
@@ -77,6 +77,11 @@ export class TriggerZoneSystem {
     if (trigger.setFlags) {
       for (const [name, value] of Object.entries(trigger.setFlags)) {
         setFlag(name, value);
+      }
+    }
+    if (trigger.incrementFlags) {
+      for (const name of trigger.incrementFlags) {
+        incrementFlag(name);
       }
     }
 

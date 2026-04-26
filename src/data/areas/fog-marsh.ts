@@ -269,6 +269,47 @@ export const fogMarsh: AreaDefinition = {
       repeatable: false,
       setFlags: { marsh_trapped: true },
     },
+    // Escape-attempt feedback bands (US-69). Each band sits one tile north of
+    // the now-walled south exit (row 21 cols 13-16). Repeatable; each entry
+    // increments escape_attempts and fires the thought matching its band.
+    // Bands are mutually exclusive at every escape_attempts value
+    // (0,1 → first only; 2,3 → second only; 4+ → third only).
+    {
+      id: 'escape-attempt-1',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: 'The fog has swallowed the way back.',
+      condition: 'marsh_trapped == true AND escape_attempts < 2',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
+    },
+    {
+      id: 'escape-attempt-2',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: "I tried this path. It's gone.",
+      condition: 'marsh_trapped == true AND escape_attempts >= 2 AND escape_attempts < 4',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
+    },
+    {
+      id: 'escape-attempt-3',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: 'I cannot do this alone.',
+      condition: 'marsh_trapped == true AND escape_attempts >= 4',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
+    },
   ],
   dialogues: {
     'marsh-hermit-intro': {

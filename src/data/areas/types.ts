@@ -68,6 +68,10 @@ export interface TriggerDefinition {
   // reads the flag in the same frame sees the new value. Mirrors the
   // DialogueChoice.setFlags shape so the authoring vocabulary is consistent.
   setFlags?: Record<string, string | number | boolean>;
+  // Optional flag counters incremented on every fire. Each entry calls
+  // incrementFlag(name) — used by repeatable triggers that need to advance a
+  // counter (e.g. escape_attempts band escalation in fog-marsh).
+  incrementFlags?: string[];
   repeatable: boolean;
 }
 
