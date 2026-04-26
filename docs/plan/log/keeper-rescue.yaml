@@ -113,3 +113,11 @@ entries:
     result: pass
     notes: docs reconciliation committed; phase-completion gate prerequisites satisfied (deploy criterion deferred to post-merge by convention)
     tokens: ~6500
+  - task: 15
+    time: "2026-04-26T11:50:00Z"
+    type: phase_complete
+    story: phase
+    description: "Branch B — Phase Completion Gate. Re-ran verify (npx tsc --noEmit && npm run build) — pass. Re-ran editor build (cd tools/editor && npm run build) — pass. Done-when audit: 51 of 51 criteria ticked in phase-goal.md (0 unchecked). AGENTS.md consistency check: Conditional NPC spawn + Player ember overlay Behavior rules present and accurate; depth map row at 5.5 present; Dialogue rule supplemented with DialogueNode.setFlags + DialogueScript.endStoryScene; Trigger flag side-effects rule unchanged (still accurate). File ownership / directory layout updates deferred to phase-level reconciliation in the next phase's start (existing convention from fog-marsh-dead-end pattern). Error-path spot check: malformed spawnCondition -> evaluateCondition returns false (regression-true via existing parser); unknown sprite id -> rectangle fallback (existing); null sprite from rectangle fallback -> registerNpc skipped (US-71 implementation); null endStoryScene -> launchStoryScene not called (if-guard); unknown story scene id -> existing console.error in launchStoryScene; missing player or area in flushSave -> early return (existing). All four stories US-70, US-71, US-72, US-73 in completed_stories. Evidence summary: heron asset+registry commit 2fe573e (US-70), conditional NPC spawn + Keeper appears commit fd5bb9e (US-71), Keeper rescue dialogue + ember-given commit d7ea45f (US-72), player ember overlay + path re-opens commit 70c2410 (US-73), manual-verify doc + AGENTS.md dialogue rule commit b13d2bc (phase docs). Phase complete."
+    result: pass
+    notes: phase complete; all 51 done-when criteria met; ready for PR creation in next iteration via Branch B review-task scheduling
+    tokens: ~3000
