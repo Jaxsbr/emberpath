@@ -4,36 +4,36 @@ import { AreaDefinition, DecorationDefinition, StoredTile } from './types';
 const F = TileType.FLOOR;
 const W = TileType.WALL;
 
-// Tiny Dungeon atlas frame vocabulary used by Fog Marsh.
-// See docs/tilesets/tiny-dungeon.md (US-61) for the full per-frame intent.
-// Tiny Dungeon is a dungeon tileset — no native water, reed, or marsh-edge
-// frames — so several picks are PROVISIONAL substitutes documented inline.
+// Tiny Dungeon atlas frame vocabulary used by Fog Marsh. Verified against
+// the labeled atlas (see docs/tilesets/tiny-dungeon.md). Tiny Dungeon is a
+// dungeon tileset — every "marsh" element is a substitute. Topology is
+// authoritative; individual frames can be swapped one-line at a time.
 const FRAME = {
-  // Dry-path tile — the prior tan dungeon floor frames, now relegated to a
-  // decoration overlay so they read as "the dry, safe place to walk" against
-  // the wet base layer.
-  PATH_A: '48',
-  PATH_B: '49',
-  // Reed/cattail substitute — there is no true reed frame in Tiny Dungeon, so
-  // a small organic prop is used. Cycling two variants keeps the marsh from
-  // feeling stamped.
-  REED_A: '108',         // PROVISIONAL — organic prop substitute for reeds
-  REED_B: '109',         // PROVISIONAL — second reed variant
-  // Marsh-edge — used over the WALL cells along the impassable left edge as a
-  // "thick wet ground / dense reed wall" cue. Reuses the existing brick frame
-  // so the edge reads as solid even though it stands in for water.
-  EDGE: '0',
-  // Ruin — brick frames cycled for the ruin walls in the NE corner. Reuses
-  // the existing TileType.WALL frames for visual coherence with the
-  // collision walls under them.
-  RUIN_A: '0',
-  RUIN_B: '1',
-  RUIN_C: '2',
+  // Dry path — wooden plank frames so the path reads as a boardwalk over
+  // the (tan) damp base floor.
+  PATH_A: '36',          // wooden plank (variant A)
+  PATH_B: '37',          // wooden plank (variant B)
+  // Marsh-edge — three dark-blue frames cycled along the impassable left
+  // band. Read as deep water / pool, the closest thing Tiny Dungeon has.
+  EDGE_A: '33',
+  EDGE_B: '34',
+  EDGE_C: '35',
+  // Ruin walls — proper stone-block wall frames with mortar pattern cycled
+  // around the ruin's perimeter (visually distinct from the tan dungeon
+  // floor under the player's feet).
+  RUIN_A: '4',
+  RUIN_B: '5',
+  RUIN_C: '16',
   // Ruin door — same wooden door frame the engine uses for EXIT, retained per
   // the schematic's "diegetic exit / ruin door" requirement.
   DOOR: '22',
-  // Whispering Stones — a small carved/skull-like prop near the trigger.
-  STONES: '116',         // PROVISIONAL — visual cue at the Whispering Stones trigger position
+  // Reeds — Tiny Dungeon has no vegetation frames; log-pile frames are the
+  // closest "small, organic clumps growing in the marsh" substitute.
+  REED_A: '92',
+  REED_B: '93',
+  // Whispering Stones — bones-and-rubble floor frame as the visual cue at
+  // the trigger position; reads as "old debris on the path side."
+  STONES: '24',
 } as const;
 
 // Builder helpers (mirrored from ashen-isle.ts; intentionally duplicated to
@@ -135,11 +135,13 @@ function buildFogMarshMap(): StoredTile[][] {
 // =============================================================================
 
 const PATH_VARIANTS = [FRAME.PATH_A, FRAME.PATH_B];
+const EDGE_VARIANTS = [FRAME.EDGE_A, FRAME.EDGE_B, FRAME.EDGE_C];
 
 const fogMarshDecorations: DecorationDefinition[] = [
-  // Marsh-edge "thick wet ground" along the impassable left band — rows 1-22
-  // col 0-1 — reads as "you cannot go this way; the marsh is too thick."
-  ...rect(0, 1, 1, 22, FRAME.EDGE),
+  // Marsh-edge "deep water" along the impassable left band — rows 1-22
+  // cols 0-1 — reads as "you cannot go this way; the marsh is too deep."
+  // Cycled across three frames so no single edge frame dominates the count.
+  ...rectVariants(0, 1, 1, 22, EDGE_VARIANTS),
 
   // Dry path — vertical south-to-north col 14 rows 10-21, then horizontal
   // east on row 10 cols 15-24 to the Marsh Hermit's stoop adjacent to the

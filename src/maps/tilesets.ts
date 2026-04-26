@@ -17,12 +17,11 @@ export const TILESETS: Record<string, TilesetDefinition> = {
   'tiny-dungeon': {
     atlasKey: 'tileset-tiny-dungeon',
     tileFrames: {
-      // Wet marsh floor — moss / damp variants (row 3, cols 0-3). Substitutes
-      // for the missing dedicated wet/water frames in Tiny Dungeon (this is a
-      // dungeon tileset, not a wetlands one). The dry-path overlay in
-      // fog-marsh.ts uses the prior tan dungeon floor frames as the visually
-      // distinct "you're walking on path" cue. See docs/tilesets/tiny-dungeon.md.
-      [TileType.FLOOR]: ['36', '37', '38', '39'],
+      // Tan dungeon floor (row 4 start). Tiny Dungeon has no native wet/marsh
+      // frames; the wet-vs-dry contrast in fog-marsh.ts is achieved by overlaying
+      // wooden-plank decoration ('36'/'37') as a dry path on top of this base
+      // tan floor. See docs/tilesets/tiny-dungeon.md for the substitution.
+      [TileType.FLOOR]: ['48', '49', '50', '51'],
       // Brown dark brick wall tops (row 0 start — strong color contrast with tan floor).
       [TileType.WALL]: ['0', '1', '2'],
       // Wooden door tile — reads as threshold.

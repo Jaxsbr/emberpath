@@ -4,25 +4,24 @@ import { AreaDefinition, DecorationDefinition, StoredTile } from './types';
 const F = TileType.FLOOR;
 const W = TileType.WALL;
 
-// Tiny Town atlas frame vocabulary used by Ashen Isle.
-// See docs/tilesets/tiny-town.md (US-61) for the full per-frame intent and
-// the reasoning behind each pick. Frames marked PROVISIONAL are best-guess
-// picks based on visual atlas inspection — swap them in tiny-town.md without
-// touching topology if any read wrong.
+// Tiny Town atlas frame vocabulary used by Ashen Isle. Verified against the
+// labeled atlas (see docs/tilesets/tiny-town.md). Topology is authoritative;
+// individual frames can be swapped one-line at a time without touching map
+// or composition shape.
 const FRAME = {
-  CLIFF_A: '120',        // PROVISIONAL — stone block (variant A) standing in for water (Tiny Town has no water tiles)
-  CLIFF_B: '121',        // PROVISIONAL — stone block (variant B) — keeps no single cliff frame above 30% of decoration count
-  CLIFF_C: '122',        // PROVISIONAL — stone block (variant C)
-  PATH: '16',            // PROVISIONAL — small dirt patch
-  DOCK: '17',            // PROVISIONAL — wooden boardwalk substitute (no true dock frame in atlas)
-  FENCE: '128',          // wooden fence (per docs/plan/tileset-frame-analysis.md row 10)
-  ROOF: '60',            // PROVISIONAL — red roof segment
-  WALL_FRONT: '72',      // PROVISIONAL — wall front with window
-  DOOR: '96',            // PROVISIONAL — door front
-  BUSH: '28',            // bush (existing prop frame)
-  FLOWER: '26',          // flower cluster (existing prop frame)
-  SIGN: '27',            // sign post (existing prop frame)
-  TREE: '6',             // pine tree (existing prop frame)
+  CLIFF_A: '120',        // light grey stone block (variant A) — substitutes for water (Tiny Town has no water tiles)
+  CLIFF_B: '121',        // light grey stone block (variant B) — keeps no single cliff frame above 30% of decoration count
+  CLIFF_C: '122',        // light grey stone block (variant C)
+  PATH: '51',            // tan dirt path with grass border — clear "trodden" surface
+  DOCK: '55',            // green cobblestone — distinct surface marking the exit zone
+  FENCE: '80',           // horizontal wooden plank — fence panel
+  ROOF: '64',            // red roof segment with white pattern
+  WALL_FRONT: '72',      // brown wall middle — pairs with red roof
+  DOOR: '97',            // brown wall with brown wooden door
+  BUSH: '30',            // green bush cluster
+  FLOWER: '22',          // yellow mushroom — substitute for flower (no true flower clusters in atlas)
+  SIGN: '95',            // sign post
+  TREE: '6',             // pine tree
 } as const;
 
 // Builder helpers — keep the decorations array readable. Each helper returns
