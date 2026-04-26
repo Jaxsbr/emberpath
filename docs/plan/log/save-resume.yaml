@@ -25,3 +25,11 @@ entries:
     result: pass
     notes: US-62 complete; saveState module + flags atomic-reset wiring shipped; both builds pass; class-baseline parity achieved
     tokens: ~9000
+  - task: 4
+    time: "2026-04-26T03:25:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-62 complete (8/22 phase criteria done). Unmet stories: US-63 (autosave write, 9 structural + 7 variant baseline + 1 editor sync), US-64 (Title screen, 11 structural + 5 behavior), US-65 (reset, 9 structural + 4 variant baseline + 2 reads-as). Priority: US-63 next since the autosave write paths must exist before US-64 (Continue button consumes save) AND US-65 (manual-verify doc tests autosave). Per investigate-first mandate (server/schema/cross-cutting phase classification, cached from task 1), queued an investigate task for US-63 covering: (a) GameScene.update structure — where the world-walk branch ends vs the dialogue early-return vs transition early-return, so maybeAutosave() lands at the correct call site; (b) transitionToArea internals — destination resolution and where to insert writeSave before scene.restart; (c) DialogueSystem.setOnEnd consumer in GameScene — exactly which line the flush hooks into; (d) StoryScene close path — whether GameScene already owns a resume hook or a new one is needed; (e) area-id consistency confirmed in task 2 (ashen-isle.ts:241, fog-marsh.ts:188 match registry keys); (f) constants placement in GameScene (top-of-file with other named constants like TARGET_VISIBLE_TILES). The investigate will produce a concrete diff plan so the implement is one coherent commit."
+    result: pass
+    notes: US-63 next; investigate-first enforced; cached server/schema/cross-cutting classification still applies
+    tokens: ~3000
