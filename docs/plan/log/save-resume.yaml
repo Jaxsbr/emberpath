@@ -137,3 +137,11 @@ entries:
     result: pass
     notes: review posted as COMMENT; one minor inline concern flagged
     tokens: ~5000
+  - task: 18
+    time: "2026-04-26T05:40:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — review_stage is review_posted; per the review-task scheduling table, queued [review] handle-pr-review pr=17 auto=true for the next iteration."
+    result: pass
+    notes: handle-pr-review queued
+    tokens: ~1000
