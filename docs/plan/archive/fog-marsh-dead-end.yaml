@@ -1,5 +1,12 @@
 phase: "fog-marsh-dead-end"
 started: "2026-04-26T06:45:43Z"
+reconciliation_status:
+  r0: done  # PRD already cleaned of inline phases — no-op
+  r1: done  # No docs/architecture/ARCHITECTURE.md in this project — no-op
+  r2: done  # phases/fog-marsh-dead-end.md set to Status: shipped, stories tagged [Shipped]; PRD index already shows Shipped
+  r3: done  # AGENTS.md updates were applied in-phase (task 12 of log) — file ownership rows + Behavior rules entries
+  r4: done  # No docs/manual/ or GUIDE.md in this project — no-op
+  r5: done  # Combined with start commit — see "chore: start keeper-rescue phase"
 entries:
   - task: 1
     time: "2026-04-26T06:50:00Z"
