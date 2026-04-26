@@ -21,3 +21,21 @@
 **Scope:** universal
 
 ---
+
+### Learning EP-02 — Phaser scene.restart hygiene: instance-field GameObject references
+
+**Failure class:** `scene-lifecycle-leak`
+
+**Description:** `scene.restart` does NOT reset class fields. Instance state (Maps, arrays, single refs) persists between runs, but Phaser destroys the referenced GameObjects (Sprites, Tweens, Timers, Particle Emitters) during shutdown. Stale references in fields then point to dead objects. Two failure modes have shipped: (1) npc-behavior PR #14 — `this.anims.create()` fired on every restart producing "key already exists" warnings (fixed with `anims.exists` guards); (2) keeper-rescue post-build-loop — `npcSpritesById` Map held a destroyed sprite from the previous Fog Marsh visit, US-71's new `if (npcSpritesById.has(id)) return null` idempotency guard in `spawnNpcSprite` then skipped fresh creation on re-entry, NpcBehaviorSystem's constructor pulled the destroyed sprite, `runtime.sprite.play()` crashed at the next tick.
+
+**Pattern:** Any class field that holds a Phaser GameObject reference (or a Map/array of them) must be reset explicitly at the top of the corresponding `renderXxx` method. The reset is *especially* required when the field is also touched by a post-construction code path (idempotency guards, runtime spawn, conditional re-render) — those paths turn the implicit "Map.set overwrites" cleanup into a hard skip on stale entries.
+
+**Prevention point:** During the investigate task for any phase that adds or modifies an instance field on a Scene class:
+1. Enumerate every `private xxx: Phaser.GameObjects.* | Map<...> | (...)[]` field touched by the change.
+2. For each, identify which `renderXxx` / `setupXxx` method is the canonical re-create path on `scene.restart`.
+3. Confirm the field is reset (`= []`, `.clear()`, `= null`) at the top of that method, BEFORE any code reads or writes it.
+4. If a new idempotency guard is added (`if (this.map.has(id)) return`), audit ALL callers — fresh-restart callers must run AFTER the reset, not before.
+
+**Scope:** phaser-game
+
+---
