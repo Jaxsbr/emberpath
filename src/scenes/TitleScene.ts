@@ -98,7 +98,7 @@ export class TitleScene extends Phaser.Scene {
     const { x, y } = save.position;
     const maxX = dest.mapCols * TILE_SIZE;
     const maxY = dest.mapRows * TILE_SIZE;
-    if (x < 0 || x > maxX || y < 0 || y > maxY) {
+    if (x < 0 || x >= maxX || y < 0 || y >= maxY) {
       console.warn('emberpath: Continue position out of bounds — falling back to playerSpawn', save.position);
       clearSave();
       this.scene.start('GameScene');
