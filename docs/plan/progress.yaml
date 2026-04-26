@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[phase] Docs reconciliation — create docs/plan/fog-marsh-dead-end-manual-verify.md (covering Threshold + Exit closure + Visual closure + Escape attempts + Reset/save-resume + Tampered flags subsections per the spec's user guidance), then update AGENTS.md: (a) Behavior rules gains a 'Conditional exits and decorations' entry covering shared condition field semantics + flag-change re-render contract + no-scene-restart rule + 'Trigger flag side-effects' (setFlags + incrementFlags); (b) File ownership rows updated for data/areas/types.ts (added TriggerDefinition.setFlags, TriggerDefinition.incrementFlags, DecorationDefinition.condition), data/areas/fog-marsh.ts (threshold + escape triggers + conditional exit/decorations), scenes/GameScene.ts (decoration condition evaluation + flag-change re-render hook + collision flip), triggers/flags.ts (flag-change subscriber API), systems/triggerZone.ts (consumes setFlags + incrementFlags); (c) Directory layout adds docs/plan/fog-marsh-dead-end-manual-verify.md entry."
+  task_number: 12
+  next_task: null
   last_result: pass
   consecutive_fails: 0
 
