@@ -27,17 +27,17 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 
 #### Structural — save module (US-62)
 
-- [ ] `src/triggers/saveState.ts` exists and exports `loadSave`, `writeSave`, `clearSave`, `hasSave`, `resetWorld` (verified: source read) [US-62]
-- [ ] `SaveState` type is `{ version: 1; areaId: string; position: { x: number; y: number } }` (verified: source read) [US-62]
-- [ ] `STORAGE_KEY` constant is `'emberpath_save'`, distinct from `triggers/flags.ts`'s `'emberpath_flags'` (verified: grep both files) [US-62]
-- [ ] `loadSave()` returns `null` on JSON parse failure AND calls `clearSave()` to scrub the corrupt entry (verified by setting `localStorage.emberpath_save = '{not json'` in DevTools, reloading, observing one warn + the entry removed) [US-62]
-- [ ] `loadSave()` validates `version === 1`, `areaId` is a known registry id (consults `getAllAreaIds()`), and `position.x/y` are finite numbers; failure returns `null` and clears (verified: source read of the validation branch + a temp tampered `areaId: 'nonexistent'` round-trip) [US-62]
-- [ ] `writeSave()` wraps `setItem` in `try/catch`; quota / unavailable failures log exactly once per session via a module-level `writeFailureLogged` flag and otherwise silently continue (verified: source read; manual quota test by repeatedly stuffing localStorage to > 5 MB then triggering an autosave) [US-62]
-- [ ] `clearSave()` is idempotent and wraps `removeItem` in `try/catch` (verified: source read + calling twice in a row) [US-62]
-- [ ] `hasSave()` returns true iff `loadSave()` is non-null (verified: source read of the relationship; correctness via DevTools toggling) [US-62]
-- [ ] `resetAllFlags()` in `triggers/flags.ts` calls `clearSave()` from `saveState.ts` so reset is atomic — wipes flags AND world save in one call (verified: source read; manual: set a flag, set a save, click Reset Progress, observe both gone) [US-62]
-- [ ] No call site outside `saveState.ts` and `flags.ts` reads or writes `'emberpath_save'` or `'emberpath_flags'` directly (verified: grep `localStorage` across `src/`) [US-62]
-- [ ] A `version: 2` save (manually written in DevTools) loads as `null` and is cleared — the version field is a real gate, not cosmetic (verified by tampered round-trip) [US-62]
+- [x] `src/triggers/saveState.ts` exists and exports `loadSave`, `writeSave`, `clearSave`, `hasSave`, `resetWorld` (verified: source read) [US-62]
+- [x] `SaveState` type is `{ version: 1; areaId: string; position: { x: number; y: number } }` (verified: source read) [US-62]
+- [x] `STORAGE_KEY` constant is `'emberpath_save'`, distinct from `triggers/flags.ts`'s `'emberpath_flags'` (verified: grep both files) [US-62]
+- [x] `loadSave()` returns `null` on JSON parse failure AND calls `clearSave()` to scrub the corrupt entry (verified by setting `localStorage.emberpath_save = '{not json'` in DevTools, reloading, observing one warn + the entry removed) [US-62]
+- [x] `loadSave()` validates `version === 1`, `areaId` is a known registry id (consults `getAllAreaIds()`), and `position.x/y` are finite numbers; failure returns `null` and clears (verified: source read of the validation branch + a temp tampered `areaId: 'nonexistent'` round-trip) [US-62]
+- [x] `writeSave()` wraps `setItem` in `try/catch`; quota / unavailable failures log exactly once per session via a module-level `writeFailureLogged` flag and otherwise silently continue (verified: source read; manual quota test by repeatedly stuffing localStorage to > 5 MB then triggering an autosave) [US-62]
+- [x] `clearSave()` is idempotent and wraps `removeItem` in `try/catch` (verified: source read + calling twice in a row) [US-62]
+- [x] `hasSave()` returns true iff `loadSave()` is non-null (verified: source read of the relationship; correctness via DevTools toggling) [US-62]
+- [x] `resetAllFlags()` in `triggers/flags.ts` calls `clearSave()` from `saveState.ts` so reset is atomic — wipes flags AND world save in one call (verified: source read; manual: set a flag, set a save, click Reset Progress, observe both gone) [US-62]
+- [x] No call site outside `saveState.ts` and `flags.ts` reads or writes `'emberpath_save'` or `'emberpath_flags'` directly (verified: grep `localStorage` across `src/`) [US-62]
+- [x] A `version: 2` save (manually written in DevTools) loads as `null` and is cleared — the version field is a real gate, not cosmetic (verified by tampered round-trip) [US-62]
 
 #### Structural — autosave write (US-63)
 
@@ -89,9 +89,9 @@ The build-loop's `frontend-design` skill applies to the Title screen layout work
 
 The save module joins the class of "world-state writers" that already includes `flags.ts`. Every shared behaviour is verified explicitly:
 
-- [ ] Both modules use `try/catch` around `localStorage` reads AND writes (verified: source read of both modules) [US-62]
-- [ ] Both modules log on failure exactly once per session (not on every call) — `flags.ts` may not currently log; if so, US-62 brings parity by adding a once-per-session warn for write failures (verified: source read) [US-62]
-- [ ] Both modules' `reset` paths are idempotent (verified: calling `resetAllFlags()` twice in a row + `clearSave()` twice in a row neither throw nor produce duplicate logs) [US-62]
+- [x] Both modules use `try/catch` around `localStorage` reads AND writes (verified: source read of both modules) [US-62]
+- [x] Both modules log on failure exactly once per session (not on every call) — `flags.ts` may not currently log; if so, US-62 brings parity by adding a once-per-session warn for write failures (verified: source read) [US-62]
+- [x] Both modules' `reset` paths are idempotent (verified: calling `resetAllFlags()` twice in a row + `clearSave()` twice in a row neither throw nor produce duplicate logs) [US-62]
 
 #### Variant baseline — every save trigger point fires for every area
 
@@ -123,12 +123,12 @@ Each reads-as is paired with an objective mechanism proxy.
 
 #### Error paths
 
-- [ ] **Corrupt JSON in localStorage** (`emberpath_save = "not json"`): on Title boot, `hasSave()` returns false, the entry is removed from localStorage, exactly one `console.warn` fires, no crash (verified manually) [US-62]
-- [ ] **Tampered shape** (`emberpath_save = '{"version":1,"areaId":"nonexistent","position":{"x":0,"y":0}}'`): on Title boot, `hasSave()` returns false, the entry is removed, exactly one warn fires (verified manually) [US-62]
-- [ ] **Wrong version** (`emberpath_save = '{"version":2,...}'`): same handling — null-treated and cleared (verified manually) [US-62]
+- [x] **Corrupt JSON in localStorage** (`emberpath_save = "not json"`): on Title boot, `hasSave()` returns false, the entry is removed from localStorage, exactly one `console.warn` fires, no crash (verified manually) [US-62]
+- [x] **Tampered shape** (`emberpath_save = '{"version":1,"areaId":"nonexistent","position":{"x":0,"y":0}}'`): on Title boot, `hasSave()` returns false, the entry is removed, exactly one warn fires (verified manually) [US-62]
+- [x] **Wrong version** (`emberpath_save = '{"version":2,...}'`): same handling — null-treated and cleared (verified manually) [US-62]
 - [ ] **Continue with stale `areaId`** (e.g. saved on `'old-name'` after an area rename): tapping Continue triggers fallback to a fresh start; first click is responsive (verified manually) [US-64]
-- [ ] **localStorage unavailable / blocked** (Safari private mode iframe sandbox): the game runs end-to-end without crash; Continue stays absent across reloads; exactly one warn fires per session for save-write failure (verified in iOS Safari private tab) [US-62]
-- [ ] **Quota exceeded** (localStorage stuffed > 5 MB by a co-resident origin): same handling as private mode — game runs, single warn, Continue may stay absent (verified by manual quota stuffing) [US-62]
+- [x] **localStorage unavailable / blocked** (Safari private mode iframe sandbox): the game runs end-to-end without crash; Continue stays absent across reloads; exactly one warn fires per session for save-write failure (verified in iOS Safari private tab) [US-62]
+- [x] **Quota exceeded** (localStorage stuffed > 5 MB by a co-resident origin): same handling as private mode — game runs, single warn, Continue may stay absent (verified by manual quota stuffing) [US-62]
 - [ ] **`?reset=1` and `?clearSave=1` together**: the wipe is total (both clear), URL cleans both params (verified manually) [US-65]
 
 #### Editor sync
@@ -140,7 +140,7 @@ Each reads-as is paired with an objective mechanism proxy.
 - [ ] **"Invisible when it works"** (design direction) traces to: zero new HUD elements; only Title labels change; in-game frame has zero per-frame localStorage work on idle frames (loop-invariant audit). [phase]
 - [ ] **"Continue is the default when a save exists"** (design direction) traces to: Title layout branch on `hasSave()`; primary visual weight on Continue; New Game smaller. [US-64]
 - [ ] **"Reset is one click and atomic"** (design direction) traces to: `resetWorld()` calls `clearSave` + `resetAllFlags` synchronously; Continue button removal is on the same frame as reset confirmation. [US-65]
-- [ ] **"Failures degrade gracefully"** (design direction) traces to: every error-path criterion above; once-per-session warn flag in saveState. [US-62]
+- [x] **"Failures degrade gracefully"** (design direction) traces to: every error-path criterion above; once-per-session warn flag in saveState. [US-62]
 
 #### Invariants
 
