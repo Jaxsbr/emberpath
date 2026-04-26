@@ -27,6 +27,15 @@ const FADE_DURATION = 400;
 // beat to register the appearance before regaining control.
 const KEEPER_FADE_DURATION_MS = 500;
 const KEEPER_INPUT_SUSPEND_MS = 1000;
+// Player ember overlay (US-73). Vertical offset from the player's centre to
+// the ember's centre — placed above the head silhouette without z-fighting
+// the body sprite. The overlay renders at depth 5.5 (literal fractional
+// depth between Entities at 5 and Thoughts at 8) so it always shows above
+// the player but below thought bubbles.
+const EMBER_OFFSET_Y = -28;
+const EMBER_RADIUS = 6;
+const EMBER_COLOR = 0xf2c878;
+const EMBER_DEPTH = 5.5;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.
@@ -76,6 +85,13 @@ export class GameScene extends Phaser.Scene {
   private spawnConditionUnsubscribes: (() => void)[] = [];
   private spawnInProgress = false;
   private activeNpcs: NpcDefinition[] = [];
+  // Player ember overlay (US-73). Created when has_ember_mark flips true OR
+  // when the flag is already true on scene create (covers area transitions
+  // and Continue-from-save). Destroyed when the flag is unset (Reset Progress
+  // notifies via resetAllFlags). The unsubscribe handle is invoked on
+  // cleanupResize.
+  private emberOverlay: Phaser.GameObjects.Arc | null = null;
+  private hasEmberMarkUnsubscribe: (() => void) | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -259,6 +275,38 @@ export class GameScene extends Phaser.Scene {
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —
     // the player is back on the world layer so this is a safe checkpoint.
     this.events.on('resume', this.flushSave, this);
+
+    // Player ember overlay (US-73). Created on flag flip OR if the flag is
+    // already true on scene create (covers area transitions to Ashen Isle
+    // post-rescue and Continue-from-save). Destroyed on flag unset (Reset
+    // Progress notifies via resetAllFlags).
+    if (getFlag('has_ember_mark') === true) this.maybeCreateEmberOverlay();
+    this.hasEmberMarkUnsubscribe = onFlagChange('has_ember_mark', (_, value) => {
+      if (value === true) this.maybeCreateEmberOverlay();
+      else this.destroyEmberOverlay();
+    });
+  }
+
+  // Idempotent — returns early when the overlay already exists. Created at
+  // EMBER_DEPTH (5.5) so it draws above the player (Entities, depth 5) and
+  // below thought bubbles (depth 8). Added to uiCam.ignore so the UI camera
+  // does not double-render the world-space ember.
+  private maybeCreateEmberOverlay(): void {
+    if (this.emberOverlay) return;
+    if (!this.player) return;
+    this.emberOverlay = this.add.circle(
+      this.player.x,
+      this.player.y + EMBER_OFFSET_Y,
+      EMBER_RADIUS,
+      EMBER_COLOR,
+    );
+    this.emberOverlay.setDepth(EMBER_DEPTH);
+    this.cameras.getCamera('ui')?.ignore(this.emberOverlay);
+  }
+
+  private destroyEmberOverlay(): void {
+    this.emberOverlay?.destroy();
+    this.emberOverlay = null;
   }
 
   update(_time: number, delta: number): void {
@@ -324,6 +372,14 @@ export class GameScene extends Phaser.Scene {
     this.debugOverlay.update();
 
     this.maybeAutosave();
+
+    // Ember overlay tracks the player's centre minus a fixed Y offset.
+    // Loop-invariant EP-01: single setPosition call, no allocations, no
+    // object literals — the overlay is reused frame-to-frame, only its
+    // position vector changes.
+    if (this.emberOverlay) {
+      this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
+    }
   }
 
   // Throttled walk-frame autosave. Returns before any localStorage IO when the
@@ -712,6 +768,11 @@ export class GameScene extends Phaser.Scene {
     }
     for (const unsub of this.spawnConditionUnsubscribes) unsub();
     this.spawnConditionUnsubscribes = [];
+    if (this.hasEmberMarkUnsubscribe) {
+      this.hasEmberMarkUnsubscribe();
+      this.hasEmberMarkUnsubscribe = null;
+    }
+    this.destroyEmberOverlay();
   }
 
   // Reflect the marsh_trapped flag on Fog Marsh: when true, the south-exit
