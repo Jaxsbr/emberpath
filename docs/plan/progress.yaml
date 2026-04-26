@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: "[US-63] Implement autosave hooks in GameScene. (a) Import writeSave from '../triggers/saveState'. (b) Add module-level SAVE_THROTTLE_MS=1000, SAVE_MIN_DELTA_PX=2 alongside FADE_DURATION. (c) Add private fields lastSaveTime/lastSaveX/lastSaveY. (d) Add private maybeAutosave() — returns early on transitionInProgress, dialogue active, elapsed<THROTTLE, |delta|<MIN_DELTA — otherwise writeSave({version:1, areaId:this.area.id, position:{x,y}}) and update bookkeeping. (e) Add private flushSave() — unconditional write with transitionInProgress safety guard, updates bookkeeping. (f) update() line 252 calls this.maybeAutosave() at end of world-walk branch. (g) transitionToArea inserts a flush of the DESTINATION payload between transitionInProgress=true and fadeOut, computing destX/destY via the same pixel formula as createPlayer. (h) dialogueSystem.setOnEnd callback appends this.flushSave(). (i) create() registers this.events.on('resume', this.flushSave, this); cleanupResize() removes it. Verify: npx tsc --noEmit && npm run build passes; cd tools/editor && npm run build passes (editor unaffected)."
+  task_number: 7
+  next_task: null
 
   # --- Review (owner: iterator) ---
   review_stage: null
