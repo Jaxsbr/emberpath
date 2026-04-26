@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-62] Implement saveState module + flags.ts atomic-reset wiring. (a) Create src/triggers/saveState.ts: STORAGE_KEY 'emberpath_save' (module-private); SaveState {version:1;areaId:string;position:{x:number;y:number}}; isValidSave type-guard (version===1, areaId in getAllAreaIds(), position.x/y Number.isFinite); loadSave (outer try/catch around getItem, inner try/catch around JSON.parse calling clearSave+warn-once-style on parse fail, validation branch calling clearSave+warn on shape fail, returns SaveState | null); writeSave (try/catch + module-level writeFailureLogged once-per-session flag); clearSave (try/catch around removeItem; idempotent); hasSave (=== loadSave() !== null); resetWorld (clearSave THEN resetAllFlags). (b) Edit src/triggers/flags.ts: add resetAllFlags-internal clearSave call (atomic per US-62); re-export resetWorld from saveState (US-65 backward-compat). Verify (npx tsc --noEmit && npm run build) passes."
+  task_number: 4
+  next_task: null
 
   # --- Review (owner: iterator) ---
   review_stage: null
