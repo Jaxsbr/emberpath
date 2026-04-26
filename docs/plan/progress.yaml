@@ -27,10 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
-  last_result: pass
-  consecutive_fails: 0
+  task_number: 2
+  next_task: "[US-62] Investigate: produce concrete diff plan for src/triggers/saveState.ts — SaveState type {version:1; areaId; position:{x,y}}; STORAGE_KEY 'emberpath_save'; loadSave try/catch + scrub-on-corrupt + version/areaId/finite-numerics validation consulting getAllAreaIds(); writeSave try/catch + module-private writeFailureLogged once-per-session warn flag; clearSave idempotent + try/catch; hasSave === loadSave-non-null; resetWorld order (clearSave THEN resetAllFlags); flags.ts edits (resetAllFlags calls clearSave; re-export resetWorld for backward compat at TitleScene call sites). Confirm: registry key === area.id for ashen-isle and fog-marsh (US-63 dep), and identify any existing direct localStorage uses outside flags.ts to flag as out-of-scope-violations."
 
   # --- Review (owner: iterator) ---
   review_stage: null
