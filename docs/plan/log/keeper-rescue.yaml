@@ -73,3 +73,11 @@ entries:
     result: pass
     notes: US-72 milestone complete; story commit d7ea45f; phase 'AGENTS.md sweep' criterion deferred to phase-level reconciliation
     tokens: ~10000
+  - task: 10
+    time: "2026-04-26T11:05:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — picking next task. US-70 + US-71 + US-72 shipped; story milestones 2fe573e + fd5bb9e + d7ea45f. Remaining work: US-73 (12 criteria incl. 2 [US-73, phase] AGENTS.md rows), phase-level (full-arc manual verify, save/resume parity, reset parity, manual-verify checklist, atlas verification, AGENTS.md sweep, build pass, deploy verify), 2 safety criteria. US-73 is the last story — small in scope (ember overlay sprite anchored to player, flag-driven create/destroy, persist across area transitions and reload). Path-re-opens criterion is already source-true post-US-72 — the marsh_trapped: false flip feeds the existing US-67/68 onFlagChange subscriber. Investigate-first mandated. Queued [US-73] investigate."
+    result: pass
+    notes: US-73 next; investigate-first enforced
+    tokens: ~2000

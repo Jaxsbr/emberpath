@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 10
-  next_task: null
+  task_number: 11
+  next_task: "[US-73] Investigate: confirm Phaser.GameObjects.Arc surface for the ember dot at depth 5.5; identify the per-frame setPosition call site at the END of GameScene.update (no allocations); plan onFlagChange('has_ember_mark') subscriber lifecycle (create on flip true, destroy on flip undefined); plan AGENTS.md depth-map row + Behavior rules entry"
   last_result: pass
   consecutive_fails: 0
 
