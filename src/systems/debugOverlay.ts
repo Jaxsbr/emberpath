@@ -12,6 +12,17 @@ const LABEL_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
   backgroundColor: '#000000aa',
   padding: { x: 2, y: 1 },
 };
+// HUD panel — UI-camera-fixed, depth above world overlays. Multi-line text
+// fed by an external provider (e.g. LightingSystem snapshot via GameScene).
+const HUD_DEPTH = 110; // above UI camera default
+const HUD_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
+  fontSize: '11px',
+  color: '#ffffff',
+  backgroundColor: '#000000cc',
+  padding: { x: 6, y: 4 },
+};
+const HUD_OFFSET_X = 8;
+const HUD_OFFSET_Y = 8;
 
 const TYPE_COLORS: Record<string, number> = {
   thought: 0x4488ff,  // blue
@@ -28,6 +39,12 @@ export class DebugOverlaySystem {
   private toggleKey: Phaser.Input.Keyboard.Key | null = null;
   private dialogueActiveCheck: (() => boolean) | null = null;
   private area: AreaDefinition | null = null;
+  // Optional HUD provider — when set, draw() creates a UI-camera text panel
+  // showing the provider's multi-line string; update() refreshes it each
+  // frame the overlay is visible. GameScene wires this in create() to
+  // surface LightingSystem state (US-74 spec).
+  private hudProvider: (() => string) | null = null;
+  private hudText: Phaser.GameObjects.Text | null = null;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -38,6 +55,10 @@ export class DebugOverlaySystem {
 
   setDialogueActiveCheck(check: () => boolean): void {
     this.dialogueActiveCheck = check;
+  }
+
+  setHudProvider(provider: () => string): void {
+    this.hudProvider = provider;
   }
 
   loadArea(area: AreaDefinition): void {
@@ -60,6 +81,11 @@ export class DebugOverlaySystem {
         this.clear();
       }
     }
+    // Refresh HUD text every frame the overlay is visible. Provider returns a
+    // primitive string — no allocation in this path beyond the string itself.
+    if (this.visible && this.hudText && this.hudProvider) {
+      this.hudText.setText(this.hudProvider());
+    }
   }
 
   private draw(): void {
@@ -75,6 +101,17 @@ export class DebugOverlaySystem {
     this.drawTriggerZones(this.area.triggers);
     this.drawExitZones(this.area.exits);
     this.drawNpcRadii(this.area.npcs);
+    this.drawHud();
+  }
+
+  // HUD text panel — UI-camera-fixed (main camera ignores it so the world's
+  // zoom/scroll doesn't move it). Created only when a provider is set.
+  private drawHud(): void {
+    if (!this.hudProvider) return;
+    this.hudText = this.scene.add.text(HUD_OFFSET_X, HUD_OFFSET_Y, this.hudProvider(), HUD_STYLE);
+    this.hudText.setDepth(HUD_DEPTH);
+    this.hudText.setScrollFactor(0);
+    this.scene.cameras.main.ignore(this.hudText);
   }
 
   private drawTriggerZones(triggers: TriggerDefinition[]): void {
@@ -181,6 +218,10 @@ export class DebugOverlaySystem {
       label.destroy();
     }
     this.labels = [];
+    if (this.hudText) {
+      this.hudText.destroy();
+      this.hudText = null;
+    }
   }
 
   destroy(): void {

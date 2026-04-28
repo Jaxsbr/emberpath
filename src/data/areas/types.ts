@@ -6,6 +6,16 @@ import { TileType } from '../../maps/constants';
 // compiler-enforced instead of convention.
 export type StoredTile = TileType.FLOOR | TileType.WALL;
 
+// Per-element light declaration consumed by LightingSystem (US-75). Tier 1 =
+// always rendered. Tier 2 = rendered at intensity 0 until has_ember_mark === true,
+// then renders at the configured intensity. Author-controlled — no user-input
+// pathway feeds this. All fields optional so omitting the block uses defaults.
+export interface LightSpec {
+  radius?: number;
+  intensity?: number;
+  tier?: 1 | 2;
+}
+
 export interface NpcDefinition {
   id: string;
   name: string;
@@ -25,6 +35,11 @@ export interface NpcDefinition {
   // and any newly-eligible NPC fades in (alpha 0 -> 1, KEEPER_FADE_DURATION_MS).
   // Idempotent — already-spawned NPCs are skipped on re-evaluation.
   spawnCondition?: string;
+  // Optional per-NPC override of the default tier-1 NPC light registered at
+  // spawn (US-75). Omit the block to use LIGHTING_CONFIG.npcRadius/npcIntensity.
+  // Set `intensity` lower to read as "fading" (Old Man → Fading metaphor).
+  // Set `tier: 2` to make this NPC's light dormant until the player has the Ember.
+  lightOverride?: LightSpec;
 }
 
 export interface DialogueChoice {
@@ -61,6 +76,14 @@ export interface DialogueScript {
   // calls launchStoryScene with the id. Existing scripts without this field
   // close as before — no story scene launch.
   endStoryScene?: string;
+  // Optional flag-driven script gate. When two scripts target the same NPC
+  // (matched by id prefix `${npc.id}-`), GameScene.selectScriptForNpc walks
+  // all variants and picks the first whose condition evaluates true; the base
+  // script `${npc.id}-intro` (no condition) is the fallback. Used by US-81 so
+  // the Old Man's post-Ember branch (`old-man-illumined`, condition
+  // `has_ember_mark == true`) takes precedence when the player carries the
+  // Ember, without disturbing the base Fading dialogue.
+  condition?: string;
 }
 
 export interface StoryBeat {
@@ -96,6 +119,10 @@ export interface TriggerDefinition {
   // counter (e.g. escape_attempts band escalation in fog-marsh).
   incrementFlags?: string[];
   repeatable: boolean;
+  // Optional light registered at the trigger's centre (US-75). Used to mark
+  // "this is a place worth investigating" — wayfinding without exposition.
+  // Tier 2 lights only render post-Ember (US-77 reveal pattern).
+  light?: LightSpec;
 }
 
 export interface ExitDefinition {
@@ -131,6 +158,14 @@ export interface DecorationDefinition {
   // (Learning EP-01: no per-frame full re-render). Existing decorations without
   // a condition render unconditionally as today.
   condition?: string;
+  // Optional light registered at the decoration's centre (US-75). E.g. a glowing
+  // path stone or a lantern. Tier 2 = dormant until Ember.
+  light?: LightSpec;
+  // Optional alpha gating (US-77). When true, the decoration's alpha is set
+  // per movement-tick to its lit coverage: 1.0 if its centre falls inside any
+  // active light, 0.0 otherwise. Combined with `light: { tier: 2 }` registered
+  // at the same position, this hides the decoration until post-Ember.
+  alphaGatedByLight?: boolean;
 }
 
 export interface AreaDefinition {

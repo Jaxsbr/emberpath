@@ -178,11 +178,6 @@ const fogMarshDecorations: DecorationDefinition[] = [
   { col: 22, row: 16, spriteFrame: FRAME.REED_A },
   { col: 7, row: 20, spriteFrame: FRAME.REED_B },
 
-  // Whispering Stones — small carved-stone visual cue immediately west of
-  // the path, sitting beside the trigger zone at (13, 16) so the player sees
-  // it as they walk past on the path.
-  { col: 13, row: 16, spriteFrame: FRAME.STONES },
-
   // South-exit closure (US-68). Paired conditional decorations sit on row 22
   // cols 13-16: PATH frames render when marsh_trapped == false (the way home
   // is open) and EDGE deep-water frames render when marsh_trapped == true (the
@@ -210,13 +205,15 @@ export const fogMarsh: AreaDefinition = {
     // (24, 9); his spawn at (24, 10) is the path tile adjacent to the door.
     { id: 'marsh-hermit', name: 'Marsh Hermit', col: 24, row: 10, color: 0x5a7a6b, sprite: 'marsh-hermit', wanderRadius: 1, awarenessRadius: 3 },
     // The Keeper (white heron) — appears mid-marsh once Pip has crossed the
-    // threshold (marsh_trapped == true) AND bumped the closed exit at least
-    // four times (escape_attempts >= 4). The 'keeper_met == false' clause is
-    // the one-shot guard — once US-72's keeper-intro dialogue fires keeper_met,
-    // the Keeper never re-spawns even if the player resets escape_attempts.
-    // wanderRadius 0 (stationary). awarenessRadius 2 so he turns to face Pip
-    // when Pip approaches. Linear-filter portrait via NPC_PORTRAITS registry.
-    { id: 'keeper', name: 'The Keeper', col: 14, row: 8, color: 0xfff5d6, sprite: 'heron', wanderRadius: 0, awarenessRadius: 2, spawnCondition: 'marsh_trapped == true AND escape_attempts >= 4 AND keeper_met == false' },
+    // threshold (marsh_trapped == true) AND surrendered (marsh_surrendered ==
+    // true — set by GameScene.updateSurrender after Pip has tried at least
+    // twice and then held still in proximity for SURRENDER_DURATION_MS, US-80).
+    // The 'keeper_met == false' clause is the one-shot guard — once US-72's
+    // keeper-intro dialogue fires keeper_met, the Keeper never re-spawns even
+    // if the player resets escape_attempts. wanderRadius 0 (stationary).
+    // awarenessRadius 2 so he turns to face Pip when Pip approaches.
+    // Linear-filter portrait via NPC_PORTRAITS registry.
+    { id: 'keeper', name: 'The Keeper', col: 14, row: 8, color: 0xfff5d6, sprite: 'heron', wanderRadius: 0, awarenessRadius: 2, spawnCondition: 'marsh_trapped == true AND marsh_surrendered == true AND keeper_met == false' },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; the prior
   // dungeon-prop list assumed the old "stone pen" map and would now sit on
@@ -251,18 +248,6 @@ export const fogMarsh: AreaDefinition = {
       repeatable: false,
     },
     {
-      // Whispering Stones — re-positioned to (13, 16) per schematic, immediately
-      // west of the dry path so the player triggers it just by passing by.
-      id: 'whispering-stones',
-      col: 13,
-      row: 16,
-      width: 1,
-      height: 1,
-      type: 'dialogue',
-      actionRef: 'whispering-stones',
-      repeatable: true,
-    },
-    {
       // Threshold north of the Marsh Hermit (10, 24) — crossing this band sets
       // marsh_trapped, which closes the south exit (US-67) and swaps the path
       // decorations to deep-water EDGE frames (US-68). One-shot; player-walked
@@ -277,11 +262,20 @@ export const fogMarsh: AreaDefinition = {
       repeatable: false,
       setFlags: { marsh_trapped: true },
     },
-    // Escape-attempt feedback bands (US-69). Each band sits one tile north of
-    // the now-walled south exit (row 21 cols 13-16). Repeatable; each entry
-    // increments escape_attempts and fires the thought matching its band.
-    // Bands are mutually exclusive at every escape_attempts value
-    // (0,1 → first only; 2,3 → second only; 4+ → third only).
+    // Escape-attempt feedback bands (US-79). Each band sits on row 21 cols
+    // 13-16, one tile north of the now-walled south exit. Player walks south
+    // → enters band → condition matches their current escape_attempts value
+    // → escape_attempts increments → thought fires. The condition order is
+    // checked BEFORE the increment, so band N fires at value N-1 (the first
+    // attempt at value 0 fires band 1).
+    //
+    // The fog-flash visual fires from GameScene's escape_attempts subscriber
+    // (US-79 wiring) — same trigger, separate concern (visual vs text).
+    //
+    // Lines escalate from "the path is gone" through "I cannot do this" so
+    // grace lands on a genuinely-tried player. Band 4 latches — every attempt
+    // beyond the third repeats "I cannot do this." (the same line that opens
+    // the surrender window in US-80).
     {
       id: 'escape-attempt-1',
       col: 13,
@@ -289,8 +283,8 @@ export const fogMarsh: AreaDefinition = {
       width: 4,
       height: 1,
       type: 'thought',
-      actionRef: 'The fog has swallowed the way back.',
-      condition: 'marsh_trapped == true AND escape_attempts < 2',
+      actionRef: 'The path is gone.',
+      condition: 'marsh_trapped == true AND escape_attempts < 1',
       repeatable: true,
       incrementFlags: ['escape_attempts'],
     },
@@ -301,8 +295,8 @@ export const fogMarsh: AreaDefinition = {
       width: 4,
       height: 1,
       type: 'thought',
-      actionRef: "I tried this path. It's gone.",
-      condition: 'marsh_trapped == true AND escape_attempts >= 2 AND escape_attempts < 4',
+      actionRef: 'There must be a way back.',
+      condition: 'marsh_trapped == true AND escape_attempts == 1',
       repeatable: true,
       incrementFlags: ['escape_attempts'],
     },
@@ -313,8 +307,20 @@ export const fogMarsh: AreaDefinition = {
       width: 4,
       height: 1,
       type: 'thought',
-      actionRef: 'I cannot do this alone.',
-      condition: 'marsh_trapped == true AND escape_attempts >= 4',
+      actionRef: 'I cannot find it.',
+      condition: 'marsh_trapped == true AND escape_attempts == 2',
+      repeatable: true,
+      incrementFlags: ['escape_attempts'],
+    },
+    {
+      id: 'escape-attempt-4-latch',
+      col: 13,
+      row: 21,
+      width: 4,
+      height: 1,
+      type: 'thought',
+      actionRef: 'I cannot do this.',
+      condition: 'marsh_trapped == true AND escape_attempts >= 3',
       repeatable: true,
       incrementFlags: ['escape_attempts'],
     },
@@ -356,23 +362,6 @@ export const fogMarsh: AreaDefinition = {
           id: 'advice',
           speaker: 'Marsh Hermit',
           text: 'Listen to the stones if you can. They remember what the fog has forgotten.',
-        },
-      ],
-    },
-    'whispering-stones': {
-      id: 'whispering-stones',
-      startNodeId: 'whisper',
-      nodes: [
-        {
-          id: 'whisper',
-          speaker: 'Whispering Stones',
-          text: 'The stones hum with a low vibration. Words form at the edge of hearing...',
-          nextId: 'message',
-        },
-        {
-          id: 'message',
-          speaker: 'Whispering Stones',
-          text: '"The ember does not die. It waits beneath the ash for one who will carry it."',
         },
       ],
     },

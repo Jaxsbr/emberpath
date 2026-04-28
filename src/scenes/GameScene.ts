@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
 import { TILESETS, resolveFrame, hasTileset } from '../maps/tilesets';
-import { AreaDefinition, NpcDefinition } from '../data/areas/types';
+import { AreaDefinition, NpcDefinition, DialogueScript } from '../data/areas/types';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
@@ -15,6 +15,9 @@ import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
 import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS, getNpcPortraitIds } from '../systems/npcSprites';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
+import { LightingSystem, RegisteredLight } from '../systems/lighting';
+import { LIGHTING_CONFIG } from '../systems/lightingConfig';
+import { DesaturationPipeline } from '../systems/desaturationPipeline';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
@@ -44,6 +47,20 @@ const SAVE_MIN_DELTA_PX = 2;
 // Source tilesets are 16×16; game tile size is 32×32 — sprites are scaled to TILE_SIZE on render.
 const TILESET_SOURCE_SIZE = 16;
 
+// Surrender trigger (US-80). The Keeper rescue fires when the player has tried,
+// then stopped, near the closed exit. Configurable here so the timing can be
+// tuned without editing code paths. Values chosen so the player must (a) attempt
+// at least twice (effort), (b) come within ~4 tiles of the closed exit
+// (location-significant), and (c) hold still for 4 seconds (genuine stop).
+// Surrender is local to fog-marsh; the constants are declared at the top of
+// GameScene to keep them discoverable next to other phase-level magic numbers.
+const SURRENDER_MIN_ATTEMPTS = 2;
+const SURRENDER_PROXIMITY_TILES = 4;
+const SURRENDER_DURATION_MS = 4000;
+// Closed exit centre in world pixels — col 14.5 (cols 13-16), row 22.
+const SURRENDER_TARGET_X = 14.5 * TILE_SIZE;
+const SURRENDER_TARGET_Y = 22 * TILE_SIZE;
+
 // Fox-pip sprite animation constants
 // Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
 const ANIM_TYPES = ['idle', 'walk'] as const;
@@ -65,6 +82,13 @@ export class GameScene extends Phaser.Scene {
   // Conditional decorations: visibility re-evaluated on flag changes only,
   // never per-frame (Learning EP-01).
   private conditionalDecorations: { sprite: Phaser.GameObjects.Sprite; condition: string }[] = [];
+  // Alpha-gated decorations (US-77). Re-evaluated when the player has moved
+  // more than alphaGateRecheckPx since last check OR when has_ember_mark
+  // flips. Each entry stores the world centre so the lighting query is
+  // primitive-only (Learning EP-01).
+  private alphaGatedDecorations: { sprite: Phaser.GameObjects.Sprite; cx: number; cy: number }[] = [];
+  private lastAlphaGateCheckX = Number.NaN;
+  private lastAlphaGateCheckY = Number.NaN;
   private propSprites: Phaser.GameObjects.Sprite[] = [];
   private npcEntities: Phaser.GameObjects.GameObject[] = [];
   private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
@@ -76,6 +100,13 @@ export class GameScene extends Phaser.Scene {
   private lastSaveX = 0;
   private lastSaveY = 0;
   private marshTrappedUnsubscribe: (() => void) | null = null;
+  private escapeAttemptsUnsubscribe: (() => void) | null = null;
+  // Surrender timer (US-80). Single number field, accumulated each frame the
+  // player is still + in proximity + has met min attempts + marsh is trapped.
+  // Reset on input, proximity exit, condition fail. Not persisted — partial
+  // surrender does not survive a force-close (spec: surrender must be a single
+  // continuous moment of giving up).
+  private surrenderTimerMs = 0;
   // Per-flag unsubscribes for NPC spawnCondition watchers (US-71). Collected as
   // GameScene parses each conditional NPC's condition for flag names; invoked
   // from cleanupResize. activeNpcs is the filtered list passed to subsystems
@@ -92,6 +123,13 @@ export class GameScene extends Phaser.Scene {
   // cleanupResize.
   private emberOverlay: Phaser.GameObjects.Arc | null = null;
   private hasEmberMarkUnsubscribe: (() => void) | null = null;
+  // Cached has_ember_mark — read from localStorage once on create and updated
+  // by the existing onFlagChange subscriber. LightingSystem.update reads this
+  // each frame; reading the flag store directly would re-parse JSON on every
+  // tick (Learning EP-01 facet — keep per-frame paths allocation-free).
+  private hasEmberCached = false;
+  private lightingSystem!: LightingSystem;
+  private desaturationPipeline: DesaturationPipeline | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -177,6 +215,16 @@ export class GameScene extends Phaser.Scene {
         this.applyMarshTrappedState();
         this.updateConditionalDecorations();
       });
+      // US-79: each escape_attempts increment fires a fog-flash visual at the
+      // closed exit centre so the failed escape is felt, not silent. Subscribed
+      // here (not in the trigger system) because the visual effect is a
+      // lighting concern, not a trigger-type concern. Cleaned up in cleanupResize.
+      this.escapeAttemptsUnsubscribe = onFlagChange('escape_attempts', () => {
+        // Closed exit: row 22, cols 13-16. Centre = col 14.5, row 22.
+        const cx = 14.5 * TILE_SIZE;
+        const cy = 22 * TILE_SIZE;
+        this.lightingSystem?.flashFog(cx, cy);
+      });
     }
 
     // Filter NPCs by spawnCondition so a Keeper whose flags haven't fired yet
@@ -198,6 +246,13 @@ export class GameScene extends Phaser.Scene {
     this.activeDialogueNpcId = null;
     this.createPlayer(data?.entryPoint, data?.resumePosition);
     this.setupCamera();
+    // LightingSystem must be created AFTER setupCamera so the UI camera exists
+    // for the rt.ignore wiring. World dimensions match the tile map; the dark
+    // overlay covers the full world and follows the main camera scroll.
+    this.lightingSystem = new LightingSystem(this);
+    this.lightingSystem.create(this.area.mapCols * TILE_SIZE, this.area.mapRows * TILE_SIZE);
+    this.registerInitialLights();
+    this.attachDesaturationPipeline();
     // Fade in when entering from an area transition OR a Continue resume
     if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
@@ -226,7 +281,7 @@ export class GameScene extends Phaser.Scene {
     this.npcInteraction = new NpcInteractionSystem(this, this.activeNpcs);
     this.npcInteraction.setLivePositionsProvider(() => this.npcBehavior.getLivePositions());
     this.npcInteraction.setInteractionCallback((npc) => {
-      const script = this.area.dialogues[`${npc.id}-intro`];
+      const script = this.selectScriptForNpc(npc);
       if (!script) {
         console.error(`NPC dialogue script not found: ${npc.id}-intro`);
         return;
@@ -279,11 +334,32 @@ export class GameScene extends Phaser.Scene {
     // Player ember overlay (US-73). Created on flag flip OR if the flag is
     // already true on scene create (covers area transitions to Ashen Isle
     // post-rescue and Continue-from-save). Destroyed on flag unset (Reset
-    // Progress notifies via resetAllFlags).
-    if (getFlag('has_ember_mark') === true) this.maybeCreateEmberOverlay();
+    // Progress notifies via resetAllFlags). The same subscriber updates
+    // hasEmberCached so LightingSystem.update reads a primitive each frame
+    // rather than re-parsing the flag store (Learning EP-01).
+    this.hasEmberCached = getFlag('has_ember_mark') === true;
+    if (this.hasEmberCached) this.maybeCreateEmberOverlay();
     this.hasEmberMarkUnsubscribe = onFlagChange('has_ember_mark', (_, value) => {
+      this.hasEmberCached = value === true;
       if (value === true) this.maybeCreateEmberOverlay();
       else this.destroyEmberOverlay();
+      // Force alpha-gate re-evaluation so tier-2 decorations reveal/hide on
+      // the same frame as the flag flip — no scene restart, no waiting for
+      // movement (US-77 atomic flip parity).
+      this.maybeUpdateAlphaGates(true);
+    });
+
+    // Provide the F3 debug HUD with a snapshot of lighting state. Captured as
+    // a closure here so DebugOverlaySystem stays decoupled from LightingSystem.
+    this.debugOverlay.setHudProvider(() => {
+      const ls = this.lightingSystem;
+      return [
+        `lighting: ${LIGHTING_CONFIG.enabled ? 'on' : 'off'}  (F4)`,
+        `playerRadius: ${ls.getPlayerRadius()}px`,
+        `desaturation: ${LIGHTING_CONFIG.desaturationStrength.toFixed(2)}`,
+        `hasEmber: ${ls.getHasEmber()}`,
+        `lights: ${ls.getLightCount()}`,
+      ].join('\n');
     });
   }
 
@@ -320,6 +396,11 @@ export class GameScene extends Phaser.Scene {
       this.dialogueSystem.update();
       this.thoughtBubble.update(this.player.x, this.player.y);
       this.debugOverlay.update();
+      // Surrender timer continues to accumulate during dialogue (player is
+      // still by definition; spec: dialogue does not reset the timer). Setting
+      // the flag is suppressed inside updateSurrender when dialogue is active
+      // so the Keeper does not spawn mid-conversation.
+      if (this.area.id === 'fog-marsh') this.updateSurrender(delta, false);
       return;
     }
 
@@ -379,6 +460,83 @@ export class GameScene extends Phaser.Scene {
     // position vector changes.
     if (this.emberOverlay) {
       this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
+    }
+
+    // Sync NPC light positions to live (post-wander) coordinates so wandering
+    // NPCs carry their light. The live-positions Map is already allocated each
+    // frame by npcBehavior.getLivePositions for collision/interaction; this
+    // call only iterates the lights array in-place (Learning EP-01).
+    this.lightingSystem.syncPositions(this.npcBehavior.getLivePositions());
+
+    // Lighting overlay — re-rendered each frame so the player's light moves
+    // smoothly. hasEmberCached is updated by the onFlagChange subscriber so
+    // this call reads only primitives (Learning EP-01).
+    this.lightingSystem.update(this.player.x, this.player.y, this.hasEmberCached);
+
+    // Push per-frame state to the desaturation pipeline (US-76). The pipeline
+    // samples the lighting RT to gate desaturation per-pixel; camera transform
+    // uniforms map screen UV → world UV in the shader. Zero allocations: the
+    // method takes primitives and a texture handle.
+    if (this.desaturationPipeline) {
+      const lightingTex = this.lightingSystem.getMaskGlTexture();
+      this.desaturationPipeline.setFrameState(
+        lightingTex,
+        this.area.mapCols * TILE_SIZE,
+        this.area.mapRows * TILE_SIZE,
+        this.cameras.main,
+      );
+    }
+
+    // Movement-gated alpha gating for hidden-until-lit decorations (US-77).
+    // No-op when there are none (early-return inside the method). Runs after
+    // lighting.update so isLitAt sees this frame's player/ember state.
+    this.maybeUpdateAlphaGates();
+
+    // Surrender timer for Keeper rescue (US-80). hasInput derived from this
+    // frame's input vector — non-zero magnitude resets the timer.
+    if (this.area.id === 'fog-marsh') this.updateSurrender(delta, hasInput);
+  }
+
+  // Accumulate the stillness timer when ALL conditions hold: marsh trapped,
+  // attempts >= min, within proximity, no input this frame. Set
+  // marsh_surrendered when the timer crosses the duration threshold — that
+  // flag is the new Keeper spawn condition (US-80, replaces the
+  // escape_attempts >= 4 gate). Suppress the flag flip during dialogue so the
+  // Keeper appears cleanly after the conversation closes (spec example:
+  // "talk to Hermit, close dialogue without moving, then standing still —
+  // Keeper appears once total quiescence + proximity is met").
+  //
+  // Loop-invariant EP-01: single number field mutation per frame, zero
+  // allocations. Flag reads are property lookups on the in-memory flagStore
+  // (no JSON parse).
+  private updateSurrender(delta: number, hasInput: boolean): void {
+    // One-shot — once surrendered, the flag stays until reset and we don't
+    // need to keep evaluating.
+    if (getFlag('marsh_surrendered') === true) return;
+    if (getFlag('marsh_trapped') !== true) {
+      this.surrenderTimerMs = 0;
+      return;
+    }
+    const attempts = (getFlag('escape_attempts') as number | undefined) ?? 0;
+    if (attempts < SURRENDER_MIN_ATTEMPTS) {
+      this.surrenderTimerMs = 0;
+      return;
+    }
+    const dx = this.player.x - SURRENDER_TARGET_X;
+    const dy = this.player.y - SURRENDER_TARGET_Y;
+    const proxLimit = SURRENDER_PROXIMITY_TILES * TILE_SIZE;
+    if (dx * dx + dy * dy > proxLimit * proxLimit) {
+      this.surrenderTimerMs = 0;
+      return;
+    }
+    if (hasInput) {
+      this.surrenderTimerMs = 0;
+      return;
+    }
+    this.surrenderTimerMs += delta;
+    if (this.surrenderTimerMs >= SURRENDER_DURATION_MS) {
+      if (this.dialogueSystem.isActive) return;
+      setFlag('marsh_surrendered', true);
     }
   }
 
@@ -465,6 +623,9 @@ export class GameScene extends Phaser.Scene {
   private renderDecorations(): void {
     this.decorationSprites = [];
     this.conditionalDecorations = [];
+    this.alphaGatedDecorations = [];
+    this.lastAlphaGateCheckX = Number.NaN;
+    this.lastAlphaGateCheckY = Number.NaN;
     if (!hasTileset(this.area.tileset)) return;
     const atlasKey = TILESETS[this.area.tileset].atlasKey;
     const texture = this.textures.get(atlasKey);
@@ -493,7 +654,40 @@ export class GameScene extends Phaser.Scene {
         sprite.setVisible(evaluateCondition(dec.condition));
         this.conditionalDecorations.push({ sprite, condition: dec.condition });
       }
+      if (dec.alphaGatedByLight) {
+        // Default to invisible — first updateAlphaGates pass after lighting
+        // initialises will set the correct alpha. Hiding by default avoids a
+        // one-frame flash of tier-2 reveals on scene create.
+        sprite.setAlpha(0);
+        const cx = (dec.col + 0.5) * TILE_SIZE;
+        const cy = (dec.row + 0.5) * TILE_SIZE;
+        this.alphaGatedDecorations.push({ sprite, cx, cy });
+      }
     }
+  }
+
+  // Re-evaluate alpha gating when the player moved enough OR force=true (called
+  // from the has_ember_mark subscriber so a flag flip immediately reveals tier-2
+  // alpha-gated decorations regardless of player movement). Movement-gated to
+  // keep per-frame cost bounded — cost is one squared-distance check + one
+  // isLitAt query per gated decoration, only when triggered (Learning EP-01).
+  private maybeUpdateAlphaGates(force = false): void {
+    if (this.alphaGatedDecorations.length === 0) return;
+    if (!force) {
+      const dx = this.player.x - this.lastAlphaGateCheckX;
+      const dy = this.player.y - this.lastAlphaGateCheckY;
+      const threshold = LIGHTING_CONFIG.alphaGateRecheckPx;
+      // First call: lastCheck is NaN → dx/dy NaN → both comparisons false → run.
+      if (!Number.isNaN(this.lastAlphaGateCheckX) && dx * dx + dy * dy < threshold * threshold) {
+        return;
+      }
+    }
+    for (let i = 0; i < this.alphaGatedDecorations.length; i++) {
+      const entry = this.alphaGatedDecorations[i];
+      entry.sprite.setAlpha(this.lightingSystem.isLitAt(entry.cx, entry.cy) ? 1 : 0);
+    }
+    this.lastAlphaGateCheckX = this.player.x;
+    this.lastAlphaGateCheckY = this.player.y;
   }
 
   // Re-evaluate conditional decoration visibility. Called from the flag-change
@@ -630,6 +824,16 @@ export class GameScene extends Phaser.Scene {
       // shows so the player sees something; behavior just stays inert.
       if (sprite) {
         this.npcBehavior?.registerNpc(npc, sprite);
+        // Register the runtime-spawned NPC's light alongside its sprite (US-75).
+        // Keeper spawns post-Ember in the keeper-rescue arc so its tier-1 light
+        // is rendered immediately on appearance.
+        this.registerNpcLight(npc);
+        // setupCamera built the UI-camera ignore list at scene create from
+        // the initial entities; late-spawned sprites need an explicit ignore
+        // here or the UI camera (no zoom, scroll 0,0) renders a screen-fixed
+        // duplicate at the sprite's world coordinates. Observed as a small
+        // Keeper at fixed screen position once the conditional spawn fired.
+        this.cameras.getCamera('ui')?.ignore(sprite);
         sprite.setAlpha(0);
         this.tweens.add({
           targets: sprite,
@@ -774,6 +978,10 @@ export class GameScene extends Phaser.Scene {
       this.marshTrappedUnsubscribe();
       this.marshTrappedUnsubscribe = null;
     }
+    if (this.escapeAttemptsUnsubscribe) {
+      this.escapeAttemptsUnsubscribe();
+      this.escapeAttemptsUnsubscribe = null;
+    }
     for (const unsub of this.spawnConditionUnsubscribes) unsub();
     this.spawnConditionUnsubscribes = [];
     if (this.hasEmberMarkUnsubscribe) {
@@ -781,6 +989,116 @@ export class GameScene extends Phaser.Scene {
       this.hasEmberMarkUnsubscribe = null;
     }
     this.destroyEmberOverlay();
+    this.lightingSystem?.destroy();
+  }
+
+  // Register lights for every NPC, trigger, and decoration declared in the
+  // area at scene create (US-75). NPC lights default to LIGHTING_CONFIG.npcRadius
+  // / npcIntensity; lightOverride lets per-NPC tuning (Old Man dimmer for the
+  // Fading metaphor). Triggers and decorations opt in via their `light` field —
+  // omitting it is the existing behavior. Tier-2 lights are registered now but
+  // render at intensity 0 until has_ember_mark === true (US-77).
+  private registerInitialLights(): void {
+    for (const npc of this.activeNpcs) {
+      this.registerNpcLight(npc);
+    }
+    for (const trigger of this.area.triggers) {
+      if (!trigger.light) continue;
+      const cx = (trigger.col + trigger.width / 2) * TILE_SIZE;
+      const cy = (trigger.row + trigger.height / 2) * TILE_SIZE;
+      this.lightingSystem.registerLight({
+        id: `trigger:${trigger.id}`,
+        x: cx,
+        y: cy,
+        radius: trigger.light.radius ?? LIGHTING_CONFIG.poiRadius,
+        intensity: trigger.light.intensity ?? LIGHTING_CONFIG.poiIntensity,
+        tier: trigger.light.tier ?? 1,
+      });
+    }
+    for (let i = 0; i < this.area.decorations.length; i++) {
+      const dec = this.area.decorations[i];
+      if (!dec.light) continue;
+      const cx = (dec.col + 0.5) * TILE_SIZE;
+      const cy = (dec.row + 0.5) * TILE_SIZE;
+      this.lightingSystem.registerLight({
+        id: `decoration:${dec.col},${dec.row}`,
+        x: cx,
+        y: cy,
+        radius: dec.light.radius ?? LIGHTING_CONFIG.poiRadius,
+        intensity: dec.light.intensity ?? LIGHTING_CONFIG.poiIntensity,
+        tier: dec.light.tier ?? 1,
+      });
+    }
+  }
+
+  // Register the DesaturationPipeline on the WebGL renderer (idempotent across
+  // scene.restart — addPostPipeline guards on duplicate keys) and attach it
+  // to the main camera. Called from create() after camera setup so the
+  // camera exists for setPostPipeline. The pipeline reads per-frame state
+  // (camera scroll/zoom + lighting RT texture) via setFrameState in update.
+  private attachDesaturationPipeline(): void {
+    const renderer = this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
+    if (!renderer.pipelines) return; // canvas renderer fallback — desaturation is a no-op
+    const pipelineKey = 'DesaturationPipeline';
+    const pipelines = renderer.pipelines;
+    // PipelineManager has no `hasPostPipeline`; postPipelineClasses is the
+    // internal map of registered classes. Re-registering would overwrite the
+    // existing class — guarding via the internal map keeps us idempotent
+    // across scene.restart without depending on a private API surface that
+    // might shift across Phaser versions.
+    const registered = (pipelines as unknown as { postPipelineClasses: Map<string, unknown> }).postPipelineClasses;
+    if (!registered || !registered.has(pipelineKey)) {
+      pipelines.addPostPipeline(pipelineKey, DesaturationPipeline);
+    }
+    this.cameras.main.setPostPipeline(pipelineKey);
+    const instance = this.cameras.main.getPostPipeline(pipelineKey);
+    if (Array.isArray(instance)) {
+      this.desaturationPipeline = (instance[0] as DesaturationPipeline) ?? null;
+    } else {
+      this.desaturationPipeline = (instance as DesaturationPipeline) ?? null;
+    }
+  }
+
+  // Pick the right dialogue script for an NPC interaction (US-81). Walks all
+  // scripts whose id starts with `${npc.id}-` looking for a variant with a
+  // currently-passing condition; falls back to the unconditional base script
+  // `${npc.id}-intro`. The base is the fallback so existing single-script
+  // NPCs continue to work unchanged. Variant scripts MUST declare a
+  // `condition` (otherwise selecting between an unconditional base and an
+  // unconditional variant is ambiguous and we deliberately ignore the
+  // variant). Returns undefined when no script is found.
+  private selectScriptForNpc(npc: NpcDefinition): DialogueScript | undefined {
+    const baseId = `${npc.id}-intro`;
+    const npcPrefix = `${npc.id}-`;
+    for (const id of Object.keys(this.area.dialogues)) {
+      if (id === baseId) continue;
+      if (!id.startsWith(npcPrefix)) continue;
+      const variant = this.area.dialogues[id];
+      if (!variant.condition) continue;
+      if (evaluateCondition(variant.condition)) return variant;
+    }
+    return this.area.dialogues[baseId];
+  }
+
+  // Register a tier-1 light at the NPC's spawn tile centre (US-75). Called from
+  // registerInitialLights at scene create AND from evaluateConditionalSpawns
+  // when a previously-gated NPC fades in. Position is updated per-frame in
+  // GameScene.update via lightingSystem.syncPositions so wandering NPCs carry
+  // their light.
+  private registerNpcLight(npc: NpcDefinition): void {
+    const offset = (TILE_SIZE - NPC_SIZE) / 2;
+    const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
+    const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
+    const override = npc.lightOverride;
+    const light: RegisteredLight = {
+      id: npc.id,
+      x: cx,
+      y: cy,
+      radius: override?.radius ?? LIGHTING_CONFIG.npcRadius,
+      intensity: override?.intensity ?? LIGHTING_CONFIG.npcIntensity,
+      tier: override?.tier ?? 1,
+    };
+    this.lightingSystem.registerLight(light);
   }
 
   // Reflect the marsh_trapped flag on Fog Marsh: when true, the south-exit
