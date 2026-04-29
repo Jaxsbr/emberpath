@@ -49,3 +49,11 @@ entries:
     result: pass
     notes: "PixelLab job cap = 8 concurrent. Will pipeline remaining batches between code iterations to avoid wall-time blocking."
     tokens: ~2500
+  - task: 7
+    time: "2026-04-29T08:50:00Z"
+    type: implement
+    story: US-85
+    description: "Branch A — implemented [US-85] warming-flag onFlagChange subscribers. (1) src/systems/lightingConfig.ts: warmedRadiusBonus=14 + warmedIntensityBonus=0.15 added to LIGHTING_CONFIG (additive over npcRadius/npcIntensity or per-NPC lightOverride; intensity clamps at 1.0). (2) src/scenes/GameScene.ts: WARMING_NPC_IDS = ['wren', 'old-man'] module-level readonly tuple (Driftwood absent — refusal flag npc_refused_driftwood is a separate path with no warming). registerNpcLight gains optional warmed parameter that adds the config bonuses; existing call sites unchanged. New warmingUnsubscribes: (() => void)[] field. In create() after has_ember_mark subscriber: per-NPC, immediately re-register at warmed values if getFlag('npc_warmed_<id>') === true (Continue-from-save / area-transition resumes warmed state without waiting for another flip); subscribe onFlagChange — on each flip, look up NPC in activeNpcs (skip if missing — different area, no light registered there), re-register at warmed-or-baseline, call maybeUpdateAlphaGates(true) for atomic flip parity with US-77 pattern. resetAllFlags notifies with value=undefined → re-registers at baseline. cleanupResize iterates warmingUnsubscribes + clears (Async-cleanup safety #2). Verify: tsc + build pass. Bundle 1556.97 → 1557.51 kB (+0.54 kB; 34 modules). Story Completion Gate: US-85 now 10/16 (foundation 8 + light-brightening 1 + alpha-gate bloom 1). Phase Async-cleanup-safety: 1/2 (warming subscribers covered; US-86 desat subscriber not yet wired). Polled Wren before commit — breathing-idle complete (8 dirs × 4 frames = 32 idle frames). Kicked off Wren walking-4-frames (8 jobs, processing now)."
+    result: pass
+    notes: "US-85 10/16. Wren breathing-idle done; walking-4-frames in flight. Driftwood anims + 2 portraits still blocked by slot cap."
+    tokens: ~6000
