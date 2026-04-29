@@ -46,6 +46,13 @@ const EMBER_DEPTH = 5.5;
 // radius bloom in. Driftwood is intentionally absent — refusal sets a
 // different flag (`npc_refused_driftwood`) and produces NO pulse / NO bump.
 const WARMING_NPC_IDS = ['wren', 'old-man'] as const;
+// Cumulative warming reduces the desaturation strength (US-86). Each warming
+// flips the world a notch toward color; floor preserves Ashen Isle's faded
+// identity so the island never reads as fully restored — only the Heart Bridge
+// fully removes the Fading. With 2 warmings + base 1.0: 1.0 × (1 − 0.30) = 0.70
+// (above the 0.40 floor).
+const DESAT_REDUCTION_PER_WARMING = 0.15;
+const DESAT_FLOOR = 0.4;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.
@@ -434,12 +441,22 @@ export class GameScene extends Phaser.Scene {
       }
       const unsubscribe = onFlagChange(flagName, (_, value) => {
         const npc = this.activeNpcs.find((n) => n.id === npcId);
-        if (!npc) return;
-        this.registerNpcLight(npc, value === true);
-        this.maybeUpdateAlphaGates(true);
+        if (npc) {
+          this.registerNpcLight(npc, value === true);
+          this.maybeUpdateAlphaGates(true);
+        }
+        // Cumulative desaturation reduction (US-86) — warmingsCount changed,
+        // recompute and push the new effective value to the pipeline. Recomputed
+        // ONLY on flag-change events, never per-frame (Learning EP-01). Runs
+        // unconditionally so an off-area warming flip (e.g. global flag set
+        // while in Fog Marsh) still updates the pipeline state for next entry.
+        this.updateEffectiveDesaturation();
       });
       this.warmingUnsubscribes.push(unsubscribe);
     }
+    // Initial effective desaturation push — covers Continue-from-save where
+    // the player resumes already-warmed flags without a fresh flip event.
+    this.updateEffectiveDesaturation();
 
     // Provide the F3 debug HUD with a snapshot of lighting state. Captured as
     // a closure here so DebugOverlaySystem stays decoupled from LightingSystem.
@@ -448,7 +465,7 @@ export class GameScene extends Phaser.Scene {
       return [
         `lighting: ${LIGHTING_CONFIG.enabled ? 'on' : 'off'}  (F4)`,
         `playerRadius: ${ls.getPlayerRadius()}px`,
-        `desaturation: ${LIGHTING_CONFIG.desaturationStrength.toFixed(2)}`,
+        `desaturation: ${(this.desaturationPipeline?.getStrength() ?? LIGHTING_CONFIG.desaturationStrength).toFixed(2)}`,
         `hasEmber: ${ls.getHasEmber()}`,
         `lights: ${ls.getLightCount()}`,
       ].join('\n');
@@ -1183,6 +1200,21 @@ export class GameScene extends Phaser.Scene {
   // when a previously-gated NPC fades in. Position is updated per-frame in
   // GameScene.update via lightingSystem.syncPositions so wandering NPCs carry
   // their light.
+  // Recompute the effective desaturation strength from the current count of
+  // warmed NPCs and push it to the desat pipeline (US-86 cumulative warming).
+  // base × (1 − reduction × count) clamped ≥ DESAT_FLOOR. Called only on
+  // warming-flag-change events (no per-frame recomputation — Learning EP-01).
+  private updateEffectiveDesaturation(): void {
+    if (!this.desaturationPipeline) return;
+    let warmingsCount = 0;
+    for (const id of WARMING_NPC_IDS) {
+      if (getFlag(`npc_warmed_${id}`) === true) warmingsCount += 1;
+    }
+    const base = LIGHTING_CONFIG.desaturationStrength;
+    const effective = Math.max(DESAT_FLOOR, base * (1 - DESAT_REDUCTION_PER_WARMING * warmingsCount));
+    this.desaturationPipeline.setStrength(effective);
+  }
+
   private registerNpcLight(npc: NpcDefinition, warmed = false): void {
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
     const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;

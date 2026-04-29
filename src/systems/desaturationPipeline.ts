@@ -74,6 +74,10 @@ export class DesaturationPipeline extends Phaser.Renderer.WebGL.Pipelines.PostFX
   private viewY = 0;
   private viewW = 0;
   private viewH = 0;
+  // Effective desaturation strength — defaults to LIGHTING_CONFIG.desaturationStrength
+  // and is pushed by GameScene when warming flags change (US-86 cumulative warming).
+  // Recomputed only on warming-flag-change events, never per-frame (Learning EP-01).
+  private currentStrength = LIGHTING_CONFIG.desaturationStrength;
 
   constructor(game: Phaser.Game) {
     super({
@@ -89,6 +93,17 @@ export class DesaturationPipeline extends Phaser.Renderer.WebGL.Pipelines.PostFX
   // authoritative "what's visible in world coords" and avoids re-deriving it
   // from scroll/zoom/screen-size (which gave wrong results across viewport
   // sizes and zoom levels).
+  // Push a new effective desaturation strength (US-86 cumulative warming).
+  // GameScene calls this from the warming-flag onFlagChange subscriber so the
+  // value updates exactly on flag flip, never per-frame.
+  setStrength(strength: number): void {
+    this.currentStrength = strength;
+  }
+
+  getStrength(): number {
+    return this.currentStrength;
+  }
+
   setFrameState(
     lightingGlTexture: WebGLTexture | null,
     worldWidth: number,
@@ -111,7 +126,7 @@ export class DesaturationPipeline extends Phaser.Renderer.WebGL.Pipelines.PostFX
   onDraw(renderTarget: Phaser.Renderer.WebGL.RenderTarget): void {
     const enabled = LIGHTING_CONFIG.enabled && this.lightingTextureSource !== null;
 
-    this.set1f('uStrength', LIGHTING_CONFIG.desaturationStrength);
+    this.set1f('uStrength', this.currentStrength);
     this.set1f('uEnabled', enabled ? 1 : 0);
     // Phaser's WebGL framebuffer for PostFX is bottom-up (GL convention) — Y
     // flip is required so the screen-top corresponds to the smaller world-Y.
