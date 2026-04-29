@@ -365,6 +365,16 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.dialogueSystem.setOnChoice((choice) => {
+      // TIMING CONTRACT (read before adding logic below). `choice.setFlags`
+      // fires synchronously at pick time — useful for refusal markers like
+      // `npc_refused_driftwood` where the flag is set BECAUSE the choice was
+      // picked, regardless of subsequent pulse lifecycle. `choice.firePulseTarget`
+      // routes through EmberShareSystem.startPulse, which DEFERS the warming
+      // flag flip (`npc_warmed_<id>`) and the dialogue advance to pulse-land
+      // (~600ms). Authoring rule: pick ONE — don't mix `setFlags` with
+      // `firePulseTarget` on the same choice. A future "warm + side-effect"
+      // pattern would need a `pulseSetFlags` field on DialogueChoice that
+      // defers alongside the warming flag, not the existing pre-pulse setFlags.
       if (choice.setFlags) {
         for (const [key, value] of Object.entries(choice.setFlags)) {
           setFlag(key, value);
@@ -376,6 +386,9 @@ export class GameScene extends Phaser.Scene {
       // dialogue node land on the same tick. Falls through to advance if the
       // target NPC sprite is missing (defensive — should not happen in
       // authored content, but a stale flag would otherwise lock the dialogue).
+      // Explicit `return` at the end of this branch — the pulse owns the rest
+      // of the choice lifecycle and any future code added below this block
+      // would otherwise run mid-pulse before onComplete.
       if (choice.firePulseTarget) {
         const targetId = choice.firePulseTarget;
         const npcSprite = this.npcSpritesById.get(targetId);
@@ -392,6 +405,7 @@ export class GameScene extends Phaser.Scene {
           this.sharingInProgress = false;
           this.dialogueSystem.advanceAfterPulse(choice);
         });
+        return;
       }
     });
     this.debugOverlay = new DebugOverlaySystem(this);
