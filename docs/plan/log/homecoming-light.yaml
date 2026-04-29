@@ -1,3 +1,11 @@
 phase: "homecoming-light"
 started: "2026-04-29T07:36:05Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-29T07:45:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — initial state survey for homecoming-light. Verify clean: npx tsc --noEmit + npm run build pass on build/homecoming-light at commit 264d7f3 (post-start commit). Source layout confirmed: existing systems (lighting, dialogue, npcBehavior, npcInteraction, conditions, triggerZone, desaturationPipeline) all in src/systems/; areas in src/data/areas/{ashen-isle,fog-marsh,registry,types}.ts; npcSprites + npcPortraits registries co-located in src/systems/npcSprites.ts. Existing NPC asset directories: heron (keeper-rescue), marsh-hermit (npc-portraits), old-man (foundation/world-legibility). New for this phase: wren (PixelLab generation needed, longest async blocker → US-82) and driftwood (PixelLab generation needed → US-83). Phase classification: SERVER/CROSS-CUTTING — touches GameScene (sharingInProgress mutual exclusion + flag-change subscribers), ashen-isle.ts (3 new dialogue scripts, 1 new NPC + extended Old Man scripts, 1 new trigger), npcSprites/npcPortraits registries, new EmberShareSystem, lighting (re-registration on warm), desaturation pipeline (effective strength derived value), alpha-gates (force-eval on warm). Investigate-first mandate applies. Story sequencing rationale: kick off Wren+Driftwood PixelLab generation FIRST since they are async blockers (~minutes); while assets generate, build US-85 (EmberShareSystem keystone) → US-86 (desaturation derived value, no asset dep) → US-84 (Old Man dialogue extensions, no asset dep). When Wren assets land, fold in US-82; when Driftwood assets land, fold in US-83. Queued first concrete task: investigate Wren PixelLab kickoff specifics so iteration 2's Branch A can fire the create_character / animate_character batch."
+    result: pass
+    notes: phase classification = SERVER/CROSS-CUTTING; investigate-first mandate active; sequencing puts long-async PixelLab gen first
+    tokens: ~3500

@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-82] Investigate: Wren PixelLab generation kickoff — confirm species prompt (young wren / small brown bird, distinct silhouette from fox/heron/marsh-hermit/old-man), animate_character / create_character workflow from prior NPC phases (npc-portraits + npc-behavior + keeper-rescue heron), expected output structure (assets/npc/wren/{idle,walk}-{dir}-{frame}.png + static/{dir}.png + portrait.png matching the npcSprites + npcPortraits registry contracts), and prepare the exact pixellab-team MCP batch to fire on the next iteration. Also confirm npm/tsc still green and current main test-baseline.txt staleness vs fog-and-light merged build (baseline note for regression check)."
   last_result: pass
   consecutive_fails: 0
 
