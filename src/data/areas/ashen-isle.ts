@@ -278,6 +278,15 @@ export const ashenIsle: AreaDefinition = {
     // north or south gate of the yard (added below). lightOverride.intensity
     // dim so he reads as a faint silhouette through fog (US-75).
     { id: 'old-man', name: 'Old Man', col: 40, row: 28, color: 0x8b6914, sprite: 'old-man', wanderRadius: 1, awarenessRadius: 3, lightOverride: { intensity: 0.15 } },
+    // Wren — the hopeful one (US-82). Stands in the central open area, well
+    // clear of the player's cottage (cols 8-12 rows 12-15), Old Man's cottage
+    // (cols 38-42 rows 24-28), and the dock (rows 1-5). FLOOR tile assumption
+    // is safe — no walls, fences, or props are placed at (22, 18) by the map
+    // builder. wanderRadius 2 lets the chirpy young wren bounce a bit;
+    // awarenessRadius 3 matches Old Man so she halts at the same proximity.
+    // No lightOverride — defaults to LIGHTING_CONFIG.npcRadius / npcIntensity,
+    // and the warming subscriber (US-85) re-registers brighter on warm.
+    { id: 'wren', name: 'Wren', col: 22, row: 18, color: 0x8b5a3c, sprite: 'wren', wanderRadius: 2, awarenessRadius: 3 },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; props are
   // intentionally empty during the world-legibility phase — the prior
@@ -392,6 +401,110 @@ export const ashenIsle: AreaDefinition = {
           id: 'farewell',
           speaker: 'Old Man',
           text: 'Go on. The path is more than this.',
+        },
+      ],
+    },
+    // Wren — the hopeful one (US-82). Three scripts, mutually exclusive at any
+    // given world state (selectScriptForNpc walks them in insertion order and
+    // returns the first whose condition evaluates true; falls back to the
+    // unconditional `wren-intro` when none match). Tone: light, chirpy, young
+    // — child voice. Per Gospel principle: "Free gift" (the player chooses to
+    // share); per "Mechanical truth" — the warming reads as a felt moment, not
+    // exposition. portraitId points to 'wren' even though the portrait file is
+    // not yet generated; DialogueSystem's graceful error-fallback logs once
+    // and renders no portrait until portrait.png lands (slot-cap blocked).
+    'wren-intro': {
+      id: 'wren-intro',
+      startNodeId: 'greeting',
+      portraitId: 'wren',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Wren',
+          text: 'Oh — you walked! I forgot how it sounded.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Wren',
+          text: 'Mama said brightness comes from inside, but mine went grey too.',
+          nextId: 'farewell',
+        },
+        {
+          id: 'farewell',
+          speaker: 'Wren',
+          text: 'Maybe yours is still bright. Walk on. I want to see.',
+        },
+      ],
+    },
+    // wren-receptive — post-Ember, pre-warming. Has the "Share warmth" choice.
+    // The choice's firePulseTarget triggers EmberShareSystem.startPulse via the
+    // GameScene setOnChoice handler; on pulse onComplete the npc_warmed_wren
+    // flag is set, and the dialogue advances to the grateful node on the same
+    // tick (US-85 advanceAfterPulse). The "Not yet" choice closes politely so
+    // the player can come back later; the choice does NOT set npc_warmed_wren.
+    'wren-receptive': {
+      id: 'wren-receptive',
+      startNodeId: 'greeting',
+      portraitId: 'wren',
+      condition: 'has_ember_mark == true AND npc_warmed_wren == false',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Wren',
+          text: 'You\'re glowing! Are you... really? Oh.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Wren',
+          text: 'I want to feel like that again. Mama said the warmth used to land like rain.',
+          nextId: 'offer',
+        },
+        {
+          id: 'offer',
+          speaker: 'Wren',
+          text: 'Could you... share some? Just a little?',
+          choices: [
+            { text: 'Share warmth', nextId: 'grateful', firePulseTarget: 'wren' },
+            { text: 'Not yet', nextId: 'demure' },
+          ],
+        },
+        {
+          id: 'grateful',
+          speaker: 'Wren',
+          text: '...!! Oh — oh, that\'s it. That\'s what Mama meant.',
+          nextId: 'thanks',
+        },
+        {
+          id: 'thanks',
+          speaker: 'Wren',
+          text: 'I\'ll keep it close. Thank you.',
+        },
+        {
+          id: 'demure',
+          speaker: 'Wren',
+          text: 'Okay. I\'ll wait. I\'m good at waiting.',
+        },
+      ],
+    },
+    // wren-warmed — Wren has been warmed; light is brighter, demeanor brighter.
+    'wren-warmed': {
+      id: 'wren-warmed',
+      startNodeId: 'greeting',
+      portraitId: 'wren',
+      condition: 'npc_warmed_wren == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Wren',
+          text: 'You walked back! I hoped you would.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Wren',
+          text: 'I feel it still. Bright in here, just under the wings.',
         },
       ],
     },
