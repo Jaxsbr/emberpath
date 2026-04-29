@@ -543,6 +543,12 @@ export const ashenIsle: AreaDefinition = {
     // exposition. portraitId points to 'wren' even though the portrait file is
     // not yet generated; DialogueSystem's graceful error-fallback logs once
     // and renders no portrait until portrait.png lands (slot-cap blocked).
+    // wren-intro is the canonical Wren script — fallback for selectScriptForNpc
+    // (no condition; baseId path). The pre-Ember encounter shows greeting →
+    // middle → offer node where the "Share warmth" choice is gated by a
+    // per-choice condition and hidden until the player carries the Ember.
+    // The "Not yet" choice is always visible so the player has a graceful exit
+    // pre-Ember and post-Ember-not-ready alike.
     'wren-intro': {
       id: 'wren-intro',
       startNodeId: 'greeting',
@@ -558,37 +564,6 @@ export const ashenIsle: AreaDefinition = {
           id: 'middle',
           speaker: 'Wren',
           text: 'Mama said brightness comes from inside, but mine went grey too.',
-          nextId: 'farewell',
-        },
-        {
-          id: 'farewell',
-          speaker: 'Wren',
-          text: 'Maybe yours is still bright. Walk on. I want to see.',
-        },
-      ],
-    },
-    // wren-receptive — post-Ember, pre-warming. Has the "Share warmth" choice.
-    // The choice's firePulseTarget triggers EmberShareSystem.startPulse via the
-    // GameScene setOnChoice handler; on pulse onComplete the npc_warmed_wren
-    // flag is set, and the dialogue advances to the grateful node on the same
-    // tick (US-85 advanceAfterPulse). The "Not yet" choice closes politely so
-    // the player can come back later; the choice does NOT set npc_warmed_wren.
-    'wren-receptive': {
-      id: 'wren-receptive',
-      startNodeId: 'greeting',
-      portraitId: 'wren',
-      condition: 'has_ember_mark == true AND npc_warmed_wren == false',
-      nodes: [
-        {
-          id: 'greeting',
-          speaker: 'Wren',
-          text: 'You\'re glowing! Are you... really? Oh.',
-          nextId: 'middle',
-        },
-        {
-          id: 'middle',
-          speaker: 'Wren',
-          text: 'I want to feel like that again. Mama said the warmth used to land like rain.',
           nextId: 'offer',
         },
         {
@@ -596,7 +571,12 @@ export const ashenIsle: AreaDefinition = {
           speaker: 'Wren',
           text: 'Could you... share some? Just a little?',
           choices: [
-            { text: 'Share warmth', nextId: 'grateful', firePulseTarget: 'wren' },
+            {
+              text: 'Share warmth',
+              nextId: 'grateful',
+              firePulseTarget: 'wren',
+              condition: 'has_ember_mark == true AND npc_warmed_wren == false',
+            },
             { text: 'Not yet', nextId: 'demure' },
           ],
         },
@@ -647,6 +627,12 @@ export const ashenIsle: AreaDefinition = {
     // variant `driftwood-refused` swaps in and the Share-warmth choice is
     // absent. Tone: smooth, worldly, knowing. He talks about other lights he
     // has seen — never abrasive, never evil ("No villains" Gospel principle).
+    // driftwood-intro is the canonical Driftwood script — fallback for
+    // selectScriptForNpc (no condition). Pre-Ember the offer node still plays
+    // but the "Share warmth" choice is hidden by its per-choice condition;
+    // post-Ember, pre-refusal it appears. Refusal does NOT use firePulseTarget
+    // (no pulse on refusal per spec — restoration is given, not taken;
+    // refusal returns nothing to Pip but a polite goodbye).
     'driftwood-intro': {
       id: 'driftwood-intro',
       startNodeId: 'greeting',
@@ -662,31 +648,6 @@ export const ashenIsle: AreaDefinition = {
           id: 'middle',
           speaker: 'Driftwood',
           text: 'I\'ve seen a hundred islands. Bright ones, dim ones. They all dim, in the end.',
-          nextId: 'farewell',
-        },
-        {
-          id: 'farewell',
-          speaker: 'Driftwood',
-          text: 'Travel light. Don\'t carry too much. The dock is good company.',
-        },
-      ],
-    },
-    'driftwood-receptive': {
-      id: 'driftwood-receptive',
-      startNodeId: 'greeting',
-      portraitId: 'driftwood',
-      condition: 'has_ember_mark == true AND npc_refused_driftwood == false',
-      nodes: [
-        {
-          id: 'greeting',
-          speaker: 'Driftwood',
-          text: 'Oh-ho — that\'s a fine little ember on you. Pretty thing.',
-          nextId: 'middle',
-        },
-        {
-          id: 'middle',
-          speaker: 'Driftwood',
-          text: 'I\'ve been offered embers before. They burn up, given time.',
           nextId: 'offer',
         },
         {
@@ -694,7 +655,12 @@ export const ashenIsle: AreaDefinition = {
           speaker: 'Driftwood',
           text: 'Suppose you\'d like to share some? You\'re sweet to ask.',
           choices: [
-            { text: 'Share warmth', nextId: 'decline', setFlags: { npc_refused_driftwood: true } },
+            {
+              text: 'Share warmth',
+              nextId: 'decline',
+              setFlags: { npc_refused_driftwood: true },
+              condition: 'has_ember_mark == true AND npc_refused_driftwood == false',
+            },
             { text: 'Just talking', nextId: 'small_talk' },
           ],
         },

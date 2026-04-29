@@ -53,6 +53,13 @@ export interface DialogueChoice {
   // called from the pulse onComplete callback so the warming flag flip and
   // the next dialogue node land on the same tick (US-85 ember-pulse).
   firePulseTarget?: string;
+  // Optional gate evaluated through `systems/conditions.ts:evaluateCondition`
+  // (same parser as DialogueScript.condition / TriggerDefinition.condition).
+  // When the condition fails, DialogueSystem hides the choice from the
+  // rendered list — the player cannot pick it. Used to gate the "Share warmth"
+  // option on `has_ember_mark == true AND npc_warmed_<id> == false` (US-82,
+  // US-83). Choices without a condition always render.
+  condition?: string;
 }
 
 export interface DialogueNode {

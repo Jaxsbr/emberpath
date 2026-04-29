@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { DialogueScript, DialogueNode, DialogueChoice } from '../data/areas/types';
 import { hasNpcPortrait } from './npcSprites';
 import { setFlag } from '../triggers/flags';
+import { evaluateCondition } from './conditions';
 
 const BOX_HEIGHT = 120;
 const BOX_PADDING = 12;
@@ -40,6 +41,11 @@ export class DialogueSystem {
   private dialogueText: Phaser.GameObjects.Text | null = null;
   private choiceTexts: Phaser.GameObjects.Text[] = [];
   private selectedChoiceIndex = 0;
+  // Filtered choices currently rendered. Equals currentNode.choices minus any
+  // entries whose `condition` failed evaluateCondition. selectChoice and the
+  // input handlers index into this list, NOT currentNode.choices, so a hidden
+  // choice never becomes pickable. Reset by clearChoices.
+  private renderedChoices: DialogueChoice[] = [];
 
   // Mobile choice elements
   private isTouchDevice: boolean;
@@ -364,11 +370,23 @@ export class DialogueSystem {
 
   private showChoices(choices: DialogueChoice[]): void {
     this.clearChoices();
+    // Filter out choices whose condition fails — they don't render and the
+    // player can't pick them. Choices without a condition always pass.
+    const filtered = choices.filter((c) => !c.condition || evaluateCondition(c.condition));
+    this.renderedChoices = filtered;
+    if (filtered.length === 0) {
+      // No visible choices — fall through as if the node had no choices, the
+      // continueHint shows. Defensive: an authored node should never have all
+      // choices condition-gated to false simultaneously, but if it happens we
+      // don't want the player to softlock.
+      if (this.continueHint) this.continueHint.setVisible(true);
+      return;
+    }
 
     if (this.isTouchDevice) {
-      this.showMobileChoices(choices);
+      this.showMobileChoices(filtered);
     } else {
-      this.showDesktopChoices(choices);
+      this.showDesktopChoices(filtered);
     }
   }
 
@@ -504,15 +522,15 @@ export class DialogueSystem {
     if (!this.currentNode?.choices) return;
     for (let i = 0; i < this.choiceTexts.length; i++) {
       const prefix = i === this.selectedChoiceIndex ? '> ' : '  ';
-      this.choiceTexts[i].setText(`${prefix}${this.currentNode.choices[i].text}`);
+      this.choiceTexts[i].setText(`${prefix}${this.renderedChoices[i].text}`);
       this.choiceTexts[i].setColor(i === this.selectedChoiceIndex ? '#ffdd44' : '#aaaaaa');
     }
   }
 
   private selectChoice(): void {
-    if (!this.currentNode?.choices || this.choiceTexts.length === 0) return;
+    if (this.renderedChoices.length === 0 || this.choiceTexts.length === 0) return;
     this.choiceJustSelected = true;
-    const choice = this.currentNode.choices[this.selectedChoiceIndex];
+    const choice = this.renderedChoices[this.selectedChoiceIndex];
     if (this.onChoiceCallback) {
       this.onChoiceCallback(choice);
     }
@@ -629,7 +647,7 @@ export class DialogueSystem {
       // Reposition confirm button
       if (this.confirmBg) {
         const confirmY = startY
-          + this.currentNode.choices.length * this.s(MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
+          + this.renderedChoices.length * this.s(MOBILE_CHOICE_HEIGHT + MOBILE_CHOICE_GAP);
         this.confirmBg.setPosition(this.s(BOX_PADDING), confirmY);
         this.confirmBg.setSize(rowWidth, this.s(MOBILE_CONFIRM_HEIGHT));
         if (this.confirmLabel) {
@@ -653,6 +671,7 @@ export class DialogueSystem {
     }
     this.choiceTexts = [];
     this.selectedChoiceIndex = 0;
+    this.renderedChoices = [];
 
     // Clean up mobile choice elements
     for (const bg of this.choiceBgs) {
