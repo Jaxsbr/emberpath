@@ -356,6 +356,30 @@ export const ashenIsle: AreaDefinition = {
       actionRef: 'The walls hum faintly, as if remembering something.',
       repeatable: true,
     },
+    {
+      // Homecoming reflection (US-86). One-shot, condition-gated, fires after
+      // both Wren AND Old Man are warmed and the player walks through the
+      // village-centre tile. setFlags { homecoming_complete: true } closes the
+      // beat — the spec's soft turn toward Briar Wilds. (24, 22) sits in the
+      // open grass between Wren (22, 18) and Old Man (40, 28); the player
+      // naturally walks this tile when returning to the Old Man for the
+      // post-Wren warming, OR when leaving Old Man toward the dock. Multi-line
+      // text via \n — Phaser Text renders newlines natively, the bubble
+      // measures dynamic width/height per request (thoughtBubble.ts).
+      id: 'homecoming-reflection',
+      col: 24,
+      row: 22,
+      width: 1,
+      height: 1,
+      type: 'thought',
+      actionRef:
+        'Two warmer than they were.\n' +
+        'What stays is mine to carry.\n' +
+        'There is more light to share, beyond this island...',
+      condition: 'npc_warmed_wren == true AND npc_warmed_old_man == true AND homecoming_complete == false',
+      repeatable: false,
+      setFlags: { homecoming_complete: true },
+    },
   ],
   dialogues: {
     // Old Man Fading dialogue (US-78). Three nodes, ≤200 chars total. Tone:
