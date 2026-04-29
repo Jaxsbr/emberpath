@@ -287,6 +287,15 @@ export const ashenIsle: AreaDefinition = {
     // No lightOverride — defaults to LIGHTING_CONFIG.npcRadius / npcIntensity,
     // and the warming subscriber (US-85) re-registers brighter on warm.
     { id: 'wren', name: 'Wren', col: 22, row: 18, color: 0x8b5a3c, sprite: 'wren', wanderRadius: 2, awarenessRadius: 3 },
+    // Driftwood — the charming refusal (US-83). Stands near the dock — the
+    // shore tile region (rows 4-7) per spec. (32, 6) is a FLOOR tile in the
+    // open dock zone, > 2 tiles from Wren (22, 18) and Old Man (40, 28), and
+    // visually distinct from the existing dock-adjacent ashen-isle-mark
+    // trigger at (24, 5). lightOverride: lower intensity makes Driftwood read
+    // as "lit by his own thing" — a worldly light, not the Ember (criterion
+    // for US-83). wanderRadius 1 keeps him hovering at the dock; awarenessRadius
+    // 3 matches the others.
+    { id: 'driftwood', name: 'Driftwood', col: 32, row: 6, color: 0x4d2f1a, sprite: 'driftwood', wanderRadius: 1, awarenessRadius: 3, lightOverride: { intensity: 0.18 } },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; props are
   // intentionally empty during the world-legibility phase — the prior
@@ -505,6 +514,103 @@ export const ashenIsle: AreaDefinition = {
           id: 'parting',
           speaker: 'Wren',
           text: 'I feel it still. Bright in here, just under the wings.',
+        },
+      ],
+    },
+    // Driftwood — the charming refusal (US-83). Same script-swap pattern as
+    // Wren. Pre-Ember script `driftwood-intro` runs as the fallback. Post-Ember
+    // and not-yet-asked script `driftwood-receptive` offers a "Share warmth"
+    // choice — but choosing it does NOT set firePulseTarget (refusal produces
+    // NO pulse per spec; just a polite-decline node + npc_refused_driftwood
+    // setFlag via the choice's setFlags). Once refused, the post-refusal
+    // variant `driftwood-refused` swaps in and the Share-warmth choice is
+    // absent. Tone: smooth, worldly, knowing. He talks about other lights he
+    // has seen — never abrasive, never evil ("No villains" Gospel principle).
+    'driftwood-intro': {
+      id: 'driftwood-intro',
+      startNodeId: 'greeting',
+      portraitId: 'driftwood',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Driftwood',
+          text: 'Ah — a walker. Most don\'t, these days. Where did you come from, friend?',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Driftwood',
+          text: 'I\'ve seen a hundred islands. Bright ones, dim ones. They all dim, in the end.',
+          nextId: 'farewell',
+        },
+        {
+          id: 'farewell',
+          speaker: 'Driftwood',
+          text: 'Travel light. Don\'t carry too much. The dock is good company.',
+        },
+      ],
+    },
+    'driftwood-receptive': {
+      id: 'driftwood-receptive',
+      startNodeId: 'greeting',
+      portraitId: 'driftwood',
+      condition: 'has_ember_mark == true AND npc_refused_driftwood == false',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Driftwood',
+          text: 'Oh-ho — that\'s a fine little ember on you. Pretty thing.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Driftwood',
+          text: 'I\'ve been offered embers before. They burn up, given time.',
+          nextId: 'offer',
+        },
+        {
+          id: 'offer',
+          speaker: 'Driftwood',
+          text: 'Suppose you\'d like to share some? You\'re sweet to ask.',
+          choices: [
+            { text: 'Share warmth', nextId: 'decline', setFlags: { npc_refused_driftwood: true } },
+            { text: 'Just talking', nextId: 'small_talk' },
+          ],
+        },
+        {
+          id: 'decline',
+          speaker: 'Driftwood',
+          text: 'Kind of you. Truly. But I\'ve got my own light — the sea, the road. I\'m alright.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Driftwood',
+          text: 'Walk well, walker. May yours last longer than mine did.',
+        },
+        {
+          id: 'small_talk',
+          speaker: 'Driftwood',
+          text: 'Then enjoy the dock a while. The water remembers everyone.',
+        },
+      ],
+    },
+    'driftwood-refused': {
+      id: 'driftwood-refused',
+      startNodeId: 'greeting',
+      portraitId: 'driftwood',
+      condition: 'npc_refused_driftwood == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Driftwood',
+          text: 'Still walking? Good. The dock is here when you\'re tired.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Driftwood',
+          text: 'Take care of that little ember of yours. Pretty thing.',
         },
       ],
     },
