@@ -50,3 +50,97 @@ entries:
     result: pass
     notes: "US-87 codex landed; 4/5 done-when met; consumer-count criterion fills on US-90/US-91"
     tokens: ~3000
+  - task: 5
+    time: "2026-04-30T11:30:00Z"
+    type: implement
+    story: US-90
+    description: |
+      Branch A (combined with US-91 stub) — created src/art/sceneAssets.ts with
+      BeatAsset discriminated union (static | animated; animated reserved as a
+      future-upgrade type and not exercised this phase) and SCENE_ASSETS keyed by
+      sceneId, ordered by beat index. Three scenes / 9 entries
+      (ashen-isle-intro=4, ember-given=3, marsh-depths=2). Every entry's `file`
+      matches `scenes/<sceneId>/beat-<n>.png`. data/areas/types.ts gained an
+      optional `StoryBeat.assetRef?: string` field — existing beats compile
+      without modification. Verified via tsc clean + npm run build.
+    result: pass
+    notes: "US-90 code-side criteria met; cost-reconciliation section pending in manual-verify doc"
+    tokens: ~3500
+  - task: 6
+    time: "2026-04-30T11:32:00Z"
+    type: implement
+    story: US-91
+    description: |
+      Branch A — created tools/generate-scene-art.ts. Imports SCENE_ASSETS from
+      US-90 + composeArtPrompt + STYLE_VIBE_PROMPT from US-87; iterates the
+      9 static beats and prints one invocation block per beat with the composed
+      prompt and the absolute output path. PLANNED_GENERATION_COUNT=9 enforced
+      against manifest length (mismatch = fatal exit 1). Run `npx tsx
+      tools/generate-scene-art.ts` printed exactly 9 blocks; tsc + build pass.
+    result: pass
+    notes: "US-91 printer shipped; assets generated in task 8"
+    tokens: ~2000
+  - task: 7
+    time: "2026-04-30T11:35:00Z"
+    type: implement
+    story: US-88
+    description: |
+      Branch A — replaced thoughtBubble.ts with cream/umber storybook bubble.
+      Phaser.GameObjects.Rectangle (#222244) → Phaser.GameObjects.Graphics
+      with fillRoundedRect (creamLight α 0.92 fill + umberDark 1px stroke,
+      radius 6). Text color flipped from white to umberDark, italic serif
+      retained. wordWrap with useAdvancedWrap (max 110 design px) added —
+      multi-line homecoming-reflection now renders all three lines. Replaced
+      world-pixel FONT_SIZE = 10 with FONT_SIZE_DESIGN = 12 plus a private s(v)
+      helper (identity for main-cam world-space rendering, documented). Reset
+      hygiene at top of displayThought + scene.events.shutdown handler clears
+      in-flight bubble + queue. Resize handler re-applies fontSize / wrap /
+      panel. UI camera continues to ignore both currentBg and currentText.
+      Verify: tsc + build clean.
+    result: pass
+    notes: "US-88 code-side criteria met; manual-verify doc pending"
+    tokens: ~5500
+  - task: 8
+    time: "2026-04-30T11:37:00Z"
+    type: implement
+    story: US-91
+    description: |
+      Branch A — fired 8 mcp__pixellab__create_object calls in parallel
+      (consistent-style 256×256, view='side', n_frames=1) with composed prompts.
+      9th hit the 8/8 concurrent-job rate limit; refired after the first batch
+      returned. All 9 jobs completed successfully (~30-60s each). Downloaded
+      PNGs via curl from the backblaze storage URLs into
+      assets/scenes/<sceneId>/beat-<n>.png. Sample inspection: ember-given
+      beat-1 (Keeper hands ember to Pip) reads as a hope-gold radiant moment
+      against sepia background; ashen-isle-intro beat-3 (Pip in hooded cloak)
+      is a small fox pilgrim on cracked stone; marsh-depths beat-1 (fog over
+      water, sun glow) reads sepia-first with hope-gold confined to the sun.
+      Object IDs: 2c3918de... 918d237e... a9eee188... c7f9af20... 98ff782f...
+      2509ea06... 2a432de6... 7c43b5e5... 6732153e... .
+    result: pass
+    notes: "9 of 9 PixelLab assets shipped; sepia-first read confirmed by sample inspection"
+    tokens: ~6000
+  - task: 9
+    time: "2026-04-30T11:42:00Z"
+    type: implement
+    story: US-89
+    description: |
+      Branch A — rewrote StoryScene.ts to wire SCENE_ASSETS into preload and
+      render real images with cross-fade. preload iterates SCENE_ASSETS, loads
+      each beat by key scene-<sceneId>-<beatIndex> from scenes/<file>, skips
+      already-loaded textures (cheap re-launch). Animated kind logs warn +
+      falls through to fallback. loaderror logs (sceneId, beatIndex, expected
+      path). create() builds explicit-depth GameObjects (letterbox=-1, image=0,
+      label=1, panel=10, text=11, hint=12) — every add.* paired with setDepth
+      per the inline depth-map block. crossFadeToBeat: outgoing tweens α 1→0
+      and incoming tweens α 0→1 over BEAT_FADE_DURATION_MS=400; outgoing is
+      destroy()-ed in onComplete; crossFadeInProgress guard blocks rapid
+      double-tap re-entrancy after the typewriter is complete. Aspect-ratio
+      preserved width-fit scale with cream-letterbox bg. Reset hygiene: all
+      GameObject refs nulled at init(); fade tweens stopped + cleared in
+      cleanupResize; typewriter timer destroyed. Texture-missing path falls
+      back to the previous flat-color rect + label (regression-safe). Verify:
+      tsc + build clean (bundle 1,570 kB / 364 kB gz, +8 kB from US-87 baseline).
+    result: pass
+    notes: "US-89 code-side criteria met; in-engine smoke test + manual-verify pending"
+    tokens: ~7000
