@@ -394,6 +394,89 @@ export const ashenIsle: AreaDefinition = {
     // does not carry. The greeting does NOT re-set spoke_to_old_man (the flag
     // is already true from the pre-Ember conversation; resetting it has no
     // effect on the existing south-interior story trigger gate).
+    // old-man-warmed (US-84). Most specific Old Man variant — checked first by
+    // selectScriptForNpc (iterates dictionary in insertion order, returns the
+    // first whose condition matches). When npc_warmed_old_man is true, this
+    // wins over old-man-receptive and old-man-illumined regardless of the
+    // other warming flag states. 2 nodes.
+    'old-man-warmed': {
+      id: 'old-man-warmed',
+      startNodeId: 'greeting',
+      portraitId: 'old-man',
+      condition: 'npc_warmed_old_man == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Old Man',
+          text: 'You\'re back. Sit a moment, walker.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Old Man',
+          text: 'I\'d forgotten how the morning felt.',
+        },
+      ],
+    },
+    // old-man-receptive (US-84). Wren has been warmed first — Old Man can now
+    // receive. selectScriptForNpc reaches this variant after old-man-warmed
+    // (which fails for `npc_warmed_old_man == false`); its longer condition
+    // beats old-man-illumined which would otherwise also match. The Share
+    // warmth choice fires the pulse via firePulseTarget='old-man'; the
+    // GameScene setOnChoice handler sets npc_warmed_old_man=true at pulse
+    // landing and the warming subscriber re-registers Old Man's light at
+    // brighter values + force-evals alpha-gates on the same tick (US-85).
+    'old-man-receptive': {
+      id: 'old-man-receptive',
+      startNodeId: 'greeting',
+      portraitId: 'old-man',
+      condition: 'has_ember_mark == true AND npc_warmed_wren == true AND npc_warmed_old_man == false',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Old Man',
+          text: 'Something has stirred. The little one — she\'s humming again.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Old Man',
+          text: 'Maybe there\'s a corner of me left. Just a corner.',
+          nextId: 'offer',
+        },
+        {
+          id: 'offer',
+          speaker: 'Old Man',
+          text: 'If you\'ve any to spare. I won\'t ask twice.',
+          choices: [
+            { text: 'Share warmth', nextId: 'received', firePulseTarget: 'old-man' },
+            { text: 'Just sitting with you', nextId: 'company' },
+          ],
+        },
+        {
+          id: 'received',
+          speaker: 'Old Man',
+          text: '...oh. Oh.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Old Man',
+          text: 'There. Yes. Bring it back when you walk this way.',
+        },
+        {
+          id: 'company',
+          speaker: 'Old Man',
+          text: 'Alright. The chair across is yours.',
+        },
+      ],
+    },
+    // old-man-illumined (US-81 + US-84). Post-Ember default when Wren is NOT
+    // yet warmed. Existing two nodes preserved; greeting now leads into a
+    // middle node with a Share-warmth choice that routes to a wary-decline.
+    // The choice has NO firePulseTarget (no pulse on wary-decline per US-84
+    // spec) and NO setFlags (no npc_warmed_old_man flip — verifiable via flag
+    // store inspection: nothing changes).
     'old-man-illumined': {
       id: 'old-man-illumined',
       startNodeId: 'greeting',
@@ -404,7 +487,21 @@ export const ashenIsle: AreaDefinition = {
           id: 'greeting',
           speaker: 'Old Man',
           text: 'You carry it now. Then you are not yet me.',
-          nextId: 'farewell',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Old Man',
+          text: 'I\'ve heard such promises before. They burn out.',
+          choices: [
+            { text: 'Share warmth', nextId: 'wary_decline' },
+            { text: 'Walk on', nextId: 'farewell' },
+          ],
+        },
+        {
+          id: 'wary_decline',
+          speaker: 'Old Man',
+          text: 'No. Not yet. I\'ve been wrong before.',
         },
         {
           id: 'farewell',
