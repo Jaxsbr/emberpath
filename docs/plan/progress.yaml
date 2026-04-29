@@ -27,10 +27,11 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
-  last_result: null
+  task_number: 2
+  next_task: "[US-87] Investigate: extract STYLE_PALETTE hex map from docs/art-style.md, plan src/art/styleGuide.ts shape — exports (STYLE_PALETTE / STYLE_VIBE_PROMPT / STYLE_BASE_PROMPT / composeArtPrompt), Phaser-free import surface, deterministic prompt composition order. Identify the second consumer needed to satisfy the ≥ 2 distinct files done-when (likely tools/generate-scene-art.ts stub introduced ahead of US-91)."
+  last_result: pass
   consecutive_fails: 0
+  phase_classification: cross-cutting
 
   # --- Review (owner: iterator) ---
   review_stage: null

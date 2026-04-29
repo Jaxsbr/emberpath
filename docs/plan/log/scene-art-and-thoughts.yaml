@@ -1,3 +1,11 @@
 phase: "scene-art-and-thoughts"
 started: "2026-04-29T22:30:00Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-29T22:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — initial state survey for scene-art-and-thoughts. Verify clean: tsc + vite build pass on build/scene-art-and-thoughts at fce5e9f (post-start commit; prior commit f4666bd is the homecoming-light reconciliation). Source layout confirmed: src/scenes/{GameScene,StoryScene,TitleScene}.ts; src/systems/{thoughtBubble,emberShare,lighting,desaturationPipeline,...}.ts; src/data/areas/{ashen-isle,fog-marsh,registry,types}.ts; tools/{atlas-preview.py,migrate-to-relative.ts,editor/}. No src/art/ directory yet — needs creation for US-87 styleGuide.ts and US-90 sceneAssets.ts. art-style.md palette has 12 named hex roles (Page cream light/mid, Sepia mid light/dark, Umber shadow light/dark, Ink near-black, Hope-gold light/deep, Mossy green, Slate blue, Burnt sienna). Phase classification: CROSS-CUTTING — adds StoryBeat.assetRef to types.ts (cross-area type contract) plus two new modules consumed by StoryScene + Node-side tooling (tools/generate-scene-art.ts). Investigate-first mandate applies. Story sequencing: US-87 (foundation codex) → US-90 (manifest depending on codex) → US-91 stub (script that prints invocations — the second consumer satisfying ≥ 2 distinct files for US-87) → US-91 actual generation (operator-fired PixelLab MCP) → US-89 (StoryScene wires preload + cross-fade against the manifest) → US-88 (thought bubble using STYLE_PALETTE) → manual-verify doc → AGENTS.md reconciliation → phase-complete gate. Queued first concrete task: investigate the styleGuide.ts module shape so iteration 2's Branch A can implement US-87 with no spec ambiguity."
+    result: pass
+    notes: "phase classification = CROSS-CUTTING; investigate-first mandate active; verify baseline clean (tsc + vite build)"
+    tokens: ~6500
