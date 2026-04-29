@@ -262,65 +262,30 @@ export const fogMarsh: AreaDefinition = {
       repeatable: false,
       setFlags: { marsh_trapped: true },
     },
-    // Escape-attempt feedback bands (US-79). Each band sits on row 21 cols
-    // 13-16, one tile north of the now-walled south exit. Player walks south
-    // → enters band → condition matches their current escape_attempts value
-    // → escape_attempts increments → thought fires. The condition order is
-    // checked BEFORE the increment, so band N fires at value N-1 (the first
-    // attempt at value 0 fires band 1).
+    // Escape-attempt feedback (US-79). One trigger band on row 21 cols 13-16,
+    // immediately north of the now-walled south exit. Each entry increments
+    // escape_attempts; GameScene's escape_attempts onFlagChange subscriber
+    // then selects the matching escalating thought AND fires the fog-flash.
     //
-    // The fog-flash visual fires from GameScene's escape_attempts subscriber
-    // (US-79 wiring) — same trigger, separate concern (visual vs text).
+    // Originally implemented as four condition-gated triggers stacked on the
+    // same tiles. That cascaded on first entry: TriggerZoneSystem evaluates
+    // triggers in array order, and each band's incrementFlags mutates the
+    // flag synchronously BEFORE the next band's evaluateCondition runs —
+    // so all four bands fired in one frame and escape_attempts jumped 0→4
+    // immediately, trivialising the surrender threshold. Collapsing to one
+    // trigger removes the cascade surface entirely.
     //
-    // Lines escalate from "the path is gone" through "I cannot do this" so
-    // grace lands on a genuinely-tried player. Band 4 latches — every attempt
-    // beyond the third repeats "I cannot do this." (the same line that opens
-    // the surrender window in US-80).
+    // actionRef is empty because the message comes from the subscriber, not
+    // the dispatch — onThought guards against empty strings.
     {
-      id: 'escape-attempt-1',
+      id: 'escape-attempt',
       col: 13,
       row: 21,
       width: 4,
       height: 1,
       type: 'thought',
-      actionRef: 'The path is gone.',
-      condition: 'marsh_trapped == true AND escape_attempts < 1',
-      repeatable: true,
-      incrementFlags: ['escape_attempts'],
-    },
-    {
-      id: 'escape-attempt-2',
-      col: 13,
-      row: 21,
-      width: 4,
-      height: 1,
-      type: 'thought',
-      actionRef: 'There must be a way back.',
-      condition: 'marsh_trapped == true AND escape_attempts == 1',
-      repeatable: true,
-      incrementFlags: ['escape_attempts'],
-    },
-    {
-      id: 'escape-attempt-3',
-      col: 13,
-      row: 21,
-      width: 4,
-      height: 1,
-      type: 'thought',
-      actionRef: 'I cannot find it.',
-      condition: 'marsh_trapped == true AND escape_attempts == 2',
-      repeatable: true,
-      incrementFlags: ['escape_attempts'],
-    },
-    {
-      id: 'escape-attempt-4-latch',
-      col: 13,
-      row: 21,
-      width: 4,
-      height: 1,
-      type: 'thought',
-      actionRef: 'I cannot do this.',
-      condition: 'marsh_trapped == true AND escape_attempts >= 3',
+      actionRef: '',
+      condition: 'marsh_trapped == true',
       repeatable: true,
       incrementFlags: ['escape_attempts'],
     },

@@ -216,14 +216,26 @@ export class GameScene extends Phaser.Scene {
         this.updateConditionalDecorations();
       });
       // US-79: each escape_attempts increment fires a fog-flash visual at the
-      // closed exit centre so the failed escape is felt, not silent. Subscribed
-      // here (not in the trigger system) because the visual effect is a
-      // lighting concern, not a trigger-type concern. Cleaned up in cleanupResize.
-      this.escapeAttemptsUnsubscribe = onFlagChange('escape_attempts', () => {
+      // closed exit centre AND queues the escalating monologue line matching
+      // the new value. Subscribed here (not driven by the trigger dispatch)
+      // because the trigger system's "fire 4 condition-gated bands stacked
+      // on the same tile" approach cascaded on first entry: each band's
+      // incrementFlags mutated the flag mid-frame, satisfying the next
+      // band's condition in the same TriggerZoneSystem.update pass. One
+      // trigger + one subscriber removes the cascade surface entirely.
+      // Cleaned up in cleanupResize.
+      this.escapeAttemptsUnsubscribe = onFlagChange('escape_attempts', (_, value) => {
         // Closed exit: row 22, cols 13-16. Centre = col 14.5, row 22.
         const cx = 14.5 * TILE_SIZE;
         const cy = 22 * TILE_SIZE;
         this.lightingSystem?.flashFog(cx, cy);
+        const n = (value as number | undefined) ?? 0;
+        const line =
+          n === 1 ? 'The path is gone.' :
+          n === 2 ? 'There must be a way back.' :
+          n === 3 ? 'I cannot find it.' :
+          'I cannot do this.';
+        this.showThought(line);
       });
     }
 
@@ -274,7 +286,11 @@ export class GameScene extends Phaser.Scene {
         this.launchStoryScene(actionRef);
       },
       onThought: (actionRef) => {
-        this.showThought(actionRef);
+        // Empty actionRef = increment-only trigger (e.g. fog-marsh
+        // 'escape-attempt' uses this so the message is driven by the
+        // escape_attempts onFlagChange subscriber rather than the dispatch).
+        // Skipping prevents queuing an empty thought bubble.
+        if (actionRef) this.showThought(actionRef);
       },
     });
     this.triggerZone.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
