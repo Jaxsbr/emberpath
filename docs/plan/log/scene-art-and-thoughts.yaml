@@ -42,3 +42,11 @@ entries:
     result: pass
     notes: "implement task queued"
     tokens: ~500
+  - task: 4
+    time: "2026-04-29T23:00:00Z"
+    type: implement
+    story: US-87
+    description: "Branch A — created src/art/styleGuide.ts (45 lines). 12-key STYLE_PALETTE (creamLight=#F2EAD6, creamMid=#E5D9BD, sepiaLight=#B89972, sepiaDark=#8C7256, umberLight=#5A4636, umberDark=#3A2C20, inkBlack=#1F1813, hopeGoldLight=#F2C95B, hopeGoldDeep=#E89C2A, mossyGreen=#7A8A55, slateBlue=#5A6B78, burntSienna=#A8543A) — every hex byte-for-byte from docs/art-style.md. STYLE_VIBE_PROMPT verbatim from spec. STYLE_BASE_PROMPT embeds STYLE_VIBE_PROMPT as its first paragraph then composition rules (palette / line / dither / lighting / avoid). composeArtPrompt(subject, mood?) joins BASE + 'Subject: ' + subject + (mood ? '\\n\\nMood: ' + mood : '') + '\\n' — single trailing newline, deterministic. Phaser-free (zero imports). Verify pass: tsc + vite build clean. US-87 4/5 done-when met (the ≥ 2 consumer-files criterion is the only outstanding box; fills naturally on US-90/US-91 import-wires). Story Completion Gate: not yet — US-87 stays out of completed_stories until consumer count reaches 2."
+    result: pass
+    notes: "US-87 codex landed; 4/5 done-when met; consumer-count criterion fills on US-90/US-91"
+    tokens: ~3000

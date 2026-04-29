@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: "[US-87] Create src/art/styleGuide.ts exporting STYLE_PALETTE (12 hex keys: creamLight/creamMid/sepiaLight/sepiaDark/umberLight/umberDark/inkBlack/hopeGoldLight/hopeGoldDeep/mossyGreen/slateBlue/burntSienna), STYLE_VIBE_PROMPT (verbatim one-liner from spec), STYLE_BASE_PROMPT (multi-line, pulled from art-style.md), composeArtPrompt(subject, mood?). Phaser-free, all values typed `as const`."
+  task_number: 5
+  next_task: null
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
