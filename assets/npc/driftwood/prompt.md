@@ -8,4 +8,6 @@ adult anthropomorphic sea otter traveler, bipedal humanoid sea otter with rich c
 
 Animations: `idle` (breathing-idle, 4 frames, animating-235419a5), `walk` (walking-4-frames, 4 frames, animating-97cb697c).
 
-## Portrait (pending — PixelLab Standard, character `f51084a5-c0dd-4945-8964-b13dd0a0af80` queued)
+## Portrait (PixelLab Standard, character `f51084a5-c0dd-4945-8964-b13dd0a0af80`, 4 directions, 136×136 canvas — south rotation used as portrait.png)
+
+head and shoulders close-up portrait of an adult anthropomorphic sea otter traveler, humanoid sea otter NOT a real animal, with rich chocolate-brown thick fur, paler tan-cream face, dark expressive eyes with smooth knowing gaze, short rounded ears, short whiskers, faded sea-green sailor's scarf draped at the neck, charming smooth-talking worldly expression, slight wry half-smile, centered symmetrical composition, dialog box character portrait, watercolor storybook style, soft painterly textures, simple solid dark background

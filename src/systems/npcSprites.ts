@@ -37,6 +37,8 @@ export const NPC_PORTRAITS: Record<string, NpcPortraitDefinition> = {
   'marsh-hermit': { file: 'portrait.png', filter: 'nearest' },
   'old-man': { file: 'portrait.png', filter: 'linear' },
   'heron': { file: 'portrait.png', filter: 'linear' },
+  'wren': { file: 'portrait.png', filter: 'linear' },
+  'driftwood': { file: 'portrait.png', filter: 'linear' },
 };
 
 export function hasNpcPortrait(id: string): boolean {
