@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 6
-  next_task: "[US-82+US-83] Kick off PixelLab template animations + portrait gens for Wren and Driftwood. Both characters' 8-direction rotations are ready (Wren=27194dce 116×116, Driftwood=bba49891 100×100). Per the heron pattern: animate_character with template_animation_id='breathing-idle' (4 frames) and 'walking-4-frames' (4 frames) for each character — 4 jobs total, 1 generation per direction × 8 dirs × 2 anims × 2 chars = 32 generations. Separately, fire two new create_character calls in standard mode for portraits (n_directions=4, size=96-ish to land at ~136×136 canvas; 'head and shoulders close-up portrait' prompts mirroring heron's portrait prompt structure) — 2 generations. Total spend this iteration: ~34 generations. Capture portrait character IDs in the log."
+  task_number: 7
+  next_task: "[US-85] Implement warming-flag onFlagChange subscribers — adds two subscribers in GameScene.create() for `npc_warmed_wren` and `npc_warmed_old_man` that, on flip-to-true: (a) re-register the target NPC's tier-1 light at brighter values (e.g. radius +25%, intensity +0.15) via LightingSystem.registerLight idempotent overwrite (Learning #63), and (b) call this.maybeUpdateAlphaGates(true) to bloom alpha-gated decorations on the same tick (mirrors US-77's has_ember_mark subscriber pattern at GameScene.ts:358-366). Each subscriber's unsubscribe collected in a new this.warmingUnsubscribes: (() => void)[] field and invoked in cleanupResize (ASYNC-CLEANUP-SAFETY criterion). On flip-to-undefined (resetAllFlags), re-register the NPC light at ORIGINAL values to restore baseline. Brightening params live as named constants (WARMED_LIGHT_RADIUS_BONUS, WARMED_LIGHT_INTENSITY_BONUS) at the top of GameScene or in lightingConfig. This task is NO-ASSET-DEP and completes US-85 criteria 11 (light brightening) + 12 (alpha-gate bloom) + 5/13 of the [phase]-tagged Async-cleanup safety criteria. Verify build green. While this implements, poll Wren breathing-idle status — should complete during/after this task."
   last_result: pass
   consecutive_fails: 0
 

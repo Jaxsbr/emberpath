@@ -41,3 +41,11 @@ entries:
     result: pass
     notes: "US-85 foundation 8/16 criteria met. EmberShareSystem ships with full restart hygiene + scene-shutdown teardown. Wren+Driftwood rotations ready — animations + portraits queued next."
     tokens: ~9500
+  - task: 6
+    time: "2026-04-29T08:35:00Z"
+    type: implement
+    story: phase
+    description: "Branch A — partial execution of [US-82+US-83] PixelLab animation + portrait kickoff. Hit PixelLab's 8-concurrent-job cap: Wren breathing-idle (8 directional jobs) consumed all 8 slots; the other 5 calls (Wren walking-4-frames, Driftwood breathing-idle, Driftwood walking-4-frames, Wren portrait, Driftwood portrait) all returned 'Insufficient job slots' / 'Maximum concurrent background jobs reached'. Will retry the remaining 5 jobs in a serialised pipeline (1 batch at a time, ~2-4 min each) over subsequent iterations. Total spend so far: 40 (Wren+Driftwood characters in Pro mode) + 8 (Wren breathing-idle) = 48 generations. Remaining for Wren+Driftwood asset gen: 24 anim jobs + 2 portrait jobs = 26 generations. No code change in this iteration; polling Wren in next iteration."
+    result: pass
+    notes: "PixelLab job cap = 8 concurrent. Will pipeline remaining batches between code iterations to avoid wall-time blocking."
+    tokens: ~2500
