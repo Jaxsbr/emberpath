@@ -17,3 +17,11 @@ entries:
     result: pass
     notes: "Wren character_id=27194dce-f37c-4363-8ca8-bee96373051f (pro mode, 20 gens). Heron-style pattern confirmed. No code change yet."
     tokens: ~3000
+  - task: 3
+    time: "2026-04-29T08:00:00Z"
+    type: implement
+    story: US-83
+    description: "Branch A — executed [US-83] Driftwood PixelLab kickoff. Mirrored Wren params: mode='pro', body_type='humanoid', size=60, view='low top-down'. Description authored from spec ('charming smooth-talking worldly traveler', sea otter species per spec) — anthropomorphic bipedal sea otter with chocolate-brown fur, sea-green sailor's scarf + leather travel satchel as cosmetic markers (distinct from Wren's dusty rose scarf and Heron's earth-tone hooded cloak). Fired mcp__pixellab__create_character. Returned character_id=bba49891-4a1b-4186-9f72-c32fa2b8e804, status=processing, cost=20 generations. ETA 3-5 min. Both Wren + Driftwood now generating in parallel. No code change yet (asset gen is server-side async); verify trivially pass; no test-baseline update. Story Completion Gate: 0/8 US-83 criteria met (assets not yet on disk). Queued next: US-85 investigate (EmberShareSystem foundation integration points) so code work proceeds while assets process."
+    result: pass
+    notes: "Driftwood character_id=bba49891-4a1b-4186-9f72-c32fa2b8e804 (pro, 20 gens). Both NPCs queued; total spend so far ~40 gens."
+    tokens: ~2000

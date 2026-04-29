@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-83] Kick off Driftwood PixelLab generation — match heron + Wren pattern: pro mode, 8-dir, size=60, body_type=humanoid, view=low top-down. Species per spec is sea otter (worldly traveler) — anthropomorphic bipedal sea otter with charming-but-cynical demeanor, distinct silhouette from fox/heron/wren/old-man. While Driftwood generates, also queue Wren get_character poll + integrate when ready. After Driftwood kicked off, the next concrete code task is US-85 EmberShareSystem foundation (no asset dep) since both characters will be processing in parallel."
+  task_number: 4
+  next_task: "[US-85] Investigate: EmberShareSystem integration points — read src/scenes/GameScene.ts for the update() world-walk early-return pattern (transitionInProgress / spawnInProgress / dialogueSystem.isActive — exact line refs, locations of suppression branches), src/systems/npcInteraction.ts for gating insertion, src/systems/triggerZone.ts for gating insertion, src/systems/dialogue.ts choice-handler entry point where a 'Share warmth' choice would invoke EmberShareSystem.startPulse. Read src/systems/lighting.ts:registerLight signature for the idempotent-overwrite contract (Learning #63 confirmation), and the existing maybeUpdateAlphaGates / alpha-gate force-eval entry point used by US-77 onFlagChange. Output: a precise diff plan for the next iteration's implement task on src/systems/emberShare.ts (new) + GameScene wiring + suppression hooks. While this investigation runs, Wren (char 27194dce) and Driftwood (char bba49891) PixelLab gens are processing in the background — poll + integrate after this investigation completes."
   last_result: pass
   consecutive_fails: 0
 
