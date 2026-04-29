@@ -9,3 +9,28 @@ entries:
     result: pass
     notes: "phase classification = CROSS-CUTTING; investigate-first mandate active; verify baseline clean (tsc + vite build)"
     tokens: ~6500
+  - task: 2
+    time: "2026-04-29T22:45:00Z"
+    type: investigate
+    story: US-87
+    description: |
+      Branch A — investigate styleGuide.ts module shape per US-87 done-when. Key reads:
+      • docs/art-style.md palette table contains 12 named roles. Mapping to TS keys:
+        creamLight=#F2EAD6, creamMid=#E5D9BD, sepiaLight=#B89972, sepiaDark=#8C7256,
+        umberLight=#5A4636, umberDark=#3A2C20, inkBlack=#1F1813,
+        hopeGoldLight=#F2C95B, hopeGoldDeep=#E89C2A,
+        mossyGreen=#7A8A55, slateBlue=#5A6B78, burntSienna=#A8543A.
+      • src/scenes/StoryScene.ts (US-89 target): placeholder is `imageRect: Rectangle` (line 20) + `imageLabel` (line 21) with `imageColor` fallback. Already has cleanupResize hook on `events.on('shutdown')` (line 100), reset of fields at top of init. Needs new fields currentBeatImage, previousBeatImage, crossFadeInProgress, explicit setDepth() on every add.* call. cleanupResize must also kill any in-flight cross-fade tween.
+      • src/systems/thoughtBubble.ts (US-88 target): currently uses world-pixel `FONT_SIZE = 10` (line 8) and `BG_COLOR = 0x222244` (line 10) — both replaced this phase. No `s(v)` helper today; will mirror dialogue.ts pattern. Currently Rectangle bg (line 85); switching to Graphics.fillRoundedRect. uiCam.ignore retained for both currentBg + currentText. displayThought() does not currently null-reset currentBg/currentText/dismissTimer at top — must add per spec criterion.
+      • Module shape decision for src/art/styleGuide.ts:
+        - export `STYLE_PALETTE` typed object literal — 12 readonly hex string fields, all `as const`
+        - export `STYLE_VIBE_PROMPT` (the one-liner from spec: "Anthropomorphic pilgrims in a graphite-and-sepia storybook world, where gold light is the only thing brave enough to be in color.")
+        - export `STYLE_BASE_PROMPT` — multi-line composition rules covering palette + line + dither + lighting + anti-patterns; pulled almost verbatim from docs/art-style.md sections (Pillars + Line & Texture + Lighting + What to avoid)
+        - export `composeArtPrompt(subject: string, mood?: string): string` — deterministic order: STYLE_VIBE_PROMPT + '\n\n' + STYLE_BASE_PROMPT + '\n\nSubject: ' + subject + (mood ? '\nMood: ' + mood : '') + '\n'
+        - zero Phaser imports; pure TypeScript module so it can be imported by Node-side tools (US-91)
+      • Second consumer for the ≥ 2 distinct files done-when: deferred until US-90 (sceneAssets.ts imports composeArtPrompt indirectly via the prompt strings) and US-91 (tools/generate-scene-art.ts imports STYLE_VIBE_PROMPT + composeArtPrompt directly). For US-87 alone, only one consumer exists at first — that done-when criterion will tick green during US-90/US-91 iterations.
+      • No verify run — investigate task did not modify source; baseline still passes from task 1.
+      Next task to queue (Branch B): "[US-87] Create src/art/styleGuide.ts with the four exports per the plan above; commit as the US-87 keystone implementation."
+    result: pass
+    notes: "investigate-first mandate satisfied; module shape locked; ≥ 2 consumer criterion deferred to US-90/US-91"
+    tokens: ~3500
