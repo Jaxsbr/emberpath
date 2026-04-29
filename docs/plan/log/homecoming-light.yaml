@@ -137,3 +137,11 @@ entries:
     result: pass
     notes: "PR #21 created; review-pr queued"
     tokens: ~3000
+  - task: 18
+    time: "2026-04-30T08:00:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed [review] review-pr pr=21 auto=true via the sabs:review-pr skill (auto mode → event=COMMENT, no auto APPROVE / REQUEST_CHANGES). Review posted as a summary comment at https://github.com/Jaxsbr/emberpath/pull/21#pullrequestreview-4200068021. Findings: 0 critical, 2 concerns (both forward-fragility on src/scenes/GameScene.ts setOnChoice — (a) setFlags applied at choice-pick time vs pulse-land timing asymmetry; (b) missing explicit `return` after the firePulseTarget block, harmless today but a footgun if future code is appended below the if-block), 1 nit (src/systems/emberShare.ts shutdown listener has no matching .off — idempotent today since instance is per-scene). Positives noted: clean three-way handoff (selectChoice → onChoiceCallback → advanceAfterPulse), DRY per-choice condition primitive, deliberate WARMING_NPC_IDS exclusion of Driftwood, restart hygiene followed. CI retro-gate is red on purpose (phase_complete: true without retro_complete: true) — phase-retro is the next step. Inline anchors fell back to a summary comment due to a line-number-mapping issue in the skill (raw-diff offsets vs post-image file lines); files + code regions are still named so the author can navigate. review_stage: pr_created → review_posted. Loop continues — Branch B on the next iteration will schedule handle-pr-review."
+    result: pass
+    notes: "Review posted; 2 concerns + 1 nit to triage in handle-pr-review next iteration"
+    tokens: ~5000
