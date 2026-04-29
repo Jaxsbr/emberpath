@@ -9,3 +9,11 @@ entries:
     result: pass
     notes: phase classification = SERVER/CROSS-CUTTING; investigate-first mandate active; sequencing puts long-async PixelLab gen first
     tokens: ~3500
+  - task: 2
+    time: "2026-04-29T07:55:00Z"
+    type: investigate
+    story: US-82
+    description: "Branch A — executed [US-82] Investigate: Wren PixelLab generation kickoff. Findings: heron asset shape is 8 idle dirs / 8 walk dirs / 8 static / portrait — matches the spec's expected layout for wren (assets/npc/wren/{idle,walk}/{dir}/frame_NNN.png + static/{dir}.png + portrait.png). Heron prompt.md confirms PRO mode + size=60 (84×84 canvas / 1.4) + view='low top-down' + body_type=humanoid (anthropomorphic bipedal animal) was the pattern; matched it. Personal pixellab MCP (mcp__pixellab__*) is now connected after a fresh registration in this session. Description authored from spec ('young, chirpy, hopeful', 'small brown bird, distinct silhouette') + heron-style structure (anthropomorphic bipedal + watercolor storybook + cosmetic marker scarf). Fired mcp__pixellab__create_character: name='Wren', mode='pro', body_type='humanoid', size=60, view='low top-down'. Returned character_id=27194dce-f37c-4363-8ca8-bee96373051f, status=processing, cost=20 generations. ETA 3-5 min. No code change in this iteration (asset generation is server-side async); verify trivially still pass; no test-baseline update needed. Story Completion Gate: 0/10 US-82 criteria met (assets not yet on disk; this is a kickoff). Queued next task: kick off Driftwood (US-83) so both characters generate in parallel; once both queued, the next iteration can shift to US-85 code work while we wait."
+    result: pass
+    notes: "Wren character_id=27194dce-f37c-4363-8ca8-bee96373051f (pro mode, 20 gens). Heron-style pattern confirmed. No code change yet."
+    tokens: ~3000

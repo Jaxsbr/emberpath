@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-82] Investigate: Wren PixelLab generation kickoff — confirm species prompt (young wren / small brown bird, distinct silhouette from fox/heron/marsh-hermit/old-man), animate_character / create_character workflow from prior NPC phases (npc-portraits + npc-behavior + keeper-rescue heron), expected output structure (assets/npc/wren/{idle,walk}-{dir}-{frame}.png + static/{dir}.png + portrait.png matching the npcSprites + npcPortraits registry contracts), and prepare the exact pixellab-team MCP batch to fire on the next iteration. Also confirm npm/tsc still green and current main test-baseline.txt staleness vs fog-and-light merged build (baseline note for regression check)."
+  task_number: 3
+  next_task: "[US-83] Kick off Driftwood PixelLab generation — match heron + Wren pattern: pro mode, 8-dir, size=60, body_type=humanoid, view=low top-down. Species per spec is sea otter (worldly traveler) — anthropomorphic bipedal sea otter with charming-but-cynical demeanor, distinct silhouette from fox/heron/wren/old-man. While Driftwood generates, also queue Wren get_character poll + integrate when ready. After Driftwood kicked off, the next concrete code task is US-85 EmberShareSystem foundation (no asset dep) since both characters will be processing in parallel."
   last_result: pass
   consecutive_fails: 0
 
