@@ -4,7 +4,9 @@ import { GameScene } from './scenes/GameScene';
 import { StoryScene } from './scenes/StoryScene';
 
 const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
+  // WebGL required — DesaturationPipeline (US-76) is a custom PostFX shader
+  // pipeline registered from GameScene; canvas renderer cannot host it.
+  type: Phaser.WEBGL,
   parent: 'game-container',
   // Nearest-neighbor filtering — crisp pixel art for tilesets, fox-pip, and future sprites.
   pixelArt: true,
