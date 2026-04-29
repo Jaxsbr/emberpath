@@ -1,0 +1,163 @@
+phase: "homecoming-light"
+started: "2026-04-29T07:36:05Z"
+entries:
+  - task: 1
+    time: "2026-04-29T07:45:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — initial state survey for homecoming-light. Verify clean: npx tsc --noEmit + npm run build pass on build/homecoming-light at commit 264d7f3 (post-start commit). Source layout confirmed: existing systems (lighting, dialogue, npcBehavior, npcInteraction, conditions, triggerZone, desaturationPipeline) all in src/systems/; areas in src/data/areas/{ashen-isle,fog-marsh,registry,types}.ts; npcSprites + npcPortraits registries co-located in src/systems/npcSprites.ts. Existing NPC asset directories: heron (keeper-rescue), marsh-hermit (npc-portraits), old-man (foundation/world-legibility). New for this phase: wren (PixelLab generation needed, longest async blocker → US-82) and driftwood (PixelLab generation needed → US-83). Phase classification: SERVER/CROSS-CUTTING — touches GameScene (sharingInProgress mutual exclusion + flag-change subscribers), ashen-isle.ts (3 new dialogue scripts, 1 new NPC + extended Old Man scripts, 1 new trigger), npcSprites/npcPortraits registries, new EmberShareSystem, lighting (re-registration on warm), desaturation pipeline (effective strength derived value), alpha-gates (force-eval on warm). Investigate-first mandate applies. Story sequencing rationale: kick off Wren+Driftwood PixelLab generation FIRST since they are async blockers (~minutes); while assets generate, build US-85 (EmberShareSystem keystone) → US-86 (desaturation derived value, no asset dep) → US-84 (Old Man dialogue extensions, no asset dep). When Wren assets land, fold in US-82; when Driftwood assets land, fold in US-83. Queued first concrete task: investigate Wren PixelLab kickoff specifics so iteration 2's Branch A can fire the create_character / animate_character batch."
+    result: pass
+    notes: phase classification = SERVER/CROSS-CUTTING; investigate-first mandate active; sequencing puts long-async PixelLab gen first
+    tokens: ~3500
+  - task: 2
+    time: "2026-04-29T07:55:00Z"
+    type: investigate
+    story: US-82
+    description: "Branch A — executed [US-82] Investigate: Wren PixelLab generation kickoff. Findings: heron asset shape is 8 idle dirs / 8 walk dirs / 8 static / portrait — matches the spec's expected layout for wren (assets/npc/wren/{idle,walk}/{dir}/frame_NNN.png + static/{dir}.png + portrait.png). Heron prompt.md confirms PRO mode + size=60 (84×84 canvas / 1.4) + view='low top-down' + body_type=humanoid (anthropomorphic bipedal animal) was the pattern; matched it. Personal pixellab MCP (mcp__pixellab__*) is now connected after a fresh registration in this session. Description authored from spec ('young, chirpy, hopeful', 'small brown bird, distinct silhouette') + heron-style structure (anthropomorphic bipedal + watercolor storybook + cosmetic marker scarf). Fired mcp__pixellab__create_character: name='Wren', mode='pro', body_type='humanoid', size=60, view='low top-down'. Returned character_id=27194dce-f37c-4363-8ca8-bee96373051f, status=processing, cost=20 generations. ETA 3-5 min. No code change in this iteration (asset generation is server-side async); verify trivially still pass; no test-baseline update needed. Story Completion Gate: 0/10 US-82 criteria met (assets not yet on disk; this is a kickoff). Queued next task: kick off Driftwood (US-83) so both characters generate in parallel; once both queued, the next iteration can shift to US-85 code work while we wait."
+    result: pass
+    notes: "Wren character_id=27194dce-f37c-4363-8ca8-bee96373051f (pro mode, 20 gens). Heron-style pattern confirmed. No code change yet."
+    tokens: ~3000
+  - task: 3
+    time: "2026-04-29T08:00:00Z"
+    type: implement
+    story: US-83
+    description: "Branch A — executed [US-83] Driftwood PixelLab kickoff. Mirrored Wren params: mode='pro', body_type='humanoid', size=60, view='low top-down'. Description authored from spec ('charming smooth-talking worldly traveler', sea otter species per spec) — anthropomorphic bipedal sea otter with chocolate-brown fur, sea-green sailor's scarf + leather travel satchel as cosmetic markers (distinct from Wren's dusty rose scarf and Heron's earth-tone hooded cloak). Fired mcp__pixellab__create_character. Returned character_id=bba49891-4a1b-4186-9f72-c32fa2b8e804, status=processing, cost=20 generations. ETA 3-5 min. Both Wren + Driftwood now generating in parallel. No code change yet (asset gen is server-side async); verify trivially pass; no test-baseline update. Story Completion Gate: 0/8 US-83 criteria met (assets not yet on disk). Queued next: US-85 investigate (EmberShareSystem foundation integration points) so code work proceeds while assets process."
+    result: pass
+    notes: "Driftwood character_id=bba49891-4a1b-4186-9f72-c32fa2b8e804 (pro, 20 gens). Both NPCs queued; total spend so far ~40 gens."
+    tokens: ~2000
+  - task: 4
+    time: "2026-04-29T08:10:00Z"
+    type: investigate
+    story: US-85
+    description: "Branch A — executed [US-85] Investigate: EmberShareSystem integration points. Findings: (a) GameScene.ts:98+117+406-411 — existing world-walk early-return pattern. transitionInProgress (98) and spawnInProgress (117) early-return at 406+409 BEFORE the dialogueSystem.isActive branch (411). npcInteraction.update (461), triggerZone.update (467), checkExitZones (468), animationSystem.update (430), maybeAutosave are ALL inside the post-early-return body. ONE new `if (this.sharingInProgress) return;` between line 409 and 411 covers movement + npcInteraction + triggerZone suppression. (b) DialogueSystem.selectChoice (dialogue.ts:512-525): fires onChoiceCallback(choice) at line 516-518 then advances to nextNode at 519-523. To pause dialogue during pulse, extend DialogueChoice with optional firePulseTarget?: string; selectChoice, when set, calls onChoiceCallback but DOES NOT advance — relies on the callback to resume via a new dialogueSystem helper (advanceToNextNode or similar). (c) GameScene.ts:334 already has a setOnChoice handler that processes choice.setFlags — extend it to handle firePulseTarget by resolving via npcSpritesById Map + invoking emberShare.startPulse. (d) LightingSystem.registerLight (lighting.ts:158-167): idempotent overwrite confirmed (findIndex + replace, Learning #63). Re-call with the same NPC id at higher radius/intensity = brightens. (e) Alpha-gate force-eval: GameScene.maybeUpdateAlphaGates(true) (line 690) — already invoked from has_ember_mark onFlagChange (line 365) on US-77's atomic flip pattern. Mirror this from a new onFlagChange('npc_warmed_<id>') subscriber. (f) npcSpritesById Map: existing GameScene field tracking NPC id -> sprite; Learning #57+US-71 reference. Use it to resolve firePulseTarget into a target sprite. (g) DESIGN NOTE — choice.setFlags vs onComplete-set flag: spec says onComplete sets the flag. Cleaner to set the flag in onComplete (so the flag flip is exactly when the pulse lands, not when the choice is made) — this means choice.firePulseTarget DOES NOT use choice.setFlags, the flag is set programmatically in the warming-success handler. Output: queued task 5 with a precise diff plan covering 5 file edits (new emberShare.ts + GameScene + dialogue.ts type extension + GameScene setOnChoice handler + verify). No code change in this iteration."
+    result: pass
+    notes: "Diff plan recorded; implement task #5 queued. Wren+Driftwood still processing in background."
+    tokens: ~5500
+  - task: 5
+    time: "2026-04-29T08:25:00Z"
+    type: implement
+    story: US-85
+    description: "Branch A — implemented [US-85] EmberShareSystem foundation per task 4's diff plan. Five files: (1) NEW src/systems/emberShare.ts — EmberShareSystem class with EMBER_COLOR=0xf2c878, EMBER_PULSE_DURATION_MS=600, EMBER_PULSE_DEPTH=5.5 named constants; constructor(scene) initializes pulseObject+pulseTween nulls and registers scene.events.once('shutdown') handler that stops the tween + destroys the Arc; startPulse(player, npc, onComplete) resets in-flight refs at top, creates a Phaser.GameObjects.Arc at player position with EMBER_PULSE_END_RADIUS, scale-tweens from EMBER_PULSE_START_RADIUS/END (4/12) to 1 while translating to npc.x/y and alpha-tweening to 0 over 600ms (Sine.easeOut), uiCam.ignore on the Arc, on tween complete destroys the Arc + nulls refs + fires onComplete. (2) src/data/areas/types.ts — DialogueChoice gains optional firePulseTarget?: string; choice with this set is the 'Share warmth' authoring marker. (3) src/systems/dialogue.ts — selectChoice fires onChoiceCallback then EARLY-RETURNS when choice.firePulseTarget is set (defers auto-advance); new public advanceAfterPulse(choice) — finds nextNode and calls showNode (or close if missing) — the GameScene handler invokes this from the pulse onComplete. (4) src/scenes/GameScene.ts — imports EmberShareSystem; private sharingInProgress + emberShare!: EmberShareSystem fields; create() resets sharingInProgress and instantiates emberShare AFTER setupCamera (UI camera must exist before the pulse Arc is uiCam.ignore'd); update() gains `if (this.sharingInProgress) return;` between the spawnInProgress check and the dialogue branch — single early-return covers movement + npcInteraction + triggerZone + exit-zone checks via the existing chain; setOnChoice handler resolves choice.firePulseTarget via npcSpritesById, sets sharingInProgress=true, calls emberShare.startPulse(this.player, npcSprite, () => { setFlag(`npc_warmed_${targetId}`, true); this.sharingInProgress=false; this.dialogueSystem.advanceAfterPulse(choice); }) — defensive console.warn + fall-through to advanceAfterPulse if sprite missing. (5) AGENTS.md — new systems/emberShare.ts row in File ownership table; new 'Ember sharing (US-85)' Behavior rule explaining the choice → defer-advance → pulse → flag flip → advance flow; sharingInProgress added to the zone-level mutual exclusion item alongside transitionInProgress and spawnInProgress. Verify: npx tsc --noEmit + npm run build pass. Bundle 1546.19 → 1556.97 kB (+10.78 kB; module count 30 → 34). Test-baseline.txt promoted to current. Golden Principles: Mechanical truth ✓ (pulse + future light/decoration changes are felt, not text); Restoration targets persons ✓ (firePulseTarget is an NPC id, not arbitrary); Loop-invariant EP-01 ✓ (zero per-frame work — pulse setup is event-driven); Restart hygiene EP-02 ✓ (refs reset + shutdown handler). Quality checks: no-silent-pass N/A (no tests); no-bare-except N/A (no try/catch); error-path-coverage ✓ (missing-sprite path logs + falls through); agents-consistency ✓ (table + behavior rule + zone-level mutex updated). Scope check: 5 files all under PROJECT_ROOT ✓. Secrets: clean. Story Completion Gate: 8/16 US-85 criteria met (foundation done; pending criteria — light brightening / alpha-gate force-eval subscribers, manual-verify doc, per-NPC variant verification — wire alongside Wren/Old Man warming flags during US-82/US-84 implements). NO ticked criteria yet since US-85 isn't fully complete. Commit: feat: ember-share foundation — EmberShareSystem + sharingInProgress mutual exclusion + DialogueChoice.firePulseTarget (US-85). Polled both PixelLab characters: Wren (116×116) + Driftwood (100×100) rotations ready, no animations yet."
+    result: pass
+    notes: "US-85 foundation 8/16 criteria met. EmberShareSystem ships with full restart hygiene + scene-shutdown teardown. Wren+Driftwood rotations ready — animations + portraits queued next."
+    tokens: ~9500
+  - task: 6
+    time: "2026-04-29T08:35:00Z"
+    type: implement
+    story: phase
+    description: "Branch A — partial execution of [US-82+US-83] PixelLab animation + portrait kickoff. Hit PixelLab's 8-concurrent-job cap: Wren breathing-idle (8 directional jobs) consumed all 8 slots; the other 5 calls (Wren walking-4-frames, Driftwood breathing-idle, Driftwood walking-4-frames, Wren portrait, Driftwood portrait) all returned 'Insufficient job slots' / 'Maximum concurrent background jobs reached'. Will retry the remaining 5 jobs in a serialised pipeline (1 batch at a time, ~2-4 min each) over subsequent iterations. Total spend so far: 40 (Wren+Driftwood characters in Pro mode) + 8 (Wren breathing-idle) = 48 generations. Remaining for Wren+Driftwood asset gen: 24 anim jobs + 2 portrait jobs = 26 generations. No code change in this iteration; polling Wren in next iteration."
+    result: pass
+    notes: "PixelLab job cap = 8 concurrent. Will pipeline remaining batches between code iterations to avoid wall-time blocking."
+    tokens: ~2500
+  - task: 7
+    time: "2026-04-29T08:50:00Z"
+    type: implement
+    story: US-85
+    description: "Branch A — implemented [US-85] warming-flag onFlagChange subscribers. (1) src/systems/lightingConfig.ts: warmedRadiusBonus=14 + warmedIntensityBonus=0.15 added to LIGHTING_CONFIG (additive over npcRadius/npcIntensity or per-NPC lightOverride; intensity clamps at 1.0). (2) src/scenes/GameScene.ts: WARMING_NPC_IDS = ['wren', 'old-man'] module-level readonly tuple (Driftwood absent — refusal flag npc_refused_driftwood is a separate path with no warming). registerNpcLight gains optional warmed parameter that adds the config bonuses; existing call sites unchanged. New warmingUnsubscribes: (() => void)[] field. In create() after has_ember_mark subscriber: per-NPC, immediately re-register at warmed values if getFlag('npc_warmed_<id>') === true (Continue-from-save / area-transition resumes warmed state without waiting for another flip); subscribe onFlagChange — on each flip, look up NPC in activeNpcs (skip if missing — different area, no light registered there), re-register at warmed-or-baseline, call maybeUpdateAlphaGates(true) for atomic flip parity with US-77 pattern. resetAllFlags notifies with value=undefined → re-registers at baseline. cleanupResize iterates warmingUnsubscribes + clears (Async-cleanup safety #2). Verify: tsc + build pass. Bundle 1556.97 → 1557.51 kB (+0.54 kB; 34 modules). Story Completion Gate: US-85 now 10/16 (foundation 8 + light-brightening 1 + alpha-gate bloom 1). Phase Async-cleanup-safety: 1/2 (warming subscribers covered; US-86 desat subscriber not yet wired). Polled Wren before commit — breathing-idle complete (8 dirs × 4 frames = 32 idle frames). Kicked off Wren walking-4-frames (8 jobs, processing now)."
+    result: pass
+    notes: "US-85 10/16. Wren breathing-idle done; walking-4-frames in flight. Driftwood anims + 2 portraits still blocked by slot cap."
+    tokens: ~6000
+  - task: 8
+    time: "2026-04-29T09:05:00Z"
+    type: implement
+    story: US-86
+    description: "Branch A — implemented [US-86] cumulative desaturation derived value. desaturationPipeline.ts gains private currentStrength field + setStrength/getStrength methods; onDraw reads currentStrength instead of LIGHTING_CONFIG.desaturationStrength. GameScene gains DESAT_REDUCTION_PER_WARMING (0.15) + DESAT_FLOOR (0.4) named constants + updateEffectiveDesaturation() method. Warming subscriber per WARMING_NPC_IDS now also calls updateEffectiveDesaturation; initial call after attachDesaturationPipeline covers Continue-from-save resume. F3 HUD reads pipeline.getStrength() to display effective. AGENTS.md Desaturation rule extended. Verify pass; bundle 1557.51→1558.01."
+    result: pass
+    notes: "US-86 5/11 met (formula, recompute-on-flag-change, pipeline reads, floor, reset baseline)"
+    tokens: ~5500
+  - task: 9
+    time: "2026-04-29T09:20:00Z"
+    type: implement
+    story: US-82
+    description: "Branch A — Wren asset placement. Downloaded character ZIP via curl, identified animating-dc2d0491=breathing-idle and animating-3a84639d=walking-4-frames by visual diff. Copied 72 PNGs to assets/npc/wren/{static,idle,walk}/. Wrote prompt.md mirroring heron format. NPC_SPRITES gains 'wren'. Verify pass."
+    result: pass
+    notes: "Wren assets on disk; sprite registered (no portrait yet)"
+    tokens: ~3000
+  - task: 10
+    time: "2026-04-29T09:35:00Z"
+    type: implement
+    story: US-82
+    description: "Branch A — Wren placement in ashen-isle.ts at (22, 18) with wanderRadius 2 / awarenessRadius 3 / no lightOverride. Three dialogue scripts: wren-intro (pre-Ember fallback, 3 nodes), wren-receptive (post-Ember pre-warming, 6 nodes with offer→Share warmth choice firePulseTarget='wren'), wren-warmed (2 nodes post-warming). portraitId='wren'. Verify pass."
+    result: pass
+    notes: "Wren content shipped; 9/10 US-82 (manual-verify pending)"
+    tokens: ~4500
+  - task: 11
+    time: "2026-04-29T09:50:00Z"
+    type: implement
+    story: US-83
+    description: "Branch A — Driftwood asset placement (72 PNGs from animating-235419a5=idle + animating-97cb697c=walk). NPC_SPRITES + prompt.md. Driftwood NpcDefinition at (32, 6) near dock with lightOverride.intensity=0.18. Three dialogue scripts: driftwood-intro (pre-Ember 3 nodes), driftwood-receptive (post-Ember 6 nodes, Share warmth sets npc_refused_driftwood via setFlags — NO firePulseTarget, refusal produces no pulse), driftwood-refused (2 nodes, Share warmth absent). Verify pass."
+    result: pass
+    notes: "Driftwood content shipped; 7/8 US-83 (manual-verify pending)"
+    tokens: ~5000
+  - task: 12
+    time: "2026-04-29T10:00:00Z"
+    type: implement
+    story: US-84
+    description: "Branch A — Old Man wary-then-warmed dialogue extension. Reordered insertion: old-man-intro (fallback) → old-man-warmed (NEW, condition 'npc_warmed_old_man == true') → old-man-receptive (NEW, condition 'has_ember_mark == true AND npc_warmed_wren == true AND npc_warmed_old_man == false') → old-man-illumined (EXTENDED, greeting → middle node with [Share warmth → wary_decline (NO pulse), Walk on → farewell]). Pulse pathway uses old-man-receptive's firePulseTarget='old-man'. Selection order verified by mutual exclusion. Verify pass."
+    result: pass
+    notes: "Old Man 7/8 (manual-verify pending)"
+    tokens: ~4500
+  - task: 13
+    time: "2026-04-29T10:10:00Z"
+    type: implement
+    story: phase
+    description: "Branch A — wren + driftwood portraits. Both portrait characters (Standard mode, 4 dirs, 96px → 136×136 canvas) completed; downloaded south rotation as portrait.png for each. NPC_PORTRAITS gains 'wren' and 'driftwood' entries with filter 'linear'. prompt.md updated with portrait IDs + prompt text. Verify pass."
+    result: pass
+    notes: "All NPC portraits live; dialogues now render portraits"
+    tokens: ~2500
+  - task: 14
+    time: "2026-04-29T10:25:00Z"
+    type: implement
+    story: US-86
+    description: "Branch A — homecoming-reflection trigger at (24, 22). repeatable: false, setFlags { homecoming_complete: true }, condition 'npc_warmed_wren == true AND npc_warmed_old_man == true AND homecoming_complete == false'. 3-line actionRef ending on the spec sentence. Verify pass."
+    result: pass
+    notes: "US-86 9/11 (manual-verify + class baselines pending)"
+    tokens: ~2000
+  - task: 15
+    time: "2026-04-29T10:35:00Z"
+    type: docs
+    story: phase
+    description: "Branch B — created docs/plan/homecoming-light-manual-verify.md with 10 scenarios + reads-as observer tests + atlas frame-pick rule note. Per-story walkthroughs (Wren, Driftwood, Old Man four-state walk, ember-pulse reads-as, cumulative desat + reflection), variant baseline + class baseline scenarios, async-cleanup safety scenario, save/resume parity scenario, deploy verification. Updated AGENTS.md flag-persistence rule with the four homecoming-light flags."
+    result: pass
+    notes: "Manual-verify shipped"
+    tokens: ~5000
+  - task: 16
+    time: "2026-04-29T10:50:00Z"
+    type: implement
+    story: US-82
+    description: "Branch A — refactor: per-choice DialogueChoice.condition. types.ts adds optional condition?: string. dialogue.ts imports evaluateCondition; renderedChoices private field stores the post-filter list; showChoices filters before rendering; selectChoice + desktop highlight + mobile resize all index into renderedChoices. Defensive: if filter empties, continueHint shows. Consolidated wren-receptive into wren-intro (Share warmth choice with condition='has_ember_mark == true AND npc_warmed_wren == false') and driftwood-receptive into driftwood-intro (refusal choice with condition='has_ember_mark == true AND npc_refused_driftwood == false'). AGENTS.md Ember sharing rule extended with the per-choice condition mechanism. Verify pass. Story Completion Gate: all 5 stories US-82..US-86 now have ALL done-when criteria met. Ticked all 69 boxes in phase-goal.md and added all 5 to completed_stories. Phase Completion Gate: re-ran verify (pass), audited done-when (all met), AGENTS.md consistency check (pass — File ownership emberShare row, Behavior rules Ember sharing + zone-mutex + flag-persistence + Desaturation), error-path spot check (defensive guards on missing NPC sprite, missing dialogue script, empty rendered choices, all log+fallback). Phase complete."
+    result: pass
+    notes: "All 69 done-when criteria met; phase_complete: true; ready for review-cycle scheduling on next iteration"
+    tokens: ~8000
+  - task: 17
+    time: "2026-04-29T11:00:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — review_stage=null + phase_complete=true. Pushed branch (20 commits ahead of main). Created PR #21 via gh pr create — title 'feat: homecoming-light — Wren + Driftwood + Old Man warming + ember-share verb (US-82..US-86)'. PR body summarises the five stories, mechanics changes (new flags, types, constants), spec compliance, reconciliation debt cleared, and a test plan covering the 10 manual-verify scenarios + verify command + deploy verification. URL: https://github.com/Jaxsbr/emberpath/pull/21. Stored pr_number=21; advanced review_stage to pr_created. Queued [review] review-pr pr=21 auto=true for the next iteration via Branch A."
+    result: pass
+    notes: "PR #21 created; review-pr queued"
+    tokens: ~3000
+  - task: 18
+    time: "2026-04-30T08:00:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed [review] review-pr pr=21 auto=true via the sabs:review-pr skill (auto mode → event=COMMENT, no auto APPROVE / REQUEST_CHANGES). Review posted as a summary comment at https://github.com/Jaxsbr/emberpath/pull/21#pullrequestreview-4200068021. Findings: 0 critical, 2 concerns (both forward-fragility on src/scenes/GameScene.ts setOnChoice — (a) setFlags applied at choice-pick time vs pulse-land timing asymmetry; (b) missing explicit `return` after the firePulseTarget block, harmless today but a footgun if future code is appended below the if-block), 1 nit (src/systems/emberShare.ts shutdown listener has no matching .off — idempotent today since instance is per-scene). Positives noted: clean three-way handoff (selectChoice → onChoiceCallback → advanceAfterPulse), DRY per-choice condition primitive, deliberate WARMING_NPC_IDS exclusion of Driftwood, restart hygiene followed. CI retro-gate is red on purpose (phase_complete: true without retro_complete: true) — phase-retro is the next step. Inline anchors fell back to a summary comment due to a line-number-mapping issue in the skill (raw-diff offsets vs post-image file lines); files + code regions are still named so the author can navigate. review_stage: pr_created → review_posted. Loop continues — Branch B on the next iteration will schedule handle-pr-review."
+    result: pass
+    notes: "Review posted; 2 concerns + 1 nit to triage in handle-pr-review next iteration"
+    tokens: ~5000
+  - task: 19
+    time: "2026-04-30T08:05:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — review_stage=review_posted, review_complete=false. Queued [review] handle-pr-review pr=21 auto=true for the next iteration. The handle-pr-review skill will triage the 2 concerns + 1 nit posted by review-pr, fix valid issues, challenge incorrect ones, skip nits per skill rules, then re-run verify + quality checks to catch regressions from review fixes."
+    result: pass
+    notes: "handle-pr-review queued"
+    tokens: ~500
+  - task: 20
+    time: "2026-04-30T08:30:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed [review] handle-pr-review pr=21 auto=true. No inline review threads (review-pr fell back to a summary review due to line-number mapping). Fetched the review summary directly via gh api repos/.../pulls/21/reviews. Triaged 2 concerns + 1 nit. Concern A (timing asymmetry between choice.setFlags pre-pulse and warming flag at pulse-land): FIXED via a TIMING CONTRACT block comment documenting the rule and the future `pulseSetFlags` extension path. Concern B (missing explicit return after firePulseTarget block): FIXED with `return;` after startPulse to prevent future-appended code from running mid-pulse. Nit (emberShare.ts shutdown listener has no matching .off): SKIPPED per auto=true rules — idempotent today since each scene gets a new EmberShareSystem instance. Verify: tsc + build pass; bundle unchanged. Committed: 'fix: address PR #21 review concerns — setOnChoice timing contract + explicit return after pulse'. Pushed. Posted two PR comments: (1) review-fix summary at #issuecomment-4346867751 with per-thread fixed/skipped breakdown; (2) phase-review-complete summary at #issuecomment-4346869432 with the build / stories / reviewed / fixed / quality-checks block. review_complete: true. Loop's guard rail 4 (phase_complete=true AND review_complete=true) will halt the iteration on the next Step 2."
+    result: pass
+    notes: "Phase review complete. PR #21 ready for human review and approval. retro-gate awaits /sabs:phase-retro."
+    tokens: ~5500

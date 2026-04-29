@@ -1,5 +1,12 @@
 phase: "keeper-rescue"
 started: "2026-04-26T09:30:00Z"
+reconciliation_status:
+  r0: done  # No legacy inline phases remain in PRD — no-op
+  r1: done  # No docs/architecture/ARCHITECTURE.md in project — no-op
+  r2: done  # PRD index already showed Shipped from prior commit; phases/keeper-rescue.md set to Status: shipped + US-70..US-73 tagged [Shipped] in this start commit
+  r3: done  # AGENTS.md updates were applied in-phase across log tasks 11-14 (file ownership / Behavior rules / depth map / Dialogue rule)
+  r4: done  # No docs/manual/ or GUIDE.md in project; manual-verify doc lives at docs/plan/keeper-rescue-manual-verify.md (already created task 14)
+  r5: done  # Combined with start commit — see "chore: start homecoming-light phase"
 entries:
   - task: 1
     time: "2026-04-26T09:35:00Z"

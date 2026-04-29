@@ -1,6 +1,6 @@
 # Phase: keeper-rescue
 
-Status: planned (DEPENDS ON `fog-marsh-dead-end`)
+Status: shipped
 
 > **Refinement pass — 2026-04-26.** This spec was originally drafted alongside `fog-marsh-dead-end`. After Phase 1 shipped, the actual implementation was diffed against the draft and four drifts were reconciled: (1) `evaluateCondition` supports `AND` only — it does NOT support `&&`, `||`, or `OR`, so condition strings now use `AND` and the `OR`'d exit/decoration patterns are replaced by a flag flip; (2) the Keeper sprite + portrait already exist on disk at `~/Jaxs/assets/emberpath/npc/heron/`, so US-70 is asset-copy + registry edits, not a PixelLab generation; (3) the Keeper's final dialogue node needs to set flags AND launch a story scene — neither is wired today, so US-72 adds two small additive type-system fields (`DialogueNode.setFlags`, `DialogueScript.endStoryScene`); (4) the Phase 1 flag-change subscriber is hardcoded to `marsh_trapped` — US-71 generalises it so the spawn-condition watcher subscribes to every flag named in any NPC's `spawnCondition`. Story IDs (US-70 through US-73) confirmed unclaimed by interim phases.
 
@@ -21,7 +21,7 @@ The build-loop's `frontend-design` skill does NOT apply — this phase introduce
 
 ## Stories
 
-### US-70 — Heron sprite + portrait + registry entries (assets-on-disk)
+### US-70 — Heron sprite + portrait + registry entries (assets-on-disk) [Shipped]
 
 The Keeper sprite + portrait already exist at `/Users/jacobusbrink/Jaxs/assets/emberpath/npc/heron/` (PixelLab-generated white-heron sage in hooded cloak, watercolor storybook palette). This story copies them into the project's asset tree and adds registry entries; it does not generate any new art.
 
@@ -35,7 +35,7 @@ The Keeper sprite + portrait already exist at `/Users/jacobusbrink/Jaxs/assets/e
 
 **Out of scope (assets shipped but not used):** The source folder also contains a `fireball/` set (8 dirs × 6 frames). The current `NpcSpriteDefinition` schema only supports `idleFrameCount` and `walkFrameCount`. The fireball frames are not loaded or registered in this phase — they remain available on disk for a future phase that extends the schema (e.g., a "blessing" animation during the ember-given story scene).
 
-### US-71 — Keeper spawns when `marsh_trapped == true AND escape_attempts >= 4`
+### US-71 — Keeper spawns when `marsh_trapped == true AND escape_attempts >= 4` [Shipped]
 
 The Keeper NPC spawns at a specific tile in Fog Marsh (proposed: `(col 14, row 8)` — on the path between the threshold at row 5 and the hermit at row 10, visible from south). Mechanism: `NpcDefinition` gains an optional `spawnCondition?: string`. GameScene's NPC pass filters on this condition at area load AND on flag-change. The flag-change subscriber is **generalised** — the prior Phase 1 hardcoded subscription to `marsh_trapped` is extended so GameScene parses every NPC's `spawnCondition` for flag names and subscribes to each via `onFlagChange`. When any spawn-relevant flag flips, the spawn pass re-evaluates and any newly-eligible NPC fades into the scene (alpha 0 → 1 over 0.5s).
 
@@ -51,7 +51,7 @@ The Keeper NPC spawns at a specific tile in Fog Marsh (proposed: `(col 14, row 8
 
 **Behavior rule update (AGENTS.md):** "Conditional NPC spawn — `NpcDefinition.spawnCondition` gates initial render and post-load spawn-on-flag-change. GameScene parses each spawn condition for flag names, subscribes per-flag, re-evaluates on change, and fades the sprite in over 500ms."
 
-### US-72 — Keeper rescue dialogue + ember-given story scene + flag flips
+### US-72 — Keeper rescue dialogue + ember-given story scene + flag flips [Shipped]
 
 Walk up to the Keeper; one-shot dialogue (`keeper-intro`):
 - Greeting: "You walked deeper than the path. Most do not."
@@ -71,7 +71,7 @@ The dialogue's terminal node sets `has_ember_mark: true`, `keeper_met: true`, an
 - **Existing-NPC regression:** Marsh Hermit dialogue (which uses `DialogueChoice.setFlags`, not the new `DialogueNode.setFlags`) continues to set `spoke_to_marsh_hermit: true` on each greeting choice. The Old Man's dialogue (no setFlags anywhere) is unchanged.
 - **Existing-script regression:** All dialogue scripts WITHOUT `endStoryScene` close as before — `setOnEnd` callback runs only the existing `exitDialogue + flushSave` path, no story scene launches.
 
-### US-73 — Path re-opens; Pip carries the ember mark
+### US-73 — Path re-opens; Pip carries the ember mark [Shipped]
 
 Because US-72 sets `marsh_trapped: false` in the same atomic flag write that grants the ember, the existing Phase 1 mechanism reverses everything else for free:
 - `applyMarshTrappedState` (Phase 1) flips collision back to FLOOR on row 22 cols 13-16 — same callback, inverse predicate.

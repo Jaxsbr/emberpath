@@ -278,6 +278,24 @@ export const ashenIsle: AreaDefinition = {
     // north or south gate of the yard (added below). lightOverride.intensity
     // dim so he reads as a faint silhouette through fog (US-75).
     { id: 'old-man', name: 'Old Man', col: 40, row: 28, color: 0x8b6914, sprite: 'old-man', wanderRadius: 1, awarenessRadius: 3, lightOverride: { intensity: 0.15 } },
+    // Wren — the hopeful one (US-82). Stands in the central open area, well
+    // clear of the player's cottage (cols 8-12 rows 12-15), Old Man's cottage
+    // (cols 38-42 rows 24-28), and the dock (rows 1-5). FLOOR tile assumption
+    // is safe — no walls, fences, or props are placed at (22, 18) by the map
+    // builder. wanderRadius 2 lets the chirpy young wren bounce a bit;
+    // awarenessRadius 3 matches Old Man so she halts at the same proximity.
+    // No lightOverride — defaults to LIGHTING_CONFIG.npcRadius / npcIntensity,
+    // and the warming subscriber (US-85) re-registers brighter on warm.
+    { id: 'wren', name: 'Wren', col: 22, row: 18, color: 0x8b5a3c, sprite: 'wren', wanderRadius: 2, awarenessRadius: 3 },
+    // Driftwood — the charming refusal (US-83). Stands near the dock — the
+    // shore tile region (rows 4-7) per spec. (32, 6) is a FLOOR tile in the
+    // open dock zone, > 2 tiles from Wren (22, 18) and Old Man (40, 28), and
+    // visually distinct from the existing dock-adjacent ashen-isle-mark
+    // trigger at (24, 5). lightOverride: lower intensity makes Driftwood read
+    // as "lit by his own thing" — a worldly light, not the Ember (criterion
+    // for US-83). wanderRadius 1 keeps him hovering at the dock; awarenessRadius
+    // 3 matches the others.
+    { id: 'driftwood', name: 'Driftwood', col: 32, row: 6, color: 0x4d2f1a, sprite: 'driftwood', wanderRadius: 1, awarenessRadius: 3, lightOverride: { intensity: 0.18 } },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; props are
   // intentionally empty during the world-legibility phase — the prior
@@ -338,6 +356,30 @@ export const ashenIsle: AreaDefinition = {
       actionRef: 'The walls hum faintly, as if remembering something.',
       repeatable: true,
     },
+    {
+      // Homecoming reflection (US-86). One-shot, condition-gated, fires after
+      // both Wren AND Old Man are warmed and the player walks through the
+      // village-centre tile. setFlags { homecoming_complete: true } closes the
+      // beat — the spec's soft turn toward Briar Wilds. (24, 22) sits in the
+      // open grass between Wren (22, 18) and Old Man (40, 28); the player
+      // naturally walks this tile when returning to the Old Man for the
+      // post-Wren warming, OR when leaving Old Man toward the dock. Multi-line
+      // text via \n — Phaser Text renders newlines natively, the bubble
+      // measures dynamic width/height per request (thoughtBubble.ts).
+      id: 'homecoming-reflection',
+      col: 24,
+      row: 22,
+      width: 1,
+      height: 1,
+      type: 'thought',
+      actionRef:
+        'Two warmer than they were.\n' +
+        'What stays is mine to carry.\n' +
+        'There is more light to share, beyond this island...',
+      condition: 'npc_warmed_wren == true AND npc_warmed_old_man == true AND homecoming_complete == false',
+      repeatable: false,
+      setFlags: { homecoming_complete: true },
+    },
   ],
   dialogues: {
     // Old Man Fading dialogue (US-78). Three nodes, ≤200 chars total. Tone:
@@ -376,6 +418,89 @@ export const ashenIsle: AreaDefinition = {
     // does not carry. The greeting does NOT re-set spoke_to_old_man (the flag
     // is already true from the pre-Ember conversation; resetting it has no
     // effect on the existing south-interior story trigger gate).
+    // old-man-warmed (US-84). Most specific Old Man variant — checked first by
+    // selectScriptForNpc (iterates dictionary in insertion order, returns the
+    // first whose condition matches). When npc_warmed_old_man is true, this
+    // wins over old-man-receptive and old-man-illumined regardless of the
+    // other warming flag states. 2 nodes.
+    'old-man-warmed': {
+      id: 'old-man-warmed',
+      startNodeId: 'greeting',
+      portraitId: 'old-man',
+      condition: 'npc_warmed_old_man == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Old Man',
+          text: 'You\'re back. Sit a moment, walker.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Old Man',
+          text: 'I\'d forgotten how the morning felt.',
+        },
+      ],
+    },
+    // old-man-receptive (US-84). Wren has been warmed first — Old Man can now
+    // receive. selectScriptForNpc reaches this variant after old-man-warmed
+    // (which fails for `npc_warmed_old_man == false`); its longer condition
+    // beats old-man-illumined which would otherwise also match. The Share
+    // warmth choice fires the pulse via firePulseTarget='old-man'; the
+    // GameScene setOnChoice handler sets npc_warmed_old_man=true at pulse
+    // landing and the warming subscriber re-registers Old Man's light at
+    // brighter values + force-evals alpha-gates on the same tick (US-85).
+    'old-man-receptive': {
+      id: 'old-man-receptive',
+      startNodeId: 'greeting',
+      portraitId: 'old-man',
+      condition: 'has_ember_mark == true AND npc_warmed_wren == true AND npc_warmed_old_man == false',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Old Man',
+          text: 'Something has stirred. The little one — she\'s humming again.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Old Man',
+          text: 'Maybe there\'s a corner of me left. Just a corner.',
+          nextId: 'offer',
+        },
+        {
+          id: 'offer',
+          speaker: 'Old Man',
+          text: 'If you\'ve any to spare. I won\'t ask twice.',
+          choices: [
+            { text: 'Share warmth', nextId: 'received', firePulseTarget: 'old-man' },
+            { text: 'Just sitting with you', nextId: 'company' },
+          ],
+        },
+        {
+          id: 'received',
+          speaker: 'Old Man',
+          text: '...oh. Oh.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Old Man',
+          text: 'There. Yes. Bring it back when you walk this way.',
+        },
+        {
+          id: 'company',
+          speaker: 'Old Man',
+          text: 'Alright. The chair across is yours.',
+        },
+      ],
+    },
+    // old-man-illumined (US-81 + US-84). Post-Ember default when Wren is NOT
+    // yet warmed. Existing two nodes preserved; greeting now leads into a
+    // middle node with a Share-warmth choice that routes to a wary-decline.
+    // The choice has NO firePulseTarget (no pulse on wary-decline per US-84
+    // spec) and NO setFlags (no npc_warmed_old_man flip — verifiable via flag
+    // store inspection: nothing changes).
     'old-man-illumined': {
       id: 'old-man-illumined',
       startNodeId: 'greeting',
@@ -386,12 +511,193 @@ export const ashenIsle: AreaDefinition = {
           id: 'greeting',
           speaker: 'Old Man',
           text: 'You carry it now. Then you are not yet me.',
-          nextId: 'farewell',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Old Man',
+          text: 'I\'ve heard such promises before. They burn out.',
+          choices: [
+            { text: 'Share warmth', nextId: 'wary_decline' },
+            { text: 'Walk on', nextId: 'farewell' },
+          ],
+        },
+        {
+          id: 'wary_decline',
+          speaker: 'Old Man',
+          text: 'No. Not yet. I\'ve been wrong before.',
         },
         {
           id: 'farewell',
           speaker: 'Old Man',
           text: 'Go on. The path is more than this.',
+        },
+      ],
+    },
+    // Wren — the hopeful one (US-82). Three scripts, mutually exclusive at any
+    // given world state (selectScriptForNpc walks them in insertion order and
+    // returns the first whose condition evaluates true; falls back to the
+    // unconditional `wren-intro` when none match). Tone: light, chirpy, young
+    // — child voice. Per Gospel principle: "Free gift" (the player chooses to
+    // share); per "Mechanical truth" — the warming reads as a felt moment, not
+    // exposition. portraitId points to 'wren' even though the portrait file is
+    // not yet generated; DialogueSystem's graceful error-fallback logs once
+    // and renders no portrait until portrait.png lands (slot-cap blocked).
+    // wren-intro is the canonical Wren script — fallback for selectScriptForNpc
+    // (no condition; baseId path). The pre-Ember encounter shows greeting →
+    // middle → offer node where the "Share warmth" choice is gated by a
+    // per-choice condition and hidden until the player carries the Ember.
+    // The "Not yet" choice is always visible so the player has a graceful exit
+    // pre-Ember and post-Ember-not-ready alike.
+    'wren-intro': {
+      id: 'wren-intro',
+      startNodeId: 'greeting',
+      portraitId: 'wren',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Wren',
+          text: 'Oh — you walked! I forgot how it sounded.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Wren',
+          text: 'Mama said brightness comes from inside, but mine went grey too.',
+          nextId: 'offer',
+        },
+        {
+          id: 'offer',
+          speaker: 'Wren',
+          text: 'Could you... share some? Just a little?',
+          choices: [
+            {
+              text: 'Share warmth',
+              nextId: 'grateful',
+              firePulseTarget: 'wren',
+              condition: 'has_ember_mark == true AND npc_warmed_wren == false',
+            },
+            { text: 'Not yet', nextId: 'demure' },
+          ],
+        },
+        {
+          id: 'grateful',
+          speaker: 'Wren',
+          text: '...!! Oh — oh, that\'s it. That\'s what Mama meant.',
+          nextId: 'thanks',
+        },
+        {
+          id: 'thanks',
+          speaker: 'Wren',
+          text: 'I\'ll keep it close. Thank you.',
+        },
+        {
+          id: 'demure',
+          speaker: 'Wren',
+          text: 'Okay. I\'ll wait. I\'m good at waiting.',
+        },
+      ],
+    },
+    // wren-warmed — Wren has been warmed; light is brighter, demeanor brighter.
+    'wren-warmed': {
+      id: 'wren-warmed',
+      startNodeId: 'greeting',
+      portraitId: 'wren',
+      condition: 'npc_warmed_wren == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Wren',
+          text: 'You walked back! I hoped you would.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Wren',
+          text: 'I feel it still. Bright in here, just under the wings.',
+        },
+      ],
+    },
+    // Driftwood — the charming refusal (US-83). Same script-swap pattern as
+    // Wren. Pre-Ember script `driftwood-intro` runs as the fallback. Post-Ember
+    // and not-yet-asked script `driftwood-receptive` offers a "Share warmth"
+    // choice — but choosing it does NOT set firePulseTarget (refusal produces
+    // NO pulse per spec; just a polite-decline node + npc_refused_driftwood
+    // setFlag via the choice's setFlags). Once refused, the post-refusal
+    // variant `driftwood-refused` swaps in and the Share-warmth choice is
+    // absent. Tone: smooth, worldly, knowing. He talks about other lights he
+    // has seen — never abrasive, never evil ("No villains" Gospel principle).
+    // driftwood-intro is the canonical Driftwood script — fallback for
+    // selectScriptForNpc (no condition). Pre-Ember the offer node still plays
+    // but the "Share warmth" choice is hidden by its per-choice condition;
+    // post-Ember, pre-refusal it appears. Refusal does NOT use firePulseTarget
+    // (no pulse on refusal per spec — restoration is given, not taken;
+    // refusal returns nothing to Pip but a polite goodbye).
+    'driftwood-intro': {
+      id: 'driftwood-intro',
+      startNodeId: 'greeting',
+      portraitId: 'driftwood',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Driftwood',
+          text: 'Ah — a walker. Most don\'t, these days. Where did you come from, friend?',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Driftwood',
+          text: 'I\'ve seen a hundred islands. Bright ones, dim ones. They all dim, in the end.',
+          nextId: 'offer',
+        },
+        {
+          id: 'offer',
+          speaker: 'Driftwood',
+          text: 'Suppose you\'d like to share some? You\'re sweet to ask.',
+          choices: [
+            {
+              text: 'Share warmth',
+              nextId: 'decline',
+              setFlags: { npc_refused_driftwood: true },
+              condition: 'has_ember_mark == true AND npc_refused_driftwood == false',
+            },
+            { text: 'Just talking', nextId: 'small_talk' },
+          ],
+        },
+        {
+          id: 'decline',
+          speaker: 'Driftwood',
+          text: 'Kind of you. Truly. But I\'ve got my own light — the sea, the road. I\'m alright.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Driftwood',
+          text: 'Walk well, walker. May yours last longer than mine did.',
+        },
+        {
+          id: 'small_talk',
+          speaker: 'Driftwood',
+          text: 'Then enjoy the dock a while. The water remembers everyone.',
+        },
+      ],
+    },
+    'driftwood-refused': {
+      id: 'driftwood-refused',
+      startNodeId: 'greeting',
+      portraitId: 'driftwood',
+      condition: 'npc_refused_driftwood == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Driftwood',
+          text: 'Still walking? Good. The dock is here when you\'re tired.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Driftwood',
+          text: 'Take care of that little ember of yours. Pretty thing.',
         },
       ],
     },

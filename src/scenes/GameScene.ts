@@ -18,6 +18,7 @@ import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
 import { DesaturationPipeline } from '../systems/desaturationPipeline';
+import { EmberShareSystem } from '../systems/emberShare';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
@@ -39,6 +40,19 @@ const EMBER_OFFSET_Y = -28;
 const EMBER_RADIUS = 6;
 const EMBER_COLOR = 0xf2c878;
 const EMBER_DEPTH = 5.5;
+// NPCs that can be warmed via the ember-share verb (US-85). Each ID maps to a
+// `npc_warmed_<id>` flag; on flip-to-true the matching NPC's tier-1 light is
+// re-registered at brighter values and alpha-gated decorations within its new
+// radius bloom in. Driftwood is intentionally absent — refusal sets a
+// different flag (`npc_refused_driftwood`) and produces NO pulse / NO bump.
+const WARMING_NPC_IDS = ['wren', 'old-man'] as const;
+// Cumulative warming reduces the desaturation strength (US-86). Each warming
+// flips the world a notch toward color; floor preserves Ashen Isle's faded
+// identity so the island never reads as fully restored — only the Heart Bridge
+// fully removes the Fading. With 2 warmings + base 1.0: 1.0 × (1 − 0.30) = 0.70
+// (above the 0.40 floor).
+const DESAT_REDUCTION_PER_WARMING = 0.15;
+const DESAT_FLOOR = 0.4;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.
@@ -115,6 +129,12 @@ export class GameScene extends Phaser.Scene {
   // doesn't collide with or interact with an invisible NPC.
   private spawnConditionUnsubscribes: (() => void)[] = [];
   private spawnInProgress = false;
+  // Ember-share pulse zone-level mutual exclusion (US-85). Set true while the
+  // pulse plays so movement, NPC interaction, trigger-zone evaluation, and
+  // exit-zone checks all suppress on the same early-return chain as
+  // transitionInProgress / spawnInProgress.
+  private sharingInProgress = false;
+  private emberShare!: EmberShareSystem;
   private activeNpcs: NpcDefinition[] = [];
   // Player ember overlay (US-73). Created when has_ember_mark flips true OR
   // when the flag is already true on scene create (covers area transitions
@@ -123,6 +143,13 @@ export class GameScene extends Phaser.Scene {
   // cleanupResize.
   private emberOverlay: Phaser.GameObjects.Arc | null = null;
   private hasEmberMarkUnsubscribe: (() => void) | null = null;
+  // Warming-flag onFlagChange unsubscribes (US-85). One per NPC in
+  // WARMING_NPC_IDS. Each subscriber re-registers the NPC's tier-1 light at
+  // brighter values on flip-to-true and restores baseline on flip-to-false /
+  // undefined (resetAllFlags), forcing alpha-gate re-eval on the same tick
+  // (mirrors US-77's has_ember_mark atomic flip pattern). Cleaned up in
+  // cleanupResize (Async-cleanup safety criterion).
+  private warmingUnsubscribes: (() => void)[] = [];
   // Cached has_ember_mark — read from localStorage once on create and updated
   // by the existing onFlagChange subscriber. LightingSystem.update reads this
   // each frame; reading the flag store directly would re-parse JSON on every
@@ -271,6 +298,12 @@ export class GameScene extends Phaser.Scene {
     }
     this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
+    // Ember-share pulse system (US-85). Instantiated after the UI camera
+    // exists so the pulse Arc can be uiCam.ignore'd on creation. Reset
+    // sharingInProgress here so a scene.restart never resumes mid-pulse
+    // (Learning EP-02 — class fields persist across restart).
+    this.sharingInProgress = false;
+    this.emberShare = new EmberShareSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
@@ -332,10 +365,47 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.dialogueSystem.setOnChoice((choice) => {
+      // TIMING CONTRACT (read before adding logic below). `choice.setFlags`
+      // fires synchronously at pick time — useful for refusal markers like
+      // `npc_refused_driftwood` where the flag is set BECAUSE the choice was
+      // picked, regardless of subsequent pulse lifecycle. `choice.firePulseTarget`
+      // routes through EmberShareSystem.startPulse, which DEFERS the warming
+      // flag flip (`npc_warmed_<id>`) and the dialogue advance to pulse-land
+      // (~600ms). Authoring rule: pick ONE — don't mix `setFlags` with
+      // `firePulseTarget` on the same choice. A future "warm + side-effect"
+      // pattern would need a `pulseSetFlags` field on DialogueChoice that
+      // defers alongside the warming flag, not the existing pre-pulse setFlags.
       if (choice.setFlags) {
         for (const [key, value] of Object.entries(choice.setFlags)) {
           setFlag(key, value);
         }
+      }
+      // Ember-share pulse (US-85). When firePulseTarget is set, DialogueSystem
+      // defers the advance to nextId — we own resuming via advanceAfterPulse()
+      // from the pulse onComplete, so the warming flag flip and the next
+      // dialogue node land on the same tick. Falls through to advance if the
+      // target NPC sprite is missing (defensive — should not happen in
+      // authored content, but a stale flag would otherwise lock the dialogue).
+      // Explicit `return` at the end of this branch — the pulse owns the rest
+      // of the choice lifecycle and any future code added below this block
+      // would otherwise run mid-pulse before onComplete.
+      if (choice.firePulseTarget) {
+        const targetId = choice.firePulseTarget;
+        const npcSprite = this.npcSpritesById.get(targetId);
+        if (!npcSprite) {
+          console.warn(`[ember-share] No sprite for NPC '${targetId}'; skipping pulse`);
+          this.dialogueSystem.advanceAfterPulse(choice);
+          return;
+        }
+        this.sharingInProgress = true;
+        this.emberShare.startPulse(this.player, npcSprite, () => {
+          // Set the warming flag at pulse-land so downstream subscribers
+          // (light brightening, alpha-gate force-eval) flip on the same tick.
+          setFlag(`npc_warmed_${targetId}`, true);
+          this.sharingInProgress = false;
+          this.dialogueSystem.advanceAfterPulse(choice);
+        });
+        return;
       }
     });
     this.debugOverlay = new DebugOverlaySystem(this);
@@ -365,6 +435,43 @@ export class GameScene extends Phaser.Scene {
       this.maybeUpdateAlphaGates(true);
     });
 
+    // Warming subscribers (US-85). For each NPC in WARMING_NPC_IDS, watch the
+    // `npc_warmed_<id>` flag: on flip-to-true, re-register the NPC's tier-1
+    // light at brighter values (idempotent overwrite — Learning #63) AND
+    // force-eval alpha-gated decorations so a nearby alpha-gated frame blooms
+    // in on the same tick as the warming. Mirrors the has_ember_mark atomic
+    // flip pattern above. On flip-to-undefined / false (resetAllFlags
+    // notifies with undefined), restore baseline. NPCs not currently in
+    // activeNpcs (e.g. wrong area) are skipped harmlessly — their light isn't
+    // registered there anyway.
+    for (const npcId of WARMING_NPC_IDS) {
+      const flagName = `npc_warmed_${npcId}`;
+      // Continue-from-save / area-transition: if already warmed, register at
+      // brighter values immediately so a fresh scene resumes at the warmed
+      // state without waiting for another flag flip.
+      if (getFlag(flagName) === true) {
+        const npc = this.activeNpcs.find((n) => n.id === npcId);
+        if (npc) this.registerNpcLight(npc, true);
+      }
+      const unsubscribe = onFlagChange(flagName, (_, value) => {
+        const npc = this.activeNpcs.find((n) => n.id === npcId);
+        if (npc) {
+          this.registerNpcLight(npc, value === true);
+          this.maybeUpdateAlphaGates(true);
+        }
+        // Cumulative desaturation reduction (US-86) — warmingsCount changed,
+        // recompute and push the new effective value to the pipeline. Recomputed
+        // ONLY on flag-change events, never per-frame (Learning EP-01). Runs
+        // unconditionally so an off-area warming flip (e.g. global flag set
+        // while in Fog Marsh) still updates the pipeline state for next entry.
+        this.updateEffectiveDesaturation();
+      });
+      this.warmingUnsubscribes.push(unsubscribe);
+    }
+    // Initial effective desaturation push — covers Continue-from-save where
+    // the player resumes already-warmed flags without a fresh flip event.
+    this.updateEffectiveDesaturation();
+
     // Provide the F3 debug HUD with a snapshot of lighting state. Captured as
     // a closure here so DebugOverlaySystem stays decoupled from LightingSystem.
     this.debugOverlay.setHudProvider(() => {
@@ -372,7 +479,7 @@ export class GameScene extends Phaser.Scene {
       return [
         `lighting: ${LIGHTING_CONFIG.enabled ? 'on' : 'off'}  (F4)`,
         `playerRadius: ${ls.getPlayerRadius()}px`,
-        `desaturation: ${LIGHTING_CONFIG.desaturationStrength.toFixed(2)}`,
+        `desaturation: ${(this.desaturationPipeline?.getStrength() ?? LIGHTING_CONFIG.desaturationStrength).toFixed(2)}`,
         `hasEmber: ${ls.getHasEmber()}`,
         `lights: ${ls.getLightCount()}`,
       ].join('\n');
@@ -407,6 +514,10 @@ export class GameScene extends Phaser.Scene {
     // Suppress during conditional NPC spawn fade (US-71) — same zone-level
     // mutual exclusion pattern as transitionInProgress.
     if (this.spawnInProgress) return;
+    // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
+    // trigger-zone evaluation, and exit-zone checks all sit in the body below
+    // this chain so a single early-return covers all four.
+    if (this.sharingInProgress) return;
 
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
@@ -1004,6 +1115,8 @@ export class GameScene extends Phaser.Scene {
       this.hasEmberMarkUnsubscribe();
       this.hasEmberMarkUnsubscribe = null;
     }
+    for (const unsub of this.warmingUnsubscribes) unsub();
+    this.warmingUnsubscribes = [];
     this.destroyEmberOverlay();
     this.lightingSystem?.destroy();
   }
@@ -1101,17 +1214,36 @@ export class GameScene extends Phaser.Scene {
   // when a previously-gated NPC fades in. Position is updated per-frame in
   // GameScene.update via lightingSystem.syncPositions so wandering NPCs carry
   // their light.
-  private registerNpcLight(npc: NpcDefinition): void {
+  // Recompute the effective desaturation strength from the current count of
+  // warmed NPCs and push it to the desat pipeline (US-86 cumulative warming).
+  // base × (1 − reduction × count) clamped ≥ DESAT_FLOOR. Called only on
+  // warming-flag-change events (no per-frame recomputation — Learning EP-01).
+  private updateEffectiveDesaturation(): void {
+    if (!this.desaturationPipeline) return;
+    let warmingsCount = 0;
+    for (const id of WARMING_NPC_IDS) {
+      if (getFlag(`npc_warmed_${id}`) === true) warmingsCount += 1;
+    }
+    const base = LIGHTING_CONFIG.desaturationStrength;
+    const effective = Math.max(DESAT_FLOOR, base * (1 - DESAT_REDUCTION_PER_WARMING * warmingsCount));
+    this.desaturationPipeline.setStrength(effective);
+  }
+
+  private registerNpcLight(npc: NpcDefinition, warmed = false): void {
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
     const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
     const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
     const override = npc.lightOverride;
+    const baseRadius = override?.radius ?? LIGHTING_CONFIG.npcRadius;
+    const baseIntensity = override?.intensity ?? LIGHTING_CONFIG.npcIntensity;
     const light: RegisteredLight = {
       id: npc.id,
       x: cx,
       y: cy,
-      radius: override?.radius ?? LIGHTING_CONFIG.npcRadius,
-      intensity: override?.intensity ?? LIGHTING_CONFIG.npcIntensity,
+      radius: warmed ? baseRadius + LIGHTING_CONFIG.warmedRadiusBonus : baseRadius,
+      intensity: warmed
+        ? Math.min(1, baseIntensity + LIGHTING_CONFIG.warmedIntensityBonus)
+        : baseIntensity,
       tier: override?.tier ?? 1,
     };
     this.lightingSystem.registerLight(light);
