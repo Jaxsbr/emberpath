@@ -153,3 +153,11 @@ entries:
     result: pass
     notes: "handle-pr-review queued"
     tokens: ~500
+  - task: 20
+    time: "2026-04-30T08:30:00Z"
+    type: review
+    story: phase
+    description: "Branch A — executed [review] handle-pr-review pr=21 auto=true. No inline review threads (review-pr fell back to a summary review due to line-number mapping). Fetched the review summary directly via gh api repos/.../pulls/21/reviews. Triaged 2 concerns + 1 nit. Concern A (timing asymmetry between choice.setFlags pre-pulse and warming flag at pulse-land): FIXED via a TIMING CONTRACT block comment documenting the rule and the future `pulseSetFlags` extension path. Concern B (missing explicit return after firePulseTarget block): FIXED with `return;` after startPulse to prevent future-appended code from running mid-pulse. Nit (emberShare.ts shutdown listener has no matching .off): SKIPPED per auto=true rules — idempotent today since each scene gets a new EmberShareSystem instance. Verify: tsc + build pass; bundle unchanged. Committed: 'fix: address PR #21 review concerns — setOnChoice timing contract + explicit return after pulse'. Pushed. Posted two PR comments: (1) review-fix summary at #issuecomment-4346867751 with per-thread fixed/skipped breakdown; (2) phase-review-complete summary at #issuecomment-4346869432 with the build / stories / reviewed / fixed / quality-checks block. review_complete: true. Loop's guard rail 4 (phase_complete=true AND review_complete=true) will halt the iteration on the next Step 2."
+    result: pass
+    notes: "Phase review complete. PR #21 ready for human review and approval. retro-gate awaits /sabs:phase-retro."
+    tokens: ~5500
