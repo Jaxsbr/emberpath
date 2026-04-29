@@ -55,7 +55,7 @@ Phaser 3 + TypeScript + Vite, systems-based entity architecture, mobile-first re
 | fog-marsh-dead-end | Shipped | US-66, US-67, US-68, US-69 | [phases/fog-marsh-dead-end.md](phases/fog-marsh-dead-end.md) |
 | keeper-rescue | Shipped | US-70, US-71, US-72, US-73 | [phases/keeper-rescue.md](phases/keeper-rescue.md) |
 | fog-and-light | Shipped | US-74, US-75, US-76, US-77, US-78, US-79, US-80, US-81 | [phases/fog-and-light.md](phases/fog-and-light.md) |
-| homecoming-light | Draft | US-82, US-83, US-84, US-85, US-86 | [phases/homecoming-light.md](phases/homecoming-light.md) |
+| homecoming-light | Shipped | US-82, US-83, US-84, US-85, US-86 | [phases/homecoming-light.md](phases/homecoming-light.md) |
 
 ## Next up
 
