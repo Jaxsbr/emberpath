@@ -40,6 +40,12 @@ const EMBER_OFFSET_Y = -28;
 const EMBER_RADIUS = 6;
 const EMBER_COLOR = 0xf2c878;
 const EMBER_DEPTH = 5.5;
+// NPCs that can be warmed via the ember-share verb (US-85). Each ID maps to a
+// `npc_warmed_<id>` flag; on flip-to-true the matching NPC's tier-1 light is
+// re-registered at brighter values and alpha-gated decorations within its new
+// radius bloom in. Driftwood is intentionally absent — refusal sets a
+// different flag (`npc_refused_driftwood`) and produces NO pulse / NO bump.
+const WARMING_NPC_IDS = ['wren', 'old-man'] as const;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.
@@ -130,6 +136,13 @@ export class GameScene extends Phaser.Scene {
   // cleanupResize.
   private emberOverlay: Phaser.GameObjects.Arc | null = null;
   private hasEmberMarkUnsubscribe: (() => void) | null = null;
+  // Warming-flag onFlagChange unsubscribes (US-85). One per NPC in
+  // WARMING_NPC_IDS. Each subscriber re-registers the NPC's tier-1 light at
+  // brighter values on flip-to-true and restores baseline on flip-to-false /
+  // undefined (resetAllFlags), forcing alpha-gate re-eval on the same tick
+  // (mirrors US-77's has_ember_mark atomic flip pattern). Cleaned up in
+  // cleanupResize (Async-cleanup safety criterion).
+  private warmingUnsubscribes: (() => void)[] = [];
   // Cached has_ember_mark — read from localStorage once on create and updated
   // by the existing onFlagChange subscriber. LightingSystem.update reads this
   // each frame; reading the flag store directly would re-parse JSON on every
@@ -400,6 +413,33 @@ export class GameScene extends Phaser.Scene {
       // movement (US-77 atomic flip parity).
       this.maybeUpdateAlphaGates(true);
     });
+
+    // Warming subscribers (US-85). For each NPC in WARMING_NPC_IDS, watch the
+    // `npc_warmed_<id>` flag: on flip-to-true, re-register the NPC's tier-1
+    // light at brighter values (idempotent overwrite — Learning #63) AND
+    // force-eval alpha-gated decorations so a nearby alpha-gated frame blooms
+    // in on the same tick as the warming. Mirrors the has_ember_mark atomic
+    // flip pattern above. On flip-to-undefined / false (resetAllFlags
+    // notifies with undefined), restore baseline. NPCs not currently in
+    // activeNpcs (e.g. wrong area) are skipped harmlessly — their light isn't
+    // registered there anyway.
+    for (const npcId of WARMING_NPC_IDS) {
+      const flagName = `npc_warmed_${npcId}`;
+      // Continue-from-save / area-transition: if already warmed, register at
+      // brighter values immediately so a fresh scene resumes at the warmed
+      // state without waiting for another flag flip.
+      if (getFlag(flagName) === true) {
+        const npc = this.activeNpcs.find((n) => n.id === npcId);
+        if (npc) this.registerNpcLight(npc, true);
+      }
+      const unsubscribe = onFlagChange(flagName, (_, value) => {
+        const npc = this.activeNpcs.find((n) => n.id === npcId);
+        if (!npc) return;
+        this.registerNpcLight(npc, value === true);
+        this.maybeUpdateAlphaGates(true);
+      });
+      this.warmingUnsubscribes.push(unsubscribe);
+    }
 
     // Provide the F3 debug HUD with a snapshot of lighting state. Captured as
     // a closure here so DebugOverlaySystem stays decoupled from LightingSystem.
@@ -1044,6 +1084,8 @@ export class GameScene extends Phaser.Scene {
       this.hasEmberMarkUnsubscribe();
       this.hasEmberMarkUnsubscribe = null;
     }
+    for (const unsub of this.warmingUnsubscribes) unsub();
+    this.warmingUnsubscribes = [];
     this.destroyEmberOverlay();
     this.lightingSystem?.destroy();
   }
@@ -1141,17 +1183,21 @@ export class GameScene extends Phaser.Scene {
   // when a previously-gated NPC fades in. Position is updated per-frame in
   // GameScene.update via lightingSystem.syncPositions so wandering NPCs carry
   // their light.
-  private registerNpcLight(npc: NpcDefinition): void {
+  private registerNpcLight(npc: NpcDefinition, warmed = false): void {
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
     const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
     const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
     const override = npc.lightOverride;
+    const baseRadius = override?.radius ?? LIGHTING_CONFIG.npcRadius;
+    const baseIntensity = override?.intensity ?? LIGHTING_CONFIG.npcIntensity;
     const light: RegisteredLight = {
       id: npc.id,
       x: cx,
       y: cy,
-      radius: override?.radius ?? LIGHTING_CONFIG.npcRadius,
-      intensity: override?.intensity ?? LIGHTING_CONFIG.npcIntensity,
+      radius: warmed ? baseRadius + LIGHTING_CONFIG.warmedRadiusBonus : baseRadius,
+      intensity: warmed
+        ? Math.min(1, baseIntensity + LIGHTING_CONFIG.warmedIntensityBonus)
+        : baseIntensity,
       tier: override?.tier ?? 1,
     };
     this.lightingSystem.registerLight(light);
