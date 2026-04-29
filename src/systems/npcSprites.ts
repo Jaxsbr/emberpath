@@ -9,6 +9,7 @@ export const NPC_SPRITES: Record<string, NpcSpriteDefinition> = {
   'marsh-hermit': { idleFrameCount: 4, walkFrameCount: 4 },
   'old-man': { idleFrameCount: 4, walkFrameCount: 4 },
   'heron': { idleFrameCount: 4, walkFrameCount: 4 },
+  'wren': { idleFrameCount: 4, walkFrameCount: 4 },
 };
 
 export function hasNpcSprite(id: string): boolean {
