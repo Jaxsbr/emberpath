@@ -46,6 +46,13 @@ export interface DialogueChoice {
   text: string;
   nextId: string;
   setFlags?: Record<string, string | number | boolean>;
+  // When set, picking this choice fires EmberShareSystem.startPulse at the
+  // named NPC sprite (resolved via GameScene.npcSpritesById). DialogueSystem
+  // does NOT auto-advance to nextId — the GameScene choice handler takes
+  // ownership of the dialogue advance via dialogueSystem.advanceAfterPulse(),
+  // called from the pulse onComplete callback so the warming flag flip and
+  // the next dialogue node land on the same tick (US-85 ember-pulse).
+  firePulseTarget?: string;
 }
 
 export interface DialogueNode {

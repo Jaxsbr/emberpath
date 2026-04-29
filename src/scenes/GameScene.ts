@@ -18,6 +18,7 @@ import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
 import { DesaturationPipeline } from '../systems/desaturationPipeline';
+import { EmberShareSystem } from '../systems/emberShare';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
@@ -115,6 +116,12 @@ export class GameScene extends Phaser.Scene {
   // doesn't collide with or interact with an invisible NPC.
   private spawnConditionUnsubscribes: (() => void)[] = [];
   private spawnInProgress = false;
+  // Ember-share pulse zone-level mutual exclusion (US-85). Set true while the
+  // pulse plays so movement, NPC interaction, trigger-zone evaluation, and
+  // exit-zone checks all suppress on the same early-return chain as
+  // transitionInProgress / spawnInProgress.
+  private sharingInProgress = false;
+  private emberShare!: EmberShareSystem;
   private activeNpcs: NpcDefinition[] = [];
   // Player ember overlay (US-73). Created when has_ember_mark flips true OR
   // when the flag is already true on scene create (covers area transitions
@@ -271,6 +278,12 @@ export class GameScene extends Phaser.Scene {
     }
     this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
+    // Ember-share pulse system (US-85). Instantiated after the UI camera
+    // exists so the pulse Arc can be uiCam.ignore'd on creation. Reset
+    // sharingInProgress here so a scene.restart never resumes mid-pulse
+    // (Learning EP-02 — class fields persist across restart).
+    this.sharingInProgress = false;
+    this.emberShare = new EmberShareSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
@@ -336,6 +349,29 @@ export class GameScene extends Phaser.Scene {
         for (const [key, value] of Object.entries(choice.setFlags)) {
           setFlag(key, value);
         }
+      }
+      // Ember-share pulse (US-85). When firePulseTarget is set, DialogueSystem
+      // defers the advance to nextId — we own resuming via advanceAfterPulse()
+      // from the pulse onComplete, so the warming flag flip and the next
+      // dialogue node land on the same tick. Falls through to advance if the
+      // target NPC sprite is missing (defensive — should not happen in
+      // authored content, but a stale flag would otherwise lock the dialogue).
+      if (choice.firePulseTarget) {
+        const targetId = choice.firePulseTarget;
+        const npcSprite = this.npcSpritesById.get(targetId);
+        if (!npcSprite) {
+          console.warn(`[ember-share] No sprite for NPC '${targetId}'; skipping pulse`);
+          this.dialogueSystem.advanceAfterPulse(choice);
+          return;
+        }
+        this.sharingInProgress = true;
+        this.emberShare.startPulse(this.player, npcSprite, () => {
+          // Set the warming flag at pulse-land so downstream subscribers
+          // (light brightening, alpha-gate force-eval) flip on the same tick.
+          setFlag(`npc_warmed_${targetId}`, true);
+          this.sharingInProgress = false;
+          this.dialogueSystem.advanceAfterPulse(choice);
+        });
       }
     });
     this.debugOverlay = new DebugOverlaySystem(this);
@@ -407,6 +443,10 @@ export class GameScene extends Phaser.Scene {
     // Suppress during conditional NPC spawn fade (US-71) — same zone-level
     // mutual exclusion pattern as transitionInProgress.
     if (this.spawnInProgress) return;
+    // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
+    // trigger-zone evaluation, and exit-zone checks all sit in the body below
+    // this chain so a single early-return covers all four.
+    if (this.sharingInProgress) return;
 
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();

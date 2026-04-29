@@ -516,7 +516,19 @@ export class DialogueSystem {
     if (this.onChoiceCallback) {
       this.onChoiceCallback(choice);
     }
-    const nextNode = this.script!.nodes.find(n => n.id === choice.nextId);
+    // Pulse-firing choices defer the advance — the GameScene handler owns
+    // resuming via advanceAfterPulse() so the warming flag flip and the next
+    // node show on the same tick (US-85).
+    if (choice.firePulseTarget) return;
+    this.advanceAfterPulse(choice);
+  }
+
+  // Advances to the choice's nextId (or closes the dialogue when no matching
+  // node exists). Public so the GameScene pulse handler can resume after the
+  // ember-share pulse onComplete fires (US-85).
+  advanceAfterPulse(choice: DialogueChoice): void {
+    if (!this.script) return;
+    const nextNode = this.script.nodes.find(n => n.id === choice.nextId);
     if (nextNode) {
       this.showNode(nextNode);
     } else {
