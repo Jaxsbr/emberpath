@@ -105,6 +105,11 @@ export interface StoryBeat {
   imageKey?: string;
   imageColor?: number;
   imageLabel?: string;
+  // Optional asset-manifest override key (US-90). When set, StoryScene resolves
+  // the texture key as `scene-${assetRef}` instead of the default
+  // `scene-${storySceneId}-${beatIndex}`. Existing beats without `assetRef`
+  // continue to use the positional default — no migration needed.
+  assetRef?: string;
 }
 
 export interface StorySceneDefinition {
