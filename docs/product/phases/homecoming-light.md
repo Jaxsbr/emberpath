@@ -1,17 +1,17 @@
 # Phase: homecoming-light
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
 Pip's "spiritual high" beat. After receiving the Ember Mark, Pip walks back to Ashen Isle and discovers the Ember has a verb: she can share warmth with people. Three NPCs model three responses to her witness — Wren (warmed easily, the first fruit), Old Man (wary, then warmed once Pip has perseverance), Driftwood (charming refusal). Each warming is a small interactive moment: a "Share warmth" dialogue choice that triggers a short ember-pulse animation, after which the target's light blooms, decorations near them un-fade, and a per-NPC warmed-state dialogue takes over. Cumulative warmings step Ashen Isle's overall fading down a notch each. The phase ends with a soft reflection — *"There is more light to share, beyond this island..."* — that sets up Briar Wilds without committing to its content.
 
 ### Stories in scope
-- US-82 — Wren, the hopeful one (warmed)
-- US-83 — Driftwood, the charming refusal
-- US-84 — Old Man, wary then warmed
-- US-85 — Ember-pulse: the share-warmth verb
-- US-86 — Cumulative warming + closing reflection
+- US-82 — Wren, the hopeful one (warmed) [Shipped]
+- US-83 — Driftwood, the charming refusal [Shipped]
+- US-84 — Old Man, wary then warmed [Shipped]
+- US-85 — Ember-pulse: the share-warmth verb [Shipped]
+- US-86 — Cumulative warming + closing reflection [Shipped]
 
 ### Design direction
 
