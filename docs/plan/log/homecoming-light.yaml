@@ -129,3 +129,11 @@ entries:
     result: pass
     notes: "All 69 done-when criteria met; phase_complete: true; ready for review-cycle scheduling on next iteration"
     tokens: ~8000
+  - task: 17
+    time: "2026-04-29T11:00:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — review_stage=null + phase_complete=true. Pushed branch (20 commits ahead of main). Created PR #21 via gh pr create — title 'feat: homecoming-light — Wren + Driftwood + Old Man warming + ember-share verb (US-82..US-86)'. PR body summarises the five stories, mechanics changes (new flags, types, constants), spec compliance, reconciliation debt cleared, and a test plan covering the 10 manual-verify scenarios + verify command + deploy verification. URL: https://github.com/Jaxsbr/emberpath/pull/21. Stored pr_number=21; advanced review_stage to pr_created. Queued [review] review-pr pr=21 auto=true for the next iteration via Branch A."
+    result: pass
+    notes: "PR #21 created; review-pr queued"
+    tokens: ~3000
