@@ -1,6 +1,6 @@
 # Phase: fog-and-light
 
-Status: planned (DEPENDS ON `keeper-rescue`)
+Status: shipped
 
 > **Phase intent — 2026-04-28.** A first playthrough of the shipped keeper-rescue arc revealed that the gospel beats encoded in the design (Fading → grace by inability → Ember → return) are present in the *code* but not in the *experience*. The Old Man reads as a broken NPC, the marsh dead-end reads as random stuckness, and the Ember Mark reads as a cosmetic glow with no callback. This phase introduces the fog-and-light substrate that has been part of the product vision from inception — a desaturated, fog-shrouded world whose visibility is bound to the player's light — and uses that substrate to rework Beats 1 and 2 so the existing arc actually communicates its intent. No new beats are added. This is the visual and narrative integration pass that makes the existing world land.
 
@@ -23,7 +23,7 @@ The build-loop's `frontend-design` skill does NOT apply — this phase introduce
 
 ## Stories
 
-### US-74 — Lighting overlay system + LightingConfig + player light + debug toggle
+### US-74 — Lighting overlay system + LightingConfig + player light + debug toggle [Shipped]
 
 Introduce the rendering substrate: a full-screen dark overlay with a soft circular cutout that follows the player. The overlay is driven by a single configuration object exposed for live tuning during dev.
 
@@ -51,7 +51,7 @@ Introduce the rendering substrate: a full-screen dark overlay with a soft circul
 
 **Behavior rule update (AGENTS.md):** "Lighting — A `LightingSystem` renders a soft-falloff darkness overlay above world entities (depth 6, below thoughts/UI). Configuration lives in `LIGHTING_CONFIG` and is live-tunable via F4 (toggle) and dev-only key bindings. Player light radius expands when `has_ember_mark === true`; POI/NPC/tier-2 lights register through `LightingSystem.registerLight`."
 
-### US-75 — POI / NPC / tier-2 light registration
+### US-75 — POI / NPC / tier-2 light registration [Shipped]
 
 Wayfinding lights for NPCs, paths, trigger zones, and interactable objects. Two tiers: tier-1 always visible; tier-2 dormant until the Ember is granted.
 
@@ -69,7 +69,7 @@ Wayfinding lights for NPCs, paths, trigger zones, and interactable objects. Two 
 
 **Behavior rule update (AGENTS.md):** "POI lighting — NPCs auto-register a dim light at spawn; triggers and decorations opt in via `light?:` field. Two tiers: tier-1 always rendered, tier-2 only rendered when `has_ember_mark === true`. The Old Man's light is intentionally dimmer (`lightOverride.intensity`) as a visual reading of the Fading."
 
-### US-76 — Desaturation post-FX with lift-within-lit-radius
+### US-76 — Desaturation post-FX with lift-within-lit-radius [Shipped]
 
 The world outside the lit area renders desaturated; within the lit area, color returns. Implemented as a camera post-FX pipeline.
 
@@ -83,7 +83,7 @@ The world outside the lit area renders desaturated; within the lit area, color r
 - **Performance budget:** per-frame post-FX cost measured on a mid-tier mobile device (target: <2ms/frame on iPhone 12 / Pixel 5 class). If exceeded, fall back to the pre-baked-texture approach. Document the chosen approach + measured cost in code comment.
 - **Loop-invariant check (Learning EP-01):** the per-frame `update` for the post-FX allocates zero objects in the JS layer; uniforms are written via existing Phaser shader-data setters, not new objects.
 
-### US-77 — Ember toggle: radius expand + tier-2 reveal + hidden-object alpha gating
+### US-77 — Ember toggle: radius expand + tier-2 reveal + hidden-object alpha gating [Shipped]
 
 Wire the Ember Mark into the lighting system as the single switch that changes world legibility.
 
@@ -97,7 +97,7 @@ Wire the Ember Mark into the lighting system as the single switch that changes w
 - **Idempotency (Learning #63):** flipping `has_ember_mark` rapidly true→false→true (synthetic dev-only test) does not leak GameObjects, double-render lights, or strand decorations at intermediate alphas.
 - **Variant baseline (Rule 4a):** with `LIGHTING_CONFIG.enabled = false`, the Ember toggle has zero visual effect on world fog/light/desaturation; the existing depth-5.5 ember overlay disc still appears as today.
 
-### US-78 — Ashen Isle Beat 1 rework: Old Man speaks the Fading
+### US-78 — Ashen Isle Beat 1 rework: Old Man speaks the Fading [Shipped]
 
 Replace the Old Man's current "stuck in doorway" non-interactivity with a short, dim dialogue that establishes the Fading. Wire his light to read as fading. Add a return-state dialogue branch for post-Ember (covered in US-81).
 
@@ -113,7 +113,7 @@ Replace the Old Man's current "stuck in doorway" non-interactivity with a short,
 - **Save/resume:** `spoke_to_old_man` flag persists across reload via existing `emberpath_flags` localStorage; verified by talking to Old Man, force-close, Continue, and confirming the flag survives in localStorage inspection.
 - **Master-prd alignment:** the dialogue is the textual encoding of beat 1 (the Fading). The PRD's "show, don't preach" principle requires that no node mentions God, Jesus, sin, salvation, ember, or rescue. The Old Man speaks only of his own stillness.
 
-### US-79 — Visible escape failures with escalating monologue
+### US-79 — Visible escape failures with escalating monologue [Shipped]
 
 Replace the current invisible "4 attempts" mechanic and the random "rock thoughts" with a felt loop: the player walks into the closed exit, gets a visible push-back response, and an escalating internal voice tracks how many times it has happened.
 
@@ -132,7 +132,7 @@ Replace the current invisible "4 attempts" mechanic and the random "rock thought
 - **Loop-invariant check (Learning EP-01):** the fog-flash animation uses a pre-allocated tween or a rectangle from a small pool; per-trigger work allocates ≤ 1 object (the tween config), and only on the actual collision attempt — not per-frame.
 - **Variant baseline:** the rebound + monologue fires identically on desktop (W key into wall) and mobile (joystick-into-wall), and on every facing direction approach to the closed exit (north-pushed, west-pushed corner cases).
 
-### US-80 — Surrender-triggered Keeper rescue
+### US-80 — Surrender-triggered Keeper rescue [Shipped]
 
 Replace the `escape_attempts >= 4` Keeper-spawn condition with a surrender-by-stillness condition: the Keeper appears when the player stops trying.
 
@@ -151,7 +151,7 @@ Replace the `escape_attempts >= 4` Keeper-spawn condition with a surrender-by-st
 
 **Behavior rule update (AGENTS.md):** "Surrender trigger — A flag-based system that fires when the player has tried, then stopped, near a context-significant location. Used by the Keeper rescue (`marsh_surrendered` in Fog Marsh). Configurable by `SURRENDER_*` constants. Reset on input or proximity exit; not persisted as a partial timer."
 
-### US-81 — Post-Ember reveal: Ashen Isle tier-2 POI + Old Man post-Ember branch
+### US-81 — Post-Ember reveal: Ashen Isle tier-2 POI + Old Man post-Ember branch [Shipped]
 
 The payoff. Walking back to Ashen Isle with the Ember reveals tier-2 lights that were always present, including a new findable element. The Old Man can now see the player's light and his dialogue branches.
 
