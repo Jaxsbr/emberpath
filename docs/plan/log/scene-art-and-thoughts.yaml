@@ -34,3 +34,11 @@ entries:
     result: pass
     notes: "investigate-first mandate satisfied; module shape locked; ≥ 2 consumer criterion deferred to US-90/US-91"
     tokens: ~3500
+  - task: 3
+    time: "2026-04-29T22:50:00Z"
+    type: investigate
+    story: US-87
+    description: "Branch B — next-task null + phase_complete false + post-investigate. Queued [US-87] implement task: create src/art/styleGuide.ts with the four exports per the locked module shape (STYLE_PALETTE 12 keys, STYLE_VIBE_PROMPT, STYLE_BASE_PROMPT, composeArtPrompt). Phaser-free, deterministic prompt composition order. Iteration 4's Branch A executes."
+    result: pass
+    notes: "implement task queued"
+    tokens: ~500
