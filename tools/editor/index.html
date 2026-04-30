@@ -20,6 +20,42 @@
       </nav>
     </header>
     <main id="workspace">
+      <aside id="map-tools">
+        <h3>Tools</h3>
+        <div class="tool-group">
+          <strong>Mode</strong>
+          <div id="mode-buttons" class="button-row">
+            <button class="mode-btn active" data-mode="cell">Cell</button>
+            <button class="mode-btn" data-mode="vertex">Vertex</button>
+            <button class="mode-btn" data-mode="object">Object</button>
+            <button class="mode-btn" data-mode="inspect">Inspect</button>
+          </div>
+          <p class="hint">
+            Cell-paint: click sets all 4 corners. Vertex: Shift-click sets one. Object: Alt-click drops; right-click removes.
+          </p>
+        </div>
+        <div class="tool-group">
+          <strong>Terrain</strong>
+          <div id="terrain-picker" class="picker"></div>
+        </div>
+        <div class="tool-group">
+          <strong>Object kind</strong>
+          <div id="object-picker" class="picker"></div>
+        </div>
+        <div class="tool-group">
+          <label class="toggle">
+            <input type="checkbox" id="conditional-alt-toggle" />
+            Show conditional alternate state
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="impassable-outline-toggle" />
+            Show impassable object outlines
+          </label>
+        </div>
+        <div class="tool-group">
+          <button id="export-ts-btn" class="export-btn">Export TypeScript</button>
+        </div>
+      </aside>
       <div id="view-container">
         <div id="view-map" class="view active"></div>
         <div id="view-dialogue" class="view"></div>
@@ -30,6 +66,19 @@
         <pre id="detail-content">Select an element to inspect.</pre>
       </aside>
     </main>
+    <div id="export-modal" class="modal hidden">
+      <div class="modal-content">
+        <header>
+          <h3>Exported terrain + objects</h3>
+          <button id="export-modal-close" aria-label="Close">×</button>
+        </header>
+        <p class="hint">Paste this fragment into the area's <code>AreaDefinition</code> to replace the existing <code>terrain</code> and <code>objects</code> fields.</p>
+        <textarea id="export-textarea" readonly></textarea>
+        <div class="button-row">
+          <button id="export-copy-btn">Copy to clipboard</button>
+        </div>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
