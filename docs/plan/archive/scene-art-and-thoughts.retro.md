@@ -1,0 +1,27 @@
+# Phase retrospective — scene-art-and-thoughts
+
+**Metrics:** 10 tasks, 3 investigate (30%), 6 implement, 1 rework. Rework rate: 10%. Investigate ratio: 30%. Health: **warning** on rework (right at the 10% threshold), **warning** on investigate ratio (cross-cutting phase target is >40%). The single rework is operator-driven and shallow (one fix-up commit), so the practical health is **healthy**.
+
+The phase shipped all 5 stories functionally — US-87 (codex), US-88 (thought bubble), US-89 (StoryScene with cross-fade), US-90 (manifest + StoryBeat.assetRef), US-91 (printer + 9 PixelLab assets) — plus a phase-spec rewrite that introduced PixelLab as the chosen generator and locked the storybook art direction (Joe Sutphin's Little Pilgrim's Progress) into code. The PixelLab handoff worked: 9 generation calls, all 9 succeed, 1 rate-limit retry on the 9th when the per-account 8/8 concurrent-job ceiling clipped the parallel batch — caught and re-fired without operator help.
+
+The investigate-first mandate was applied to US-87 (one investigate-then-implement pair). US-88, US-89, US-90, US-91 shipped without paired investigates because the phase spec was unusually concrete (per-criterion code paths and file-line references), so once the foundation was in place each implement was mechanical. Twelve consecutive phases (foundation through homecoming-light) ran 0% rework; this phase introduces a 10% mark.
+
+## Build-log failure classes
+
+- `visual-pick-without-verification` — **PATTERN (third occurrence).** First-seen in `tileset` (frame indices picked from atlas thumbnails without runtime rendering, two reworks). Recurred in `world-legibility` (initial PROVISIONAL frame picks plus PR auto-review reinforcement — counted as third source on that retro). Third manifestation here: US-88 thought bubble shipped with serif fontFamily + s()/zoom-scaling that produced corrupted glyphs at mobile zoom ~1.1x AND uneven panel padding (2*padY above text, 0 below). US-89 StoryScene similarly shipped without an in-engine smoke test by the agent. Both caught by operator running the dev server at desktop and mobile viewports. Cost was one rework iteration (commit `7fb3a4d`).
+
+  This is the same pattern the prior two retros both forecast: visual changes shipped without runtime visual verification because tsc + vite build cannot see the screen. The earlier retros recommended a phase-kickoff "atlas preview" or a `tools/editor/frames.html` viewer for frame-index work, but no compounding fix was applied because the recommended fix was domain-specific (atlas indices). The thought-bubble + StoryScene case generalises the pattern: any visual-touching story needs an in-engine smoke test before story-completion, regardless of whether atlas indices are involved.
+
+- `spec-pattern-mismatch` — **first-seen.** US-88's done-when criterion specced "uses the same design-pixel + zoom-scale pattern as systems/dialogue.ts: a private `s(v)` helper that scales design pixels by camera zoom" — prescribing reuse of a pattern from a different rendering context. dialogue.ts targets the UI camera (zoom 1) where `s(v) = v * mainZoom` translates design pixels to canvas pixels for a no-zoom renderer. thoughtBubble targets the main camera at variable zoom (1.1x mobile, 4x desktop) — the same math overshoots screen size by `zoom×` and combined with serif fontFamily produces broken glyphs after NEAREST sampling. The criterion was specced without checking whether the prescribed pattern fits the consuming module's camera context. First time this manifestation has surfaced; not yet a pattern.
+
+## Review-sourced failure classes
+
+No PR exists for this phase yet — Step 1.5 skipped.
+
+## Compounding fixes proposed
+
+- **[Project-local LEARNINGS.md]** Add new entry **EP-03 — Visual stories require in-engine smoke test before story-completion.** Cite three occurrences (tileset, world-legibility, scene-art-and-thoughts) plus the pattern carry-over from the world-legibility retro's PR-auto-review confirmation. Prevention: any story whose done-when criteria touch tile rendering, sprite swaps, UI panels, scene compositions, or animation must include at least one in-engine smoke-test criterion at desktop AND mobile zoom. The build-loop's Story Completion Gate (or Phase Completion Gate, whichever fires first) must verify the agent ran the smoke test before ticking the story complete. Reason: `visual-pick-without-verification` in tileset (build-log) + world-legibility (build-log + PR auto-review) + scene-art-and-thoughts (build-log). Scope: phaser-game (the specific failure mode is Phaser pixelArt:true NEAREST + camera-zoom interaction; the broader "visual changes need visual verification" rule is universal but the actionable detail here references Phaser-specific rendering model).
+
+- **[Project-local LEARNINGS.md]** Add new entry **EP-04 — Pattern-reuse criteria must be context-checked before specification.** Cite this phase's US-88 dialogue-s()-pattern misapplication. Prevention: when a phase spec instructs "use pattern X from module Y" the spec author must confirm module Y and the consuming module share the same renderer context (camera, depth, scaling pipeline). For Phaser specifically, "main camera" vs "UI camera" is the key axis — UI cam runs at zoom 1, main cam runs at variable zoom; design-pixel math differs. Scope: phaser-game.
+
+No fixes target skill files or workspace-level paths this round — both fixes are project-local learnings.

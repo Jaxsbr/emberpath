@@ -22,23 +22,24 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: homecoming-light
+  phase: scene-art-and-thoughts
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 20
+  task_number: 11
   next_task: null
   last_result: pass
   consecutive_fails: 0
+  phase_classification: cross-cutting
 
   # --- Review (owner: iterator) ---
-  review_stage: review_posted
-  review_complete: true
-  pr_number: 21
+  review_stage: null
+  review_complete: false
+  pr_number: null
 
   # --- Retrospective (owner: retro) ---
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-82, US-83, US-84, US-85, US-86]
+  completed_stories: [US-87, US-88, US-89, US-90, US-91]

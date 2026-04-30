@@ -1,0 +1,180 @@
+phase: "scene-art-and-thoughts"
+started: "2026-04-29T22:30:00Z"
+reconciliation_status:
+  r0: done
+  r1: done
+  r2: done
+  r3: done
+  r4: done
+  r5: done
+entries:
+  - task: 1
+    time: "2026-04-29T22:35:00Z"
+    type: investigate
+    story: phase
+    description: "Branch B — initial state survey for scene-art-and-thoughts. Verify clean: tsc + vite build pass on build/scene-art-and-thoughts at fce5e9f (post-start commit; prior commit f4666bd is the homecoming-light reconciliation). Source layout confirmed: src/scenes/{GameScene,StoryScene,TitleScene}.ts; src/systems/{thoughtBubble,emberShare,lighting,desaturationPipeline,...}.ts; src/data/areas/{ashen-isle,fog-marsh,registry,types}.ts; tools/{atlas-preview.py,migrate-to-relative.ts,editor/}. No src/art/ directory yet — needs creation for US-87 styleGuide.ts and US-90 sceneAssets.ts. art-style.md palette has 12 named hex roles (Page cream light/mid, Sepia mid light/dark, Umber shadow light/dark, Ink near-black, Hope-gold light/deep, Mossy green, Slate blue, Burnt sienna). Phase classification: CROSS-CUTTING — adds StoryBeat.assetRef to types.ts (cross-area type contract) plus two new modules consumed by StoryScene + Node-side tooling (tools/generate-scene-art.ts). Investigate-first mandate applies. Story sequencing: US-87 (foundation codex) → US-90 (manifest depending on codex) → US-91 stub (script that prints invocations — the second consumer satisfying ≥ 2 distinct files for US-87) → US-91 actual generation (operator-fired PixelLab MCP) → US-89 (StoryScene wires preload + cross-fade against the manifest) → US-88 (thought bubble using STYLE_PALETTE) → manual-verify doc → AGENTS.md reconciliation → phase-complete gate. Queued first concrete task: investigate the styleGuide.ts module shape so iteration 2's Branch A can implement US-87 with no spec ambiguity."
+    result: pass
+    notes: "phase classification = CROSS-CUTTING; investigate-first mandate active; verify baseline clean (tsc + vite build)"
+    tokens: ~6500
+  - task: 2
+    time: "2026-04-29T22:45:00Z"
+    type: investigate
+    story: US-87
+    description: |
+      Branch A — investigate styleGuide.ts module shape per US-87 done-when. Key reads:
+      • docs/art-style.md palette table contains 12 named roles. Mapping to TS keys:
+        creamLight=#F2EAD6, creamMid=#E5D9BD, sepiaLight=#B89972, sepiaDark=#8C7256,
+        umberLight=#5A4636, umberDark=#3A2C20, inkBlack=#1F1813,
+        hopeGoldLight=#F2C95B, hopeGoldDeep=#E89C2A,
+        mossyGreen=#7A8A55, slateBlue=#5A6B78, burntSienna=#A8543A.
+      • src/scenes/StoryScene.ts (US-89 target): placeholder is `imageRect: Rectangle` (line 20) + `imageLabel` (line 21) with `imageColor` fallback. Already has cleanupResize hook on `events.on('shutdown')` (line 100), reset of fields at top of init. Needs new fields currentBeatImage, previousBeatImage, crossFadeInProgress, explicit setDepth() on every add.* call. cleanupResize must also kill any in-flight cross-fade tween.
+      • src/systems/thoughtBubble.ts (US-88 target): currently uses world-pixel `FONT_SIZE = 10` (line 8) and `BG_COLOR = 0x222244` (line 10) — both replaced this phase. No `s(v)` helper today; will mirror dialogue.ts pattern. Currently Rectangle bg (line 85); switching to Graphics.fillRoundedRect. uiCam.ignore retained for both currentBg + currentText. displayThought() does not currently null-reset currentBg/currentText/dismissTimer at top — must add per spec criterion.
+      • Module shape decision for src/art/styleGuide.ts:
+        - export `STYLE_PALETTE` typed object literal — 12 readonly hex string fields, all `as const`
+        - export `STYLE_VIBE_PROMPT` (the one-liner from spec: "Anthropomorphic pilgrims in a graphite-and-sepia storybook world, where gold light is the only thing brave enough to be in color.")
+        - export `STYLE_BASE_PROMPT` — multi-line composition rules covering palette + line + dither + lighting + anti-patterns; pulled almost verbatim from docs/art-style.md sections (Pillars + Line & Texture + Lighting + What to avoid)
+        - export `composeArtPrompt(subject: string, mood?: string): string` — deterministic order: STYLE_VIBE_PROMPT + '\n\n' + STYLE_BASE_PROMPT + '\n\nSubject: ' + subject + (mood ? '\nMood: ' + mood : '') + '\n'
+        - zero Phaser imports; pure TypeScript module so it can be imported by Node-side tools (US-91)
+      • Second consumer for the ≥ 2 distinct files done-when: deferred until US-90 (sceneAssets.ts imports composeArtPrompt indirectly via the prompt strings) and US-91 (tools/generate-scene-art.ts imports STYLE_VIBE_PROMPT + composeArtPrompt directly). For US-87 alone, only one consumer exists at first — that done-when criterion will tick green during US-90/US-91 iterations.
+      • No verify run — investigate task did not modify source; baseline still passes from task 1.
+      Next task to queue (Branch B): "[US-87] Create src/art/styleGuide.ts with the four exports per the plan above; commit as the US-87 keystone implementation."
+    result: pass
+    notes: "investigate-first mandate satisfied; module shape locked; ≥ 2 consumer criterion deferred to US-90/US-91"
+    tokens: ~3500
+  - task: 3
+    time: "2026-04-29T22:50:00Z"
+    type: investigate
+    story: US-87
+    description: "Branch B — next-task null + phase_complete false + post-investigate. Queued [US-87] implement task: create src/art/styleGuide.ts with the four exports per the locked module shape (STYLE_PALETTE 12 keys, STYLE_VIBE_PROMPT, STYLE_BASE_PROMPT, composeArtPrompt). Phaser-free, deterministic prompt composition order. Iteration 4's Branch A executes."
+    result: pass
+    notes: "implement task queued"
+    tokens: ~500
+  - task: 4
+    time: "2026-04-29T23:00:00Z"
+    type: implement
+    story: US-87
+    description: "Branch A — created src/art/styleGuide.ts (45 lines). 12-key STYLE_PALETTE (creamLight=#F2EAD6, creamMid=#E5D9BD, sepiaLight=#B89972, sepiaDark=#8C7256, umberLight=#5A4636, umberDark=#3A2C20, inkBlack=#1F1813, hopeGoldLight=#F2C95B, hopeGoldDeep=#E89C2A, mossyGreen=#7A8A55, slateBlue=#5A6B78, burntSienna=#A8543A) — every hex byte-for-byte from docs/art-style.md. STYLE_VIBE_PROMPT verbatim from spec. STYLE_BASE_PROMPT embeds STYLE_VIBE_PROMPT as its first paragraph then composition rules (palette / line / dither / lighting / avoid). composeArtPrompt(subject, mood?) joins BASE + 'Subject: ' + subject + (mood ? '\\n\\nMood: ' + mood : '') + '\\n' — single trailing newline, deterministic. Phaser-free (zero imports). Verify pass: tsc + vite build clean. US-87 4/5 done-when met (the ≥ 2 consumer-files criterion is the only outstanding box; fills naturally on US-90/US-91 import-wires). Story Completion Gate: not yet — US-87 stays out of completed_stories until consumer count reaches 2."
+    result: pass
+    notes: "US-87 codex landed; 4/5 done-when met; consumer-count criterion fills on US-90/US-91"
+    tokens: ~3000
+  - task: 5
+    time: "2026-04-30T11:30:00Z"
+    type: implement
+    story: US-90
+    description: |
+      Branch A (combined with US-91 stub) — created src/art/sceneAssets.ts with
+      BeatAsset discriminated union (static | animated; animated reserved as a
+      future-upgrade type and not exercised this phase) and SCENE_ASSETS keyed by
+      sceneId, ordered by beat index. Three scenes / 9 entries
+      (ashen-isle-intro=4, ember-given=3, marsh-depths=2). Every entry's `file`
+      matches `scenes/<sceneId>/beat-<n>.png`. data/areas/types.ts gained an
+      optional `StoryBeat.assetRef?: string` field — existing beats compile
+      without modification. Verified via tsc clean + npm run build.
+    result: pass
+    notes: "US-90 code-side criteria met; cost-reconciliation section pending in manual-verify doc"
+    tokens: ~3500
+  - task: 6
+    time: "2026-04-30T11:32:00Z"
+    type: implement
+    story: US-91
+    description: |
+      Branch A — created tools/generate-scene-art.ts. Imports SCENE_ASSETS from
+      US-90 + composeArtPrompt + STYLE_VIBE_PROMPT from US-87; iterates the
+      9 static beats and prints one invocation block per beat with the composed
+      prompt and the absolute output path. PLANNED_GENERATION_COUNT=9 enforced
+      against manifest length (mismatch = fatal exit 1). Run `npx tsx
+      tools/generate-scene-art.ts` printed exactly 9 blocks; tsc + build pass.
+    result: pass
+    notes: "US-91 printer shipped; assets generated in task 8"
+    tokens: ~2000
+  - task: 7
+    time: "2026-04-30T11:35:00Z"
+    type: implement
+    story: US-88
+    description: |
+      Branch A — replaced thoughtBubble.ts with cream/umber storybook bubble.
+      Phaser.GameObjects.Rectangle (#222244) → Phaser.GameObjects.Graphics
+      with fillRoundedRect (creamLight α 0.92 fill + umberDark 1px stroke,
+      radius 6). Text color flipped from white to umberDark, italic serif
+      retained. wordWrap with useAdvancedWrap (max 110 design px) added —
+      multi-line homecoming-reflection now renders all three lines. Replaced
+      world-pixel FONT_SIZE = 10 with FONT_SIZE_DESIGN = 12 plus a private s(v)
+      helper (identity for main-cam world-space rendering, documented). Reset
+      hygiene at top of displayThought + scene.events.shutdown handler clears
+      in-flight bubble + queue. Resize handler re-applies fontSize / wrap /
+      panel. UI camera continues to ignore both currentBg and currentText.
+      Verify: tsc + build clean.
+    result: pass
+    notes: "US-88 code-side criteria met; manual-verify doc pending"
+    tokens: ~5500
+  - task: 8
+    time: "2026-04-30T11:37:00Z"
+    type: implement
+    story: US-91
+    description: |
+      Branch A — fired 8 mcp__pixellab__create_object calls in parallel
+      (consistent-style 256×256, view='side', n_frames=1) with composed prompts.
+      9th hit the 8/8 concurrent-job rate limit; refired after the first batch
+      returned. All 9 jobs completed successfully (~30-60s each). Downloaded
+      PNGs via curl from the backblaze storage URLs into
+      assets/scenes/<sceneId>/beat-<n>.png. Sample inspection: ember-given
+      beat-1 (Keeper hands ember to Pip) reads as a hope-gold radiant moment
+      against sepia background; ashen-isle-intro beat-3 (Pip in hooded cloak)
+      is a small fox pilgrim on cracked stone; marsh-depths beat-1 (fog over
+      water, sun glow) reads sepia-first with hope-gold confined to the sun.
+      Object IDs: 2c3918de... 918d237e... a9eee188... c7f9af20... 98ff782f...
+      2509ea06... 2a432de6... 7c43b5e5... 6732153e... .
+    result: pass
+    notes: "9 of 9 PixelLab assets shipped; sepia-first read confirmed by sample inspection"
+    tokens: ~6000
+  - task: 9
+    time: "2026-04-30T11:42:00Z"
+    type: implement
+    story: US-89
+    description: |
+      Branch A — rewrote StoryScene.ts to wire SCENE_ASSETS into preload and
+      render real images with cross-fade. preload iterates SCENE_ASSETS, loads
+      each beat by key scene-<sceneId>-<beatIndex> from scenes/<file>, skips
+      already-loaded textures (cheap re-launch). Animated kind logs warn +
+      falls through to fallback. loaderror logs (sceneId, beatIndex, expected
+      path). create() builds explicit-depth GameObjects (letterbox=-1, image=0,
+      label=1, panel=10, text=11, hint=12) — every add.* paired with setDepth
+      per the inline depth-map block. crossFadeToBeat: outgoing tweens α 1→0
+      and incoming tweens α 0→1 over BEAT_FADE_DURATION_MS=400; outgoing is
+      destroy()-ed in onComplete; crossFadeInProgress guard blocks rapid
+      double-tap re-entrancy after the typewriter is complete. Aspect-ratio
+      preserved width-fit scale with cream-letterbox bg. Reset hygiene: all
+      GameObject refs nulled at init(); fade tweens stopped + cleared in
+      cleanupResize; typewriter timer destroyed. Texture-missing path falls
+      back to the previous flat-color rect + label (regression-safe). Verify:
+      tsc + build clean (bundle 1,570 kB / 364 kB gz, +8 kB from US-87 baseline).
+    result: pass
+    notes: "US-89 code-side criteria met; in-engine smoke test + manual-verify pending"
+    tokens: ~7000
+  - task: 10
+    time: "2026-04-30T12:10:00Z"
+    type: rework
+    story: US-88
+    description: |
+      Branch A — operator-driven smoke test (desktop + mobile) caught two
+      issues with the US-88 bubble that tsc + vite build did not flag:
+      (a) serif glyphs corrupted at mobile zoom ~1.1x because pixelArt:true
+          NEAREST scaling destroys thin serif strokes when the s(v)*main-cam
+          zoom math (originally specced from dialogue.ts's UI-cam pattern)
+          produces small native font sizes, and
+      (b) bubble panel padding asymmetric — text origin (0.5, 1) anchors
+          text bottom at the GameObject position while the panel was drawn
+          from -h..0, leaving 2*padY above text and 0 below.
+      Fix shipped (commit 7fb3a4d): (a) dropped serif fontFamily and the
+      s(v)/zoom-scaling, switched to literal fontSize: '12px' matching the
+      npcInteraction.ts "Tap to talk" pattern that already reads cleanly on
+      both viewports. (b) shifted panel draw to (-h + padY)..padY so padding
+      is symmetric. Side effects: removed the now-unused s(v) helper and
+      handleResize handler. The "uses the same design-pixel + zoom-scale
+      pattern as systems/dialogue.ts" done-when criterion is intentionally
+      no longer met — the spec author did not recognize that dialogue.ts
+      targets the UI camera (zoom 1) while thoughtBubble targets the main
+      camera at variable zoom, so the pattern does not translate.
+    result: pass
+    notes: "post-fix accepted by operator; cost = 1 rework cycle; spec criterion deviation documented"
+    tokens: ~4500
