@@ -230,7 +230,15 @@ export interface AreaDefinition {
   conditionalTerrain?: ConditionalTerrainBlock[];
   mapCols: number;
   mapRows: number;
+  // Tileset id used for terrain Wang resolution (US-95 PixelLab tilesets).
   tileset: string;
+  // Tileset id used for decoration + prop atlas frame lookups. Stage-1 / 2A
+  // decorations and props still reference Kenney atlas frame numbers (e.g.
+  // '36' wooden plank, '120' cliff stone) rather than PixelLab frames; this
+  // field keeps the legacy Kenney atlas resolvable for them. US-98's
+  // re-author migrates decorations + props to the new authoring vocabulary
+  // and deletes this field.
+  decorationsTileset: string;
   npcs: NpcDefinition[];
   props: PropDefinition[];
   decorations: DecorationDefinition[];

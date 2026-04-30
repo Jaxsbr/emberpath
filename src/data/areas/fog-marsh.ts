@@ -220,7 +220,8 @@ export const fogMarsh: AreaDefinition = {
   name: 'Fog Marsh',
   mapCols: 30,
   mapRows: 24,
-  tileset: 'tiny-dungeon',
+  tileset: 'fog-marsh-floor-path',
+  decorationsTileset: 'tiny-dungeon',
   map: fogMarshTileMap,
   terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
   objects: [

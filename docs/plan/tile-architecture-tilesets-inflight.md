@@ -1,6 +1,20 @@
 # US-95 Tilesets — In-Flight Generation Tracking
 
-**STATUS (last check): all 5 generations FAILED. Build loop paused.**
+**STATUS: 5 fresh generations fired on personal `mcp__pixellab__` after team server proved to be maxed out. See Learning EP-05.**
+
+## Current generations (personal server)
+
+| # | Plan id | Tileset id | Lower base | Upper base | Status |
+|---|---|---|---|---|---|
+| 1 | ashen-isle-grass-sand | `ad38f433-0670-487b-8d76-3901582b78ce` | grass: `862e94b0-956f-496f-95b7-80c41b4d9655` | sand: `1c757f7c-bb28-4aa3-a969-f99a660415d0` | processing |
+| 2 | ashen-isle-sand-path | `dd2ef281-17f7-49aa-be44-fa211016ef25` | sand (chained from #1): `1c757f7c-...` | path: `26a92e2a-3e0a-40ee-8fd1-732cda60ecb8` | processing |
+| 3 | fog-marsh-floor-path | `0a444b6d-7077-4a3a-882b-fbe02a455c37` | marsh-floor: `049bbd50-884a-47d6-a80e-2fc5d9186c3a` | path: `3e5afc50-865c-4cf3-8167-0154110363bf` | processing |
+| 4 | fog-marsh-floor-water | `bd2d04ef-a6b6-4007-b6c5-b6120c9c4e36` | marsh-floor (chained from #3): `049bbd50-...` | water: `94cac44a-9b5e-408d-a073-880efed9c90f` | processing |
+| 5 | fog-marsh-floor-stone | `fa67b851-8eb8-48c7-a681-8bf81c22d2f3` | marsh-floor (chained from #3): `049bbd50-...` | stone: `b87f14db-e8d9-402b-b7af-a6c9d3e94a6c` | processing |
+
+ETA ~100s from fire time. All 5 in parallel (chained ones use predetermined base tile ids per docs).
+
+## Previous batch — all failed on team server (recorded for retro)
 
 Working doc — updated as PixelLab generations land. Delete when US-95 wraps and tilesets are wired into TILESETS.
 

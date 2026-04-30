@@ -35,11 +35,91 @@ export interface TilesetDefinition {
   wang: WangTilesetDefinition;
 }
 
+// PixelLab-generated Wang tilesets (US-95). Each has all 16 mask entries
+// populated — the resolver always finds a frame and never falls back. Stage-1
+// Kenney degenerate tilesets retained until US-98 deletes them along with
+// the legacy atlas directories. The PixelLab tilesets share an identical
+// frame layout (4×4 grid, mask→frame mapping) because the spritesheet was
+// produced by the same `tileset15` algorithm — see assets/tilesets/<id>/
+// tilemap.json for per-tileset metadata, and tools/wire-tilesets.ts for the
+// parser that produced these entries.
+
+function pixellabCornerMaskTable(): Record<string, string[]> {
+  return {
+    '0000': ['6'],
+    '0001': ['10'],
+    '0010': ['7'],
+    '0011': ['9'],
+    '0100': ['2'],
+    '0101': ['4'],
+    '0110': ['11'],
+    '0111': ['15'],
+    '1000': ['5'],
+    '1001': ['1'],
+    '1010': ['14'],
+    '1011': ['8'],
+    '1100': ['3'],
+    '1101': ['13'],
+    '1110': ['0'],
+    '1111': ['12'],
+  };
+}
+const PIXELLAB_FALLBACK_FRAMES = (): string[] => ['6']; // mask '0000' = all-primary
+
 export const TILESETS: Record<string, TilesetDefinition> = {
+  // ───── PixelLab Wang tilesets — Ashen Isle chain ─────
+  'ashen-isle-grass-sand': {
+    atlasKey: 'tileset-ashen-isle-grass-sand',
+    wang: {
+      primaryTerrain: 'grass',
+      secondaryTerrain: 'sand',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
+  'ashen-isle-sand-path': {
+    atlasKey: 'tileset-ashen-isle-sand-path',
+    wang: {
+      primaryTerrain: 'sand',
+      secondaryTerrain: 'path',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
+  // ───── PixelLab Wang tilesets — Fog Marsh chain ─────
+  'fog-marsh-floor-path': {
+    atlasKey: 'tileset-fog-marsh-floor-path',
+    wang: {
+      primaryTerrain: 'marsh-floor',
+      secondaryTerrain: 'path',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
+  'fog-marsh-floor-water': {
+    atlasKey: 'tileset-fog-marsh-floor-water',
+    wang: {
+      primaryTerrain: 'marsh-floor',
+      secondaryTerrain: 'water',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
+  'fog-marsh-floor-stone': {
+    atlasKey: 'tileset-fog-marsh-floor-stone',
+    wang: {
+      primaryTerrain: 'marsh-floor',
+      secondaryTerrain: 'stone',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
+
+  // ───── Legacy Kenney degenerate tilesets — pending US-98 deletion ─────
+  // Retained so the editor's tools/editor renderer keeps loading until US-97
+  // rewrites it; both areas now reference the PixelLab tilesets above.
   'tiny-town': {
     atlasKey: 'tileset-tiny-town',
-    // Degenerate Wang — no transition tiles registered. Replaced by US-95
-    // PixelLab grass→sand and sand→path tilesets when content lands.
     wang: {
       primaryTerrain: 'grass',
       secondaryTerrain: null,
@@ -52,11 +132,6 @@ export const TILESETS: Record<string, TilesetDefinition> = {
   },
   'tiny-dungeon': {
     atlasKey: 'tileset-tiny-dungeon',
-    // Degenerate Wang — replaced by US-95 PixelLab marsh-floor→path,
-    // marsh-floor→water, marsh-floor→stone tilesets. Tiny Dungeon has no native
-    // wet/marsh frames; the wet-vs-dry contrast in fog-marsh is achieved during
-    // stage 1 by the wooden-plank decoration overlay (frames 36/37) — replaced
-    // by proper marsh-floor→path Wang transitions in US-95.
     wang: {
       primaryTerrain: 'marsh-floor',
       secondaryTerrain: null,

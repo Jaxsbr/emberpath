@@ -810,8 +810,8 @@ export class GameScene extends Phaser.Scene {
     this.alphaGatedDecorations = [];
     this.lastAlphaGateCheckX = Number.NaN;
     this.lastAlphaGateCheckY = Number.NaN;
-    if (!hasTileset(this.area.tileset)) return;
-    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    if (!hasTileset(this.area.decorationsTileset)) return;
+    const atlasKey = TILESETS[this.area.decorationsTileset].atlasKey;
     const texture = this.textures.get(atlasKey);
     // Out-of-bounds (col,row) outside (mapCols,mapRows) is not crashed-on:
     // Phaser accepts arbitrary world coords and the decoration renders off-grid
@@ -820,7 +820,7 @@ export class GameScene extends Phaser.Scene {
       if (!texture.has(dec.spriteFrame)) {
         console.warn(
           `[GameScene] Decoration at (${dec.col},${dec.row}) references missing frame ` +
-            `'${dec.spriteFrame}' on tileset '${this.area.tileset}'; skipping.`,
+            `'${dec.spriteFrame}' on tileset '${this.area.decorationsTileset}'; skipping.`,
         );
         continue;
       }
@@ -887,14 +887,14 @@ export class GameScene extends Phaser.Scene {
 
   private renderProps(): void {
     this.propSprites = [];
-    if (!hasTileset(this.area.tileset)) return;
-    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    if (!hasTileset(this.area.decorationsTileset)) return;
+    const atlasKey = TILESETS[this.area.decorationsTileset].atlasKey;
     const texture = this.textures.get(atlasKey);
     for (const prop of this.area.props) {
       if (!texture.has(prop.spriteFrame)) {
         console.warn(
           `[GameScene] Prop '${prop.id}' references missing frame '${prop.spriteFrame}' ` +
-            `on tileset '${this.area.tileset}'; skipping.`,
+            `on tileset '${this.area.decorationsTileset}'; skipping.`,
         );
         continue;
       }

@@ -24,7 +24,7 @@ state:
   # --- Lifecycle (owner: iterator) ---
   phase: tile-architecture
   phase_complete: false
-  status: paused
+  status: running
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 9

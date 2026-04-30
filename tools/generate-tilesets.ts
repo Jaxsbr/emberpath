@@ -2,7 +2,8 @@
 // PixelLab Wang tileset generation printer (US-95).
 // Defines TILESET_PLAN — 5 ordered (lower, upper, transition) entries covering
 // the Ashen Isle and Fog Marsh terrain pairs — and prints each one as an
-// `mcp__pixellab-team__create_topdown_tileset` invocation block. The script
+// `mcp__pixellab__create_topdown_tileset` invocation block (personal account;
+// the `mcp__pixellab-team__` server is maxed out — Learning EP-05). The script
 // does NOT fire the calls (PixelLab MCP tool calls require an agent context;
 // Node cannot fire them — same printer pattern as tools/generate-scene-art.ts
 // from US-91).
@@ -209,7 +210,7 @@ function printBlock(block: InvocationBlock): void {
   console.log(indent(block.composedUpperDescription));
   console.log('Composed transition_description:');
   console.log(indent(block.composedTransitionDescription));
-  console.log('Tool: mcp__pixellab-team__create_topdown_tileset');
+  console.log('Tool: mcp__pixellab__create_topdown_tileset  (personal server — Learning EP-05)');
   console.log('Args (JSON):');
   console.log(indent(JSON.stringify(block.args, null, 2)));
   console.log();
@@ -224,8 +225,8 @@ function main(): void {
   for (const block of blocks) printBlock(block);
   console.log('═══════════════════════════════════════════════════════════════');
   console.log('Done. For each block:');
-  console.log('  1. Submit via mcp__pixellab-team__create_topdown_tileset.');
-  console.log('  2. Poll mcp__pixellab-team__get_topdown_tileset until status is "completed".');
+  console.log('  1. Submit via mcp__pixellab__create_topdown_tileset (personal — NOT pixellab-team; Learning EP-05).');
+  console.log('  2. Poll mcp__pixellab__get_topdown_tileset until status is "completed".');
   console.log('  3. Download the resulting tilemap.png + tilemap.json to the printed paths.');
   console.log('  4. Generate a labelled-atlas preview PNG via src/maps/atlasPreview.ts and inspect.');
   console.log('  5. Verify sepia-first read + hope-gold absence + Wang corner correctness.');

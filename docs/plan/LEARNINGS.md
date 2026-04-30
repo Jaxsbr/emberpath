@@ -78,3 +78,22 @@ The compounding form of this rule applies beyond Phaser: any cross-module patter
 **Scope:** phaser-game
 
 ---
+
+## EP-05 — Verify which MCP server has remaining budget before firing async generations
+
+**Phase:** tile-architecture (US-95)
+**Date:** 2026-04-30
+
+**Description:** Stage 2 of the tile-architecture phase needed 5 PixelLab Wang tilesets via `create_topdown_tileset`. Two PixelLab MCP servers are configured on this machine: `mcp__pixellab__` (personal account) and `mcp__pixellab-team__` (team account). I picked `mcp__pixellab-team__` without checking which had remaining budget. The team account was maxed out — every call (5 initial + 4 rerolls = 9 generations) returned errors: fresh Wang generations failed within seconds with "Unknown error" (immediate API rejection), chained generations reached 90% then returned "Generation completed but no tiles were produced". 9 generations spent, 0 successful tilesets, plus the round-trip latency of waiting ~3 minutes for each batch before realising the failure pattern was systemic. Operator caught the mistake, redirected to `mcp__pixellab__` (personal) — fresh generations on the personal server succeeded immediately.
+
+**Pattern:** When two MCP servers expose the same tool (PixelLab personal vs team, AWS prod vs sandbox, OpenAI vs Anthropic, etc.), agents that pick "the most prominent name" or "the one I used last time" without checking budget / rate limits / health will burn budget on the wrong endpoint. The failure modes from a maxed-out / over-quota / degraded server look different from prompt errors — they tend to fail late in the pipeline ("90% then no result") or fail with generic "Unknown error" rather than a clean rate-limit response — so it's hard to diagnose without first ruling out budget. The cost is doubled by async generation: each call costs the budget unit AND ~100s of wall-clock time before the failure is observable.
+
+**Prevention point:** Before firing the FIRST call against a multi-server MCP tool, check which server has remaining budget. Concretely:
+1. Look for prior PixelLab calls in the project's commit history (`git log --grep=pixellab`) to see which server has been used and at what scale.
+2. If multiple servers are available, prefer the personal server (`mcp__pixellab__`) for project work unless the project has explicit per-server allocation rules.
+3. If a generation fails twice in a row with "Unknown error" (especially within seconds — too fast for image generation to have run), STOP and check budget before retrying. Don't burn 9/10 of the spec's reroll budget chasing a prompt cause for an account-quota failure.
+4. Update the project's tooling docs / generator scripts to name the chosen server explicitly so future runs don't re-pick badly.
+
+**Scope:** mcp, pixellab, multi-server
+
+---
