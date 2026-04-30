@@ -226,4 +226,28 @@ entries:
       Story Completion Gate: code criteria met. Operator-driven verification (style-matched
       cohesion, sepia-first silhouette, hope-gold audit) deferred until US-98 places objects.
     tokens: ~22000
+  - task: 12
+    time: "2026-05-01T00:15:00Z"
+    type: implement
+    story: US-97
+    description: "Editor rewrite — vertex/cell/object paint + Wang resolver + Export"
+    result: pass
+    notes: |
+      mapRenderer.ts rewritten: reads area.terrain (vertex grid) + area.objects via the same
+      Wang resolver (resolveWangFrame from @game/maps/wang) the game uses. Cell-paint default
+      (drag supported), Shift-click vertex paint with vertex dots, Alt-click object placer,
+      right-click removes object. Detail panel shows 4 vertex terrains + Wang mask string +
+      picked frame + object kind/passability/condition. Conditional alternate-state toggle
+      and impassable-outline toggle (off by default per spec). Export-to-TypeScript opens a
+      modal with serialized terrain + objects code block + copy-to-clipboard — no auto-write.
+      New modules: editorState.ts (mode + active picks + working copies + subscribe/notify;
+      mutations target editor's clones, never the loaded AreaDefinition); exportTypeScript.ts
+      (serializer).
+      Sidebar UI added to index.html (#map-tools); CSS extended; sidebar hidden on
+      non-map views.
+      All editor imports route through @game/maps/* and @game/data/areas/types — no local
+      redeclaration of TerrainDefinition / ObjectKindDefinition. Editor tsc + build green;
+      root tsc + build green.
+      AGENTS.md updated for the editor row + new module rows.
+    tokens: ~25000
 
