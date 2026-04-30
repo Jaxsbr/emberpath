@@ -96,10 +96,10 @@ export function resolveWangFrame(
 
 function hashCellMask(tilesetId: string, mask: string, col: number, row: number): number {
   // Reuse the FNV-1a-style mixer from tilesets.hashCell so per-cell variation
-  // matches the legacy resolveFrame() determinism. We re-derive here rather
+  // matches the legacy per-cell determinism. We re-derive here rather
   // than importing the legacy fn directly because the legacy signature was
-  // `(col, row, kind: TileType, tilesetId)`; here the `kind` axis is the
-  // mask string instead.
+  // `(col, row, kind, tilesetId)` numeric kind axis; here the `kind` axis is
+  // the mask string instead, mixed character-by-character.
   let h = 2166136261 >>> 0;
   h = Math.imul(h ^ col, 16777619) >>> 0;
   h = Math.imul(h ^ row, 16777619) >>> 0;

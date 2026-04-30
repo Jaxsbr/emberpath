@@ -120,7 +120,7 @@ export class GameScene extends Phaser.Scene {
   private conditionalObjects: { sprite: Phaser.GameObjects.Image; instance: ObjectInstance }[] = [];
   // Translucent exit-zone overlays (US-92). Rendered at depth 0.5 between
   // terrain and decorations using STYLE_PALETTE.hopeGoldLight at alpha 0.25 so
-  // exit invitations remain visible without a dedicated TileType frame.
+  // exit invitations remain visible without a dedicated terrain frame.
   private exitOverlays: Phaser.GameObjects.Rectangle[] = [];
   // Per-flag unsubscribes for object-collision-map rebuild + conditional-
   // object visibility (US-94). One subscriber per unique flag named in any
@@ -206,7 +206,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
-    // indices; resolveFrame() returns them as strings which Phaser accepts directly.
+    // indices; resolveWangFrame returns them as strings which Phaser accepts directly.
     // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
     for (const [id, def] of Object.entries(TILESETS)) {
       this.load.spritesheet(def.atlasKey, `tilesets/${id}/tilemap.png`, {
@@ -787,7 +787,7 @@ export class GameScene extends Phaser.Scene {
 
   // Translucent hope-gold overlay marking each exit zone (US-92). Sits at
   // depth 0.5 between terrain (0) and decorations (2) so the visual cue "this
-  // is the way to the next stage" survives without a TileType.EXIT atlas
+  // is the way to the next stage" survives without a dedicated exit atlas
   // frame. Color is palette-driven (STYLE_PALETTE.hopeGoldLight) — the one
   // terrain-adjacent visual permitted hope-gold per art-style.md § Palette.
   private renderExitOverlays(): void {

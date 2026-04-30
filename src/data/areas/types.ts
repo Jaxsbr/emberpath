@@ -1,19 +1,15 @@
-import { TileType } from '../../maps/constants';
 import { TerrainId } from '../../maps/terrain';
 import { ObjectInstance, ObjectKindId } from '../../maps/objects';
 
-// Tiles that may appear in AreaDefinition.map. TileType.EXIT is render-only
-// (the renderer selects it for cells that overlap an area.exits zone) and must
-// never be stored in map data — narrowing the array type makes that invariant
-// compiler-enforced instead of convention.
-//
-// Stage-1 migration note (US-92): `map` is being phased out in favour of
-// `terrain` (vertex grid) + `objects` (sparse list). It remains during
-// stage 1 as the authoring source for the migration helpers below; consumer
-// code is migrated story-by-story; the final TileType / map removal lands
-// when every consumer reads passability via terrain + objects (US-92 final
-// cleanup task).
-export type StoredTile = TileType.FLOOR | TileType.WALL;
+// Stage-1 authoring tile values for the migration helpers below. Legacy
+// FLOOR / WALL enum is gone — stage-1 area files declare
+// `const F = TILE_FLOOR; const W = TILE_WALL;` shorthand instead. `map` itself
+// is retained on AreaDefinition through stage 1 to preserve the editor's
+// current renderer (US-97 fully migrates the editor); US-98's re-author
+// removes `map` entirely once every area is hand-painted on terrain + objects.
+export const TILE_FLOOR = 0;
+export const TILE_WALL = 1;
+export type StoredTile = 0 | 1;
 
 // Per-element light declaration consumed by LightingSystem (US-75). Tier 1 =
 // always rendered. Tier 2 = rendered at intensity 0 until has_ember_mark === true,
@@ -219,7 +215,7 @@ export interface AreaDefinition {
   name: string;
   // Stage-1 migration: `map` remains alongside `terrain` + `objects` while
   // consumer code is migrated. Final state (US-92 cleanup) removes `map` and
-  // every TileType reference.
+  // every legacy tile-type reference.
   map: StoredTile[][];
   // Vertex-grid terrain. Dimensions are (rows + 1) × (cols + 1) so that every
   // cell (row, col) is bounded by the four vertices [row][col], [row][col+1],
@@ -292,7 +288,7 @@ export function deriveObjectsFromTileMap(
   for (let r = 0; r < tileMap.length; r++) {
     const row = tileMap[r];
     for (let c = 0; c < row.length; c++) {
-      if (row[c] === TileType.WALL) {
+      if (row[c] === TILE_WALL) {
         out.push({ kind: wallKind, col: c, row: r });
       }
     }

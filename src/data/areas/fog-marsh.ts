@@ -1,14 +1,15 @@
-import { TileType } from '../../maps/constants';
 import {
   AreaDefinition,
   DecorationDefinition,
   StoredTile,
+  TILE_FLOOR,
+  TILE_WALL,
   deriveTerrainFromTileMap,
   deriveObjectsFromTileMap,
 } from './types';
 
-const F = TileType.FLOOR;
-const W = TileType.WALL;
+const F = TILE_FLOOR;
+const W = TILE_WALL;
 
 // Tiny Dungeon atlas frame vocabulary used by Fog Marsh. Verified against
 // the labeled atlas (see docs/tilesets/tiny-dungeon.md). Tiny Dungeon is a
@@ -165,7 +166,7 @@ const fogMarshDecorations: DecorationDefinition[] = [
   ...rect(25, 27, 9, 9, FRAME.RUIN_A),
 
   // Ruin door — wooden door frame in the south wall of the ruin (mirrors
-  // the engine's existing TileType.EXIT rendering — same semantic, different
+  // the engine's existing exit-zone rendering — same semantic, different
   // role here).
   { col: 24, row: 9, spriteFrame: FRAME.DOOR },
 

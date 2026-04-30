@@ -1,4 +1,4 @@
-import { TileType } from '@game/maps/constants';
+import { TILE_WALL } from '@game/data/areas/types';
 import type { AreaDefinition } from '@game/data/areas/types';
 import { showDetail } from './main';
 
@@ -89,7 +89,7 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
   for (let row = 0; row < area.mapRows; row++) {
     for (let col = 0; col < area.mapCols; col++) {
       const tile = area.map[row]?.[col];
-      ctx.fillStyle = tile === TileType.WALL ? wallColor : floorColor;
+      ctx.fillStyle = tile === TILE_WALL ? wallColor : floorColor;
       ctx.fillRect(LABEL_MARGIN + col * CELL, LABEL_MARGIN + row * CELL, CELL, CELL);
     }
   }

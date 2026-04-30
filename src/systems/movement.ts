@@ -9,7 +9,7 @@ export interface Entity {
   height: number;
 }
 
-// Collision dependencies for movement. Replaces the legacy `map: TileType[][]`
+// Collision dependencies for movement. Replaces the legacy flat tile-array
 // shape with the unified passability snapshot under the tile-architecture
 // model (US-94). The snapshot encapsulates terrain (vertex grid) and the
 // runtime `objectBlockMap` GameScene maintains as conditional flags flip.

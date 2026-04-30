@@ -1,14 +1,15 @@
-import { TileType } from '../../maps/constants';
 import {
   AreaDefinition,
   DecorationDefinition,
   StoredTile,
+  TILE_FLOOR,
+  TILE_WALL,
   deriveTerrainFromTileMap,
   deriveObjectsFromTileMap,
 } from './types';
 
-const F = TileType.FLOOR;
-const W = TileType.WALL;
+const F = TILE_FLOOR;
+const W = TILE_WALL;
 
 // Tiny Town atlas frame vocabulary used by Ashen Isle. Verified against the
 // labeled atlas (see docs/tilesets/tiny-town.md). Topology is authoritative;
@@ -270,7 +271,7 @@ const ashenDecorations: DecorationDefinition[] = [
   { col: 30, row: 33, spriteFrame: FRAME.BUSH },
 ];
 
-// Stage-1 migration source: the existing TileType[][] authoring array remains
+// Stage-1 migration source: the existing FLOOR/WALL authoring array remains
 // the source of truth, with terrain + objects derived from it via the helpers
 // in types.ts. US-98 replaces this with hand-painted vertex data + authored
 // objects.

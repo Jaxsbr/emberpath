@@ -1,4 +1,3 @@
-import { TileType } from './constants';
 import { TerrainId } from './terrain';
 
 // ───── Wang tileset definition (US-93) ─────
@@ -25,29 +24,20 @@ export interface WangTilesetDefinition {
   fallbackFrames: string[];
 }
 
-// Legacy flat-bucket definition retained alongside the wang block for stage 1
-// rendering — GameScene still reads `tileFrames` until the renderer migrates
-// to the wang resolver in US-94. Final removal lands at the end of stage 1.
 export interface TilesetDefinition {
   atlasKey: string;
-  tileFrames: Record<TileType, string[]>;
-  // Optional Wang block. Stage 1 registers `tiny-town` and `tiny-dungeon` as
+  // Wang block. Stage 1 registers `tiny-town` and `tiny-dungeon` as
   // degenerate Wang tilesets — `cornerMaskTable['0000']` lists the existing
   // FLOOR frames, `cornerMaskTable['1111']` lists the existing WALL frames,
   // every other mask is intentionally omitted. Stage 2 (US-95) replaces the
   // Kenney atlases with PixelLab-generated tilesets that populate all 16
   // mask entries.
-  wang?: WangTilesetDefinition;
+  wang: WangTilesetDefinition;
 }
 
 export const TILESETS: Record<string, TilesetDefinition> = {
   'tiny-town': {
     atlasKey: 'tileset-tiny-town',
-    tileFrames: {
-      [TileType.FLOOR]: ['0', '1', '2'],
-      [TileType.WALL]: ['120', '121', '122'],
-      [TileType.EXIT]: ['15'],
-    },
     // Degenerate Wang — no transition tiles registered. Replaced by US-95
     // PixelLab grass→sand and sand→path tilesets when content lands.
     wang: {
@@ -62,19 +52,11 @@ export const TILESETS: Record<string, TilesetDefinition> = {
   },
   'tiny-dungeon': {
     atlasKey: 'tileset-tiny-dungeon',
-    tileFrames: {
-      // Tan dungeon floor (row 4 start). Tiny Dungeon has no native wet/marsh
-      // frames; the wet-vs-dry contrast in fog-marsh.ts is achieved by overlaying
-      // wooden-plank decoration ('36'/'37') as a dry path on top of this base
-      // tan floor. See docs/tilesets/tiny-dungeon.md for the substitution.
-      [TileType.FLOOR]: ['48', '49', '50', '51'],
-      // Brown dark brick wall tops (row 0 start — strong color contrast with tan floor).
-      [TileType.WALL]: ['0', '1', '2'],
-      // Wooden door tile — reads as threshold.
-      [TileType.EXIT]: ['22'],
-    },
     // Degenerate Wang — replaced by US-95 PixelLab marsh-floor→path,
-    // marsh-floor→water, marsh-floor→stone tilesets.
+    // marsh-floor→water, marsh-floor→stone tilesets. Tiny Dungeon has no native
+    // wet/marsh frames; the wet-vs-dry contrast in fog-marsh is achieved during
+    // stage 1 by the wooden-plank decoration overlay (frames 36/37) — replaced
+    // by proper marsh-floor→path Wang transitions in US-95.
     wang: {
       primaryTerrain: 'marsh-floor',
       secondaryTerrain: null,
@@ -91,7 +73,10 @@ export function hasTileset(tilesetId: string): boolean {
   return Object.prototype.hasOwnProperty.call(TILESETS, tilesetId);
 }
 
-export function hashCell(col: number, row: number, kind: TileType, tilesetId: string): number {
+// FNV-1a-style mixer used by wang.ts hashCellMask for per-cell variation.
+// `kind` is included in the mix so future per-frame-class hashing (e.g.
+// terrain-class vs object-class) can re-key without colliding.
+export function hashCell(col: number, row: number, kind: number, tilesetId: string): number {
   let h = 2166136261 >>> 0;
   h = Math.imul(h ^ col, 16777619) >>> 0;
   h = Math.imul(h ^ row, 16777619) >>> 0;
@@ -102,23 +87,3 @@ export function hashCell(col: number, row: number, kind: TileType, tilesetId: st
   return h >>> 0;
 }
 
-// Legacy flat-bucket resolver — retained for stage-1 GameScene rendering until
-// the renderer migrates to the wang resolver. Removed at end of stage 1.
-export function resolveFrame(
-  tilesetId: string,
-  kind: TileType,
-  col: number,
-  row: number,
-): string | null {
-  const ts = TILESETS[tilesetId];
-  if (!ts) {
-    console.error(`[tilesets] Unknown tileset id: '${tilesetId}'. Known ids: ${Object.keys(TILESETS).join(', ')}`);
-    return null;
-  }
-  const frames = ts.tileFrames[kind];
-  if (!frames || frames.length === 0) {
-    console.warn(`[tilesets] Tileset '${tilesetId}' has no frames for TileType ${TileType[kind] ?? kind}`);
-    return null;
-  }
-  return frames[hashCell(col, row, kind, tilesetId) % frames.length];
-}
