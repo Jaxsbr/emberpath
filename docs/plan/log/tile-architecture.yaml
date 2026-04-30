@@ -67,3 +67,19 @@ entries:
       Story Completion Gate: 4/9 US-92 criteria met (terrain.ts + objects.ts modules exist,
       AGENTS.md rows for both, build passes); next task continues US-92 with types.ts rewrite.
     tokens: ~5000
+  - task: 5
+    time: "2026-04-30T10:40:00Z"
+    type: implement
+    story: US-92
+    description: "types.ts adds terrain/objects/conditionalTerrain + migration helpers; both area files migrated"
+    result: pass
+    notes: |
+      AreaDefinition gains terrain (vertex grid), objects (sparse list), conditionalTerrain?
+      (flag-gated terrain-flip blocks). `map` + StoredTile retained alongside during stage 1
+      to keep build green while consumers migrate. Migration helpers deriveTerrainFromTileMap
+      (uniform base vertices) and deriveObjectsFromTileMap (one wall-kind object per WALL
+      cell) preserve visual + collision parity. Ashen Isle migrates to base 'grass' +
+      'wall-stone'; Fog Marsh to 'marsh-floor' + 'wall-tomb'. AGENTS.md File ownership row
+      added for types.ts. Verify (tsc + build) passes.
+      Story Completion Gate: 5/9 US-92 criteria met. Next: US-93 wang.ts + WangTilesetDefinition.
+    tokens: ~6000

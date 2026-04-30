@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 5
-  next_task: "[US-92] Rewrite data/areas/types.ts AreaDefinition: add terrain: TerrainId[][] (vertex grid), objects: ObjectInstance[], conditionalTerrain?: ConditionalTerrainBlock[]; remove map: StoredTile[][] and StoredTile alias. Add deriveTerrainFromMap + deriveObjectsFromMap helpers (stage-1 migration shim) so ashen-isle.ts and fog-marsh.ts can keep their existing TileType arrays as authoring source while AreaDefinition exposes the new shape. Then migrate ashen-isle.ts and fog-marsh.ts to call the helpers + delete TileType import."
+  task_number: 6
+  next_task: "[US-93] Implement src/maps/wang.ts — resolveWangFrame(tilesetId, terrainIds: [TL, TR, BR, BL]) function with FNV-1a hash-pick, JSDoc pinning clockwise corner convention, one-time-per-mask warn Set for absent-mask fallback. Update src/maps/tilesets.ts: add WangTilesetDefinition shape (cornerMaskTable + fallbackFrames), register tiny-town and tiny-dungeon as degenerate Wang tilesets ('0000' = FLOOR frames, '1111' = WALL frames, all 14 other masks omitted), keep legacy TilesetDefinition + resolveFrame alive for now (consumer migration follows in US-94). Add src/maps/atlasPreview.ts (TS port — generates a 4×4 labelled grid PNG via canvas)."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
