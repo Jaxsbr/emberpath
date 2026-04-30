@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-96] Implement tools/generate-map-objects.ts — OBJECT_PLAN with ~18 entries (Ashen + Fog Marsh kinds). Render 96×96 area-sample patches, pass via background_image to mcp__pixellab__create_map_object for style-matched generation. Save outputs to assets/objects/<area>/<kindId>.png and update OBJECT_KINDS atlasKey/frame."
+  task_number: 12
+  next_task: "[US-97] Rewrite tools/editor/src/mapRenderer.ts to read area.terrain (vertex grid) + area.objects (sparse list) instead of area.map. Add cell-paint mode (default), vertex-paint mode (Shift-click), object placer mode (Alt-click), sidebar pickers, detail panel showing 4 vertex terrains + Wang mask + picked frame, conditional toggle, and Export-to-TypeScript button (clipboard or modal — no auto-write). Imports route through @game/maps/* path alias to avoid local redeclaration."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

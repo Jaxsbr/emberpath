@@ -198,4 +198,32 @@ entries:
       mobile viewports). Those land after US-98 paints non-uniform terrain to actually
       exercise the transition tiles.
     tokens: ~12000
+  - task: 11
+    time: "2026-04-30T23:42:00Z"
+    type: implement
+    story: US-96
+    description: "Generate 18 PixelLab style-matched objects + wire OBJECT_KINDS"
+    result: pass
+    notes: |
+      Cropped 32×32 area sample patches via sips (frame '6' from each new tileset's all-primary
+      tile, upscaled 16→32). Fired all 18 objects against personal mcp__pixellab__create_map_object
+      with `background_image: { base64: <sample> }` for style-matching. PixelLab Tier 1 cap is 8
+      concurrent — first batch of 18 hit the limit; 10 made it into queue, 8 hit rate-limit and
+      were re-fired sequentially after. 5 of the original 18 returned 500 from the download
+      endpoint and were rerolled with slightly tweaked prompts. door-wood reroll #1 produced a
+      near-empty 122-byte PNG; rerolled #2 with a stronger size cue ("large wooden plank door
+      filling most of the canvas") landed cleanly. All 18 objects now saved to
+      assets/objects/<area>/<kindId>.png.
+      Total generations: 24/36 budget.
+      OBJECT_KINDS rewritten: ObjectKindDefinition.frame removed (single-image textures use
+      Phaser's default __BASE frame); atlasKey is `object-<id>`; new assetPath field. GameScene
+      preload iterates OBJECT_KINDS and load.image(...). renderObjects creates Image without
+      frame argument; texture-existence guard uses textures.exists().
+      tools/generate-map-objects.ts written as a printer (companion to generate-tilesets.ts);
+      OBJECT_PLAN with 18 entries; runs to completion printing 18 invocation blocks.
+      ATTRIBUTION.md captures all 18 object_ids, prompts, and budget reconciliation.
+      Build green; editor tsc passes.
+      Story Completion Gate: code criteria met. Operator-driven verification (style-matched
+      cohesion, sepia-first silhouette, hope-gold audit) deferred until US-98 places objects.
+    tokens: ~22000
 
