@@ -202,6 +202,18 @@ const fogMarshDecorations: DecorationDefinition[] = [
 // Stage-1 migration source — see ashen-isle.ts for the migration note.
 const fogMarshTileMap = buildFogMarshMap();
 
+// Marsh-trap closure under the new conditional-object pathway (US-94).
+// Replaces the legacy map-mutation closure: 4 wall-tomb objects
+// gated on `marsh_trapped == true` populate the closure cells; collision and
+// visibility flip together via the GameScene buildObjectCollisionMap +
+// updateConditionalObjects path on flag change.
+const fogMarshConditionalClosure = [
+  { kind: 'wall-tomb', col: 13, row: 22, condition: 'marsh_trapped == true' },
+  { kind: 'wall-tomb', col: 14, row: 22, condition: 'marsh_trapped == true' },
+  { kind: 'wall-tomb', col: 15, row: 22, condition: 'marsh_trapped == true' },
+  { kind: 'wall-tomb', col: 16, row: 22, condition: 'marsh_trapped == true' },
+] as const;
+
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
   name: 'Fog Marsh',
@@ -210,7 +222,10 @@ export const fogMarsh: AreaDefinition = {
   tileset: 'tiny-dungeon',
   map: fogMarshTileMap,
   terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
-  objects: deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
+  objects: [
+    ...deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
+    ...fogMarshConditionalClosure,
+  ],
   npcs: [
     // Marsh Hermit on the dry path immediately south of the ruin's door at
     // (24, 9); his spawn at (24, 10) is the path tile adjacent to the door.
@@ -420,8 +435,9 @@ export const fogMarsh: AreaDefinition = {
       // Walk south off the dry path into the EXIT zone at row 22 cols 13-16
       // and arrive on Ashen Isle just south of the dock. Gated on the trap
       // flag — once marsh-deepens fires (col 14, row 5) and sets
-      // marsh_trapped: true, this exit becomes inert AND the cells flip from
-      // FLOOR to WALL via GameScene.applyMarshTrappedState (US-67).
+      // marsh_trapped: true, this exit becomes inert AND the cells become
+      // impassable via the conditional wall-tomb objects in
+      // fogMarshConditionalClosure (US-67 / US-94 conditional-object pathway).
       id: 'fog-to-ashen',
       col: 13,
       row: 22,
