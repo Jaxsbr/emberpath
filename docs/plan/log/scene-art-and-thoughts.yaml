@@ -144,3 +144,30 @@ entries:
     result: pass
     notes: "US-89 code-side criteria met; in-engine smoke test + manual-verify pending"
     tokens: ~7000
+  - task: 10
+    time: "2026-04-30T12:10:00Z"
+    type: rework
+    story: US-88
+    description: |
+      Branch A — operator-driven smoke test (desktop + mobile) caught two
+      issues with the US-88 bubble that tsc + vite build did not flag:
+      (a) serif glyphs corrupted at mobile zoom ~1.1x because pixelArt:true
+          NEAREST scaling destroys thin serif strokes when the s(v)*main-cam
+          zoom math (originally specced from dialogue.ts's UI-cam pattern)
+          produces small native font sizes, and
+      (b) bubble panel padding asymmetric — text origin (0.5, 1) anchors
+          text bottom at the GameObject position while the panel was drawn
+          from -h..0, leaving 2*padY above text and 0 below.
+      Fix shipped (commit 7fb3a4d): (a) dropped serif fontFamily and the
+      s(v)/zoom-scaling, switched to literal fontSize: '12px' matching the
+      npcInteraction.ts "Tap to talk" pattern that already reads cleanly on
+      both viewports. (b) shifted panel draw to (-h + padY)..padY so padding
+      is symmetric. Side effects: removed the now-unused s(v) helper and
+      handleResize handler. The "uses the same design-pixel + zoom-scale
+      pattern as systems/dialogue.ts" done-when criterion is intentionally
+      no longer met — the spec author did not recognize that dialogue.ts
+      targets the UI camera (zoom 1) while thoughtBubble targets the main
+      camera at variable zoom, so the pattern does not translate.
+    result: pass
+    notes: "post-fix accepted by operator; cost = 1 rework cycle; spec criterion deviation documented"
+    tokens: ~4500
