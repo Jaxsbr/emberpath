@@ -24,11 +24,11 @@ state:
   # --- Lifecycle (owner: iterator) ---
   phase: tile-architecture
   phase_complete: false
-  status: running
+  status: paused
 
   # --- Task orchestration (owner: iterator) ---
   task_number: 9
-  next_task: "[US-94] Operator-driven: in-engine architecture-only baseline at desktop ~1280×720 AND mobile DevTools 360×640. Walk through the checklist in docs/plan/tile-architecture-manual-verify.md § 'Architecture-only baseline' for both Ashen Isle and Fog Marsh. Verify visual parity vs pre-phase, marsh-trap closure flip via conditional-object pathway, and save-state compatibility. After verification passes, queue US-95 PixelLab tileset generation."
+  next_task: "[US-95] PAUSED — PixelLab team server returned 9/9 failures on tileset generation (5 initial calls + 4 rerolls; both fresh and chained variants, both full and stripped prompts). See docs/plan/tile-architecture-tilesets-inflight.md for full failure log. Operator decision required: (1) wait and retry later, (2) switch to personal mcp__pixellab__ server, (3) defer PixelLab content to follow-up phase and ship architecture-only, (4) approve more reroll budget."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
