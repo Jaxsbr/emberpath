@@ -27,11 +27,11 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 1
-  next_task: null
+  task_number: 2
+  next_task: "[US-92] Investigate: catalog current TileType usage, AreaDefinition shape, decoration/prop semantics, all collision-bearing object kinds in ashen-isle.ts and fog-marsh.ts — produce inventory file informing terrain.ts + objects.ts registry design"
   last_result: pass
   consecutive_fails: 0
-  phase_classification: null
+  phase_classification: cross-cutting
 
   # --- Review (owner: iterator) ---
   review_stage: null

@@ -3,4 +3,20 @@
 
 phase: tile-architecture
 started: "2026-04-30T09:55:41Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-04-30T09:55:41Z"
+    type: investigate
+    description: "Initial state read for tile-architecture phase"
+    result: pass
+    notes: |
+      Verify (npx tsc --noEmit && npm run build) passes.
+      Source structure: src/maps/ has constants.ts + tilesets.ts (need to add terrain.ts, objects.ts, wang.ts, atlasPreview.ts);
+      src/data/areas/ has types.ts (needs AreaDefinition rewrite), registry.ts, ashen-isle.ts, fog-marsh.ts (both need
+      migration in US-98 — out of scope for early stories);
+      src/systems/ has collision.ts (needs collidesWithWall unification rewrite in US-94).
+      Phase classified as cross-cutting (data model rewrite spans types.ts + maps/* + scenes/* + systems/* + tools/editor).
+      Investigate-first mandate applies.
+      Queued task 2 as Investigate to catalog TileType usage and object-kind vocabulary before implementing US-92's
+      terrain.ts and objects.ts registries.
+    tokens: ~5000
