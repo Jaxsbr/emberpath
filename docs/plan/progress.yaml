@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: "[US-92] Implement src/maps/objects.ts — ObjectKindId union (wall-stone, door-wood, gate-wood, fence-rail, tree-pine, bush, flower, sign-wood, cliff-stone, dead-tree, marsh-stone, gravestone, mushroom, dry-reed, wall-tomb, door-tomb, lantern-broken), ObjectKindDefinition shape, OBJECT_KINDS registry pointing at existing Kenney atlasKey + frame for stage 1, hasObjectKind helper, ObjectInstance type. No consumer changes."
+  task_number: 5
+  next_task: "[US-92] Rewrite data/areas/types.ts AreaDefinition: add terrain: TerrainId[][] (vertex grid), objects: ObjectInstance[], conditionalTerrain?: ConditionalTerrainBlock[]; remove map: StoredTile[][] and StoredTile alias. Add deriveTerrainFromMap + deriveObjectsFromMap helpers (stage-1 migration shim) so ashen-isle.ts and fog-marsh.ts can keep their existing TileType arrays as authoring source while AreaDefinition exposes the new shape. Then migrate ashen-isle.ts and fog-marsh.ts to call the helpers + delete TileType import."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

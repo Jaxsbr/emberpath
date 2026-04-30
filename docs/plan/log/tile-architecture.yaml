@@ -50,3 +50,20 @@ entries:
       Verify (tsc + build) passes. Story Completion Gate: 2/9 US-92 criteria met (terrain
       module + AGENTS.md row partial); US-92 not yet complete.
     tokens: ~3500
+  - task: 4
+    time: "2026-04-30T10:25:00Z"
+    type: implement
+    story: US-92
+    description: "Add src/maps/objects.ts with ObjectKindId union + OBJECT_KINDS registry"
+    result: pass
+    notes: |
+      18 kinds registered: 10 Ashen Isle (wall-stone, wall-front, wall-roof, door-wood,
+      fence-rail, cliff-stone, tree-pine, bush, flower, sign-wood) + 8 Fog Marsh (wall-tomb,
+      door-tomb, dead-tree, gravestone, marsh-stone, dry-reed, mushroom, lantern-broken).
+      Stage-1 atlasKeys point at the existing Kenney atlases ('tileset-tiny-town',
+      'tileset-tiny-dungeon') with frames sourced from the area FRAME blocks. ObjectInstance
+      shape (kind, col, row, condition?) added — condition wires through evaluateCondition.
+      AGENTS.md File ownership row added. Verify (tsc + build) passes.
+      Story Completion Gate: 4/9 US-92 criteria met (terrain.ts + objects.ts modules exist,
+      AGENTS.md rows for both, build passes); next task continues US-92 with types.ts rewrite.
+    tokens: ~5000
