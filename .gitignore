@@ -7,3 +7,4 @@ dist/
 credentials.json
 .build-loop.lock
 .DS_Store
+.claude/scheduled_tasks.lock

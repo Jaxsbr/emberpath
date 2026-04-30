@@ -174,4 +174,28 @@ entries:
       Build loop paused. Failure log documented in docs/plan/tile-architecture-tilesets-inflight.md
       under § "Decision required from operator".
     tokens: ~9000
+  - task: 10
+    time: "2026-04-30T23:15:00Z"
+    type: implement
+    story: US-95
+    description: "Wire 5 PixelLab tilesets into TILESETS via personal mcp__pixellab__"
+    result: pass
+    notes: |
+      Operator caught the wrong-server mistake (team account maxed; should have used personal).
+      Recorded as Learning EP-05. Re-fired all 5 generations on personal server (0 rerolls);
+      all 5 landed successfully. Downloaded PNG + JSON pairs to assets/tilesets/<plan_id>/.
+      Wrote tools/wire-tilesets.ts to parse metadata into the pixellabCornerMaskTable mapping
+      (tileset15 algorithm produces an identical 4×4 frame layout across all 5 generations).
+      tilesets.ts: added 5 PixelLab TILESETS entries; legacy tiny-town/tiny-dungeon retained
+      until US-98 deletes them. AreaDefinition gained `decorationsTileset: string` so legacy
+      Kenney atlas frame numbers in decorations/props keep resolving against tiny-town /
+      tiny-dungeon while the new PixelLab tilesets serve terrain. ATTRIBUTION.md updated.
+      Build green at every step; editor tsc passes. .claude/scheduled_tasks.lock un-tracked
+      and added to .gitignore.
+      Story Completion Gate: most US-95 criteria met; remaining are operator-driven
+      verification (labelled-atlas previews, sepia-first read, hope-gold absence audit, Wang
+      corner correctness across 80 mask×tileset checkboxes, in-engine smoke at desktop +
+      mobile viewports). Those land after US-98 paints non-uniform terrain to actually
+      exercise the transition tiles.
+    tokens: ~12000
 
