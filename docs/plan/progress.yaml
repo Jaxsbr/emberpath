@@ -22,16 +22,16 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: scene-art-and-thoughts
-  phase_complete: true
+  phase: tile-architecture
+  phase_complete: false
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
+  task_number: 1
   next_task: null
   last_result: pass
   consecutive_fails: 0
-  phase_classification: cross-cutting
+  phase_classification: null
 
   # --- Review (owner: iterator) ---
   review_stage: null
@@ -39,7 +39,7 @@ state:
   pr_number: null
 
   # --- Retrospective (owner: retro) ---
-  retro_complete: true
+  retro_complete: false
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-87, US-88, US-89, US-90, US-91]
+  completed_stories: []

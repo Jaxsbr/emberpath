@@ -1,0 +1,6 @@
+# Build Loop — Phase Log: tile-architecture
+# Schema: append-only entries list. One entry per task.
+
+phase: tile-architecture
+started: "2026-04-30T09:55:41Z"
+entries: []
