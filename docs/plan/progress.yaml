@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-92] Investigate: catalog current TileType usage, AreaDefinition shape, decoration/prop semantics, all collision-bearing object kinds in ashen-isle.ts and fog-marsh.ts — produce inventory file informing terrain.ts + objects.ts registry design"
+  task_number: 3
+  next_task: "[US-92] Implement src/maps/terrain.ts — TerrainId union, TerrainDefinition shape, TERRAINS registry with grass/sand/path/marsh-floor/water/stone (water passable=false; others true), hasTerrain helper. No consumer changes in this task."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

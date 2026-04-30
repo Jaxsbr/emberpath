@@ -20,3 +20,19 @@ entries:
       Queued task 2 as Investigate to catalog TileType usage and object-kind vocabulary before implementing US-92's
       terrain.ts and objects.ts registries.
     tokens: ~5000
+  - task: 2
+    time: "2026-04-30T10:05:00Z"
+    type: investigate
+    story: US-92
+    description: "Inventory: catalog TileType usage, AreaDefinition shape, object-kind vocabulary"
+    result: pass
+    notes: |
+      Wrote docs/plan/tile-architecture-inventory.md with: 12 TileType call sites across 11 files;
+      applyMarshTrappedState mutation pattern (GameScene.ts:1257-, subscribed via onFlagChange);
+      conditional-decoration closure representation (fog-marsh.ts:186-193 PATH_A/B vs EDGE_A/B/C);
+      Kenney decoration vocabulary catalog for both areas (FRAME constants); target TerrainId/
+      ObjectKindId registry shapes; stage-1 implementation order.
+      Verify (tsc + build) passes. Quality checks N/A (markdown only).
+      Queued task 3 = implement src/maps/terrain.ts (registry only, no consumer changes — keeps
+      this task atomic and reviewable).
+    tokens: ~6000
