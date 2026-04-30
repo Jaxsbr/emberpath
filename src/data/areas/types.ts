@@ -1,9 +1,18 @@
 import { TileType } from '../../maps/constants';
+import { TerrainId } from '../../maps/terrain';
+import { ObjectInstance, ObjectKindId } from '../../maps/objects';
 
 // Tiles that may appear in AreaDefinition.map. TileType.EXIT is render-only
 // (the renderer selects it for cells that overlap an area.exits zone) and must
 // never be stored in map data — narrowing the array type makes that invariant
 // compiler-enforced instead of convention.
+//
+// Stage-1 migration note (US-92): `map` is being phased out in favour of
+// `terrain` (vertex grid) + `objects` (sparse list). It remains during
+// stage 1 as the authoring source for the migration helpers below; consumer
+// code is migrated story-by-story; the final TileType / map removal lands
+// when every consumer reads passability via terrain + objects (US-92 final
+// cleanup task).
 export type StoredTile = TileType.FLOOR | TileType.WALL;
 
 // Per-element light declaration consumed by LightingSystem (US-75). Tier 1 =
@@ -187,10 +196,42 @@ export interface DecorationDefinition {
   alphaGatedByLight?: boolean;
 }
 
+// Conditional terrain block — declared on AreaDefinition, evaluated by
+// GameScene.applyConditionalTerrain (US-98). When the named flag value
+// changes, every listed vertex in `vertices` flips its terrain id between
+// `whenTrue` and `whenFalse`. The Wang resolver re-renders affected cells
+// and collision unifies via terrain passability (e.g. water `passable: false`
+// blocks the cell when all 4 vertices flip to water). The condition string
+// goes through the existing systems/conditions.ts:evaluateCondition parser —
+// no new condition syntax is introduced.
+export interface ConditionalTerrainBlock {
+  condition: string;
+  vertices: {
+    col: number;
+    row: number;
+    whenTrue: TerrainId;
+    whenFalse: TerrainId;
+  }[];
+}
+
 export interface AreaDefinition {
   id: string;
   name: string;
+  // Stage-1 migration: `map` remains alongside `terrain` + `objects` while
+  // consumer code is migrated. Final state (US-92 cleanup) removes `map` and
+  // every TileType reference.
   map: StoredTile[][];
+  // Vertex-grid terrain. Dimensions are (rows + 1) × (cols + 1) so that every
+  // cell (row, col) is bounded by the four vertices [row][col], [row][col+1],
+  // [row+1][col+1], [row+1][col]. Wang resolver (US-93) samples these 4
+  // vertices to pick the atlas frame; collision (US-94) ANDs their passability.
+  terrain: TerrainId[][];
+  // Sparse list of placed objects. Rendered above terrain at depth 2.5 (US-94).
+  // Each instance contributes to cell collision via the kind's `passable` flag.
+  objects: ObjectInstance[];
+  // Optional flag-gated terrain-flip blocks. Used by Fog Marsh (US-98) to flip
+  // path↔water at the marsh-trap closure on `marsh_trapped` flag change.
+  conditionalTerrain?: ConditionalTerrainBlock[];
   mapCols: number;
   mapRows: number;
   tileset: string;
@@ -204,4 +245,57 @@ export interface AreaDefinition {
   exits: ExitDefinition[];
   // Retained for editor's map-overview mode — the game scene now renders via tileset.
   visual: { floorColor: number; wallColor: number };
+}
+
+// ───── Stage-1 migration helpers ─────
+//
+// Used by ashen-isle.ts and fog-marsh.ts to derive the new vertex-terrain
+// grid and sparse-object list from their existing StoredTile[][] authoring
+// arrays — no manual re-author until US-98. The helpers preserve visual
+// parity: every vertex is set to the area's base terrain (uniform), and
+// every WALL cell becomes an impassable ObjectInstance whose Kenney atlas
+// frame is the area's wall-class kind.
+
+/**
+ * Derive a uniform (rows+1) × (cols+1) vertex-terrain grid from a
+ * StoredTile[][] authoring array. Every vertex is set to `baseTerrain`.
+ * Stage-1 only — US-98 replaces with hand-painted vertex data.
+ */
+export function deriveTerrainFromTileMap(
+  tileMap: StoredTile[][],
+  baseTerrain: TerrainId,
+): TerrainId[][] {
+  const rows = tileMap.length;
+  const cols = tileMap[0]?.length ?? 0;
+  const out: TerrainId[][] = [];
+  for (let r = 0; r <= rows; r++) {
+    const row: TerrainId[] = [];
+    for (let c = 0; c <= cols; c++) {
+      row.push(baseTerrain);
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+/**
+ * Derive a sparse ObjectInstance[] from a StoredTile[][] authoring array.
+ * Emits one impassable object of `wallKind` for every WALL cell so that
+ * stage-1 collision unification (US-94) reproduces today's collision
+ * exactly.  Stage-2 (US-98) re-authors objects by hand.
+ */
+export function deriveObjectsFromTileMap(
+  tileMap: StoredTile[][],
+  wallKind: ObjectKindId,
+): ObjectInstance[] {
+  const out: ObjectInstance[] = [];
+  for (let r = 0; r < tileMap.length; r++) {
+    const row = tileMap[r];
+    for (let c = 0; c < row.length; c++) {
+      if (row[c] === TileType.WALL) {
+        out.push({ kind: wallKind, col: c, row: r });
+      }
+    }
+  }
+  return out;
 }

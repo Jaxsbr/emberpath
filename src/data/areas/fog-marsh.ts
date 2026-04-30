@@ -1,5 +1,11 @@
 import { TileType } from '../../maps/constants';
-import { AreaDefinition, DecorationDefinition, StoredTile } from './types';
+import {
+  AreaDefinition,
+  DecorationDefinition,
+  StoredTile,
+  deriveTerrainFromTileMap,
+  deriveObjectsFromTileMap,
+} from './types';
 
 const F = TileType.FLOOR;
 const W = TileType.WALL;
@@ -193,13 +199,18 @@ const fogMarshDecorations: DecorationDefinition[] = [
   { col: 16, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
 ];
 
+// Stage-1 migration source — see ashen-isle.ts for the migration note.
+const fogMarshTileMap = buildFogMarshMap();
+
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
   name: 'Fog Marsh',
   mapCols: 30,
   mapRows: 24,
   tileset: 'tiny-dungeon',
-  map: buildFogMarshMap(),
+  map: fogMarshTileMap,
+  terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
+  objects: deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
   npcs: [
     // Marsh Hermit on the dry path immediately south of the ruin's door at
     // (24, 9); his spawn at (24, 10) is the path tile adjacent to the door.

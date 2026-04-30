@@ -1,5 +1,11 @@
 import { TileType } from '../../maps/constants';
-import { AreaDefinition, DecorationDefinition, StoredTile } from './types';
+import {
+  AreaDefinition,
+  DecorationDefinition,
+  StoredTile,
+  deriveTerrainFromTileMap,
+  deriveObjectsFromTileMap,
+} from './types';
 
 const F = TileType.FLOOR;
 const W = TileType.WALL;
@@ -264,13 +270,21 @@ const ashenDecorations: DecorationDefinition[] = [
   { col: 30, row: 33, spriteFrame: FRAME.BUSH },
 ];
 
+// Stage-1 migration source: the existing TileType[][] authoring array remains
+// the source of truth, with terrain + objects derived from it via the helpers
+// in types.ts. US-98 replaces this with hand-painted vertex data + authored
+// objects.
+const ashenTileMap = buildAshenMap();
+
 export const ashenIsle: AreaDefinition = {
   id: 'ashen-isle',
   name: 'Ashen Isle',
   mapCols: 50,
   mapRows: 38,
   tileset: 'tiny-town',
-  map: buildAshenMap(),
+  map: ashenTileMap,
+  terrain: deriveTerrainFromTileMap(ashenTileMap, 'grass'),
+  objects: deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'),
   npcs: [
     // Old Man stands in the doorway of his cottage (40, 28 — the door FLOOR
     // tile). With wanderRadius 1 he drifts a step south to (40, 29) and back,
