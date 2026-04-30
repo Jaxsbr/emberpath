@@ -4,26 +4,23 @@ import { STYLE_PALETTE } from '../art/styleGuide';
 const THOUGHT_DEPTH = 8;
 const DEFAULT_DURATION = 4000;
 
-// Design-pixel constants. Thought bubbles render in world space on the main
-// camera, so these values are in world pixels — Phaser's pixelArt:true NEAREST
-// sampling produces sharp output at any camera zoom. The s() helper exists for
-// symmetry with dialogue.ts and as a hook for future zoom-aware tuning; for now
-// it is identity (main-cam world pixels are already "design pixels" for this
-// renderer).
-const FONT_SIZE_DESIGN = 12;
-const PADDING_X_DESIGN = 6;
-const PADDING_Y_DESIGN = 4;
-const OFFSET_Y_DESIGN = -28;
-const THOUGHT_MAX_WIDTH_DESIGN = 110;
-const THOUGHT_CORNER_RADIUS_DESIGN = 6;
-const THOUGHT_STROKE_WIDTH_DESIGN = 1;
+// Native-pixel literals — same approach as systems/npcInteraction.ts's "Tap
+// to talk" prompt. Phaser pixelArt:true NEAREST sampling chunks-up these
+// glyphs cleanly across mobile and desktop zooms; the previous serif +
+// design-pixel-scaled fontSize was destroying thin strokes at mobile zoom.
+const FONT_SIZE = '12px';
+const PADDING_X = 6;
+const PADDING_Y = 4;
+const OFFSET_Y = -28;
+const MAX_WIDTH = 110;
+const CORNER_RADIUS = 6;
+const STROKE_WIDTH = 1;
 const PANEL_ALPHA = 0.92;
 
 const hexToInt = (h: string) => parseInt(h.slice(1), 16);
 const PANEL_FILL_INT = hexToInt(STYLE_PALETTE.creamLight);
 const PANEL_STROKE_INT = hexToInt(STYLE_PALETTE.umberDark);
 const TEXT_COLOR = STYLE_PALETTE.umberDark;
-const FONT_FAMILY = 'serif';
 
 export interface ThoughtRequest {
   text: string;
@@ -46,18 +43,7 @@ export class ThoughtBubbleSystem {
     this.scene = scene;
     scene.events.on('shutdown', this.handleShutdown, this);
     scene.events.on('destroy', this.handleShutdown, this);
-    scene.scale.on('resize', this.handleResize, this);
     this.listenersBound = true;
-  }
-
-  /**
-   * Symmetry hook with dialogue.ts's s() helper. Identity for main-camera
-   * world-space thought bubbles; here so design-pixel constants above remain
-   * the single tuning surface even as future iterations introduce per-zoom
-   * adjustments.
-   */
-  private s(v: number): number {
-    return v;
   }
 
   setDialogueActiveCheck(check: () => boolean): void {
@@ -73,9 +59,8 @@ export class ThoughtBubbleSystem {
     this.playerCenterX = playerCenterX;
     this.playerCenterY = playerCenterY;
     if (this.active && this.currentBg && this.currentText) {
-      const offsetY = this.s(OFFSET_Y_DESIGN);
-      this.currentText.setPosition(playerCenterX, playerCenterY + offsetY);
-      this.currentBg.setPosition(playerCenterX, playerCenterY + offsetY);
+      this.currentText.setPosition(playerCenterX, playerCenterY + OFFSET_Y);
+      this.currentBg.setPosition(playerCenterX, playerCenterY + OFFSET_Y);
     }
     if (!this.active && this.queue.length > 0) {
       this.tryShowNext();
@@ -91,8 +76,8 @@ export class ThoughtBubbleSystem {
   }
 
   private displayThought(request: ThoughtRequest): void {
-    // Reset hygiene (Learning EP-02) — clear stale refs at the top before
-    // creating fresh GameObjects so a scene.restart mid-bubble cannot leak.
+    // Reset hygiene (Learning EP-02) — clear any leftovers before creating
+    // fresh GameObjects so a scene.restart mid-bubble cannot leak.
     this.currentBg?.destroy();
     this.currentBg = null;
     this.currentText?.destroy();
@@ -104,11 +89,10 @@ export class ThoughtBubbleSystem {
     const duration = request.duration ?? DEFAULT_DURATION;
 
     this.currentText = this.scene.add.text(0, 0, request.text, {
-      fontSize: `${this.s(FONT_SIZE_DESIGN)}px`,
+      fontSize: FONT_SIZE,
       color: TEXT_COLOR,
       fontStyle: 'italic',
-      fontFamily: FONT_FAMILY,
-      wordWrap: { width: this.s(THOUGHT_MAX_WIDTH_DESIGN), useAdvancedWrap: true },
+      wordWrap: { width: MAX_WIDTH, useAdvancedWrap: true },
       align: 'center',
     });
     this.currentText.setOrigin(0.5, 1);
@@ -116,47 +100,42 @@ export class ThoughtBubbleSystem {
 
     this.currentBg = this.scene.add.graphics();
     this.currentBg.setDepth(THOUGHT_DEPTH - 1);
-
     this.redrawBg();
 
-    // Camera split — UI cam ignores both so they render exclusively on the main
-    // camera (world space, follows the player).
+    // Camera split — UI cam ignores both so they render exclusively on the
+    // main camera (world space, follows the player).
     const uiCam = this.scene.cameras.getCamera('ui');
     if (uiCam) {
       uiCam.ignore(this.currentText);
       uiCam.ignore(this.currentBg);
     }
 
-    const offsetY = this.s(OFFSET_Y_DESIGN);
-    this.currentText.setPosition(this.playerCenterX, this.playerCenterY + offsetY);
-    this.currentBg.setPosition(this.playerCenterX, this.playerCenterY + offsetY);
+    this.currentText.setPosition(this.playerCenterX, this.playerCenterY + OFFSET_Y);
+    this.currentBg.setPosition(this.playerCenterX, this.playerCenterY + OFFSET_Y);
 
     this.dismissTimer = this.scene.time.delayedCall(duration, () => {
       this.dismiss();
     });
   }
 
+  /**
+   * Draw the cream rounded panel + umber border around the text bounding box.
+   *
+   * Text origin is (0.5, 1) so text occupies local y = [-textHeight, 0]. To
+   * keep symmetric vertical padding (the previous draw at -h..0 left 2*padY
+   * above and 0 below), the panel spans local y = [-textHeight - padY, padY]
+   * — equivalently top = -h + padY where h = textHeight + 2*padY.
+   */
   private redrawBg(): void {
     if (!this.currentBg || !this.currentText) return;
-    const padX = this.s(PADDING_X_DESIGN);
-    const padY = this.s(PADDING_Y_DESIGN);
-    const radius = this.s(THOUGHT_CORNER_RADIUS_DESIGN);
-    const strokeW = this.s(THOUGHT_STROKE_WIDTH_DESIGN);
-    const w = this.currentText.width + padX * 2;
-    const h = this.currentText.height + padY * 2;
+    const w = this.currentText.width + PADDING_X * 2;
+    const h = this.currentText.height + PADDING_Y * 2;
+    const top = -h + PADDING_Y;
     this.currentBg.clear();
     this.currentBg.fillStyle(PANEL_FILL_INT, PANEL_ALPHA);
-    this.currentBg.fillRoundedRect(-w / 2, -h, w, h, radius);
-    this.currentBg.lineStyle(strokeW, PANEL_STROKE_INT, 1);
-    this.currentBg.strokeRoundedRect(-w / 2, -h, w, h, radius);
-  }
-
-  private handleResize(): void {
-    if (this.active && this.currentText) {
-      this.currentText.setFontSize(this.s(FONT_SIZE_DESIGN));
-      this.currentText.setWordWrapWidth(this.s(THOUGHT_MAX_WIDTH_DESIGN));
-      this.redrawBg();
-    }
+    this.currentBg.fillRoundedRect(-w / 2, top, w, h, CORNER_RADIUS);
+    this.currentBg.lineStyle(STROKE_WIDTH, PANEL_STROKE_INT, 1);
+    this.currentBg.strokeRoundedRect(-w / 2, top, w, h, CORNER_RADIUS);
   }
 
   private dismiss(): void {
@@ -182,7 +161,6 @@ export class ThoughtBubbleSystem {
     if (this.listenersBound) {
       this.scene.events.off('shutdown', this.handleShutdown, this);
       this.scene.events.off('destroy', this.handleShutdown, this);
-      this.scene.scale.off('resize', this.handleResize, this);
       this.listenersBound = false;
     }
   }
