@@ -36,3 +36,17 @@ entries:
       Queued task 3 = implement src/maps/terrain.ts (registry only, no consumer changes — keeps
       this task atomic and reviewable).
     tokens: ~6000
+  - task: 3
+    time: "2026-04-30T10:15:00Z"
+    type: implement
+    story: US-92
+    description: "Add src/maps/terrain.ts with TerrainId union + TERRAINS registry"
+    result: pass
+    notes: |
+      Six terrains registered (grass, sand, path, marsh-floor, water, stone). Water alone is
+      impassable at stage 1; all others passable. Each entry carries a wangTilesetId pointing
+      at the PixelLab id from US-95 (forward-looking) — stage 1's degenerate Kenney atlases
+      will register under the same ids in US-93. AGENTS.md File ownership row added.
+      Verify (tsc + build) passes. Story Completion Gate: 2/9 US-92 criteria met (terrain
+      module + AGENTS.md row partial); US-92 not yet complete.
+    tokens: ~3500

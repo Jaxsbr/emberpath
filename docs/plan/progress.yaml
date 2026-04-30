@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
-  next_task: "[US-92] Implement src/maps/terrain.ts — TerrainId union, TerrainDefinition shape, TERRAINS registry with grass/sand/path/marsh-floor/water/stone (water passable=false; others true), hasTerrain helper. No consumer changes in this task."
+  task_number: 4
+  next_task: "[US-92] Implement src/maps/objects.ts — ObjectKindId union (wall-stone, door-wood, gate-wood, fence-rail, tree-pine, bush, flower, sign-wood, cliff-stone, dead-tree, marsh-stone, gravestone, mushroom, dry-reed, wall-tomb, door-tomb, lantern-broken), ObjectKindDefinition shape, OBJECT_KINDS registry pointing at existing Kenney atlasKey + frame for stage 1, hasObjectKind helper, ObjectInstance type. No consumer changes."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
