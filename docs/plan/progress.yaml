@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: "[US-94] Migrate GameScene tile rendering + collision: rewrite renderTileMap to read terrain (Wang resolver) + render objects above at depth 2.5 via new renderObjects(); add buildObjectCollisionMap (cell `Map<string, boolean>`); rewrite collidesWithWall to consult both terrain (4-vertex AND-impassable rule) and object passability; delete applyMarshTrappedState + its onFlagChange subscriber, replaced by buildObjectCollisionMap rebuild on conditional-object flag change. Update collision.ts + movement.ts + npcBehavior.ts signatures to take area instead of map: TileType[][]."
+  task_number: 9
+  next_task: "[US-94] Operator-driven: in-engine architecture-only baseline at desktop ~1280×720 AND mobile DevTools 360×640. Walk through the checklist in docs/plan/tile-architecture-manual-verify.md § 'Architecture-only baseline' for both Ashen Isle and Fog Marsh. Verify visual parity vs pre-phase, marsh-trap closure flip via conditional-object pathway, and save-state compatibility. After verification passes, queue US-95 PixelLab tileset generation."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

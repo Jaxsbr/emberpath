@@ -109,3 +109,46 @@ entries:
       removal of resolveFrame (after GameScene migrates) and the atlasPreview-vs-Python
       decision callout.
     tokens: ~10000
+  - task: 7
+    time: "2026-04-30T11:15:00Z"
+    type: implement
+    story: US-94
+    description: "GameScene Wang migration + renderObjects + buildObjectCollisionMap + collision unification + applyMarshTrappedState delete"
+    result: pass
+    notes: |
+      collision.ts: AreaPassability shape + new collidesWithWall consulting both
+      objectBlockMap and 4-vertex AND-impassable terrain rule. Out-of-bounds blocks.
+      movement.ts: AreaCollisionData carries passability instead of TileType[][].
+      npcBehavior.ts: takes AreaPassability.
+      GameScene rewrite: renderTileMap uses resolveWangFrame; new renderExitOverlays paints
+      hope-gold rectangles at depth 0.5; new renderObjects places sprites at depth 2.5;
+      new buildObjectCollisionMap + rebuildObjectCollisionMap; new subscribeToConditionalObjects
+      registers onFlagChange listeners per unique flag in object conditions; conditional-
+      object visibility re-evaluated only on flag change (Learning EP-01); cleanupResize
+      destroys new sprites and unsubscribes; uiCam.ignore includes new sprites.
+      applyMarshTrappedState DELETED; the marsh-trap closure is now 4 conditional wall-tomb
+      ObjectInstances on fog-marsh (col 13-16, row 22, condition marsh_trapped == true) —
+      same code path serves every conditional-object closure pattern.
+      Verify (tsc + build) passes.
+    tokens: ~14000
+  - task: 8
+    time: "2026-04-30T11:30:00Z"
+    type: implement
+    story: US-92,US-93
+    description: "Final stage-1 cleanup: remove TileType + resolveFrame; migrate TitleScene + editor"
+    result: pass
+    notes: |
+      TileType enum removed from maps/constants.ts. TILE_FLOOR + TILE_WALL constants in
+      types.ts replace the authoring shorthand; both area files use them. resolveFrame
+      removed from tilesets.ts; legacy tileFrames field removed from TilesetDefinition.
+      `grep -rn "TileType\|resolveFrame" src tools` returns zero hits.
+      TitleScene Continue-position validation rewritten to use new passability model
+      (object-block lookup + 4-vertex AND-impassable terrain check).
+      Editor mapRenderer migrated to read TILE_WALL constant; editor tsc passes.
+      AGENTS.md scrubbed: directory layout + file ownership + depth map + Tile rendering
+      + Decorations sections rewritten to describe shipped Wang + objects model.
+      Architecture-only baseline reached. Manual-verify doc skeleton created at
+      docs/plan/tile-architecture-manual-verify.md. Operator-driven in-engine smoke
+      remains for US-94 done-when completion.
+    tokens: ~7000
+
