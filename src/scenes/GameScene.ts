@@ -215,6 +215,14 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
+    // Load PixelLab object PNGs (US-96). One image per ObjectKindDefinition;
+    // each is 32×32 with a transparent background. Phaser's default frame
+    // (`__BASE`) is used at render time — renderObjects does not pass a
+    // frame argument.
+    for (const def of Object.values(OBJECT_KINDS)) {
+      this.load.image(def.atlasKey, def.assetPath);
+    }
+
     // Load per-NPC sprite frames driven by the registry — adding a new NPC becomes
     // a registry entry plus an AreaDefinition row, with no scene-file edit.
     for (const spriteId of getNpcSpriteIds()) {
@@ -982,16 +990,14 @@ export class GameScene extends Phaser.Scene {
         console.warn(`[GameScene] ObjectInstance at (${inst.col},${inst.row}) references unknown kind '${inst.kind}'; skipping render.`);
         continue;
       }
-      const texture = this.textures.get(def.atlasKey);
-      if (!texture || (texture.has && !texture.has(def.frame))) {
-        console.warn(`[GameScene] Object kind '${inst.kind}' references missing frame '${def.frame}' on atlas '${def.atlasKey}'; skipping render. Object still contributes to collision per registry passable flag.`);
+      if (!this.textures.exists(def.atlasKey)) {
+        console.warn(`[GameScene] Object kind '${inst.kind}' references missing atlas '${def.atlasKey}' (path '${def.assetPath}'); skipping render. Object still contributes to collision per registry passable flag.`);
         continue;
       }
       const sprite = this.add.image(
         inst.col * TILE_SIZE,
         inst.row * TILE_SIZE,
         def.atlasKey,
-        def.frame,
       );
       sprite.setOrigin(0, 0);
       sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
