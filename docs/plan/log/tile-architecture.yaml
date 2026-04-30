@@ -83,3 +83,29 @@ entries:
       added for types.ts. Verify (tsc + build) passes.
       Story Completion Gate: 5/9 US-92 criteria met. Next: US-93 wang.ts + WangTilesetDefinition.
     tokens: ~6000
+  - task: 6
+    time: "2026-04-30T10:55:00Z"
+    type: implement
+    story: US-93
+    description: "wang.ts resolver + degenerate Wang tilesets + atlasPreview.ts"
+    result: pass
+    notes: |
+      wang.ts resolveWangFrame computes 4-bit corner mask (clockwise TL/TR/BR/BL, secondary
+      bits set), hash-picks within cornerMaskTable[mask] via the shared FNV-1a mixer; absent-
+      mask path falls back to wang.fallbackFrames AND emits a one-time-per-mask console.warn
+      keyed `${tilesetId}:${mask}`. Boot-time assertion pins the convention: [grass, sand,
+      sand, grass] under primary=grass / secondary=sand → mask '0110' (throws on mismatch).
+      tilesets.ts: WangTilesetDefinition added; tiny-town + tiny-dungeon register a
+      degenerate wang block (cornerMaskTable['0000'] FLOOR, ['1111'] WALL, 14 other masks
+      omitted; primaryTerrain grass / marsh-floor; secondaryTerrain null). Legacy
+      TilesetDefinition + resolveFrame retained until GameScene migrates in US-94.
+      atlasPreview.ts (browser-only) generates a 4×4 labelled-PNG grid for any registered
+      Wang tileset — picked frame at 4× scale, mask label in umber, diagonal line on
+      absent-mask cells (Learning EP-03 verification gate for US-95).
+      AGENTS.md File ownership rows added for wang.ts + atlasPreview.ts; tilesets.ts row
+      rewritten to describe Wang block + degenerate-mode registration.
+      Verify (tsc + build) passes. Story Completion Gate: 7/9 US-93 criteria met (resolver,
+      shape, registration, hash-pick, convention assertion, atlasPreview, build); pending
+      removal of resolveFrame (after GameScene migrates) and the atlasPreview-vs-Python
+      decision callout.
+    tokens: ~10000
