@@ -1,6 +1,6 @@
 # Phase: scene-art-and-thoughts
 
-Status: draft
+Status: shipped
 
 > Presentation-layer phase. Locks the project's visual identity into code (`src/art/styleGuide.ts`), replaces the placeholder rectangle in `StoryScene` with real pixel-art beats and cross-fade transitions, and fixes thought-bubble readability. PixelLab is the chosen generator; this phase wires the rendering pipeline and produces the static beats. Animated beats remain a future upgrade — the asset manifest carries `kind` so a beat can swap to `animated` without StoryScene rework.
 
@@ -14,7 +14,7 @@ Caveat captured for follow-up scope (NOT this phase): NPC sprites and props of i
 
 ## Stories
 
-### US-87 — Aesthetic codex as code
+### US-87 — Aesthetic codex as code [Shipped]
 
 As an art-pipeline operator, I want the project's locked visual identity expressed as a TypeScript module rather than a markdown doc, so that every future generation script (PixelLab, Midjourney, regen passes) composes prompts from the same source and visual identity does not drift across tools.
 
@@ -32,7 +32,7 @@ As an art-pipeline operator, I want the project's locked visual identity express
 
 **Design rationale:** Markdown documents drift; TypeScript modules don't. Once the codex is `import`-able, every generator that asks for an asset is forced to start from the same base prompt. This is the cheapest possible visual-identity lock.
 
-### US-88 — Thought bubble readability
+### US-88 — Thought bubble readability [Shipped]
 
 As a player reading Pip's thoughts, I want the on-screen text to be sharp, fully visible, and visually consistent with the storybook aesthetic, so that ambient narration feels like part of the world rather than a debug overlay.
 
@@ -53,7 +53,7 @@ As a player reading Pip's thoughts, I want the on-screen text to be sharp, fully
 
 **Design rationale:** The current bubble fails three orthogonal tests at once — sharpness (world-pixel text sampled at fractional zoom), bounding (single-line, no wrap), and tonality (cool blue against the warm sepia world). One fix sweep that adopts the dialogue system's existing zoom-scale pattern is the smallest change that addresses all three.
 
-### US-89 — Story scene image rendering + cross-fade
+### US-89 — Story scene image rendering + cross-fade [Shipped]
 
 As a player watching a story scene, I want each beat's narrative image to render as actual pixel art and cross-fade smoothly into the next beat's image, so that the story scene reads as an illustrated cutscene rather than a labeled placeholder.
 
@@ -76,7 +76,7 @@ As a player watching a story scene, I want each beat's narrative image to render
 
 **Design rationale:** Cross-fade rather than hard-cut because a hard cut on a static image looks like a slideshow; cross-fade reads as illustrated narration. Image-aspect preserved with letterbox over flat scale because squashing a 1:1 PixelLab output to a 16:9 viewport mangles the art — letterboxing in cream is a deliberate storybook gesture.
 
-### US-90 — Scene asset manifest + StoryBeat asset hook
+### US-90 — Scene asset manifest + StoryBeat asset hook [Shipped]
 
 As an art-pipeline operator, I want a single typed registry mapping each story scene's beats to their image assets, so that the StoryScene loader, the generation tool, and the cost-mapping table all read from one source.
 
@@ -94,7 +94,7 @@ As an art-pipeline operator, I want a single typed registry mapping each story s
 
 **Design rationale:** A separate manifest decouples authoring (scene-level beats live in `data/areas/`) from asset lookup (image keys live in `art/sceneAssets.ts`). Same pattern the project already uses for `npcSprites.ts` and `tilesets.ts`.
 
-### US-91 — Generate static scene art for shipped beats
+### US-91 — Generate static scene art for shipped beats [Shipped]
 
 As an art-pipeline operator, I want a runnable script that walks the manifest from US-90, composes each beat's prompt through US-87's codex, calls PixelLab via the MCP, and saves PNGs into `assets/scenes/<sceneId>/`, so that I can produce the 9 shipped beats deterministically and re-roll any single beat without reshooting the rest.
 
@@ -149,7 +149,7 @@ Safety criteria: **N/A** — this phase introduces no API endpoints, user-input 
 - [ ] `grep -r "from.*art/styleGuide" src tools` returns ≥ 2 distinct files [US-87]
 - [ ] `src/art/styleGuide.ts` has no Phaser import (file inspection) [US-87]
 
-### US-88 — Thought bubble readability
+### US-88 — Thought bubble readability [Shipped]
 - [ ] `systems/thoughtBubble.ts` defines a private `s(v)` helper and uses design-pixel constants (e.g., `FONT_SIZE_DESIGN`); the world-pixel `FONT_SIZE = 10` literal is removed [US-88]
 - [ ] `homecoming-reflection` thought displays 3 lines in the bubble; bubble height ≥ 3 × line-height (manual + DOM/scene-children inspection) [US-88]
 - [ ] At a 360 × 640 viewport, the `room-echo` thought wraps to ≥ 2 lines, no horizontal overflow past the panel edge (manual) [US-88]
@@ -160,7 +160,7 @@ Safety criteria: **N/A** — this phase introduces no API endpoints, user-input 
 - [ ] `displayThought()` opens by resetting `currentBg`, `currentText`, `dismissTimer` to null; `scene.events.shutdown` handler clears in-flight bubble (file inspection + restart smoke test) [US-88]
 - [ ] User documentation: `docs/plan/scene-art-and-thoughts-manual-verify.md` § "Thought bubble visual + readability check" lists explicit checkboxes for `start-thought`, `room-echo`, `homecoming-reflection`, `marsh-deepens`, escape-attempt subscriber thoughts, and `ashen-isle-mark` [US-88]
 
-### US-89 — Story scene image rendering + cross-fade
+### US-89 — Story scene image rendering + cross-fade [Shipped]
 - [ ] `StoryScene.preload()` iterates `SCENE_ASSETS` from US-90 and loads each entry by key `scene-<sceneId>-<beatIndex>` (file inspection) [US-89]
 - [ ] Missing-file path: a deliberately-deleted asset logs a warning with `(sceneId, beatIndex, expected path)` and falls back to the existing flat-color rectangle + label without crashing (manual: rename one file, walk the trigger, confirm fallback renders) [US-89]
 - [ ] Cross-fade: on `advanceBeat()`, outgoing and incoming image tweens both run with `BEAT_FADE_DURATION_MS = 400`; both images coexist mid-tween (file inspection + manual frame-by-frame check) [US-89]
