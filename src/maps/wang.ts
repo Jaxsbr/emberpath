@@ -115,6 +115,67 @@ function hashCellMask(tilesetId: string, mask: string, col: number, row: number)
 // Re-export hashCell so consumers needing the legacy hash can find it via wang.ts.
 export { hashCell };
 
+// ───── Per-cell tileset selection (US-98) ─────
+//
+// Under the multi-pair authoring model an area can paint cells with any
+// combination of registered terrains, but each Wang tileset is a single
+// (primary, secondary) pair. The renderer must therefore pick the matching
+// tileset per cell based on the cell's corner-terrain set.
+//
+// Algorithm: collect the unique terrains across the 4 corners. If only one
+// terrain is present, find a tileset where it is the primary; the cell
+// renders at mask '0000'. If two terrains are present, find the tileset
+// whose (primary, secondary) pair matches; the cell's mask is computed
+// against that tileset. Three or more distinct terrains in a single cell
+// are not authored under the supported tileset registry — fall back to the
+// area's `defaultTilesetId` so the renderer still produces a frame.
+//
+// Match preference when multiple tilesets satisfy the constraint (e.g.
+// marsh-floor appears as primary in three Fog Marsh tilesets):
+//   1. Exact (primary, secondary) match.
+//   2. Single-terrain cell — first tileset where the terrain is primary.
+//   3. Fall back to defaultTilesetId.
+//
+// The function is pure / deterministic; per-frame O(N) over TILESETS — but
+// N = 7 today, so the cost is trivial. If TILESETS grows >100 in some
+// future expansion, swap to a `Map<TerrainPair, tilesetId>` index built at
+// module load.
+
+export function pickWangTilesetForCell(
+  corners: CornerTuple,
+  defaultTilesetId: string,
+): string {
+  const unique = Array.from(new Set(corners));
+  // Single-terrain cell: prefer a tileset where this terrain is the primary.
+  if (unique.length === 1) {
+    const t = unique[0];
+    for (const [id, def] of Object.entries(TILESETS)) {
+      if (def.wang.primaryTerrain === t) return id;
+    }
+    // Fallback: any tileset that registers this terrain at all.
+    for (const [id, def] of Object.entries(TILESETS)) {
+      if (def.wang.primaryTerrain === t || def.wang.secondaryTerrain === t) return id;
+    }
+    return defaultTilesetId;
+  }
+  // Two-terrain cell: find the (primary, secondary) match in either order.
+  if (unique.length === 2) {
+    const [a, b] = unique;
+    for (const [id, def] of Object.entries(TILESETS)) {
+      const p = def.wang.primaryTerrain;
+      const s = def.wang.secondaryTerrain;
+      if (s === null) continue; // degenerate tileset can't represent a transition
+      if ((p === a && s === b) || (p === b && s === a)) return id;
+    }
+    // Fallback to the default tileset; the cell will render with whatever
+    // mask the default tileset's pair produces — visually wrong but
+    // mechanically intact.
+    return defaultTilesetId;
+  }
+  // 3+ distinct terrains in a single cell — not supported by the registry.
+  return defaultTilesetId;
+}
+
 // ───── Boot-time corner-clockwise convention assertion ─────
 //
 // Pinned per the spec: a synthetic terrain grid with corners

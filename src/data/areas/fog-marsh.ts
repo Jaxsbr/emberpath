@@ -185,35 +185,28 @@ const fogMarshDecorations: DecorationDefinition[] = [
   { col: 22, row: 16, spriteFrame: FRAME.REED_A },
   { col: 7, row: 20, spriteFrame: FRAME.REED_B },
 
-  // South-exit closure (US-68). Paired conditional decorations sit on row 22
-  // cols 13-16: PATH frames render when marsh_trapped == false (the way home
-  // is open) and EDGE deep-water frames render when marsh_trapped == true (the
-  // way home is gone). GameScene applies the same flag-change subscriber that
-  // flips collision (US-67) — one shared mechanism, on the same frame.
-  { col: 13, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
-  { col: 14, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
-  { col: 15, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
-  { col: 16, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
-  { col: 13, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
-  { col: 14, row: 22, spriteFrame: FRAME.EDGE_B, condition: 'marsh_trapped == true' },
-  { col: 15, row: 22, spriteFrame: FRAME.EDGE_C, condition: 'marsh_trapped == true' },
-  { col: 16, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
+  // (US-98) — South-exit closure decorations removed. The terrain-flip
+  // pathway (`conditionalTerrain` block on this AreaDefinition) replaces
+  // both the PATH overlay and the EDGE deep-water overlay: when
+  // `marsh_trapped == true`, the closure vertices flip to `water` and the
+  // Wang resolver renders the fog-marsh-floor-water tileset on those
+  // cells; collision unifies via water.passable === false. One mechanism,
+  // no parallel decoration variants.
 ];
 
 // Stage-1 migration source — see ashen-isle.ts for the migration note.
 const fogMarshTileMap = buildFogMarshMap();
 
-// Marsh-trap closure under the new conditional-object pathway (US-94).
-// Replaces the legacy map-mutation closure: 4 wall-tomb objects
-// gated on `marsh_trapped == true` populate the closure cells; collision and
-// visibility flip together via the GameScene buildObjectCollisionMap +
-// updateConditionalObjects path on flag change.
-const fogMarshConditionalClosure = [
-  { kind: 'wall-tomb', col: 13, row: 22, condition: 'marsh_trapped == true' },
-  { kind: 'wall-tomb', col: 14, row: 22, condition: 'marsh_trapped == true' },
-  { kind: 'wall-tomb', col: 15, row: 22, condition: 'marsh_trapped == true' },
-  { kind: 'wall-tomb', col: 16, row: 22, condition: 'marsh_trapped == true' },
-] as const;
+// Marsh-trap closure (US-98) — terrain-flip pathway. The 8 vertices spanning
+// row 22 cols 13-16 + row 23 cols 13-16 flip from `path` (default state) to
+// `water` when `marsh_trapped == true`. The Wang resolver re-renders the 4
+// closure cells using the fog-marsh-floor-water tileset (per-cell tileset
+// selection picks it because the cell corners now include water), and
+// collision unifies via `water.passable === false` (the AND-of-4-vertices
+// rule blocks every closure cell once all 4 vertices are water).
+//
+// Replaces the legacy applyMarshTrappedState map-mutation AND the US-94
+// conditional `wall-tomb` ObjectInstances on the same cells.
 
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
@@ -224,9 +217,21 @@ export const fogMarsh: AreaDefinition = {
   decorationsTileset: 'tiny-dungeon',
   map: fogMarshTileMap,
   terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
-  objects: [
-    ...deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
-    ...fogMarshConditionalClosure,
+  objects: deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
+  conditionalTerrain: [
+    {
+      condition: 'marsh_trapped == true',
+      vertices: [
+        { col: 13, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 14, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 15, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 16, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 13, row: 23, whenTrue: 'water', whenFalse: 'path' },
+        { col: 14, row: 23, whenTrue: 'water', whenFalse: 'path' },
+        { col: 15, row: 23, whenTrue: 'water', whenFalse: 'path' },
+        { col: 16, row: 23, whenTrue: 'water', whenFalse: 'path' },
+      ],
+    },
   ],
   npcs: [
     // Marsh Hermit on the dry path immediately south of the ruin's door at

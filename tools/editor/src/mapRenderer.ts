@@ -13,7 +13,7 @@
 // resolver — same registries the game uses, single source of truth.
 
 import type { AreaDefinition } from '@game/data/areas/types';
-import { resolveWangFrame } from '@game/maps/wang';
+import { resolveWangFrame, pickWangTilesetForCell } from '@game/maps/wang';
 import { TERRAINS, type TerrainId } from '@game/maps/terrain';
 import { OBJECT_KINDS, type ObjectInstance } from '@game/maps/objects';
 import { TILESETS } from '@game/maps/tilesets';
@@ -111,15 +111,8 @@ function drawTerrain(
   area: AreaDefinition,
   terrain: TerrainId[][],
 ): void {
-  const tilesetId = area.tileset;
-  const atlasImg = tilesetAtlases[tilesetId];
-  const atlasReady = atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0;
-  const grid = atlasGridForTileset(tilesetId);
-
   for (let row = 0; row < area.mapRows; row++) {
     for (let col = 0; col < area.mapCols; col++) {
-      // Fall back to flat colour if terrain is undefined (working copy
-      // shorter than mapRows/mapCols, defensive).
       const tl = terrain[row]?.[col];
       const tr = terrain[row]?.[col + 1];
       const br = terrain[row + 1]?.[col + 1];
@@ -129,8 +122,15 @@ function drawTerrain(
       const dx = LABEL_MARGIN + col * CELL;
       const dy = LABEL_MARGIN + row * CELL;
 
+      // Per-cell tileset selection (US-98) — same algorithm as GameScene.
+      // Each cell's terrain pair picks the matching registered tileset.
+      const cellTilesetId = pickWangTilesetForCell([tl, tr, br, bl], area.tileset);
+      const atlasImg = tilesetAtlases[cellTilesetId];
+      const atlasReady = atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0;
+      const grid = atlasGridForTileset(cellTilesetId);
+
       if (atlasReady) {
-        const frame = resolveWangFrame(tilesetId, [tl, tr, br, bl], col, row);
+        const frame = resolveWangFrame(cellTilesetId, [tl, tr, br, bl], col, row);
         if (frame !== null) {
           const idx = Number.parseInt(frame, 10);
           if (Number.isFinite(idx) && idx >= 0) {
@@ -399,9 +399,14 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     };
     const obj = objectAtCell(col, row);
     const objKind = obj ? OBJECT_KINDS[obj.kind] : undefined;
-    const tilesetDef = TILESETS[area.tileset];
+    // Per-cell tileset pick (US-98) so the detail panel reports the same
+    // tileset / mask / frame the renderer actually drew.
+    const cellTilesetId = corners.TL && corners.TR && corners.BR && corners.BL
+      ? pickWangTilesetForCell([corners.TL, corners.TR, corners.BR, corners.BL], area.tileset)
+      : area.tileset;
+    const tilesetDef = TILESETS[cellTilesetId];
     const frame = corners.TL && corners.TR && corners.BR && corners.BL
-      ? resolveWangFrame(area.tileset, [corners.TL, corners.TR, corners.BR, corners.BL], col, row)
+      ? resolveWangFrame(cellTilesetId, [corners.TL, corners.TR, corners.BR, corners.BL], col, row)
       : null;
     // Derive the 4-bit Wang mask using the resolver's convention: bit3=TL,
     // bit2=TR, bit1=BR, bit0=BL — '1' = secondary terrain (or any non-primary
@@ -427,7 +432,7 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
       vertices: corners,
       wangMask: mask,
       pickedFrame: frame,
-      tileset: area.tileset,
+      tileset: cellTilesetId,
       object: obj
         ? { kind: obj.kind, passable: objKind?.passable ?? null, condition: obj.condition ?? null }
         : null,

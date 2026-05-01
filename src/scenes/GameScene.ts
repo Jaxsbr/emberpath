@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE } from '../maps/constants';
 import { TILESETS, hasTileset } from '../maps/tilesets';
-import { resolveWangFrame } from '../maps/wang';
+import { resolveWangFrame, pickWangTilesetForCell } from '../maps/wang';
 import { TerrainId, TERRAINS } from '../maps/terrain';
 import { OBJECT_KINDS, ObjectInstance } from '../maps/objects';
 import { AreaDefinition, NpcDefinition, DialogueScript } from '../data/areas/types';
@@ -127,6 +127,9 @@ export class GameScene extends Phaser.Scene {
   // ObjectInstance.condition; collected at create() and invoked in
   // cleanupResize.
   private objectFlagUnsubscribes: (() => void)[] = [];
+  // Per-flag unsubscribes for conditionalTerrain flips (US-98). One
+  // subscriber per unique flag named in any ConditionalTerrainBlock.condition.
+  private conditionalTerrainUnsubscribes: (() => void)[] = [];
   // Cell-keyed runtime passability snapshot consumed by collision +
   // npcBehavior + movement (US-94). Built once at create() AND rebuilt on
   // any flag change referenced by an object's `condition`.
@@ -272,20 +275,22 @@ export class GameScene extends Phaser.Scene {
 
     // Snapshot terrain into the runtime passability struct BEFORE collision-
     // dependent subsystems initialise. The objectBlockMap is filled in by
-    // buildObjectCollisionMap below.
+    // buildObjectCollisionMap below. Apply conditional terrain so a
+    // Continue-resume on Fog Marsh with `marsh_trapped` already true rebuilds
+    // the water vertices before the player can walk on them.
     this.passability = {
       terrain: this.area.terrain,
       objectBlockMap: new Map(),
     };
+    this.applyConditionalTerrain();
     // Build the object-collision map and subscribe to every flag named in any
     // ObjectInstance.condition so conditional-object impassability flips on
-    // flag change (US-94). Replaces the legacy map-mutation closure path —
-    // the marsh-trap closure is now expressed as 4 conditional wall-tomb
-    // ObjectInstances on fog-marsh (col 13-16, row 22, condition
-    // marsh_trapped == true) so the same code path serves every conditional-
-    // object closure pattern.
+    // flag change (US-94). The marsh-trap closure now flows through the
+    // terrain-flip path (US-98 conditionalTerrain), but other conditional
+    // objects in future areas still wire through this path.
     this.buildObjectCollisionMap();
     this.subscribeToConditionalObjects();
+    this.subscribeToConditionalTerrain();
     if (this.area.id === 'fog-marsh') {
       this.marshTrappedUnsubscribe = onFlagChange('marsh_trapped', () => {
         // Conditional-object visibility + cell-block lookup re-evaluate; the
@@ -774,7 +779,6 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const atlasKey = TILESETS[this.area.tileset].atlasKey;
     const terrain = this.area.terrain;
     for (let row = 0; row < this.area.mapRows; row++) {
       for (let col = 0; col < this.area.mapCols; col++) {
@@ -782,9 +786,16 @@ export class GameScene extends Phaser.Scene {
         const tr: TerrainId = terrain[row][col + 1];
         const br: TerrainId = terrain[row + 1][col + 1];
         const bl: TerrainId = terrain[row + 1][col];
-        const frame = resolveWangFrame(this.area.tileset, [tl, tr, br, bl], col, row);
+        // Per-cell tileset selection (US-98): pick the registered Wang
+        // tileset whose (primary, secondary) pair matches this cell's
+        // unique corner terrains. Falls back to area.tileset for cells
+        // with 3+ distinct terrains or unregistered combinations.
+        const cellTilesetId = pickWangTilesetForCell([tl, tr, br, bl], this.area.tileset);
+        const cellTilesetDef = TILESETS[cellTilesetId];
+        if (!cellTilesetDef) continue;
+        const frame = resolveWangFrame(cellTilesetId, [tl, tr, br, bl], col, row);
         if (frame === null) continue;
-        const sprite = this.add.sprite(col * TILE_SIZE, row * TILE_SIZE, atlasKey, frame);
+        const sprite = this.add.sprite(col * TILE_SIZE, row * TILE_SIZE, cellTilesetDef.atlasKey, frame);
         sprite.setOrigin(0, 0);
         sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
         sprite.setDepth(0);
@@ -972,6 +983,67 @@ export class GameScene extends Phaser.Scene {
   // condition.
   private rebuildObjectCollisionMap(): void {
     this.buildObjectCollisionMap();
+  }
+
+  // Apply every conditionalTerrain block (US-98) — mutates `area.terrain`
+  // in-place. The Wang resolver's per-cell tileset selection picks up the
+  // new vertex values automatically; collision unifies via terrain
+  // passability (e.g. water `passable: false` blocks the cell when all 4
+  // vertices flip to water). Idempotent — safe to re-run on every flag
+  // change.
+  private applyConditionalTerrain(): void {
+    const blocks = this.area.conditionalTerrain;
+    if (!blocks || blocks.length === 0) return;
+    for (const block of blocks) {
+      const isOn = evaluateCondition(block.condition);
+      for (const v of block.vertices) {
+        const target = isOn ? v.whenTrue : v.whenFalse;
+        if (this.area.terrain[v.row]?.[v.col] !== undefined) {
+          this.area.terrain[v.row][v.col] = target;
+        }
+      }
+    }
+  }
+
+  // Re-apply conditional terrain AND re-render the affected tile sprites on
+  // flag change (US-98). Cheap: re-issuing renderTileMap rebuilds all
+  // tileLayer sprites. For larger areas the sprite count is in the low
+  // thousands — still O(rows × cols) but only on flag flips, never per-frame.
+  // Subscriber unsubscribes are collected in `conditionalTerrainUnsubscribes`
+  // and invoked in cleanupResize.
+  private subscribeToConditionalTerrain(): void {
+    const blocks = this.area.conditionalTerrain;
+    if (!blocks || blocks.length === 0) return;
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    for (const block of blocks) {
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(block.condition)) !== null) {
+        flagNames.add(match[1]);
+      }
+    }
+    for (const name of flagNames) {
+      const unsub = onFlagChange(name, () => {
+        this.applyConditionalTerrain();
+        this.redrawTerrainOnly();
+      });
+      this.conditionalTerrainUnsubscribes.push(unsub);
+    }
+  }
+
+  // Re-issue terrain rendering after a conditional-terrain flip (US-98).
+  // Destroys the existing tileLayer sprites and rebuilds them. Decorations,
+  // objects, NPCs, etc. are untouched.
+  private redrawTerrainOnly(): void {
+    for (const obj of this.tileLayer) obj.destroy();
+    this.renderTileMap();
+    // Re-add the new tile sprites to uiCam.ignore so they don't double-render
+    // on the UI camera.
+    const uiCam = this.cameras.getCamera('ui');
+    if (uiCam) {
+      for (const obj of this.tileLayer) uiCam.ignore(obj);
+    }
   }
 
   // Render every ObjectInstance as a Phaser image at depth 2.5 (US-94).
@@ -1295,6 +1367,8 @@ export class GameScene extends Phaser.Scene {
     this.spawnConditionUnsubscribes = [];
     for (const unsub of this.objectFlagUnsubscribes) unsub();
     this.objectFlagUnsubscribes = [];
+    for (const unsub of this.conditionalTerrainUnsubscribes) unsub();
+    this.conditionalTerrainUnsubscribes = [];
     for (const sprite of this.objectSprites) sprite.destroy();
     this.objectSprites = [];
     this.conditionalObjects = [];
