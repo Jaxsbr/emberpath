@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 13
-  next_task: "[US-98] Re-author Ashen Isle + Fog Marsh on the new vertex+object model + marsh-trap terrain-flip. Architectural scaffolding remaining: (1) per-cell tileset selection in the Wang resolver so cells with mixed terrains pick the matching tileset (currently area.tileset is single, blocking multi-pair authoring); (2) GameScene.applyConditionalTerrain method that mutates area.terrain on flag change for the marsh-trap closure; (3) conditionalTerrain block on fog-marsh declaring path↔water at row 22 cols 13-16. Content-side re-author (paint vertex grids, place objects via the new editor in tools/editor, remove decorations that became objects, delete tiny-town/tiny-dungeon atlas dirs + TILESETS entries + decorationsTileset field) is operator-driven creative work — recommended path: open the editor, paint each area, click Export TypeScript, paste into the area files."
+  task_number: 14
+  next_task: "[US-98] OPERATOR-DRIVEN: hand-paint both areas via the new editor. Architectural pieces are landed (per-cell tileset selection, applyConditionalTerrain + marsh-trap terrain-flip block, closure decorations removed). Remaining: (a) open tools/editor, paint Ashen Isle terrain + place objects, Export TypeScript, paste into ashen-isle.ts replacing the derived terrain/objects (and remove the now-redundant Kenney decorations); (b) same for Fog Marsh; (c) in-engine smoke at desktop ~1280×720 + mobile DevTools 360×640; (d) save-state + Reset Progress smoke. Once content authoring is complete, the agent can remove tiny-town/tiny-dungeon TILESETS entries + asset dirs + decorationsTileset field + the degenerate-mode warning Set."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

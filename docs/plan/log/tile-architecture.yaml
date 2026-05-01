@@ -250,4 +250,35 @@ entries:
       root tsc + build green.
       AGENTS.md updated for the editor row + new module rows.
     tokens: ~25000
+  - task: 13
+    time: "2026-05-01T00:35:00Z"
+    type: implement
+    story: US-98
+    description: "Per-cell tileset selection + applyConditionalTerrain + marsh-trap terrain-flip"
+    result: pass
+    notes: |
+      Operator walkthrough surfaced 4 editor gaps; documented in
+      docs/plan/editor-known-issues.md. Issue #2 (terrain painting only renders sand on
+      Ashen / path on Marsh) was the visible symptom of a deeper architectural gap:
+      area.tileset is single, but stage 2 needs cells with mixed terrains to pick the
+      matching tileset.
+      Fix landed: wang.ts adds pickWangTilesetForCell(corners, defaultTilesetId) — finds the
+      registered tileset whose (primary, secondary) pair matches the cell's unique terrain
+      set. GameScene.renderTileMap and tools/editor/src/mapRenderer.ts both call it per cell
+      now (instead of using area.tileset directly). area.tileset becomes the fallback for
+      cells with 3+ distinct terrains or unregistered combinations.
+      Marsh-trap closure migrated from US-94's conditional-object pathway to US-98's
+      terrain-flip: fog-marsh.conditionalTerrain declares 8 vertices (row 22 + 23 cols 13-16)
+      that flip path↔water on marsh_trapped. The 4 conditional wall-tomb ObjectInstances
+      and the 8 PATH/EDGE conditional decorations from US-67/US-68 are removed — the
+      terrain-flip + Wang re-blend renders the closure visually with no parallel system.
+      GameScene.applyConditionalTerrain mutates area.terrain in-place per every
+      conditionalTerrain block; subscribeToConditionalTerrain wires per-flag listeners that
+      re-apply terrain + redraw the tile layer (redrawTerrainOnly destroys + rebuilds
+      tileLayer sprites + re-issues uiCam.ignore). Subscriber unsubscribes collected and
+      invoked in cleanupResize.
+      Build green; editor tsc + build green.
+      Story Completion Gate: architectural pieces met. Hand-painted re-author + Kenney
+      removal + manual verification remain operator-driven.
+    tokens: ~17000
 
