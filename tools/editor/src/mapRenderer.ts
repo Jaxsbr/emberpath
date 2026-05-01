@@ -27,6 +27,7 @@ import {
   placeObject,
   removeObject,
   objectAtCell,
+  setZoom,
   subscribe,
 } from './editorState';
 
@@ -45,6 +46,20 @@ const TRIGGER_COLORS: Record<string, string> = {
   story: '#ff44ff',
   dialogue: '#44ff88',
   exit: '#ffaa44',
+};
+
+// Per-terrain swatch colours used for vertex dots in vertex-paint mode and
+// for the flat-colour fallback when a cell has an unregistered terrain
+// pair. Sourced from STYLE_PALETTE intent: grass = mossy green, sand = page
+// cream, path = sepia mid, marsh-floor = umber shadow, water = slate blue,
+// stone = umber dark.
+const TERRAIN_SWATCH: Record<string, string> = {
+  grass: '#7A8A55',
+  sand: '#E5D9BD',
+  path: '#8C7256',
+  'marsh-floor': '#5A4636',
+  water: '#5A6B78',
+  stone: '#3A2C20',
 };
 
 // ───── Atlas + object-image cache ─────
@@ -106,6 +121,25 @@ function atlasGridForTileset(tilesetId: string): { cols: number; frameSize: numb
   return { cols: KENNEY_ATLAS_GRID_COLS, frameSize: KENNEY_FRAME_SIZE };
 }
 
+// Returns true when the tileset registry actually contains a (primary,
+// secondary) pair matching the cell's unique terrain set. False = the cell
+// would silently fall back to area.tileset and would render incorrectly.
+function isRegisteredPair(corners: TerrainId[], defaultTilesetId: string): boolean {
+  const unique = Array.from(new Set(corners));
+  if (unique.length === 1) return true;
+  if (unique.length !== 2) return false;
+  const [a, b] = unique;
+  for (const def of Object.values(TILESETS)) {
+    const p = def.wang.primaryTerrain;
+    const s = def.wang.secondaryTerrain;
+    if (s === null) continue;
+    if ((p === a && s === b) || (p === b && s === a)) return true;
+  }
+  // Single-terrain cells with no registered tileset fall through.
+  void defaultTilesetId;
+  return false;
+}
+
 function drawTerrain(
   ctx: CanvasRenderingContext2D,
   area: AreaDefinition,
@@ -123,13 +157,14 @@ function drawTerrain(
       const dy = LABEL_MARGIN + row * CELL;
 
       // Per-cell tileset selection (US-98) — same algorithm as GameScene.
-      // Each cell's terrain pair picks the matching registered tileset.
       const cellTilesetId = pickWangTilesetForCell([tl, tr, br, bl], area.tileset);
       const atlasImg = tilesetAtlases[cellTilesetId];
       const atlasReady = atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0;
       const grid = atlasGridForTileset(cellTilesetId);
+      const registered = isRegisteredPair([tl, tr, br, bl], area.tileset);
 
-      if (atlasReady) {
+      let drewAtlas = false;
+      if (atlasReady && registered) {
         const frame = resolveWangFrame(cellTilesetId, [tl, tr, br, bl], col, row);
         if (frame !== null) {
           const idx = Number.parseInt(frame, 10);
@@ -138,17 +173,36 @@ function drawTerrain(
             const sy = Math.floor(idx / grid.cols) * grid.frameSize;
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(atlasImg, sx, sy, grid.frameSize, grid.frameSize, dx, dy, CELL, CELL);
-            continue;
+            drewAtlas = true;
           }
         }
       }
-      // Fallback flat colour by primary-vertex passability — same logic as
-      // GameScene.renderFallbackTiles.
-      const allImpassable =
-        TERRAINS[tl] && TERRAINS[tr] && TERRAINS[br] && TERRAINS[bl] &&
-        !TERRAINS[tl].passable && !TERRAINS[tr].passable && !TERRAINS[br].passable && !TERRAINS[bl].passable;
-      ctx.fillStyle = allImpassable ? hexToCSS(area.visual.wallColor) : hexToCSS(area.visual.floorColor);
-      ctx.fillRect(dx, dy, CELL, CELL);
+      if (!drewAtlas) {
+        // Flat-colour fallback (a) when the atlas is still loading (b) when
+        // the cell has an UNREGISTERED terrain pair so the Wang resolver has
+        // no transition tile to pick. Each corner is rendered as a quarter
+        // of the cell using its own swatch colour, so authors see the
+        // terrain they actually painted instead of a silent grass cell.
+        const cw = CELL / 2;
+        const swatch = (t: TerrainId): string => TERRAIN_SWATCH[t] ?? hexToCSS(area.visual.floorColor);
+        ctx.fillStyle = swatch(tl);
+        ctx.fillRect(dx, dy, cw, cw);
+        ctx.fillStyle = swatch(tr);
+        ctx.fillRect(dx + cw, dy, cw, cw);
+        ctx.fillStyle = swatch(br);
+        ctx.fillRect(dx + cw, dy + cw, cw, cw);
+        ctx.fillStyle = swatch(bl);
+        ctx.fillRect(dx, dy + cw, cw, cw);
+      }
+      // Loud yellow border on cells with an unregistered terrain pair so
+      // silent fallbacks aren't silent. Helps authors notice when they've
+      // painted a transition the registry can't resolve (e.g. grass↔path
+      // on Ashen Isle has no tileset; only grass↔sand and sand↔path do).
+      if (!registered) {
+        ctx.strokeStyle = '#f0c040';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(dx + 0.5, dy + 0.5, CELL - 1, CELL - 1);
+      }
     }
   }
 }
@@ -202,16 +256,20 @@ function drawVertexDots(
   area: AreaDefinition,
   terrain: TerrainId[][],
 ): void {
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth = 1;
   for (let r = 0; r <= area.mapRows; r++) {
     for (let c = 0; c <= area.mapCols; c++) {
-      if (!terrain[r]?.[c]) continue;
+      const t = terrain[r]?.[c];
+      if (!t) continue;
       const x = LABEL_MARGIN + c * CELL;
       const y = LABEL_MARGIN + r * CELL;
+      // Dot colour = the vertex's terrain swatch so authors can SEE what
+      // they've painted at each vertex even when the cell can't resolve a
+      // Wang transition tile.
+      ctx.fillStyle = TERRAIN_SWATCH[t] ?? '#ffffff';
+      ctx.strokeStyle = '#1f1813';
       ctx.beginPath();
-      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     }
@@ -244,6 +302,13 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
   const canvas = document.createElement('canvas');
   canvas.width = canvasW;
   canvas.height = canvasH;
+  // Apply CSS zoom — internal canvas dimensions stay constant; transform-
+  // scale changes the visual size. The view-container's overflow:auto
+  // gives natural pan via scrollbars when the scaled canvas exceeds the
+  // viewport. Coordinate handlers below divide screen-space deltas by
+  // editor.zoom to map back to internal pixels.
+  canvas.style.transformOrigin = '0 0';
+  canvas.style.transform = `scale(${editor.zoom})`;
   // Mode-driven cursor.
   canvas.style.cursor =
     editor.mode === 'cell' ? 'crosshair'
@@ -252,6 +317,14 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     : 'pointer';
   // Disable native context menu so right-click can remove objects.
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  // Wheel zoom — Ctrl/Cmd+wheel zooms; plain wheel scrolls the container
+  // (so users can scan a large area without zooming).
+  canvas.addEventListener('wheel', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+    setZoom(editor.zoom * factor);
+  }, { passive: false });
   container.appendChild(canvas);
 
   const ctx = canvas.getContext('2d')!;
@@ -367,8 +440,12 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
   // ───── Mouse handlers ─────
 
   function pointerToGrid(e: MouseEvent): { x: number; y: number } {
+    // getBoundingClientRect returns the TRANSFORMED rect, so the screen-pixel
+    // offset already includes the zoom scale. Divide by zoom to recover the
+    // canvas's internal pixel coordinate.
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const z = editor.zoom || 1;
+    return { x: (e.clientX - rect.left) / z, y: (e.clientY - rect.top) / z };
   }
 
   function gridCell(e: MouseEvent): { col: number; row: number } | null {

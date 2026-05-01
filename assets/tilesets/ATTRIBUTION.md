@@ -8,7 +8,7 @@ Generated 2026-04-30 via the personal `mcp__pixellab__create_topdown_tileset` se
 
 | Pair | Tileset id | Lower | Upper | Transition | Size |
 |---|---|---|---|---|---|
-| grass→sand | `ad38f433-0670-487b-8d76-3901582b78ce` | weathered sepia grass with scattered single-pixel weeds | pale dry sand with faint stippled grain | dry sepia weeds and stray pebbles | 0.25 |
+| grass→sand | `2d11fd17-da93-4e4d-9094-f3e0b7aa3de3` (reroll — original `ad38f433-0670-487b-8d76-3901582b78ce` rendered grass too brown; reroll allows mossy green #7A8A55 as the dominant grass hue while keeping sand stable via `upper_base_tile_id` chained from the original sand) | muted mossy-green grass with sepia undertones | pale dry sand with faint stippled grain | dry sepia weeds and stray pebbles where mossy grass meets sand | 0.25 |
 | sand→path | `dd2ef281-17f7-49aa-be44-fa211016ef25` | pale dry sand with faint stippled grain (chained from grass→sand) | compacted sepia path of small flat stones | compacted sepia stones | 0.25 |
 
 ### Fog Marsh chain
@@ -21,7 +21,7 @@ Generated 2026-04-30 via the personal `mcp__pixellab__create_topdown_tileset` se
 
 ### Generation budget reconciliation
 
-Spec budget: ≤ 1 reroll per tileset (10 generations max). Personal server cost: **5 generations, 0 rerolls**.
+Spec budget: ≤ 1 reroll per tileset (10 generations max). Personal server cost: **6 generations, 1 reroll** (grass→sand operator-driven reroll for grass colour).
 
 (See `docs/plan/LEARNINGS.md` § EP-05 for the prior-batch retro: a first attempt fired against the maxed-out `mcp__pixellab-team__` server burned 9 generations on that account before the operator caught the wrong-server mistake. The personal-server batch above is the successful retry.)
 

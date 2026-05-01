@@ -12,6 +12,7 @@ import {
   setActiveObjectKind,
   setShowConditionalAlternate,
   setShowImpassableOutlines,
+  setZoom,
   subscribe,
 } from './editorState';
 import { serializeTerrainAndObjects } from './exportTypeScript';
@@ -36,6 +37,10 @@ const exportModal = document.getElementById('export-modal') as HTMLDivElement;
 const exportModalClose = document.getElementById('export-modal-close') as HTMLButtonElement;
 const exportTextarea = document.getElementById('export-textarea') as HTMLTextAreaElement;
 const exportCopyBtn = document.getElementById('export-copy-btn') as HTMLButtonElement;
+const zoomInBtn = document.getElementById('zoom-in-btn') as HTMLButtonElement;
+const zoomOutBtn = document.getElementById('zoom-out-btn') as HTMLButtonElement;
+const zoomResetBtn = document.getElementById('zoom-reset-btn') as HTMLButtonElement;
+const zoomLabel = document.getElementById('zoom-label') as HTMLSpanElement;
 
 function populateAreaSelector(): void {
   const areaIds = getAllAreaIds();
@@ -96,6 +101,7 @@ function reflectStateInUI(): void {
   });
   conditionalAltToggle.checked = s.showConditionalAlternate;
   impassableOutlineToggle.checked = s.showImpassableOutlines;
+  zoomLabel.textContent = `${s.zoom.toFixed(1)}×`;
 }
 
 function switchView(view: ViewName): void {
@@ -197,6 +203,16 @@ conditionalAltToggle.addEventListener('change', () => {
 
 impassableOutlineToggle.addEventListener('change', () => {
   setShowImpassableOutlines(impassableOutlineToggle.checked);
+});
+
+zoomInBtn.addEventListener('click', () => setZoom(getState().zoom * 1.2));
+zoomOutBtn.addEventListener('click', () => setZoom(getState().zoom / 1.2));
+zoomResetBtn.addEventListener('click', () => setZoom(1));
+window.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.key === '=' || e.key === '+') { e.preventDefault(); setZoom(getState().zoom * 1.2); }
+  else if (e.key === '-') { e.preventDefault(); setZoom(getState().zoom / 1.2); }
+  else if (e.key === '0') { e.preventDefault(); setZoom(1); }
 });
 
 exportBtn.addEventListener('click', openExportModal);

@@ -19,6 +19,10 @@ export interface EditorState {
   // Render a thin red outline on every impassable object so authors see
   // collision contributors at a glance. Off by default (US-97 spec).
   showImpassableOutlines: boolean;
+  // Canvas zoom — multiplier applied via CSS transform on the mapRenderer
+  // canvas. 1 = 16px-per-tile (the default), 2 = 32px, etc. Mouse coordinate
+  // handlers divide by zoom so painting still hits the right cells.
+  zoom: number;
   // Working copies — cloned from the loaded AreaDefinition on area switch.
   // Edits target these copies, not the source AreaDefinition.
   terrain: TerrainId[][];
@@ -31,6 +35,7 @@ let state: EditorState = {
   activeObjectKind: 'tree-pine',
   showConditionalAlternate: false,
   showImpassableOutlines: false,
+  zoom: 1,
   terrain: [],
   objects: [],
 };
@@ -81,6 +86,13 @@ export function setShowConditionalAlternate(v: boolean): void {
 
 export function setShowImpassableOutlines(v: boolean): void {
   state.showImpassableOutlines = v;
+  notify();
+}
+
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 6;
+export function setZoom(v: number): void {
+  state.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v));
   notify();
 }
 

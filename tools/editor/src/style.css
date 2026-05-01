@@ -338,3 +338,27 @@ html, body {
   border-radius: 2px;
   font-size: 11px;
 }
+
+.zoom-label {
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+#zoom-in-btn, #zoom-out-btn, #zoom-reset-btn {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+#zoom-in-btn:hover, #zoom-out-btn:hover, #zoom-reset-btn:hover {
+  background: var(--tab-hover);
+}
