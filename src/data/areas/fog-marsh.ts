@@ -1,8 +1,15 @@
-import { TileType } from '../../maps/constants';
-import { AreaDefinition, DecorationDefinition, StoredTile } from './types';
+import {
+  AreaDefinition,
+  DecorationDefinition,
+  StoredTile,
+  TILE_FLOOR,
+  TILE_WALL,
+  deriveTerrainFromTileMap,
+  deriveObjectsFromTileMap,
+} from './types';
 
-const F = TileType.FLOOR;
-const W = TileType.WALL;
+const F = TILE_FLOOR;
+const W = TILE_WALL;
 
 // Tiny Dungeon atlas frame vocabulary used by Fog Marsh. Verified against
 // the labeled atlas (see docs/tilesets/tiny-dungeon.md). Tiny Dungeon is a
@@ -159,7 +166,7 @@ const fogMarshDecorations: DecorationDefinition[] = [
   ...rect(25, 27, 9, 9, FRAME.RUIN_A),
 
   // Ruin door — wooden door frame in the south wall of the ruin (mirrors
-  // the engine's existing TileType.EXIT rendering — same semantic, different
+  // the engine's existing exit-zone rendering — same semantic, different
   // role here).
   { col: 24, row: 9, spriteFrame: FRAME.DOOR },
 
@@ -178,28 +185,54 @@ const fogMarshDecorations: DecorationDefinition[] = [
   { col: 22, row: 16, spriteFrame: FRAME.REED_A },
   { col: 7, row: 20, spriteFrame: FRAME.REED_B },
 
-  // South-exit closure (US-68). Paired conditional decorations sit on row 22
-  // cols 13-16: PATH frames render when marsh_trapped == false (the way home
-  // is open) and EDGE deep-water frames render when marsh_trapped == true (the
-  // way home is gone). GameScene applies the same flag-change subscriber that
-  // flips collision (US-67) — one shared mechanism, on the same frame.
-  { col: 13, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
-  { col: 14, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
-  { col: 15, row: 22, spriteFrame: FRAME.PATH_A, condition: 'marsh_trapped == false' },
-  { col: 16, row: 22, spriteFrame: FRAME.PATH_B, condition: 'marsh_trapped == false' },
-  { col: 13, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
-  { col: 14, row: 22, spriteFrame: FRAME.EDGE_B, condition: 'marsh_trapped == true' },
-  { col: 15, row: 22, spriteFrame: FRAME.EDGE_C, condition: 'marsh_trapped == true' },
-  { col: 16, row: 22, spriteFrame: FRAME.EDGE_A, condition: 'marsh_trapped == true' },
+  // (US-98) — South-exit closure decorations removed. The terrain-flip
+  // pathway (`conditionalTerrain` block on this AreaDefinition) replaces
+  // both the PATH overlay and the EDGE deep-water overlay: when
+  // `marsh_trapped == true`, the closure vertices flip to `water` and the
+  // Wang resolver renders the fog-marsh-floor-water tileset on those
+  // cells; collision unifies via water.passable === false. One mechanism,
+  // no parallel decoration variants.
 ];
+
+// Stage-1 migration source — see ashen-isle.ts for the migration note.
+const fogMarshTileMap = buildFogMarshMap();
+
+// Marsh-trap closure (US-98) — terrain-flip pathway. The 8 vertices spanning
+// row 22 cols 13-16 + row 23 cols 13-16 flip from `path` (default state) to
+// `water` when `marsh_trapped == true`. The Wang resolver re-renders the 4
+// closure cells using the fog-marsh-floor-water tileset (per-cell tileset
+// selection picks it because the cell corners now include water), and
+// collision unifies via `water.passable === false` (the AND-of-4-vertices
+// rule blocks every closure cell once all 4 vertices are water).
+//
+// Replaces the legacy applyMarshTrappedState map-mutation AND the US-94
+// conditional `wall-tomb` ObjectInstances on the same cells.
 
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
   name: 'Fog Marsh',
   mapCols: 30,
   mapRows: 24,
-  tileset: 'tiny-dungeon',
-  map: buildFogMarshMap(),
+  tileset: 'fog-marsh-floor-path',
+  decorationsTileset: 'tiny-dungeon',
+  map: fogMarshTileMap,
+  terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
+  objects: deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
+  conditionalTerrain: [
+    {
+      condition: 'marsh_trapped == true',
+      vertices: [
+        { col: 13, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 14, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 15, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 16, row: 22, whenTrue: 'water', whenFalse: 'path' },
+        { col: 13, row: 23, whenTrue: 'water', whenFalse: 'path' },
+        { col: 14, row: 23, whenTrue: 'water', whenFalse: 'path' },
+        { col: 15, row: 23, whenTrue: 'water', whenFalse: 'path' },
+        { col: 16, row: 23, whenTrue: 'water', whenFalse: 'path' },
+      ],
+    },
+  ],
   npcs: [
     // Marsh Hermit on the dry path immediately south of the ruin's door at
     // (24, 9); his spawn at (24, 10) is the path tile adjacent to the door.
@@ -409,8 +442,9 @@ export const fogMarsh: AreaDefinition = {
       // Walk south off the dry path into the EXIT zone at row 22 cols 13-16
       // and arrive on Ashen Isle just south of the dock. Gated on the trap
       // flag — once marsh-deepens fires (col 14, row 5) and sets
-      // marsh_trapped: true, this exit becomes inert AND the cells flip from
-      // FLOOR to WALL via GameScene.applyMarshTrappedState (US-67).
+      // marsh_trapped: true, this exit becomes inert AND the cells become
+      // impassable via the conditional wall-tomb objects in
+      // fogMarshConditionalClosure (US-67 / US-94 conditional-object pathway).
       id: 'fog-to-ashen',
       col: 13,
       row: 22,

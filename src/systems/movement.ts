@@ -1,6 +1,5 @@
-import { TileType } from '../maps/constants';
 import { NpcDefinition } from '../data/areas/types';
-import { collidesWithWall, collidesWithNpc, NpcLivePositions } from './collision';
+import { collidesWithWall, collidesWithNpc, NpcLivePositions, AreaPassability } from './collision';
 import { InputVector } from './input';
 
 export interface Entity {
@@ -10,8 +9,12 @@ export interface Entity {
   height: number;
 }
 
+// Collision dependencies for movement. Replaces the legacy flat tile-array
+// shape with the unified passability snapshot under the tile-architecture
+// model (US-94). The snapshot encapsulates terrain (vertex grid) and the
+// runtime `objectBlockMap` GameScene maintains as conditional flags flip.
 export interface AreaCollisionData {
-  map: TileType[][];
+  passability: AreaPassability;
   npcs: NpcDefinition[];
   npcLivePositions?: NpcLivePositions;
 }
@@ -27,14 +30,18 @@ export function moveWithCollision(
   let newY = entity.y;
 
   const candidateX = entity.x + velocity.x * dt;
-  if (!collidesWithWall(candidateX, entity.y, entity.width, entity.height, area.map) &&
-      !collidesWithNpc(candidateX, entity.y, entity.width, entity.height, area.npcs, area.npcLivePositions)) {
+  if (
+    !collidesWithWall(candidateX, entity.y, entity.width, entity.height, area.passability) &&
+    !collidesWithNpc(candidateX, entity.y, entity.width, entity.height, area.npcs, area.npcLivePositions)
+  ) {
     newX = candidateX;
   }
 
   const candidateY = entity.y + velocity.y * dt;
-  if (!collidesWithWall(newX, candidateY, entity.width, entity.height, area.map) &&
-      !collidesWithNpc(newX, candidateY, entity.width, entity.height, area.npcs, area.npcLivePositions)) {
+  if (
+    !collidesWithWall(newX, candidateY, entity.width, entity.height, area.passability) &&
+    !collidesWithNpc(newX, candidateY, entity.width, entity.height, area.npcs, area.npcLivePositions)
+  ) {
     newY = candidateY;
   }
 

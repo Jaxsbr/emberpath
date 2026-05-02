@@ -1,7 +1,12 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, TileType } from '../maps/constants';
-import { TILESETS, resolveFrame, hasTileset } from '../maps/tilesets';
+import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE } from '../maps/constants';
+import { TILESETS, hasTileset } from '../maps/tilesets';
+import { resolveWangFrame, pickWangTilesetForCell } from '../maps/wang';
+import { TerrainId, TERRAINS } from '../maps/terrain';
+import { OBJECT_KINDS, ObjectInstance } from '../maps/objects';
 import { AreaDefinition, NpcDefinition, DialogueScript } from '../data/areas/types';
+import { AreaPassability } from '../systems/collision';
+import { STYLE_PALETTE } from '../art/styleGuide';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
@@ -104,6 +109,34 @@ export class GameScene extends Phaser.Scene {
   private lastAlphaGateCheckX = Number.NaN;
   private lastAlphaGateCheckY = Number.NaN;
   private propSprites: Phaser.GameObjects.Sprite[] = [];
+  // Object layer (US-94) — sparse list, rendered above terrain at depth 2.5.
+  // Tracked as instance fields so cleanupResize can destroy them and uiCam can
+  // ignore them. Reset to [] at the top of renderObjects().
+  private objectSprites: Phaser.GameObjects.Image[] = [];
+  // Conditional objects: visibility re-evaluated only on flag changes
+  // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
+  // condition string is available for re-eval and so buildObjectCollisionMap
+  // can re-derive the cell-block flag.
+  private conditionalObjects: { sprite: Phaser.GameObjects.Image; instance: ObjectInstance }[] = [];
+  // Translucent exit-zone overlays (US-92). Rendered at depth 0.5 between
+  // terrain and decorations using STYLE_PALETTE.hopeGoldLight at alpha 0.25 so
+  // exit invitations remain visible without a dedicated terrain frame.
+  private exitOverlays: Phaser.GameObjects.Rectangle[] = [];
+  // Per-flag unsubscribes for object-collision-map rebuild + conditional-
+  // object visibility (US-94). One subscriber per unique flag named in any
+  // ObjectInstance.condition; collected at create() and invoked in
+  // cleanupResize.
+  private objectFlagUnsubscribes: (() => void)[] = [];
+  // Per-flag unsubscribes for conditionalTerrain flips (US-98). One
+  // subscriber per unique flag named in any ConditionalTerrainBlock.condition.
+  private conditionalTerrainUnsubscribes: (() => void)[] = [];
+  // Cell-keyed runtime passability snapshot consumed by collision +
+  // npcBehavior + movement (US-94). Built once at create() AND rebuilt on
+  // any flag change referenced by an object's `condition`.
+  private passability: AreaPassability = {
+    terrain: [],
+    objectBlockMap: new Map(),
+  };
   private npcEntities: Phaser.GameObjects.GameObject[] = [];
   private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
   private npcBehavior!: NpcBehaviorSystem;
@@ -176,13 +209,21 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
-    // indices; resolveFrame() returns them as strings which Phaser accepts directly.
+    // indices; resolveWangFrame returns them as strings which Phaser accepts directly.
     // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
     for (const [id, def] of Object.entries(TILESETS)) {
       this.load.spritesheet(def.atlasKey, `tilesets/${id}/tilemap.png`, {
         frameWidth: TILESET_SOURCE_SIZE,
         frameHeight: TILESET_SOURCE_SIZE,
       });
+    }
+
+    // Load PixelLab object PNGs (US-96). One image per ObjectKindDefinition;
+    // each is 32×32 with a transparent background. Phaser's default frame
+    // (`__BASE`) is used at render time — renderObjects does not pass a
+    // frame argument.
+    for (const def of Object.values(OBJECT_KINDS)) {
+      this.load.image(def.atlasKey, def.assetPath);
     }
 
     // Load per-NPC sprite frames driven by the registry — adding a new NPC becomes
@@ -232,14 +273,30 @@ export class GameScene extends Phaser.Scene {
     }
     this.area = area;
 
-    // Apply trap state BEFORE the tile/decoration render passes consume area.map,
-    // so a Continue-resume on Fog Marsh with marsh_trapped already true rebuilds
-    // the wall cells before the player can walk on them. Subscribe to flag changes
-    // so the in-session threshold trigger flips collision on the same frame.
-    this.applyMarshTrappedState();
+    // Snapshot terrain into the runtime passability struct BEFORE collision-
+    // dependent subsystems initialise. The objectBlockMap is filled in by
+    // buildObjectCollisionMap below. Apply conditional terrain so a
+    // Continue-resume on Fog Marsh with `marsh_trapped` already true rebuilds
+    // the water vertices before the player can walk on them.
+    this.passability = {
+      terrain: this.area.terrain,
+      objectBlockMap: new Map(),
+    };
+    this.applyConditionalTerrain();
+    // Build the object-collision map and subscribe to every flag named in any
+    // ObjectInstance.condition so conditional-object impassability flips on
+    // flag change (US-94). The marsh-trap closure now flows through the
+    // terrain-flip path (US-98 conditionalTerrain), but other conditional
+    // objects in future areas still wire through this path.
+    this.buildObjectCollisionMap();
+    this.subscribeToConditionalObjects();
+    this.subscribeToConditionalTerrain();
     if (this.area.id === 'fog-marsh') {
       this.marshTrappedUnsubscribe = onFlagChange('marsh_trapped', () => {
-        this.applyMarshTrappedState();
+        // Conditional-object visibility + cell-block lookup re-evaluate; the
+        // conditional-decoration update path is unchanged.
+        this.rebuildObjectCollisionMap();
+        this.updateConditionalObjects();
         this.updateConditionalDecorations();
       });
       // US-79: each escape_attempts increment fires a fog-flash visual at the
@@ -277,11 +334,13 @@ export class GameScene extends Phaser.Scene {
     this.subscribeToConditionalSpawns();
 
     this.renderTileMap();
+    this.renderExitOverlays();
     this.renderDecorations();
+    this.renderObjects();
     this.renderProps();
     this.registerAnimations();
     this.renderNpcs();
-    this.npcBehavior = new NpcBehaviorSystem(this, this.activeNpcs, this.area.map, this.npcSpritesById);
+    this.npcBehavior = new NpcBehaviorSystem(this, this.activeNpcs, this.passability, this.npcSpritesById);
     this.activeDialogueNpcId = null;
     this.createPlayer(data?.entryPoint, data?.resumePosition);
     this.setupCamera();
@@ -561,7 +620,7 @@ export class GameScene extends Phaser.Scene {
       { x: moveVx, y: moveVy },
       delta,
       {
-        map: this.area.map,
+        passability: this.passability,
         npcs: this.activeNpcs,
         npcLivePositions: this.npcBehavior.getLivePositions(),
       },
@@ -707,43 +766,60 @@ export class GameScene extends Phaser.Scene {
   private renderTileMap(): void {
     this.tileLayer = [];
 
-    const exitTiles = new Set<string>();
-    for (const exit of this.area.exits) {
-      for (let r = exit.row; r < exit.row + exit.height; r++) {
-        for (let c = exit.col; c < exit.col + exit.width; c++) {
-          exitTiles.add(`${c},${r}`);
-        }
-      }
-    }
-
     // Fallback: unknown tileset id — render flat-color tiles so the scene still
-    // loads with a clear console error (US-48 error-path).
+    // loads with a clear console error (US-48 error-path). Exit overlays are
+    // rendered separately by renderExitOverlays and persist across the
+    // fallback path.
     if (!hasTileset(this.area.tileset)) {
       console.error(
         `[GameScene] Unknown tileset id '${this.area.tileset}' on area '${this.area.id}'. ` +
           `Rendering flat-color fallback.`,
       );
-      this.renderFallbackTiles(exitTiles);
+      this.renderFallbackTiles();
       return;
     }
 
-    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    const terrain = this.area.terrain;
     for (let row = 0; row < this.area.mapRows; row++) {
       for (let col = 0; col < this.area.mapCols; col++) {
-        const tile = this.area.map[row][col];
-        const kind = exitTiles.has(`${col},${row}`)
-          ? TileType.EXIT
-          : tile === TileType.WALL
-          ? TileType.WALL
-          : TileType.FLOOR;
-        const frame = resolveFrame(this.area.tileset, kind, col, row);
+        const tl: TerrainId = terrain[row][col];
+        const tr: TerrainId = terrain[row][col + 1];
+        const br: TerrainId = terrain[row + 1][col + 1];
+        const bl: TerrainId = terrain[row + 1][col];
+        // Per-cell tileset selection (US-98): pick the registered Wang
+        // tileset whose (primary, secondary) pair matches this cell's
+        // unique corner terrains. Falls back to area.tileset for cells
+        // with 3+ distinct terrains or unregistered combinations.
+        const cellTilesetId = pickWangTilesetForCell([tl, tr, br, bl], this.area.tileset);
+        const cellTilesetDef = TILESETS[cellTilesetId];
+        if (!cellTilesetDef) continue;
+        const frame = resolveWangFrame(cellTilesetId, [tl, tr, br, bl], col, row);
         if (frame === null) continue;
-        const sprite = this.add.sprite(col * TILE_SIZE, row * TILE_SIZE, atlasKey, frame);
+        const sprite = this.add.sprite(col * TILE_SIZE, row * TILE_SIZE, cellTilesetDef.atlasKey, frame);
         sprite.setOrigin(0, 0);
         sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
         sprite.setDepth(0);
         this.tileLayer.push(sprite);
       }
+    }
+  }
+
+  // Translucent hope-gold overlay marking each exit zone (US-92). Sits at
+  // depth 0.5 between terrain (0) and decorations (2) so the visual cue "this
+  // is the way to the next stage" survives without a dedicated exit atlas
+  // frame. Color is palette-driven (STYLE_PALETTE.hopeGoldLight) — the one
+  // terrain-adjacent visual permitted hope-gold per art-style.md § Palette.
+  private renderExitOverlays(): void {
+    this.exitOverlays = [];
+    const colorHex = parseInt(STYLE_PALETTE.hopeGoldLight.replace('#', ''), 16);
+    for (const exit of this.area.exits) {
+      const w = exit.width * TILE_SIZE;
+      const h = exit.height * TILE_SIZE;
+      const x = exit.col * TILE_SIZE + w / 2;
+      const y = exit.row * TILE_SIZE + h / 2;
+      const rect = this.add.rectangle(x, y, w, h, colorHex, 0.25);
+      rect.setDepth(0.5);
+      this.exitOverlays.push(rect);
     }
   }
 
@@ -753,8 +829,8 @@ export class GameScene extends Phaser.Scene {
     this.alphaGatedDecorations = [];
     this.lastAlphaGateCheckX = Number.NaN;
     this.lastAlphaGateCheckY = Number.NaN;
-    if (!hasTileset(this.area.tileset)) return;
-    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    if (!hasTileset(this.area.decorationsTileset)) return;
+    const atlasKey = TILESETS[this.area.decorationsTileset].atlasKey;
     const texture = this.textures.get(atlasKey);
     // Out-of-bounds (col,row) outside (mapCols,mapRows) is not crashed-on:
     // Phaser accepts arbitrary world coords and the decoration renders off-grid
@@ -763,7 +839,7 @@ export class GameScene extends Phaser.Scene {
       if (!texture.has(dec.spriteFrame)) {
         console.warn(
           `[GameScene] Decoration at (${dec.col},${dec.row}) references missing frame ` +
-            `'${dec.spriteFrame}' on tileset '${this.area.tileset}'; skipping.`,
+            `'${dec.spriteFrame}' on tileset '${this.area.decorationsTileset}'; skipping.`,
         );
         continue;
       }
@@ -818,8 +894,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Re-evaluate conditional decoration visibility. Called from the flag-change
-  // subscriber (one shared mechanism with the collision flip in
-  // applyMarshTrappedState — US-67/US-68 'one shared mechanism, not two').
+  // subscriber alongside rebuildObjectCollisionMap + updateConditionalObjects
+  // — collision flip and visibility swap on the same frame.
   // Iterates only the conditional subset; unconditional decorations are never
   // re-evaluated (Learning EP-01).
   private updateConditionalDecorations(): void {
@@ -830,14 +906,14 @@ export class GameScene extends Phaser.Scene {
 
   private renderProps(): void {
     this.propSprites = [];
-    if (!hasTileset(this.area.tileset)) return;
-    const atlasKey = TILESETS[this.area.tileset].atlasKey;
+    if (!hasTileset(this.area.decorationsTileset)) return;
+    const atlasKey = TILESETS[this.area.decorationsTileset].atlasKey;
     const texture = this.textures.get(atlasKey);
     for (const prop of this.area.props) {
       if (!texture.has(prop.spriteFrame)) {
         console.warn(
           `[GameScene] Prop '${prop.id}' references missing frame '${prop.spriteFrame}' ` +
-            `on tileset '${this.area.tileset}'; skipping.`,
+            `on tileset '${this.area.decorationsTileset}'; skipping.`,
         );
         continue;
       }
@@ -854,23 +930,193 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private renderFallbackTiles(exitTiles: Set<string>): void {
+  private renderFallbackTiles(): void {
     const g = this.add.graphics();
     g.setDepth(0);
-    const FALLBACK_EXIT = 0xc89b3c;
+    const terrain = this.area.terrain;
     for (let row = 0; row < this.area.mapRows; row++) {
       for (let col = 0; col < this.area.mapCols; col++) {
-        const tile = this.area.map[row][col];
-        const color = exitTiles.has(`${col},${row}`)
-          ? FALLBACK_EXIT
-          : tile === TileType.WALL
-          ? this.area.visual.wallColor
-          : this.area.visual.floorColor;
+        // Cell colour: wall tone when ALL 4 vertices are impassable terrain
+        // (matches the cell-blocks-from-terrain rule in collision.ts) OR when
+        // an impassable object sits on the cell; floor tone otherwise. Exit
+        // zones get their hope-gold tint from renderExitOverlays at depth 0.5.
+        const tl = TERRAINS[terrain[row][col]];
+        const tr = TERRAINS[terrain[row][col + 1]];
+        const br = TERRAINS[terrain[row + 1][col + 1]];
+        const bl = TERRAINS[terrain[row + 1][col]];
+        const allImpassableTerrain =
+          tl && tr && br && bl &&
+          !tl.passable && !tr.passable && !br.passable && !bl.passable;
+        const blocked = allImpassableTerrain || this.passability.objectBlockMap.get(`${col},${row}`);
+        const color = blocked ? this.area.visual.wallColor : this.area.visual.floorColor;
         g.fillStyle(color);
         g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
       }
     }
     this.tileLayer.push(g);
+  }
+
+  // Build the runtime cell-keyed object-collision map (US-94). Iterates
+  // area.objects, evaluates each ObjectInstance.condition (absent → true),
+  // and sets `objectBlockMap.set("col,row", true)` for every visible
+  // impassable object. Per-frame collision is O(1) lookup against this Map
+  // (Learning EP-01: never iterate area.objects in the collision hot path).
+  private buildObjectCollisionMap(): void {
+    const m = this.passability.objectBlockMap;
+    m.clear();
+    for (const inst of this.area.objects) {
+      if (inst.condition && !evaluateCondition(inst.condition)) continue;
+      const def = OBJECT_KINDS[inst.kind];
+      if (!def) {
+        console.warn(`[GameScene] ObjectInstance at (${inst.col},${inst.row}) references unknown kind '${inst.kind}'; skipping collision contribution.`);
+        continue;
+      }
+      if (!def.passable) {
+        m.set(`${inst.col},${inst.row}`, true);
+      }
+    }
+  }
+
+  // Rebuild the collision map on conditional-flag change (US-94). Cheap —
+  // ~hundreds of objects max. Called from the marsh-trapped subscriber and
+  // from any flag subscriber that fires on a flag named in any object's
+  // condition.
+  private rebuildObjectCollisionMap(): void {
+    this.buildObjectCollisionMap();
+  }
+
+  // Apply every conditionalTerrain block (US-98) — mutates `area.terrain`
+  // in-place. The Wang resolver's per-cell tileset selection picks up the
+  // new vertex values automatically; collision unifies via terrain
+  // passability (e.g. water `passable: false` blocks the cell when all 4
+  // vertices flip to water). Idempotent — safe to re-run on every flag
+  // change.
+  private applyConditionalTerrain(): void {
+    const blocks = this.area.conditionalTerrain;
+    if (!blocks || blocks.length === 0) return;
+    for (const block of blocks) {
+      const isOn = evaluateCondition(block.condition);
+      for (const v of block.vertices) {
+        const target = isOn ? v.whenTrue : v.whenFalse;
+        if (this.area.terrain[v.row]?.[v.col] !== undefined) {
+          this.area.terrain[v.row][v.col] = target;
+        }
+      }
+    }
+  }
+
+  // Re-apply conditional terrain AND re-render the affected tile sprites on
+  // flag change (US-98). Cheap: re-issuing renderTileMap rebuilds all
+  // tileLayer sprites. For larger areas the sprite count is in the low
+  // thousands — still O(rows × cols) but only on flag flips, never per-frame.
+  // Subscriber unsubscribes are collected in `conditionalTerrainUnsubscribes`
+  // and invoked in cleanupResize.
+  private subscribeToConditionalTerrain(): void {
+    const blocks = this.area.conditionalTerrain;
+    if (!blocks || blocks.length === 0) return;
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    for (const block of blocks) {
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(block.condition)) !== null) {
+        flagNames.add(match[1]);
+      }
+    }
+    for (const name of flagNames) {
+      const unsub = onFlagChange(name, () => {
+        this.applyConditionalTerrain();
+        this.redrawTerrainOnly();
+      });
+      this.conditionalTerrainUnsubscribes.push(unsub);
+    }
+  }
+
+  // Re-issue terrain rendering after a conditional-terrain flip (US-98).
+  // Destroys the existing tileLayer sprites and rebuilds them. Decorations,
+  // objects, NPCs, etc. are untouched.
+  private redrawTerrainOnly(): void {
+    for (const obj of this.tileLayer) obj.destroy();
+    this.renderTileMap();
+    // Re-add the new tile sprites to uiCam.ignore so they don't double-render
+    // on the UI camera.
+    const uiCam = this.cameras.getCamera('ui');
+    if (uiCam) {
+      for (const obj of this.tileLayer) uiCam.ignore(obj);
+    }
+  }
+
+  // Render every ObjectInstance as a Phaser image at depth 2.5 (US-94).
+  // Conditional objects render at scene start with their initial visibility
+  // set per evaluateCondition; subsequent updates flow through
+  // updateConditionalObjects on flag-change events (Learning EP-01: no
+  // per-frame visibility re-eval). Sprites are tracked as instance fields,
+  // reset to [] at the top of this method, and uiCam-ignored downstream so
+  // they don't double-render.
+  private renderObjects(): void {
+    this.objectSprites = [];
+    this.conditionalObjects = [];
+    for (const inst of this.area.objects) {
+      const def = OBJECT_KINDS[inst.kind];
+      if (!def) {
+        console.warn(`[GameScene] ObjectInstance at (${inst.col},${inst.row}) references unknown kind '${inst.kind}'; skipping render.`);
+        continue;
+      }
+      if (!this.textures.exists(def.atlasKey)) {
+        console.warn(`[GameScene] Object kind '${inst.kind}' references missing atlas '${def.atlasKey}' (path '${def.assetPath}'); skipping render. Object still contributes to collision per registry passable flag.`);
+        continue;
+      }
+      const sprite = this.add.image(
+        inst.col * TILE_SIZE,
+        inst.row * TILE_SIZE,
+        def.atlasKey,
+      );
+      sprite.setOrigin(0, 0);
+      sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
+      sprite.setDepth(2.5);
+      this.objectSprites.push(sprite);
+      if (inst.condition) {
+        sprite.setVisible(evaluateCondition(inst.condition));
+        this.conditionalObjects.push({ sprite, instance: inst });
+      }
+    }
+  }
+
+  // Re-evaluate conditional-object visibility on flag change (US-94).
+  // Iterates only the conditional subset (Learning EP-01).
+  private updateConditionalObjects(): void {
+    for (const entry of this.conditionalObjects) {
+      const cond = entry.instance.condition;
+      if (!cond) continue;
+      entry.sprite.setVisible(evaluateCondition(cond));
+    }
+  }
+
+  // Subscribe to every flag named in any ObjectInstance.condition so the
+  // collision map + visibility re-evaluate when a relevant flag changes
+  // (US-94). De-duplicated so two objects sharing a flag register one
+  // listener per flag, not two. Cleaned up via objectFlagUnsubscribes in
+  // cleanupResize.
+  private subscribeToConditionalObjects(): void {
+    // Mirrors subscribeToConditionalSpawns flag-name extraction — same regex,
+    // same dedup, different action.
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    for (const inst of this.area.objects) {
+      if (!inst.condition) continue;
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(inst.condition)) !== null) {
+        flagNames.add(match[1]);
+      }
+    }
+    for (const name of flagNames) {
+      const unsub = onFlagChange(name, () => {
+        this.rebuildObjectCollisionMap();
+        this.updateConditionalObjects();
+      });
+      this.objectFlagUnsubscribes.push(unsub);
+    }
   }
 
   private renderNpcs(): void {
@@ -990,7 +1236,15 @@ export class GameScene extends Phaser.Scene {
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
     uiCam.setScroll(0, 0);
     // Prevent UI camera from double-rendering world objects
-    uiCam.ignore([...this.tileLayer, ...this.decorationSprites, ...this.propSprites, this.player, ...this.npcEntities]);
+    uiCam.ignore([
+      ...this.tileLayer,
+      ...this.exitOverlays,
+      ...this.decorationSprites,
+      ...this.objectSprites,
+      ...this.propSprites,
+      this.player,
+      ...this.npcEntities,
+    ]);
 
     this.scale.on('resize', this.handleResize, this);
 
@@ -1111,6 +1365,15 @@ export class GameScene extends Phaser.Scene {
     }
     for (const unsub of this.spawnConditionUnsubscribes) unsub();
     this.spawnConditionUnsubscribes = [];
+    for (const unsub of this.objectFlagUnsubscribes) unsub();
+    this.objectFlagUnsubscribes = [];
+    for (const unsub of this.conditionalTerrainUnsubscribes) unsub();
+    this.conditionalTerrainUnsubscribes = [];
+    for (const sprite of this.objectSprites) sprite.destroy();
+    this.objectSprites = [];
+    this.conditionalObjects = [];
+    for (const rect of this.exitOverlays) rect.destroy();
+    this.exitOverlays = [];
     if (this.hasEmberMarkUnsubscribe) {
       this.hasEmberMarkUnsubscribe();
       this.hasEmberMarkUnsubscribe = null;
@@ -1247,22 +1510,6 @@ export class GameScene extends Phaser.Scene {
       tier: override?.tier ?? 1,
     };
     this.lightingSystem.registerLight(light);
-  }
-
-  // Reflect the marsh_trapped flag on Fog Marsh: when true, the south-exit
-  // cells (row 22 cols 13-16) flip from FLOOR to WALL so collision treats them
-  // like any other wall; when false, they restore to FLOOR. Idempotent — runs
-  // on scene create AND on every flag-change notification (US-67). Scoped to
-  // fog-marsh so other areas' maps are never mutated.
-  private applyMarshTrappedState(): void {
-    if (this.area.id !== 'fog-marsh') return;
-    const trapped = getFlag('marsh_trapped') === true;
-    const tile = trapped ? TileType.WALL : TileType.FLOOR;
-    const map = this.area.map;
-    if (map.length <= 22) return;
-    for (let c = 13; c <= 16; c++) {
-      map[22][c] = tile;
-    }
   }
 
   showThought(text: string, duration?: number): void {

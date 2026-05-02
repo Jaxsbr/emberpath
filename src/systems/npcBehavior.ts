@@ -6,10 +6,9 @@ import {
   NPC_SPEED,
   NPC_IDLE_MIN_MS,
   NPC_IDLE_MAX_MS,
-  TileType,
 } from '../maps/constants';
 import { Direction, vectorToDirection } from './direction';
-import { collidesWithWall } from './collision';
+import { collidesWithWall, AreaPassability } from './collision';
 
 type NpcState = 'idle' | 'walk' | 'aware' | 'dialogue';
 
@@ -47,17 +46,17 @@ interface NpcRuntime {
 export class NpcBehaviorSystem {
   private runtimes: Map<string, NpcRuntime> = new Map();
   private scene: Phaser.Scene;
-  private map: TileType[][];
+  private passability: AreaPassability;
   private shutdownBound: (() => void) | null = null;
 
   constructor(
     scene: Phaser.Scene,
     npcs: NpcDefinition[],
-    map: TileType[][],
+    passability: AreaPassability,
     spritesById: Map<string, Phaser.GameObjects.Sprite>,
   ) {
     this.scene = scene;
-    this.map = map;
+    this.passability = passability;
 
     const offset = (TILE_SIZE - NPC_SIZE) / 2;
     for (const def of npcs) {
@@ -310,7 +309,7 @@ export class NpcBehaviorSystem {
       // Bounding-box top-left for collidesWithWall.
       const bx = px - NPC_SIZE / 2;
       const by = py - NPC_SIZE / 2;
-      if (collidesWithWall(bx, by, NPC_SIZE, NPC_SIZE, this.map)) return false;
+      if (collidesWithWall(bx, by, NPC_SIZE, NPC_SIZE, this.passability)) return false;
     }
     return true;
   }

@@ -22,13 +22,13 @@ config:
 
 state:
   # --- Lifecycle (owner: iterator) ---
-  phase: scene-art-and-thoughts
+  phase: tile-architecture
   phase_complete: true
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: null
+  task_number: 14
+  next_task: "[US-98] OPERATOR-DRIVEN: hand-paint both areas via the new editor. Architectural pieces are landed (per-cell tileset selection, applyConditionalTerrain + marsh-trap terrain-flip block, closure decorations removed). Remaining: (a) open tools/editor, paint Ashen Isle terrain + place objects, Export TypeScript, paste into ashen-isle.ts replacing the derived terrain/objects (and remove the now-redundant Kenney decorations); (b) same for Fog Marsh; (c) in-engine smoke at desktop ~1280×720 + mobile DevTools 360×640; (d) save-state + Reset Progress smoke. Once content authoring is complete, the agent can remove tiny-town/tiny-dungeon TILESETS entries + asset dirs + decorationsTileset field + the degenerate-mode warning Set."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
@@ -42,4 +42,4 @@ state:
   retro_complete: true
 
   # --- Tracking (owner: iterator) ---
-  completed_stories: [US-87, US-88, US-89, US-90, US-91]
+  completed_stories: [US-92, US-93, US-94, US-95, US-96, US-97, US-98]

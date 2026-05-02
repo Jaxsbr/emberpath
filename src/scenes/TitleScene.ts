@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { hasSave, loadSave, clearSave, resetWorld } from '../triggers/saveState';
 import { getArea } from '../data/areas/registry';
-import { TILE_SIZE, TileType } from '../maps/constants';
+import { TILE_SIZE } from '../maps/constants';
+import { TERRAINS } from '../maps/terrain';
+import { OBJECT_KINDS } from '../maps/objects';
 
 const PRIMARY_FONT_SIZE = '32px';
 const SECONDARY_FONT_SIZE = '20px';
@@ -106,9 +108,23 @@ export class TitleScene extends Phaser.Scene {
     }
     const col = Math.floor(x / TILE_SIZE);
     const row = Math.floor(y / TILE_SIZE);
-    const tile = dest.map[row]?.[col];
-    if (tile === TileType.WALL) {
-      console.warn('emberpath: Continue position on WALL tile — falling back to playerSpawn', save.position);
+    // Cell-passability check under the tile-architecture model: the cell blocks
+    // if any object on it is impassable OR all four bounding terrain vertices
+    // are impassable (matches systems/collision.ts:cellBlocks).
+    const blockedByObject = dest.objects.some(
+      (o) => o.col === col && o.row === row && OBJECT_KINDS[o.kind] && !OBJECT_KINDS[o.kind].passable,
+    );
+    const t = dest.terrain;
+    const inBounds =
+      row >= 0 && row + 1 < t.length && col >= 0 && col + 1 < (t[0]?.length ?? 0);
+    const allImpassableTerrain =
+      inBounds &&
+      !TERRAINS[t[row][col]].passable &&
+      !TERRAINS[t[row][col + 1]].passable &&
+      !TERRAINS[t[row + 1][col + 1]].passable &&
+      !TERRAINS[t[row + 1][col]].passable;
+    if (blockedByObject || allImpassableTerrain || !inBounds) {
+      console.warn('emberpath: Continue position on impassable cell — falling back to playerSpawn', save.position);
       clearSave();
       this.scene.start('GameScene');
       return;

@@ -1,10 +1,45 @@
-import { TileType } from '@game/maps/constants';
+// Map editor renderer (US-97). Reads area.terrain (vertex grid) + area.objects
+// (sparse list) under the tile-architecture model and draws them via the same
+// Wang resolver the game uses (`@game/maps/wang.ts`). Adds:
+//   • cell-paint mode (default click): sets all 4 vertices of a cell.
+//   • vertex-paint mode (Shift-click): sets the nearest vertex.
+//   • object placer mode (Alt-click): drops the active ObjectKindId.
+//   • right-click on an object: removes it.
+//   • detail panel: shows 4 vertex terrains + Wang mask + picked frame for
+//     the cell + any object instance at that cell.
+//
+// Imports route through the `@game/...` path alias to avoid local
+// redeclaration of `TerrainDefinition`, `ObjectKindDefinition`, and the
+// resolver — same registries the game uses, single source of truth.
+
 import type { AreaDefinition } from '@game/data/areas/types';
+import { resolveWangFrame, pickWangTilesetForCell } from '@game/maps/wang';
+import { TERRAINS, type TerrainId } from '@game/maps/terrain';
+import { OBJECT_KINDS, type ObjectInstance } from '@game/maps/objects';
+import { TILESETS } from '@game/maps/tilesets';
+import { evaluateCondition } from '@game/systems/conditions';
 import { showDetail } from './main';
+import {
+  getState,
+  loadAreaIntoState,
+  paintCell,
+  paintVertex,
+  placeObject,
+  removeObject,
+  objectAtCell,
+  setZoom,
+  subscribe,
+} from './editorState';
 
 const CELL = 16; // pixels per tile in the editor
-const LABEL_MARGIN = 24; // space for axis labels
+const LABEL_MARGIN = 24;
 const TRIGGER_ALPHA = 0.35;
+const PIXELLAB_ATLAS_GRID_COLS = 4;
+const PIXELLAB_FRAME_SIZE = 16;
+const KENNEY_ATLAS_GRID_COLS = 12;
+const KENNEY_FRAME_SIZE = 16;
+// Object PNGs are 32×32; rendered at CELL=16 in the editor (downscaled 2:1).
+const OBJECT_DRAW_SIZE = CELL;
 
 const TRIGGER_COLORS: Record<string, string> = {
   thought: '#4488ff',
@@ -13,32 +48,52 @@ const TRIGGER_COLORS: Record<string, string> = {
   exit: '#ffaa44',
 };
 
-// Source-atlas grid info for the decoration sprite renderer below. Both
-// Kenney atlases used by the game are 12×11 grids of 16×16 frames; the editor
-// reads the same /tilesets/<id>/tilemap.png path the game does (publicDir is
-// shared via vite.config.ts).
-const ATLAS_GRID = {
-  'tiny-town': { url: '/tilesets/tiny-town/tilemap.png', cols: 12, frameSize: 16 },
-  'tiny-dungeon': { url: '/tilesets/tiny-dungeon/tilemap.png', cols: 12, frameSize: 16 },
-} as const;
-type AtlasId = keyof typeof ATLAS_GRID;
+// Per-terrain swatch colours used for vertex dots in vertex-paint mode and
+// for the flat-colour fallback when a cell has an unregistered terrain
+// pair. Sourced from STYLE_PALETTE intent: grass = mossy green, sand = page
+// cream, path = sepia mid, marsh-floor = umber shadow, water = slate blue,
+// stone = umber dark.
+const TERRAIN_SWATCH: Record<string, string> = {
+  grass: '#7A8A55',
+  sand: '#E5D9BD',
+  path: '#8C7256',
+  'marsh-floor': '#5A4636',
+  water: '#5A6B78',
+  stone: '#3A2C20',
+};
 
-// Atlases are loaded once at module init and cached. While an atlas is still
-// loading on the very first renderMap call, decorations using that atlas are
-// silently skipped this pass; the onload handler re-runs the most recent
-// renderMap call so the decoration layer paints in as soon as it can.
-const atlases: Record<string, HTMLImageElement> = {};
+// ───── Atlas + object-image cache ─────
+
+const tilesetAtlases: Record<string, HTMLImageElement> = {};
+const objectImages: Record<string, HTMLImageElement> = {};
 let lastRender: { container: HTMLElement; area: AreaDefinition } | null = null;
-const warnedTilesets = new Set<string>();
 
-for (const [id, info] of Object.entries(ATLAS_GRID)) {
+function loadTilesetAtlas(tilesetId: string): void {
+  if (tilesetAtlases[tilesetId]) return;
   const img = new Image();
   img.onload = () => {
     if (lastRender) renderMap(lastRender.container, lastRender.area);
   };
-  img.src = info.url;
-  atlases[id] = img;
+  img.src = `/tilesets/${tilesetId}/tilemap.png`;
+  tilesetAtlases[tilesetId] = img;
 }
+
+function loadObjectImage(kindId: string, assetPath: string): void {
+  if (objectImages[kindId]) return;
+  const img = new Image();
+  img.onload = () => {
+    if (lastRender) renderMap(lastRender.container, lastRender.area);
+  };
+  img.src = `/${assetPath}`;
+  objectImages[kindId] = img;
+}
+
+// Pre-load every registered atlas + object on module init so the editor has
+// them all by the time the first render runs.
+for (const id of Object.keys(TILESETS)) loadTilesetAtlas(id);
+for (const def of Object.values(OBJECT_KINDS)) loadObjectImage(def.id, def.assetPath);
+
+// ───── Render ─────
 
 interface Clickable {
   x: number;
@@ -47,15 +102,197 @@ interface Clickable {
   h: number;
   data: Record<string, unknown>;
 }
-
 let clickables: Clickable[] = [];
 
 function hexToCSS(hex: number): string {
   return '#' + hex.toString(16).padStart(6, '0');
 }
 
+// The game's `area.tileset` names a single Wang tileset (e.g. 'ashen-isle-
+// grass-sand'). PixelLab tilesets ship as 4×4 frame grids; Kenney degenerate
+// tilesets are 12×11 atlases. Differentiate via the wang.secondaryTerrain —
+// PixelLab tilesets register a non-null secondary; Kenney degenerate ones
+// register null.
+function atlasGridForTileset(tilesetId: string): { cols: number; frameSize: number } {
+  const def = TILESETS[tilesetId];
+  if (def && def.wang.secondaryTerrain !== null) {
+    return { cols: PIXELLAB_ATLAS_GRID_COLS, frameSize: PIXELLAB_FRAME_SIZE };
+  }
+  return { cols: KENNEY_ATLAS_GRID_COLS, frameSize: KENNEY_FRAME_SIZE };
+}
+
+// Returns true when the tileset registry actually contains a (primary,
+// secondary) pair matching the cell's unique terrain set. False = the cell
+// would silently fall back to area.tileset and would render incorrectly.
+function isRegisteredPair(corners: TerrainId[], defaultTilesetId: string): boolean {
+  const unique = Array.from(new Set(corners));
+  if (unique.length === 1) return true;
+  if (unique.length !== 2) return false;
+  const [a, b] = unique;
+  for (const def of Object.values(TILESETS)) {
+    const p = def.wang.primaryTerrain;
+    const s = def.wang.secondaryTerrain;
+    if (s === null) continue;
+    if ((p === a && s === b) || (p === b && s === a)) return true;
+  }
+  // Single-terrain cells with no registered tileset fall through.
+  void defaultTilesetId;
+  return false;
+}
+
+function drawTerrain(
+  ctx: CanvasRenderingContext2D,
+  area: AreaDefinition,
+  terrain: TerrainId[][],
+): void {
+  for (let row = 0; row < area.mapRows; row++) {
+    for (let col = 0; col < area.mapCols; col++) {
+      const tl = terrain[row]?.[col];
+      const tr = terrain[row]?.[col + 1];
+      const br = terrain[row + 1]?.[col + 1];
+      const bl = terrain[row + 1]?.[col];
+      if (!tl || !tr || !br || !bl) continue;
+
+      const dx = LABEL_MARGIN + col * CELL;
+      const dy = LABEL_MARGIN + row * CELL;
+
+      // Per-cell tileset selection (US-98) — same algorithm as GameScene.
+      const cellTilesetId = pickWangTilesetForCell([tl, tr, br, bl], area.tileset);
+      const atlasImg = tilesetAtlases[cellTilesetId];
+      const atlasReady = atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0;
+      const grid = atlasGridForTileset(cellTilesetId);
+      const registered = isRegisteredPair([tl, tr, br, bl], area.tileset);
+
+      let drewAtlas = false;
+      if (atlasReady && registered) {
+        const frame = resolveWangFrame(cellTilesetId, [tl, tr, br, bl], col, row);
+        if (frame !== null) {
+          const idx = Number.parseInt(frame, 10);
+          if (Number.isFinite(idx) && idx >= 0) {
+            const sx = (idx % grid.cols) * grid.frameSize;
+            const sy = Math.floor(idx / grid.cols) * grid.frameSize;
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(atlasImg, sx, sy, grid.frameSize, grid.frameSize, dx, dy, CELL, CELL);
+            drewAtlas = true;
+          }
+        }
+      }
+      if (!drewAtlas) {
+        // Flat-colour fallback (a) when the atlas is still loading (b) when
+        // the cell has an UNREGISTERED terrain pair so the Wang resolver has
+        // no transition tile to pick. Each corner is rendered as a quarter
+        // of the cell using its own swatch colour, so authors see the
+        // terrain they actually painted instead of a silent grass cell.
+        const cw = CELL / 2;
+        const swatch = (t: TerrainId): string => TERRAIN_SWATCH[t] ?? hexToCSS(area.visual.floorColor);
+        ctx.fillStyle = swatch(tl);
+        ctx.fillRect(dx, dy, cw, cw);
+        ctx.fillStyle = swatch(tr);
+        ctx.fillRect(dx + cw, dy, cw, cw);
+        ctx.fillStyle = swatch(br);
+        ctx.fillRect(dx + cw, dy + cw, cw, cw);
+        ctx.fillStyle = swatch(bl);
+        ctx.fillRect(dx, dy + cw, cw, cw);
+      }
+      // Loud yellow border on cells with an unregistered terrain pair so
+      // silent fallbacks aren't silent. Helps authors notice when they've
+      // painted a transition the registry can't resolve (e.g. grass↔path
+      // on Ashen Isle has no tileset; only grass↔sand and sand↔path do).
+      if (!registered) {
+        ctx.strokeStyle = '#f0c040';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(dx + 0.5, dy + 0.5, CELL - 1, CELL - 1);
+      }
+    }
+  }
+}
+
+function drawObjects(
+  ctx: CanvasRenderingContext2D,
+  objects: ObjectInstance[],
+  showAlternate: boolean,
+  showImpassableOutlines: boolean,
+): void {
+  for (const inst of objects) {
+    const def = OBJECT_KINDS[inst.kind];
+    if (!def) continue;
+    // Conditional visibility: when a condition is set, default render is the
+    // when-true state if showAlternate; otherwise default render is the
+    // when-condition-evaluates-to-true state at game-start. The editor evaluates
+    // through the same evaluateCondition parser to mirror the game.
+    let visible = true;
+    if (inst.condition) {
+      const cur = evaluateCondition(inst.condition);
+      visible = showAlternate ? !cur : cur;
+    }
+    const dx = LABEL_MARGIN + inst.col * CELL;
+    const dy = LABEL_MARGIN + inst.row * CELL;
+    const img = objectImages[inst.kind];
+    const ready = img && img.complete && img.naturalWidth > 0;
+    if (ready) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = visible ? 1 : 0.35;
+      ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, OBJECT_DRAW_SIZE, OBJECT_DRAW_SIZE);
+      ctx.globalAlpha = 1;
+    } else {
+      // Fallback marker — small square coloured by passability.
+      ctx.fillStyle = def.passable ? '#88aa44' : '#aa4444';
+      ctx.globalAlpha = visible ? 0.8 : 0.3;
+      ctx.fillRect(dx + 2, dy + 2, CELL - 4, CELL - 4);
+      ctx.globalAlpha = 1;
+    }
+    // Impassable outline — toggleable via the "Show impassable outlines"
+    // sidebar checkbox; off by default per US-97 spec.
+    if (!def.passable && showImpassableOutlines) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(dx + 0.5, dy + 0.5, CELL - 1, CELL - 1);
+    }
+  }
+}
+
+function drawVertexDots(
+  ctx: CanvasRenderingContext2D,
+  area: AreaDefinition,
+  terrain: TerrainId[][],
+): void {
+  ctx.lineWidth = 1;
+  for (let r = 0; r <= area.mapRows; r++) {
+    for (let c = 0; c <= area.mapCols; c++) {
+      const t = terrain[r]?.[c];
+      if (!t) continue;
+      const x = LABEL_MARGIN + c * CELL;
+      const y = LABEL_MARGIN + r * CELL;
+      // Dot colour = the vertex's terrain swatch so authors can SEE what
+      // they've painted at each vertex even when the cell can't resolve a
+      // Wang transition tile.
+      ctx.fillStyle = TERRAIN_SWATCH[t] ?? '#ffffff';
+      ctx.strokeStyle = '#1f1813';
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+}
+
+// ───── Main render entry ─────
+
+let stateUnsubscribe: (() => void) | null = null;
+
 export function renderMap(container: HTMLElement, area: AreaDefinition): void {
+  // Fresh load: clone the area's terrain + objects into editor state and wire
+  // a state subscriber so any in-state mutation re-renders. The subscription
+  // is reset per renderMap call to avoid stacking.
+  const isNewArea = !lastRender || lastRender.area !== area;
   lastRender = { container, area };
+  if (isNewArea) {
+    loadAreaIntoState(area);
+    stateUnsubscribe?.();
+    stateUnsubscribe = subscribe(() => renderMap(container, area));
+  }
+  const editor = getState();
+
   container.innerHTML = '';
   clickables = [];
 
@@ -65,12 +302,34 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
   const canvas = document.createElement('canvas');
   canvas.width = canvasW;
   canvas.height = canvasH;
-  canvas.style.cursor = 'crosshair';
+  // Apply CSS zoom — internal canvas dimensions stay constant; transform-
+  // scale changes the visual size. The view-container's overflow:auto
+  // gives natural pan via scrollbars when the scaled canvas exceeds the
+  // viewport. Coordinate handlers below divide screen-space deltas by
+  // editor.zoom to map back to internal pixels.
+  canvas.style.transformOrigin = '0 0';
+  canvas.style.transform = `scale(${editor.zoom})`;
+  // Mode-driven cursor.
+  canvas.style.cursor =
+    editor.mode === 'cell' ? 'crosshair'
+    : editor.mode === 'vertex' ? 'cell'
+    : editor.mode === 'object' ? 'copy'
+    : 'pointer';
+  // Disable native context menu so right-click can remove objects.
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  // Wheel zoom — Ctrl/Cmd+wheel zooms; plain wheel scrolls the container
+  // (so users can scan a large area without zooming).
+  canvas.addEventListener('wheel', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+    setZoom(editor.zoom * factor);
+  }, { passive: false });
   container.appendChild(canvas);
 
   const ctx = canvas.getContext('2d')!;
 
-  // Draw axis labels
+  // Axis labels
   ctx.font = '9px monospace';
   ctx.fillStyle = '#667788';
   ctx.textAlign = 'center';
@@ -82,19 +341,8 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     ctx.fillText(String(row), LABEL_MARGIN - 4, LABEL_MARGIN + row * CELL + CELL / 2 + 3);
   }
 
-  // Draw tile grid
-  const floorColor = hexToCSS(area.visual.floorColor);
-  const wallColor = hexToCSS(area.visual.wallColor);
-
-  for (let row = 0; row < area.mapRows; row++) {
-    for (let col = 0; col < area.mapCols; col++) {
-      const tile = area.map[row]?.[col];
-      ctx.fillStyle = tile === TileType.WALL ? wallColor : floorColor;
-      ctx.fillRect(LABEL_MARGIN + col * CELL, LABEL_MARGIN + row * CELL, CELL, CELL);
-    }
-  }
-
-  // Draw grid lines (subtle)
+  // Terrain + grid lines
+  drawTerrain(ctx, area, editor.terrain);
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   ctx.lineWidth = 0.5;
   for (let col = 0; col <= area.mapCols; col++) {
@@ -110,193 +358,57 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     ctx.stroke();
   }
 
-  // Draw decorations (between base tile grid and trigger zones — matches the
-  // game's depth ordering: tiles at depth 0, decorations at depth 2, props at
-  // depth 3, with triggers/exits as editor-only annotations on top).
-  const atlasInfo = (ATLAS_GRID as Record<string, { url: string; cols: number; frameSize: number }>)[area.tileset];
-  const atlasImg = atlases[area.tileset];
-  if (!atlasInfo && area.decorations.length > 0 && !warnedTilesets.has(area.tileset)) {
-    console.warn(
-      `[editor mapRenderer] Tileset '${area.tileset}' has no entry in ATLAS_GRID; ` +
-        `decorations on area '${area.id}' will not render in the editor (they will still render in the game). ` +
-        `Add a row to ATLAS_GRID in tools/editor/src/mapRenderer.ts.`,
-    );
-    warnedTilesets.add(area.tileset);
-  }
-  if (atlasInfo && atlasImg && atlasImg.complete && atlasImg.naturalWidth > 0) {
-    // Conditional decorations (DecorationDefinition.condition) render
-    // unconditionally in the editor — the editor is the area-author's view, so
-    // hiding flag-gated content would defeat the point. The flag-gated visibility
-    // applies only at runtime in GameScene.updateConditionalDecorations.
-    for (const dec of area.decorations) {
-      const frameIdx = Number(dec.spriteFrame);
-      if (!Number.isFinite(frameIdx)) continue;
-      const srcX = (frameIdx % atlasInfo.cols) * atlasInfo.frameSize;
-      const srcY = Math.floor(frameIdx / atlasInfo.cols) * atlasInfo.frameSize;
-      const dx = LABEL_MARGIN + dec.col * CELL;
-      const dy = LABEL_MARGIN + dec.row * CELL;
-      // Disable image smoothing so pixel-art frames stay crisp at 1:1 scale.
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(atlasImg, srcX, srcY, atlasInfo.frameSize, atlasInfo.frameSize, dx, dy, CELL, CELL);
+  // Objects (above terrain, before triggers/exits)
+  drawObjects(ctx, editor.objects, editor.showConditionalAlternate, editor.showImpassableOutlines);
 
-      clickables.push({
-        x: dx,
-        y: dy,
-        w: CELL,
-        h: CELL,
-        data: {
-          type: 'decoration',
-          col: dec.col,
-          row: dec.row,
-          spriteFrame: dec.spriteFrame,
-        },
-      });
-    }
-  }
+  // Vertex dots in vertex-paint mode
+  if (editor.mode === 'vertex') drawVertexDots(ctx, area, editor.terrain);
 
-  // Draw trigger zones
+  // Triggers
   for (const trigger of area.triggers) {
     const color = TRIGGER_COLORS[trigger.type] || '#ffffff';
     const x = LABEL_MARGIN + trigger.col * CELL;
     const y = LABEL_MARGIN + trigger.row * CELL;
     const w = trigger.width * CELL;
     const h = trigger.height * CELL;
-
     ctx.fillStyle = color;
     ctx.globalAlpha = TRIGGER_ALPHA;
     ctx.fillRect(x, y, w, h);
     ctx.globalAlpha = 1;
-
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
-
-    // Label
     ctx.font = '8px monospace';
     ctx.fillStyle = color;
     ctx.textAlign = 'left';
     ctx.fillText(trigger.id, x + 2, y + 8);
-
-    // Resolve actionRef to actual content
-    let content: unknown = trigger.actionRef;
-    if (trigger.type === 'dialogue') {
-      const script = area.dialogues[trigger.actionRef];
-      if (script) {
-        content = script.nodes.map(n => ({
-          id: n.id,
-          speaker: n.speaker,
-          text: n.text,
-          nextId: n.nextId ?? null,
-          choices: n.choices?.map(c => ({
-            text: c.text,
-            nextId: c.nextId,
-            setFlags: c.setFlags ?? null,
-          })) ?? null,
-        }));
-      }
-    } else if (trigger.type === 'story') {
-      const scene = area.storyScenes[trigger.actionRef];
-      if (scene) {
-        content = scene.beats.map(b => ({
-          text: b.text,
-          imageLabel: b.imageLabel ?? null,
-        }));
-      }
-    }
-    // For 'thought', actionRef IS the text — no resolution needed
-
-    clickables.push({
-      x, y, w, h,
-      data: {
-        type: 'trigger',
-        id: trigger.id,
-        col: trigger.col,
-        row: trigger.row,
-        width: trigger.width,
-        height: trigger.height,
-        triggerType: trigger.type,
-        actionRef: trigger.actionRef,
-        condition: trigger.condition ?? null,
-        repeatable: trigger.repeatable,
-        content,
-      },
-    });
   }
 
-  // Draw exit zones
+  // Exits
   for (const exit of area.exits) {
     const color = TRIGGER_COLORS.exit;
     const x = LABEL_MARGIN + exit.col * CELL;
     const y = LABEL_MARGIN + exit.row * CELL;
     const w = exit.width * CELL;
     const h = exit.height * CELL;
-
     ctx.fillStyle = color;
     ctx.globalAlpha = TRIGGER_ALPHA;
     ctx.fillRect(x, y, w, h);
     ctx.globalAlpha = 1;
-
     ctx.strokeStyle = color;
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
-
-    // Label with destination
     ctx.font = '8px monospace';
     ctx.fillStyle = color;
     ctx.textAlign = 'left';
     ctx.fillText(exit.destinationAreaId, x + 2, y + 8);
-
-    clickables.push({
-      x, y, w, h,
-      data: {
-        type: 'exit',
-        id: exit.id,
-        col: exit.col,
-        row: exit.row,
-        width: exit.width,
-        height: exit.height,
-        destinationAreaId: exit.destinationAreaId,
-        entryPoint: exit.entryPoint,
-        condition: exit.condition ?? null,
-      },
-    });
   }
 
-  // Draw props (between exits and NPCs — matches game depth order Tiles < Props < Entities)
-  for (const prop of area.props) {
-    const cx = LABEL_MARGIN + prop.col * CELL + CELL / 2;
-    const cy = LABEL_MARGIN + prop.row * CELL + CELL / 2;
-    const radius = CELL / 4;
-
-    ctx.fillStyle = '#c89b68';
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-
-    clickables.push({
-      x: cx - radius,
-      y: cy - radius,
-      w: radius * 2,
-      h: radius * 2,
-      data: {
-        type: 'prop',
-        id: prop.id,
-        col: prop.col,
-        row: prop.row,
-        spriteFrame: prop.spriteFrame,
-      },
-    });
-  }
-
-  // Draw player spawn
+  // Player spawn
   const spawnX = LABEL_MARGIN + area.playerSpawn.col * CELL + CELL / 2;
   const spawnY = LABEL_MARGIN + area.playerSpawn.row * CELL + CELL / 2;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  // Diamond shape for spawn
   ctx.moveTo(spawnX, spawnY - CELL / 2.5);
   ctx.lineTo(spawnX + CELL / 2.5, spawnY);
   ctx.lineTo(spawnX, spawnY + CELL / 2.5);
@@ -307,34 +419,11 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // Draw NPCs
+  // NPCs
   for (const npc of area.npcs) {
     const cx = LABEL_MARGIN + npc.col * CELL + CELL / 2;
     const cy = LABEL_MARGIN + npc.row * CELL + CELL / 2;
     const radius = CELL / 2.2;
-
-    // Wander radius (dashed green) and awareness radius (dashed yellow) around the spawn tile.
-    if (npc.wanderRadius > 0) {
-      ctx.save();
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = '#44ff44';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(cx, cy, npc.wanderRadius * CELL, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-    if (npc.awarenessRadius > 0) {
-      ctx.save();
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = '#ffff44';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(cx, cy, npc.awarenessRadius * CELL, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-
     ctx.fillStyle = hexToCSS(npc.color);
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -342,44 +431,148 @@ export function renderMap(container: HTMLElement, area: AreaDefinition): void {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1;
     ctx.stroke();
-
-    // NPC name label
     ctx.font = '9px monospace';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.fillText(npc.name, cx, cy - radius - 3);
+  }
 
-    clickables.push({
-      x: cx - radius,
-      y: cy - radius,
-      w: radius * 2,
-      h: radius * 2,
-      data: {
-        type: 'npc',
-        id: npc.id,
-        name: npc.name,
-        col: npc.col,
-        row: npc.row,
-        color: '0x' + npc.color.toString(16).padStart(6, '0'),
-      },
+  // ───── Mouse handlers ─────
+
+  function pointerToGrid(e: MouseEvent): { x: number; y: number } {
+    // getBoundingClientRect returns the TRANSFORMED rect, so the screen-pixel
+    // offset already includes the zoom scale. Divide by zoom to recover the
+    // canvas's internal pixel coordinate.
+    const rect = canvas.getBoundingClientRect();
+    const z = editor.zoom || 1;
+    return { x: (e.clientX - rect.left) / z, y: (e.clientY - rect.top) / z };
+  }
+
+  function gridCell(e: MouseEvent): { col: number; row: number } | null {
+    const { x, y } = pointerToGrid(e);
+    if (x < LABEL_MARGIN || y < LABEL_MARGIN) return null;
+    const col = Math.floor((x - LABEL_MARGIN) / CELL);
+    const row = Math.floor((y - LABEL_MARGIN) / CELL);
+    if (col < 0 || col >= area.mapCols || row < 0 || row >= area.mapRows) return null;
+    return { col, row };
+  }
+
+  function nearestVertex(e: MouseEvent): { col: number; row: number } | null {
+    const { x, y } = pointerToGrid(e);
+    if (x < LABEL_MARGIN - CELL / 2 || y < LABEL_MARGIN - CELL / 2) return null;
+    const col = Math.round((x - LABEL_MARGIN) / CELL);
+    const row = Math.round((y - LABEL_MARGIN) / CELL);
+    if (col < 0 || col > area.mapCols || row < 0 || row > area.mapRows) return null;
+    return { col, row };
+  }
+
+  function showCellDetail(col: number, row: number): void {
+    const t = editor.terrain;
+    const corners = {
+      TL: t[row]?.[col],
+      TR: t[row]?.[col + 1],
+      BR: t[row + 1]?.[col + 1],
+      BL: t[row + 1]?.[col],
+    };
+    const obj = objectAtCell(col, row);
+    const objKind = obj ? OBJECT_KINDS[obj.kind] : undefined;
+    // Per-cell tileset pick (US-98) so the detail panel reports the same
+    // tileset / mask / frame the renderer actually drew.
+    const cellTilesetId = corners.TL && corners.TR && corners.BR && corners.BL
+      ? pickWangTilesetForCell([corners.TL, corners.TR, corners.BR, corners.BL], area.tileset)
+      : area.tileset;
+    const tilesetDef = TILESETS[cellTilesetId];
+    const frame = corners.TL && corners.TR && corners.BR && corners.BL
+      ? resolveWangFrame(cellTilesetId, [corners.TL, corners.TR, corners.BR, corners.BL], col, row)
+      : null;
+    // Derive the 4-bit Wang mask using the resolver's convention: bit3=TL,
+    // bit2=TR, bit1=BR, bit0=BL — '1' = secondary terrain (or any non-primary
+    // for degenerate tilesets where secondaryTerrain is null).
+    let mask: string | null = null;
+    if (corners.TL && corners.TR && corners.BR && corners.BL && tilesetDef) {
+      const w = tilesetDef.wang;
+      const isSecondary = (terrain: TerrainId): boolean => {
+        if (w.secondaryTerrain && w.primaryTerrain !== w.secondaryTerrain) {
+          return terrain === w.secondaryTerrain;
+        }
+        return terrain !== w.primaryTerrain;
+      };
+      mask =
+        (isSecondary(corners.TL) ? '1' : '0') +
+        (isSecondary(corners.TR) ? '1' : '0') +
+        (isSecondary(corners.BR) ? '1' : '0') +
+        (isSecondary(corners.BL) ? '1' : '0');
+    }
+    showDetail({
+      type: 'cell',
+      col, row,
+      vertices: corners,
+      wangMask: mask,
+      pickedFrame: frame,
+      tileset: cellTilesetId,
+      object: obj
+        ? { kind: obj.kind, passable: objKind?.passable ?? null, condition: obj.condition ?? null }
+        : null,
     });
   }
 
-  // Click handler
-  canvas.addEventListener('click', (e: MouseEvent) => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-
-    // Check clickables in reverse (topmost first)
-    for (let i = clickables.length - 1; i >= 0; i--) {
-      const c = clickables[i];
-      if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
-        showDetail(c.data);
-        return;
-      }
+  let dragging = false;
+  canvas.addEventListener('mousedown', (e) => {
+    // Right-click → remove object at the cell, regardless of mode.
+    if (e.button === 2) {
+      const cell = gridCell(e);
+      if (!cell) return;
+      removeObject(cell.col, cell.row);
+      return;
     }
-    // Click empty space — deselect
-    showDetail({ hint: 'Click a trigger, NPC, or exit to inspect.' });
+    if (e.button !== 0) return;
+    // Modifier-driven mode override per spec: Shift = vertex paint,
+    // Alt = object placer. Otherwise use the current sidebar mode.
+    const effectiveMode: typeof editor.mode =
+      e.shiftKey ? 'vertex'
+      : e.altKey ? 'object'
+      : editor.mode;
+
+    if (effectiveMode === 'cell') {
+      const cell = gridCell(e);
+      if (!cell) return;
+      paintCell(cell.col, cell.row);
+      dragging = true;
+    } else if (effectiveMode === 'vertex') {
+      const v = nearestVertex(e);
+      if (!v) return;
+      paintVertex(v.col, v.row);
+    } else if (effectiveMode === 'object') {
+      const cell = gridCell(e);
+      if (!cell) return;
+      placeObject(cell.col, cell.row);
+    } else {
+      // inspect mode → just show detail
+      const cell = gridCell(e);
+      if (cell) showCellDetail(cell.col, cell.row);
+    }
   });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    if (e.buttons !== 1) { dragging = false; return; }
+    if (e.shiftKey || e.altKey) return; // drag only paints cells
+    const cell = gridCell(e);
+    if (!cell) return;
+    paintCell(cell.col, cell.row);
+  });
+
+  canvas.addEventListener('mouseup', () => { dragging = false; });
+  canvas.addEventListener('mouseleave', () => { dragging = false; });
+
+  // Click for inspection always shows the cell detail (on top of any paint).
+  canvas.addEventListener('click', (e) => {
+    if (e.shiftKey || e.altKey) return;
+    if (editor.mode !== 'inspect') return;
+    const cell = gridCell(e);
+    if (cell) showCellDetail(cell.col, cell.row);
+  });
+
+  // suppress unused-clickables warning — retained for future feature reuse
+  void clickables;
 }

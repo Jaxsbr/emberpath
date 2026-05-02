@@ -78,3 +78,51 @@ The compounding form of this rule applies beyond Phaser: any cross-module patter
 **Scope:** phaser-game
 
 ---
+
+## EP-05 — Verify which MCP server has remaining budget before firing async generations
+
+**Phase:** tile-architecture (US-95)
+**Date:** 2026-04-30
+
+**Description:** Stage 2 of the tile-architecture phase needed 5 PixelLab Wang tilesets via `create_topdown_tileset`. Two PixelLab MCP servers are configured on this machine: `mcp__pixellab__` (personal account) and `mcp__pixellab-team__` (team account). I picked `mcp__pixellab-team__` without checking which had remaining budget. The team account was maxed out — every call (5 initial + 4 rerolls = 9 generations) returned errors: fresh Wang generations failed within seconds with "Unknown error" (immediate API rejection), chained generations reached 90% then returned "Generation completed but no tiles were produced". 9 generations spent, 0 successful tilesets, plus the round-trip latency of waiting ~3 minutes for each batch before realising the failure pattern was systemic. Operator caught the mistake, redirected to `mcp__pixellab__` (personal) — fresh generations on the personal server succeeded immediately.
+
+**Pattern:** When two MCP servers expose the same tool (PixelLab personal vs team, AWS prod vs sandbox, OpenAI vs Anthropic, etc.), agents that pick "the most prominent name" or "the one I used last time" without checking budget / rate limits / health will burn budget on the wrong endpoint. The failure modes from a maxed-out / over-quota / degraded server look different from prompt errors — they tend to fail late in the pipeline ("90% then no result") or fail with generic "Unknown error" rather than a clean rate-limit response — so it's hard to diagnose without first ruling out budget. The cost is doubled by async generation: each call costs the budget unit AND ~100s of wall-clock time before the failure is observable.
+
+**Prevention point:** Before firing the FIRST call against a multi-server MCP tool, check which server has remaining budget. Concretely:
+1. Look for prior PixelLab calls in the project's commit history (`git log --grep=pixellab`) to see which server has been used and at what scale.
+2. If multiple servers are available, prefer the personal server (`mcp__pixellab__`) for project work unless the project has explicit per-server allocation rules.
+3. If a generation fails twice in a row with "Unknown error" (especially within seconds — too fast for image generation to have run), STOP and check budget before retrying. Don't burn 9/10 of the spec's reroll budget chasing a prompt cause for an account-quota failure.
+4. Update the project's tooling docs / generator scripts to name the chosen server explicitly so future runs don't re-pick badly.
+
+**Scope:** mcp, pixellab, multi-server
+
+---
+
+## EP-06 — Author-facing UX gaps are invisible to compile-only verify; require operator-walkthrough done-when criteria written in plain language
+
+**Phase:** tile-architecture (US-97), with prior occurrences in foundation and mobile-ux
+**Date:** 2026-05-03
+
+**Description:** This is the third time across phases that the build loop shipped something that compiled cleanly but turned out to have real authoring blockers when an operator drove it for the first time. The pattern:
+
+- `foundation` phase: virtual joystick on mobile didn't work because Phaser routes touch-emulated pointers through different objects than the build-loop verify ever sees. Compile passed; touch input was broken.
+- `mobile-ux` phase: viewport zoom and orientation handling broke under DevTools mobile emulation in ways the build couldn't catch.
+- `tile-architecture` phase: the editor compiled fine and the tests had nothing to fail on, but four real authoring blockers were sitting there waiting for the operator — no canvas zoom, terrain painting silently failed when the operator painted an unregistered terrain pair (single area-wide tileset), no UI to author triggers/NPCs/exits/transitions, and broader walkthrough gaps the operator could only find by actually using the tool.
+
+Both prior retros explicitly punted on compounding because the issues "weren't classified build-loop failures" — they were caught after the fact during operator testing. With three occurrences across phases, the pattern is real and it costs operator time on every phase that ships an author-facing surface.
+
+**Pattern:** The build loop's verify step (compile + tests) cannot catch ergonomics. Whether a tool is *pleasant to use* is invisible to TypeScript and to the test suite. Author-facing surfaces — editors, dev tools, content composers, generation pipelines, story-scene authoring UIs, asset preview tools — ship with their compile-side criteria met but their authoring blockers undiscovered. The blockers surface only when the operator (or another agent driving the tool) starts using it for real work, which by then is mid-content-authoring and expensive to interrupt.
+
+A second pattern stacked on top: when spec-author DOES include a "verify the editor works" criterion, the wording is typically jargon-style abstract ("operator runs the surface for 10 minutes against a representative scenario", "exercise the cell-paint mode") and gets skipped because it reads like AI boilerplate that's been pasted in for completeness. The operator confirmed during the tile-architecture retro that this jargon framing is itself part of why the gate fails — abstract criteria are unreadable as a test script and get checked off without being run.
+
+**Prevention point:** The earliest prevention point is spec-author at spec-write time. The fix lives in `/Users/jacobusbrink/Jaxs/projects/sabs/skills/spec-author/SKILL.md` under "Compounded done-when rules" → "Operator-walkthrough completion gate (compounded)". Concretely:
+
+1. When a phase delivers an author-facing surface (any tool an operator drives directly), spec-author MUST add at least one operator-walkthrough done-when criterion.
+2. The criterion text MUST be a plain-language step-by-step test guide — numbered concrete actions with described visible outcomes ("click the Vertex button → a green dot appears"). Abstract framings ("verify the rendering pipeline", "exercise cell-paint mode") explicitly fail the rule.
+3. Steps end with: "If any step doesn't behave as described, record it in `docs/plan/<phase>-known-issues.md` (or equivalent). Phase cannot be marked complete until each gap is either fixed or explicitly deferred to a follow-up phase."
+
+When a phase delivers an author-facing surface AND the spec doesn't include a plain-language operator-walkthrough criterion, the spec is incomplete — push back to spec-author before starting the phase. When the criterion exists but reads like jargon, rewrite it before locking the spec.
+
+**Scope:** universal
+
+---
