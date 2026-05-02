@@ -1,6 +1,6 @@
-# Phase retrospective — tile-architecture (PARTIAL — phase still in flight)
+# Phase retrospective — tile-architecture
 
-**Note:** Operator triggered `/phase-retro` mid-phase to capture learnings while context was fresh. `progress.yaml` shows `phase_complete: false` — content authoring (hand-paint both areas via the new editor + remove the now-redundant Kenney decorations) and final cleanup (delete `tiny-town`/`tiny-dungeon` TILESETS entries + asset dirs + `decorationsTileset` field + degenerate-mode warning Set) and manual smoke (in-engine at desktop + mobile, save-state compat, Reset Progress) all remain. **`retro_complete` is intentionally NOT set** — leaving it `false` so the phase-retro PR gate stays armed for the final retro re-run when the phase actually completes. This file captures what's known so far so the analysis isn't lost.
+**Phase finalised by operator.** Architectural deliverables (US-92..US-98 code-side: data model, Wang resolver, collision unification, PixelLab tilesets, PixelLab objects, editor, per-cell tileset selection + marsh-trap terrain-flip) all shipped to `build/tile-architecture`. Content-side hand-paint of both areas + Kenney atlas removal + `decorationsTileset` field cleanup + degenerate-mode warning Set removal + in-engine manual smoke are operator-deferred to a follow-up phase (likely `tile-content` or merged into `briar-wilds` setup work). Operator opted to ship the architecture now via this PR so the foundation is mergeable; the content authoring proceeds against a stable base.
 
 ## Metrics (so far)
 
@@ -47,11 +47,15 @@ The fix — agreed below — pushes prevention upstream into spec-author. The bu
 
 **Approved by operator and applied** — file edited on disk. Note: the sabs plugin lives at `/Users/jacobusbrink/Jaxs/projects/sabs/` which is gitignored in the workspace repo and has no `.git` of its own — the plugin is local-only on this machine. The fix takes effect immediately for any future spec-author invocation on this machine; there is no portable record of the change beyond the file itself. If the plugin is later promoted to its own repo, this commit needs to be reconstructed from the SKILL.md history.
 
-## What remains for full phase completion (re-run retro then)
+## What's deferred to a follow-up phase
 
-When the phase actually completes (operator finishes content authoring + Kenney cleanup + manual smoke), re-run `/phase-retro` to:
+The operator finalised the retro and merged the architectural foundation. The following items remain and are tracked for the next phase:
 
-- Confirm or update metrics with the final task count.
-- Capture any new failure classes from the content-authoring iterations (e.g. unregistered-pair painting friction, export round-trip issues).
-- Set `retro_complete: true` and update PRD index status to `Shipped`.
-- Push commit to unblock the merge gate.
+- **Hand-paint both areas** via the new editor (Ashen Isle + Fog Marsh terrain vertices + object placement). Spec recommends opening `tools/editor`, painting each area, clicking Export TypeScript, pasting into the area files.
+- **Remove now-redundant Kenney decorations** from `ashen-isle.ts` and `fog-marsh.ts` once their visual role is taken over by hand-painted terrain + objects.
+- **Delete `tiny-town`/`tiny-dungeon`** TILESETS entries and `assets/tilesets/tiny-town/` + `assets/tilesets/tiny-dungeon/` directories.
+- **Remove `decorationsTileset`** field from `AreaDefinition` (depends on no remaining Kenney decorations).
+- **Remove degenerate-mode warning Set** from `wang.ts` (depends on no degenerate tilesets registered).
+- **Manual smoke**: in-engine at desktop ~1280×720 + mobile DevTools 360×640 across both areas, save-state compat, Reset Progress flow.
+
+The follow-up phase that picks these up will inherit a clean architectural base. Operator-walkthrough criteria for that phase MUST be specced under the new "Operator-walkthrough completion gate" rule landed in spec-author this retro — written as plain-language step-by-step test guides, not abstract jargon.
