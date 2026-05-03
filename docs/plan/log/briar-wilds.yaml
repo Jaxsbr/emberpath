@@ -3,4 +3,27 @@
 
 phase: briar-wilds
 started: "2026-05-03T07:41:50Z"
-entries: []
+entries:
+  - task: 1
+    time: "2026-05-03T07:55:00Z"
+    type: investigate
+    description: "Initial state read for briar-wilds phase"
+    result: pass
+    notes: |
+      Verify (npx tsc --noEmit && npm run build) passes — 40 modules, dist ~1579 kB.
+      Source layout: src/systems/ has lighting.ts, lightingConfig.ts, thoughtBubble.ts,
+      desaturationPipeline.ts (no emberWarmth.ts yet — to be created in US-101).
+      src/data/areas/ holds types.ts, ashen-isle.ts, fog-marsh.ts, registry.ts (no
+      briar-wilds.ts — to be created in US-100).
+      LIGHTING_CONFIG (lightingConfig.ts) currently uses ADDITIVE bonus: `warmedRadiusBonus: 14`,
+      `warmedIntensityBonus: 0.15`. US-99 wants ABSOLUTE values: `npcWarmedRadius` ≥ 1.5x npcRadius
+      (≥60), `npcWarmedIntensity` ≥ 2x npcIntensity (≥0.50). Single call site identified at
+      GameScene.ts:1500-1512 (`registerNpcLight`) — adds bonus to base when warmed. Wren/Old Man
+      both flow through this same path; Driftwood uses `npc_refused_driftwood` flag and never
+      hits the warming branch.
+      Phase classified as cross-cutting (will introduce new system file emberWarmth.ts +
+      AreaDefinition optional fields drainZones/quietZones + new area file briar-wilds.ts +
+      new tileset/object kinds). Investigate-first mandate applies to all implementation tasks.
+      Queued task 2 as Investigate to confirm the warmed-NPC re-registration paths + F3 debug
+      HUD render path before implementing US-99's constant rename.
+    tokens: ~6000
