@@ -24,6 +24,7 @@ import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
 import { DesaturationPipeline } from '../systems/desaturationPipeline';
 import { EmberShareSystem } from '../systems/emberShare';
+import { EmberWarmthSystem } from '../systems/emberWarmth';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
@@ -190,6 +191,10 @@ export class GameScene extends Phaser.Scene {
   private hasEmberCached = false;
   private lightingSystem!: LightingSystem;
   private desaturationPipeline: DesaturationPipeline | null = null;
+  // EmberWarmthSystem (US-101) — constructed regardless of area (cheap on
+  // areas with no drain/quiet zones; safer than conditional construction
+  // because the system also handles ember_warmth load + Reset Progress).
+  private emberWarmthSystem!: EmberWarmthSystem;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -351,6 +356,10 @@ export class GameScene extends Phaser.Scene {
     this.lightingSystem.create(this.area.mapCols * TILE_SIZE, this.area.mapRows * TILE_SIZE);
     this.registerInitialLights();
     this.attachDesaturationPipeline();
+    // US-101: construct after lighting so a future visual-binding hook can
+    // reference both. Always constructed (even on areas without drain/quiet
+    // zones) — it owns ember_warmth load + Reset Progress reseed.
+    this.emberWarmthSystem = new EmberWarmthSystem(this);
     // Fade in when entering from an area transition OR a Continue resume
     if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
@@ -548,6 +557,8 @@ export class GameScene extends Phaser.Scene {
         `hasEmber: ${ls.getHasEmber()}`,
         `lights: ${ls.getLightCount()}`,
         `warmed: ${warmedCount} @ R${LIGHTING_CONFIG.npcWarmedRadius}/I${LIGHTING_CONFIG.npcWarmedIntensity}`,
+        // US-101: HUD readout for the warmth state — value + zone classification.
+        `warmth: ${this.emberWarmthSystem.getCurrentWarmth().toFixed(2)}  zone: ${this.emberWarmthSystem.getZoneState()}`,
       ].join('\n');
     });
   }
@@ -637,6 +648,9 @@ export class GameScene extends Phaser.Scene {
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
+    // US-101: warmth update fires every walk-frame. delta is in ms; convert to
+    // seconds for the per-second drain/restore rates. No-op until zones land.
+    this.emberWarmthSystem.update(delta / 1000);
 
     // Collision bounds for trigger/exit zone checks
     const boundsX = this.player.x - halfSize;
