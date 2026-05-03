@@ -68,3 +68,16 @@ entries:
 
       Queued task 3 as operator manual-verify (US-99 closure).
     tokens: ~12000
+  - task: 3
+    time: "2026-05-04T08:45:00Z"
+    type: implement
+    story: US-99
+    description: "US-99: bump npcWarmedRadius 96->288, npcWarmedIntensity 0.65->1.0 (operator 3x calibration)"
+    result: pass
+    notes: |
+      Operator request: "more x3" after the previous bump still read too dim.
+      Radius: 96 * 3 = 288 (7.2x base npcRadius=40, well above the 1.5x floor).
+      Intensity: 0.65 * 3 = 1.95 -> clamped at 1.0 (the registerLight max).
+      Verify green (40 modules, dist 1579.65 kB).
+      Spec floors still satisfied (npcWarmedRadius >= 60, npcWarmedIntensity >= 0.50).
+    tokens: ~3000

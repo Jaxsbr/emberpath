@@ -27,7 +27,7 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 3
+  task_number: 4
   next_task: "[US-99] Operator manual-verify of US-99: launch dev server, take a fresh playthrough or use Reset Progress; visit Wren before warming, then warm Wren and re-visit (radius/colour readability check); same for Old Man (post-Wren); walk past Driftwood after refusing — confirm no brightening; enter Fog Marsh and return — bubble persists; Reset Progress — bubble back to baseline. Record results in docs/plan/briar-wilds-manual-verify.md § US-99 (file to be created in next task). Once observations are recorded, US-99 can be marked complete."
   last_result: pass
   consecutive_fails: 0
