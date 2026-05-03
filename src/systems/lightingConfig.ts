@@ -20,11 +20,16 @@ export const LIGHTING_CONFIG = {
   // Per-NPC defaults (Tier 1 — always rendered).
   npcRadius: 40,
   npcIntensity: 0.25,
-  // Warming bump (US-85). When `npc_warmed_<id>` flips true, the target NPC's
-  // tier-1 light is re-registered at base + bonus values to read as "the ember
-  // landed here." Bonuses are additive; intensity is clamped at 1.0.
-  warmedRadiusBonus: 14,
-  warmedIntensityBonus: 0.15,
+  // Warmed-NPC absolutes (US-99 — replaces the additive bonus from US-85).
+  // When `npc_warmed_<id>` flips true, the target NPC's tier-1 light is
+  // re-registered at these absolute values (any per-NPC `lightOverride` is
+  // ignored — restoration is supposed to read uniformly bright). Floor per
+  // spec: npcWarmedRadius ≥ 1.5 × npcRadius (60), npcWarmedIntensity ≥ 2 ×
+  // npcIntensity (0.50). Committed values sit well above those floors so the
+  // warmed bubble survives the global desaturation pipeline at a glance —
+  // operator-calibrated against the in-engine smoke (briar-wilds US-99).
+  npcWarmedRadius: 96,
+  npcWarmedIntensity: 0.65,
   // Tier 2 lights — rendered at 0 intensity pre-Ember, full intensity post-Ember.
   tier2Radius: 56,
   tier2Intensity: 0.40,

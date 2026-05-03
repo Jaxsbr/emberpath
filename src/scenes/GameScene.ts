@@ -535,12 +535,19 @@ export class GameScene extends Phaser.Scene {
     // a closure here so DebugOverlaySystem stays decoupled from LightingSystem.
     this.debugOverlay.setHudProvider(() => {
       const ls = this.lightingSystem;
+      // US-99: warmed-NPC count + the absolute warmed values, so the operator
+      // can confirm the brightening at a glance without inspecting the registry.
+      let warmedCount = 0;
+      for (const id of WARMING_NPC_IDS) {
+        if (getFlag(`npc_warmed_${id}`) === true) warmedCount += 1;
+      }
       return [
         `lighting: ${LIGHTING_CONFIG.enabled ? 'on' : 'off'}  (F4)`,
         `playerRadius: ${ls.getPlayerRadius()}px`,
         `desaturation: ${(this.desaturationPipeline?.getStrength() ?? LIGHTING_CONFIG.desaturationStrength).toFixed(2)}`,
         `hasEmber: ${ls.getHasEmber()}`,
         `lights: ${ls.getLightCount()}`,
+        `warmed: ${warmedCount} @ R${LIGHTING_CONFIG.npcWarmedRadius}/I${LIGHTING_CONFIG.npcWarmedIntensity}`,
       ].join('\n');
     });
   }
@@ -1497,16 +1504,17 @@ export class GameScene extends Phaser.Scene {
     const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
     const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
     const override = npc.lightOverride;
-    const baseRadius = override?.radius ?? LIGHTING_CONFIG.npcRadius;
-    const baseIntensity = override?.intensity ?? LIGHTING_CONFIG.npcIntensity;
+    // US-99: warmed state ignores any per-NPC dimmer override so restoration
+    // reads uniformly bright across every warmed NPC. Pre-warming uses the
+    // override (lets Old Man sit dimmer than baseline before the ember).
+    const radius = warmed ? LIGHTING_CONFIG.npcWarmedRadius : (override?.radius ?? LIGHTING_CONFIG.npcRadius);
+    const intensity = warmed ? LIGHTING_CONFIG.npcWarmedIntensity : (override?.intensity ?? LIGHTING_CONFIG.npcIntensity);
     const light: RegisteredLight = {
       id: npc.id,
       x: cx,
       y: cy,
-      radius: warmed ? baseRadius + LIGHTING_CONFIG.warmedRadiusBonus : baseRadius,
-      intensity: warmed
-        ? Math.min(1, baseIntensity + LIGHTING_CONFIG.warmedIntensityBonus)
-        : baseIntensity,
+      radius,
+      intensity,
       tier: override?.tier ?? 1,
     };
     this.lightingSystem.registerLight(light);
