@@ -28,8 +28,8 @@ export const LIGHTING_CONFIG = {
   // npcIntensity (0.50). Committed values sit well above those floors so the
   // warmed bubble survives the global desaturation pipeline at a glance —
   // operator-calibrated against the in-engine smoke (briar-wilds US-99).
-  npcWarmedRadius: 96,
-  npcWarmedIntensity: 0.65,
+  npcWarmedRadius: 288,
+  npcWarmedIntensity: 1.0,
   // Tier 2 lights — rendered at 0 intensity pre-Ember, full intensity post-Ember.
   tier2Radius: 56,
   tier2Intensity: 0.40,
