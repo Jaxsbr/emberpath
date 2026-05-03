@@ -359,7 +359,16 @@ export class GameScene extends Phaser.Scene {
     // US-101: construct after lighting so a future visual-binding hook can
     // reference both. Always constructed (even on areas without drain/quiet
     // zones) — it owns ember_warmth load + Reset Progress reseed.
-    this.emberWarmthSystem = new EmberWarmthSystem(this);
+    // ThoughtBubble is wired below in the system-creation chain; pass null
+    // here and inject after the bubble exists. Zones come from the area.
+    this.emberWarmthSystem = new EmberWarmthSystem(
+      this,
+      this.area.drainZones,
+      this.area.quietZones,
+      null,
+      this.area.mapCols,
+      this.area.mapRows,
+    );
     // Fade in when entering from an area transition OR a Continue resume
     if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
@@ -374,6 +383,9 @@ export class GameScene extends Phaser.Scene {
     this.emberShare = new EmberShareSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    // US-101: now that the bubble exists, wire it into the warmth system so
+    // drain/quiet zone entry transitions can queue doubt/narration lines.
+    this.emberWarmthSystem.setThoughtBubble(this.thoughtBubble);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
         const script = this.area.dialogues[actionRef];
@@ -648,9 +660,10 @@ export class GameScene extends Phaser.Scene {
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
-    // US-101: warmth update fires every walk-frame. delta is in ms; convert to
-    // seconds for the per-second drain/restore rates. No-op until zones land.
-    this.emberWarmthSystem.update(delta / 1000);
+    // US-101: warmth update fires every walk-frame. delta is in ms; convert
+    // to seconds for the per-second drain/restore rates. Player position in
+    // pixels — the system divides by TILE_SIZE for the zone-tile overlap.
+    this.emberWarmthSystem.update(delta / 1000, this.player.x, this.player.y);
     // Plumb warmth into LightingSystem so getPlayerRadius lerps the lit area
     // each frame (post-Ember only; pre-Ember falls back to playerRadiusPre).
     this.lightingSystem.setPlayerWarmth(this.emberWarmthSystem.getCurrentWarmth());

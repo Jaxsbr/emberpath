@@ -247,8 +247,52 @@ export interface AreaDefinition {
   storyScenes: Record<string, StorySceneDefinition>;
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
+  // Drain zones (US-102) — twisted false-hope patches that drain ember warmth
+  // and queue doubt-voice thought bubbles on entry. Briar Wilds defines ≥2.
+  drainZones?: DrainZoneDefinition[];
+  // Quiet places (US-103) — small clearings that restore ember warmth and
+  // play first-entry narration. Briar Wilds defines ≥2 (one carries the
+  // closing-reflection beat).
+  quietZones?: QuietZoneDefinition[];
   // Retained for editor's map-overview mode — the game scene now renders via tileset.
   visual: { floorColor: number; wallColor: number };
+}
+
+// Doubt-voice / narration sequence shape — a list of bubble lines cycled
+// through on re-entry (drain) or shown once on first entry (quiet).
+export interface ThoughtSequence {
+  lines: string[];
+}
+
+// Drain zone (US-102) — rectangular patch in tile coordinates. While the
+// player bounding-box centre overlaps the zone, ember warmth drains at
+// `WARMTH_DRAIN_PER_SECOND × (drainMultiplier ?? 1)`. On entry transition
+// (outside → inside), the next doubt line is queued via the thought-bubble
+// system (cycled by `doubt_count_<id>` modulo `doubts.lines.length`).
+export interface DrainZoneDefinition {
+  id: string;
+  col: number;
+  row: number;
+  width: number;
+  height: number;
+  drainMultiplier?: number;
+  doubts?: ThoughtSequence;
+}
+
+// Quiet place (US-103) — rectangular patch in tile coordinates. While the
+// player bounding-box centre overlaps the zone, ember warmth restores at
+// `WARMTH_RESTORE_PER_SECOND × (restoreMultiplier ?? 1)`. On first entry
+// (`quiet_seen_<id>` flag false), the narration sequence is queued via the
+// thought-bubble system (one-shot per zone). Quiet wins over drain on
+// overlap (US-103 design — grace stronger than trial).
+export interface QuietZoneDefinition {
+  id: string;
+  col: number;
+  row: number;
+  width: number;
+  height: number;
+  restoreMultiplier?: number;
+  narration?: ThoughtSequence;
 }
 
 // ───── Stage-1 migration helpers ─────
