@@ -30,6 +30,19 @@ export const LIGHTING_CONFIG = {
   // operator-calibrated against the in-engine smoke (briar-wilds US-99).
   npcWarmedRadius: 288,
   npcWarmedIntensity: 1.0,
+  // Player ember overlay visual binding to warmth state (US-101). The 6 px
+  // base Arc gets `setRadius(lerp(floor, full, warmth))` and `setAlpha(lerp(...))`
+  // each frame. Floor values committed clearly visible (the ember NEVER
+  // disappears — kid-safe design promise).
+  playerEmberRadiusFloor: 4,
+  playerEmberRadiusFull: 12,
+  playerEmberAlphaFloor: 0.55,
+  playerEmberAlphaFull: 1.0,
+  // Lighting overlay player-light radius binding to warmth state (US-101).
+  // Replaces the fixed playerRadiusPost when warmth state is active.
+  // Floor > 0 so the world is never pitch black at WARMTH_FLOOR.
+  playerLightRadiusFloor: 80,
+  playerLightRadiusFull: 192,
   // Tier 2 lights — rendered at 0 intensity pre-Ember, full intensity post-Ember.
   tier2Radius: 56,
   tier2Intensity: 0.40,

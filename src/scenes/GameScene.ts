@@ -24,7 +24,7 @@ import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
 import { DesaturationPipeline } from '../systems/desaturationPipeline';
 import { EmberShareSystem } from '../systems/emberShare';
-import { EmberWarmthSystem } from '../systems/emberWarmth';
+import { EmberWarmthSystem, WARMTH_FLOOR, WARMTH_MAX } from '../systems/emberWarmth';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
@@ -651,6 +651,9 @@ export class GameScene extends Phaser.Scene {
     // US-101: warmth update fires every walk-frame. delta is in ms; convert to
     // seconds for the per-second drain/restore rates. No-op until zones land.
     this.emberWarmthSystem.update(delta / 1000);
+    // Plumb warmth into LightingSystem so getPlayerRadius lerps the lit area
+    // each frame (post-Ember only; pre-Ember falls back to playerRadiusPre).
+    this.lightingSystem.setPlayerWarmth(this.emberWarmthSystem.getCurrentWarmth());
 
     // Collision bounds for trigger/exit zone checks
     const boundsX = this.player.x - halfSize;
@@ -661,12 +664,18 @@ export class GameScene extends Phaser.Scene {
 
     this.maybeAutosave();
 
-    // Ember overlay tracks the player's centre minus a fixed Y offset.
-    // Loop-invariant EP-01: single setPosition call, no allocations, no
-    // object literals — the overlay is reused frame-to-frame, only its
-    // position vector changes.
+    // Ember overlay tracks the player's centre minus a fixed Y offset; its
+    // radius and alpha lerp by current warmth (US-101).
+    // Loop-invariant EP-01: setPosition + setRadius + setAlpha mutations, no
+    // allocations, no object literals — the overlay is reused frame-to-frame.
     if (this.emberOverlay) {
+      const w = this.emberWarmthSystem.getCurrentWarmth();
+      const wt = (Math.max(WARMTH_FLOOR, Math.min(WARMTH_MAX, w)) - WARMTH_FLOOR) / (WARMTH_MAX - WARMTH_FLOOR);
+      const radius = LIGHTING_CONFIG.playerEmberRadiusFloor + (LIGHTING_CONFIG.playerEmberRadiusFull - LIGHTING_CONFIG.playerEmberRadiusFloor) * wt;
+      const alpha = LIGHTING_CONFIG.playerEmberAlphaFloor + (LIGHTING_CONFIG.playerEmberAlphaFull - LIGHTING_CONFIG.playerEmberAlphaFloor) * wt;
       this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
+      this.emberOverlay.setRadius(radius);
+      this.emberOverlay.setAlpha(alpha);
     }
 
     // Sync NPC light positions to live (post-wander) coordinates so wandering
