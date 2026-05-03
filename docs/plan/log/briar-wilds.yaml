@@ -1,0 +1,6 @@
+# Build Loop — Phase Log: briar-wilds
+# Schema: append-only entries list. One entry per task.
+
+phase: briar-wilds
+started: "2026-05-03T07:41:50Z"
+entries: []
