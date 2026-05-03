@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 2
-  next_task: "[US-99] Investigate: confirm exact rename path for warmedRadiusBonus/warmedIntensityBonus -> npcWarmedRadius/npcWarmedIntensity in lightingConfig.ts; map every call site that registers a warmed NPC light (GameScene.ts:1500-1512 registerNpcLight is the known site — verify no others); locate the F3 debug HUD render path that lists registered lights so US-99's warmed-radius/intensity readout can be added; confirm Driftwood's refusal flag is npc_refused_driftwood and that no warming code path fires for it (negative criterion)."
+  task_number: 3
+  next_task: "[US-99] Operator manual-verify of US-99: launch dev server, take a fresh playthrough or use Reset Progress; visit Wren before warming, then warm Wren and re-visit (radius/colour readability check); same for Old Man (post-Wren); walk past Driftwood after refusing — confirm no brightening; enter Fog Marsh and return — bubble persists; Reset Progress — bubble back to baseline. Record results in docs/plan/briar-wilds-manual-verify.md § US-99 (file to be created in next task). Once observations are recorded, US-99 can be marked complete."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

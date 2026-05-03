@@ -27,3 +27,44 @@ entries:
       Queued task 2 as Investigate to confirm the warmed-NPC re-registration paths + F3 debug
       HUD render path before implementing US-99's constant rename.
     tokens: ~6000
+  - task: 2
+    time: "2026-05-04T08:30:00Z"
+    type: implement
+    story: US-99
+    description: "US-99: warmed-NPC absolute values + HUD readout (operator fast-path)"
+    result: pass
+    notes: |
+      Operator provided in-engine smoke before implementation: shared a screenshot
+      of warmed Old Man whose light bubble read as faint and small (only ~3 tiles
+      against the desaturation pipeline). Asked for ~2x current sphere size and
+      brighter. Skipped the queued Investigate task and went straight to implement
+      since the operator's smoke replaced the investigation purpose.
+
+      Changes:
+      - lightingConfig.ts: removed additive warmedRadiusBonus (14) and
+        warmedIntensityBonus (0.15); added absolute npcWarmedRadius=96 (2.4x base
+        npcRadius=40, well above spec floor of 1.5x=60) and npcWarmedIntensity=0.65
+        (2.6x base 0.25, above spec floor of 2x=0.50).
+      - GameScene.registerNpcLight: when warmed=true, use absolute constants and
+        IGNORE per-NPC lightOverride (so Old Man's pre-warming dimmer override
+        does not cap the warmed brightness). Pre-warming path unchanged.
+      - GameScene HUD provider: added `warmed: <count> @ R96/I0.65` line so the
+        F3 overlay confirms the warmed values at a glance (criterion 12).
+
+      Verify: tsc --noEmit + vite build green (40 modules, dist 1579.65 kB —
+      +0.11 kB vs baseline, no regression).
+
+      Story Completion Gate: file-inspectable US-99 criteria met:
+        - npcWarmedRadius defined ≥ 1.5x npcRadius ✓ (96 vs 60 floor)
+        - npcWarmedIntensity defined ≥ 2x npcIntensity ✓ (0.65 vs 0.50 floor)
+        - call sites read constants, no inline magic numbers ✓
+        - npc_warmed_wren/old_man re-registration wired ✓ (existing onFlagChange path)
+        - npc_refused_driftwood does NOT trigger registerNpcLight ✓
+        - F3 debug HUD shows warmed radius/intensity ✓
+      Manual-verify-only criteria (visit Wren before/after, Old Man, Driftwood
+      negative, area transition persistence, Reset Progress baseline restore)
+      cannot be auto-confirmed → story not auto-completed by gate; awaits
+      operator smoke recorded in briar-wilds-manual-verify.md.
+
+      Queued task 3 as operator manual-verify (US-99 closure).
+    tokens: ~12000
