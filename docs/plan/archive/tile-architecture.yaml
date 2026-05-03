@@ -282,3 +282,11 @@ entries:
       removal + manual verification remain operator-driven.
     tokens: ~17000
 
+
+reconciliation_status:
+  r0: done  # PRD is index-only — no inline stories to extract
+  r1: done  # no docs/architecture/ in this project
+  r2: done  # spec Status: shipped + per-story [Shipped] tags; PRD index row already shipped
+  r3: done  # AGENTS.md was kept current during the phase (US-92..US-98 references in File ownership, Depth map, Behavior rules); no further edits needed
+  r4: done  # no docs/manual/ or docs/GUIDE.md; per-phase manual-verify checklists live in docs/plan/ and were updated in-phase
+  r5: done

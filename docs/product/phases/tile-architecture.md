@@ -1,6 +1,6 @@
 # Phase: tile-architecture
 
-Status: Draft
+Status: Shipped
 
 ## Phase goal
 
@@ -43,7 +43,7 @@ Locked by `docs/art-style.md` and `art/styleGuide.ts` (US-87's codex). All Pixel
 
 ### Stories
 
-#### US-92 — Vertex terrain + object data model
+#### US-92 [Shipped] — Vertex terrain + object data model
 
 As an area author, I want areas to be authored as a **vertex grid of terrains** plus a **sparse list of objects**, each with a `passable` flag, so that one model expresses ground type, walkability, and overlay objects without the FLOOR/WALL/EXIT enum and without the "decoration is visual / wall-tile is collision" split.
 
@@ -69,7 +69,7 @@ As an area author, I want areas to be authored as a **vertex grid of terrains** 
 
 ---
 
-#### US-93 — Wang resolver + degenerate-mode fallback for Kenney atlases
+#### US-93 [Shipped] — Wang resolver + degenerate-mode fallback for Kenney atlases
 
 As the tile renderer, I want a deterministic Wang resolver that samples a cell's 4 vertex terrains and picks the matching tile from a 16-mask table, with a graceful fallback when a Kenney-derived "degenerate Wang" tileset has no transition entry, so that stage 1 can ship visually identical to today using the existing Kenney atlases before stage 2's PixelLab content lands.
 
@@ -94,7 +94,7 @@ As the tile renderer, I want a deterministic Wang resolver that samples a cell's
 
 ---
 
-#### US-94 — Object layer rendering + collision unification
+#### US-94 [Shipped] — Object layer rendering + collision unification
 
 As the player, I want trees, walls, gates, and fences to **render on top of terrain at the right depth** and to **block movement when their `passable: false`**, so that the world reads as cohesive (a tree visibly sits on grass) and so that walking into a wall stops me whether the wall is encoded as terrain or as an object.
 
@@ -124,7 +124,7 @@ As the player, I want trees, walls, gates, and fences to **render on top of terr
 
 ---
 
-#### US-95 — PixelLab Wang terrain tilesets (Ashen Isle + Fog Marsh chains)
+#### US-95 [Shipped] — PixelLab Wang terrain tilesets (Ashen Isle + Fog Marsh chains)
 
 As an art-pipeline operator, I want PixelLab-generated 16-tile Wang tilesets for both areas, prompt-composed through the US-87 codex and chained via `lower_base_tile_id` for visual continuity, so that Ashen Isle and Fog Marsh ship with their own coherent art direction matching `docs/art-style.md` rather than reusing Kenney CC0 atlases.
 
@@ -156,7 +156,7 @@ As an art-pipeline operator, I want PixelLab-generated 16-tile Wang tilesets for
 
 ---
 
-#### US-96 — PixelLab style-matched map objects
+#### US-96 [Shipped] — PixelLab style-matched map objects
 
 As an art-pipeline operator, I want every object kind referenced by the two areas (trees, walls, gates, fences, lanterns, signs, doors, etc.) generated through PixelLab's `create_map_object` style-matching mode against a sample render of the area's new tileset, so that objects visually cohere with the terrain they sit on rather than reading as a sticker overlay.
 
@@ -184,7 +184,7 @@ As an art-pipeline operator, I want every object kind referenced by the two area
 
 ---
 
-#### US-97 — Editor (`tools/editor`) — vertex-aware terrain brush + object placer
+#### US-97 [Shipped] — Editor (`tools/editor`) — vertex-aware terrain brush + object placer
 
 As an area author, I want the `tools/editor` map view to render the new terrain + object layers and let me paint terrain (with a cell-paint shortcut that bulk-sets all 4 of a cell's vertices, plus a finer vertex-paint mode) and place objects, so that re-authoring Ashen Isle and Fog Marsh in US-98 is a visual-editor task rather than hand-edited TypeScript literals.
 
@@ -212,7 +212,7 @@ As an area author, I want the `tools/editor` map view to render the new terrain 
 
 ---
 
-#### US-98 — Re-author Ashen Isle + Fog Marsh + marsh-trap terrain-flip migration
+#### US-98 [Shipped] — Re-author Ashen Isle + Fog Marsh + marsh-trap terrain-flip migration
 
 As the area author, I want both areas re-authored against the new model — vertex grids painted to express grass / sand / path / marsh-floor / water / stone correctly, objects placed for every wall / tree / gate / fence / sign / tapestry / etc. — and the marsh-trap dead-end migrated to a terrain-flip (path → water on those cells when `marsh_trapped == true`) the Wang resolver auto-blends, so that the phase ships with both areas fully on the new architecture and the new PixelLab content.
 
