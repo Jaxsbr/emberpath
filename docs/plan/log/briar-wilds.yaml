@@ -81,3 +81,46 @@ entries:
       Verify green (40 modules, dist 1579.65 kB).
       Spec floors still satisfied (npcWarmedRadius >= 60, npcWarmedIntensity >= 0.50).
     tokens: ~3000
+  - task: 4
+    time: "2026-05-04T09:00:00Z"
+    type: implement
+    story: US-101
+    description: "US-101: EmberWarmthSystem foundation — file + constants + flag wiring + error-path + reset subscriber + HUD line"
+    result: pass
+    notes: |
+      Operator advanced past US-99's manual-verify ("proceed to next phase" =
+      next user story). Foundation-only commit so visual binding can land
+      cleanly in task 5.
+
+      New module src/systems/emberWarmth.ts:
+      - WARMTH_MAX=1.0, WARMTH_FLOOR=0.3, drain=0.08/s, restore=0.20/s, epsilon=0.005
+      - Constructor loads ember_warmth from flag store; validateWarmthValue
+        rejects non-number / non-finite / out-of-range and seeds to MAX with
+        once-per-session warn (mirrors saveState scrub-on-corrupt pattern).
+      - update(dt) is intentionally a no-op until US-102/US-103 wire zones —
+        signature stable so GameScene.update can call it now.
+      - getCurrentWarmth() / getZoneState() getters for HUD + future visual binding.
+      - onFlagChange(ember_warmth) subscriber seeds in-memory back to MAX on
+        Reset Progress; unsubscriber collected for shutdown (Learning EP-02).
+      - scene SHUTDOWN handler invokes destroy() so subscribers release across
+        scene.restart even if the owning scope forgets (defense-in-depth).
+
+      GameScene:
+      - emberWarmthSystem field + import + constructed after lighting in create
+        (always — owns flag load even on areas without zones).
+      - update() calls emberWarmthSystem.update(delta/1000) on every walk-frame
+        (after thoughtBubble.update, before maybeAutosave — the existing
+        per-frame update chain).
+      - F3 HUD provider adds 'warmth: 0.XX  zone: drain|quiet|neutral' line.
+
+      Verify: build green (40 modules, dist 1580.82 kB, +1.17 kB vs prior).
+      Quality checks: no-silent-pass / no-bare-except / agents-consistency all
+      pass; error-path-coverage met by validateWarmthValue.
+      No regression in baseline.
+
+      Story Completion Gate: foundation criteria met (file + constants + flag
+      persistence + error-path + reset subscriber + HUD + always-constructed
+      + zero-alloc update + tsc green); visual binding + zone consumption
+      criteria still ✗ — story not auto-completed. Queued task 5 for visual
+      binding (player ember overlay + lighting overlay player-light radius).
+    tokens: ~10000

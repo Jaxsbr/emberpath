@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 4
-  next_task: "[US-99] Operator manual-verify of US-99: launch dev server, take a fresh playthrough or use Reset Progress; visit Wren before warming, then warm Wren and re-visit (radius/colour readability check); same for Old Man (post-Wren); walk past Driftwood after refusing — confirm no brightening; enter Fog Marsh and return — bubble persists; Reset Progress — bubble back to baseline. Record results in docs/plan/briar-wilds-manual-verify.md § US-99 (file to be created in next task). Once observations are recorded, US-99 can be marked complete."
+  task_number: 5
+  next_task: "[US-101] Implement visual binding: player ember overlay (GameScene.ts:663-665, Phaser.GameObjects.Arc with EMBER_RADIUS=6) lerps scale 1.0..N and alpha A..B between WARMTH_FLOOR and WARMTH_MAX; lighting overlay's player-light radius (LightingSystem.getPlayerRadius at lighting.ts:213) lerps between new LIGHTING_CONFIG.playerLightRadiusFloor and playerLightRadiusFull. Add LIGHTING_CONFIG fields: playerEmberRadiusFloor/Full, playerEmberAlphaFloor/Full, playerLightRadiusFloor/Full — explicit committed values, never undefined. EmberWarmthSystem exposes getCurrentWarmth() (already done) and the GameScene update path calls a tiny lerp helper to set scale+alpha; LightingSystem grows a setPlayerWarmth(w) input."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
