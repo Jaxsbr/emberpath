@@ -124,3 +124,71 @@ entries:
       criteria still ✗ — story not auto-completed. Queued task 5 for visual
       binding (player ember overlay + lighting overlay player-light radius).
     tokens: ~10000
+  - task: 5
+    time: "2026-05-04T09:30:00Z"
+    type: implement
+    story: US-101
+    description: "US-101: visual binding — player ember overlay + lighting overlay lerp by warmth"
+    result: pass
+    notes: |
+      LIGHTING_CONFIG: added 6 committed values (no undefined possible):
+      playerEmberRadiusFloor=4 / Full=12, playerEmberAlphaFloor=0.55 / Full=1.0,
+      playerLightRadiusFloor=80 / Full=192. Floor=80 (vs base playerRadiusPost=192)
+      keeps the world legible at WARMTH_FLOOR.
+
+      LightingSystem: lerpByWarmth(w, atFloor, atFull) module helper clamps
+      input to [FLOOR, MAX] and returns linear interpolation t = (w-FLOOR)/(MAX-FLOOR).
+      pRadius lerps in update() when hasEmber; getPlayerRadius() lerps so the
+      F3 HUD reading stays accurate. setPlayerWarmth(w) is the input setter.
+
+      GameScene update(): calls lightingSystem.setPlayerWarmth each frame after
+      emberWarmthSystem.update; ember overlay branch lerps Arc.setRadius +
+      setAlpha. Zero allocations in the per-frame path — only mutations.
+
+      Build green (40 modules, dist 1581.62 kB).
+    tokens: ~7000
+  - task: 6
+    time: "2026-05-04T09:50:00Z"
+    type: implement
+    story: US-101
+    description: "US-101 + US-102/103 prereq: AreaDefinition zone types + EmberWarmthSystem zone consumption"
+    result: pass
+    notes: |
+      types.ts: added AreaDefinition.drainZones?: DrainZoneDefinition[] and
+      quietZones?: QuietZoneDefinition[] + ThoughtSequence shape. Both zone
+      types match the spec shape ({ id, col, row, width, height, multiplier?, sequence? }).
+
+      EmberWarmthSystem extended:
+      - Constructor now takes drainZones, quietZones, thoughtBubble (nullable),
+        worldCols, worldRows. ThoughtBubbleQueue is a minimal interface (not the
+        concrete class) so the system depends on behavior, not class identity.
+      - On construction, isZoneValid filters out zones with out-of-grid coords
+        or non-positive dimensions, with once-per-zone-id warn — area still
+        loads, other zones still function (no crash on author error per US-102/103
+        error-path criterion).
+      - update(dt, playerX, playerY) walks both zone lists with indexed for-loops
+        (zero allocation). Per-zone wasInside Map tracks transitions; entry
+        (outside -> inside) fires:
+          drain: incrementFlag('doubt_count_<id>') + queue cycled doubt line
+          quiet: if !quiet_seen_<id>, queue narration + setFlag(true)
+      - Quiet wins over drain on overlap (US-103 — grace stronger than trial).
+      - Clamps to [WARMTH_FLOOR, WARMTH_MAX]; persists only when |delta| > epsilon.
+
+      GameScene wiring:
+      - Warmth system constructed with area.drainZones/quietZones (undefined on
+        existing areas; system's filter accepts undefined as 'no zones').
+      - thoughtBubble is constructed AFTER the warmth system, so a setter is
+        used to inject it post-construction (no order coupling).
+      - update() passes player x/y into warmth update.
+
+      Build green (40 modules, dist 1582.65 kB).
+
+      Story Completion Gate: US-101 now has the full code path (foundation +
+      visual binding + zone consumption + entry transitions + clamp + epsilon
+      persist). Manual-verify (in-engine smoke at desktop+mobile, drain stress,
+      Continue-from-save, Reset Progress) still ✗ — closing requires operator
+      smoke once briar-wilds.ts exists with real zones.
+
+      Queued task 7 as US-100 Investigate (briar-wilds area + east-gated entry
+      from Ashen Isle; no PixelLab calls until implement).
+    tokens: ~14000
