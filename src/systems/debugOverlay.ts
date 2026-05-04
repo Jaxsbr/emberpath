@@ -1,6 +1,13 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../maps/constants';
-import { AreaDefinition, TriggerDefinition, ExitDefinition, NpcDefinition } from '../data/areas/types';
+import {
+  AreaDefinition,
+  TriggerDefinition,
+  ExitDefinition,
+  NpcDefinition,
+  DrainZoneDefinition,
+  QuietZoneDefinition,
+} from '../data/areas/types';
 
 const DEBUG_DEPTH = 50; // between entities (5) and UI (100)
 const TRIGGER_ALPHA = 0.3;
@@ -30,6 +37,11 @@ const TYPE_COLORS: Record<string, number> = {
   dialogue: 0x44ff88, // green
   exit: 0xffaa44,     // orange
 };
+// US-102/103 zone colors — distinct from trigger/exit so the F3 view reads as
+// "drain = warm-sienna trap, quiet = hope-gold rest" at a glance. Drawn at
+// TRIGGER_ALPHA so they sit visibly under any overlapping trigger/exit rect.
+const DRAIN_ZONE_COLOR = 0xc97a3a;  // STYLE_PALETTE.burntSienna analog
+const QUIET_ZONE_COLOR = 0xf2c95b;  // STYLE_PALETTE.hopeGoldLight analog
 
 export class DebugOverlaySystem {
   private scene: Phaser.Scene;
@@ -100,6 +112,8 @@ export class DebugOverlaySystem {
 
     this.drawTriggerZones(this.area.triggers);
     this.drawExitZones(this.area.exits);
+    this.drawDrainZones(this.area.drainZones ?? []);
+    this.drawQuietZones(this.area.quietZones ?? []);
     this.drawNpcRadii(this.area.npcs);
     this.drawHud();
   }
@@ -158,6 +172,54 @@ export class DebugOverlaySystem {
       this.graphics.strokeRect(x, y, w, h);
 
       const labelText = `${exit.id} [exit]\n→ ${exit.destinationAreaId} (${exit.entryPoint.col},${exit.entryPoint.row})`;
+      const label = this.scene.add.text(x + 2, y + 2, labelText, LABEL_STYLE);
+      label.setDepth(DEBUG_DEPTH + 1);
+      const uiCam = this.scene.cameras.getCamera('ui');
+      if (uiCam) uiCam.ignore(label);
+      this.labels.push(label);
+    }
+  }
+
+  private drawDrainZones(zones: DrainZoneDefinition[]): void {
+    if (!this.graphics) return;
+    for (const z of zones) {
+      const x = z.col * TILE_SIZE;
+      const y = z.row * TILE_SIZE;
+      const w = z.width * TILE_SIZE;
+      const h = z.height * TILE_SIZE;
+      this.graphics.fillStyle(DRAIN_ZONE_COLOR, TRIGGER_ALPHA);
+      this.graphics.fillRect(x, y, w, h);
+      this.graphics.lineStyle(1, DRAIN_ZONE_COLOR, 0.8);
+      this.graphics.strokeRect(x, y, w, h);
+
+      const lineCount = z.doubts?.lines.length ?? 0;
+      const labelText = `${z.id} [drain]${
+        z.drainMultiplier !== undefined ? ` x${z.drainMultiplier}` : ''
+      }\n${lineCount} doubt line${lineCount === 1 ? '' : 's'}`;
+      const label = this.scene.add.text(x + 2, y + 2, labelText, LABEL_STYLE);
+      label.setDepth(DEBUG_DEPTH + 1);
+      const uiCam = this.scene.cameras.getCamera('ui');
+      if (uiCam) uiCam.ignore(label);
+      this.labels.push(label);
+    }
+  }
+
+  private drawQuietZones(zones: QuietZoneDefinition[]): void {
+    if (!this.graphics) return;
+    for (const z of zones) {
+      const x = z.col * TILE_SIZE;
+      const y = z.row * TILE_SIZE;
+      const w = z.width * TILE_SIZE;
+      const h = z.height * TILE_SIZE;
+      this.graphics.fillStyle(QUIET_ZONE_COLOR, TRIGGER_ALPHA);
+      this.graphics.fillRect(x, y, w, h);
+      this.graphics.lineStyle(1, QUIET_ZONE_COLOR, 0.8);
+      this.graphics.strokeRect(x, y, w, h);
+
+      const lineCount = z.narration?.lines.length ?? 0;
+      const labelText = `${z.id} [quiet]${
+        z.restoreMultiplier !== undefined ? ` x${z.restoreMultiplier}` : ''
+      }\n${lineCount} narration line${lineCount === 1 ? '' : 's'}`;
       const label = this.scene.add.text(x + 2, y + 2, labelText, LABEL_STYLE);
       label.setDepth(DEBUG_DEPTH + 1);
       const uiCam = this.scene.cameras.getCamera('ui');
