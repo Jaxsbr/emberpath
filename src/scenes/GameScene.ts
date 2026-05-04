@@ -382,6 +382,7 @@ export class GameScene extends Phaser.Scene {
       null,
       this.area.mapCols,
       this.area.mapRows,
+      this.lightingSystem,
     );
     // Fade in when entering from an area transition OR a Continue resume
     if (data?.entryPoint || data?.resumePosition) {

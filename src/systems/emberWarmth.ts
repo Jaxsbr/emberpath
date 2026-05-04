@@ -24,6 +24,12 @@ export const WARMTH_FLOOR = 0.3;
 export const WARMTH_DRAIN_PER_SECOND = 0.08;
 export const WARMTH_RESTORE_PER_SECOND = 0.20;
 export const WARMTH_WRITE_EPSILON = 0.005;
+// Quiet-zone tier-2 light defaults (US-103). Sized to clearly read as a
+// warm pocket of grace once the Ember is carried — slightly larger than a
+// per-NPC tier-1 baseline (40 px) so a small clearing reads as a destination,
+// not a single-NPC bubble.
+export const QUIET_ZONE_LIGHT_RADIUS = 72;
+export const QUIET_ZONE_LIGHT_INTENSITY = 0.55;
 
 const FLAG_NAME = 'ember_warmth';
 
@@ -34,6 +40,22 @@ export type WarmthZoneState = 'drain' | 'quiet' | 'neutral';
 // real one in; tests can pass a stub.
 export interface ThoughtBubbleQueue {
   show(request: { text: string; duration?: number }): void;
+}
+
+// Lighting registry interface — same minimal-decoupling pattern as the
+// thought-bubble queue. EmberWarmthSystem registers a tier-2 light at each
+// quiet zone's centre (US-103) so the clearings bloom as warm pockets once
+// the player carries the Ember (existing tier-2 mechanism in LightingSystem).
+export interface LightRegistry {
+  registerLight(light: {
+    id: string;
+    x: number;
+    y: number;
+    radius: number;
+    intensity: number;
+    tier: 1 | 2;
+  }): void;
+  unregisterLight(id: string): void;
 }
 
 let invalidWarnLogged = false;
@@ -51,6 +73,11 @@ export class EmberWarmthSystem {
   private validDrainZones: DrainZoneDefinition[] = [];
   private validQuietZones: QuietZoneDefinition[] = [];
   private unsubscribers: Array<() => void> = [];
+  // Registered tier-2 light ids (one per valid quiet zone). Stored so destroy
+  // can unregister them — defense-in-depth alongside scene-shutdown lighting
+  // cleanup, so a future scenario where the warmth system is rebuilt without
+  // a full scene restart can't leak lights.
+  private registeredLightIds: string[] = [];
 
   constructor(
     private scene: Phaser.Scene,
@@ -59,6 +86,7 @@ export class EmberWarmthSystem {
     private thoughtBubble: ThoughtBubbleQueue | null,
     private worldCols: number,
     private worldRows: number,
+    private lighting: LightRegistry | null = null,
   ) {
     // Reset hygiene (Learning EP-02): instance fields explicitly reset at top
     // of setup so a scene restart starts from a known state.
@@ -70,6 +98,7 @@ export class EmberWarmthSystem {
     this.validDrainZones = [];
     this.validQuietZones = [];
     this.unsubscribers = [];
+    this.registeredLightIds = [];
 
     // Filter zones to those with valid in-bounds coordinates and positive
     // dimensions. Authoring errors (out-of-grid coords, zero/negative size)
@@ -81,6 +110,31 @@ export class EmberWarmthSystem {
     this.validQuietZones = (quietZones ?? []).filter((z) =>
       this.isZoneValid(z, 'quiet'),
     );
+
+    // US-103 — auto-register a tier-2 light at each quiet zone's centre. The
+    // existing tier-2 mechanism in LightingSystem renders these at intensity 0
+    // pre-Ember and at full intensity post-Ember, so the clearings only bloom
+    // once the player carries the Ember (matching the design vocabulary: light
+    // = grace, revealed by the Ember). Constants live in the system so a
+    // future area-author override could supply per-zone radius/intensity
+    // without touching emberWarmth.ts.
+    if (this.lighting) {
+      for (let i = 0; i < this.validQuietZones.length; i++) {
+        const z = this.validQuietZones[i];
+        const cx = (z.col + z.width / 2) * TILE_SIZE;
+        const cy = (z.row + z.height / 2) * TILE_SIZE;
+        const id = `quiet:${z.id}`;
+        this.lighting.registerLight({
+          id,
+          x: cx,
+          y: cy,
+          radius: QUIET_ZONE_LIGHT_RADIUS,
+          intensity: QUIET_ZONE_LIGHT_INTENSITY,
+          tier: 2,
+        });
+        this.registeredLightIds.push(id);
+      }
+    }
 
     // Load + validate. Mirrors saveState's scrub-on-corrupt pattern: any
     // non-number / non-finite / out-of-range value seeds back to MAX with a
@@ -206,6 +260,12 @@ export class EmberWarmthSystem {
   destroy(): void {
     for (const u of this.unsubscribers) u();
     this.unsubscribers = [];
+    if (this.lighting) {
+      for (let i = 0; i < this.registeredLightIds.length; i++) {
+        this.lighting.unregisterLight(this.registeredLightIds[i]);
+      }
+    }
+    this.registeredLightIds = [];
   }
 
   // Wire the thought-bubble queue post-construction (GameScene constructs the
