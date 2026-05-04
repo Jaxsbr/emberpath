@@ -253,3 +253,56 @@ entries:
       Queued task 8 as the implement: skeleton with placeholder tilesets, build
       green, area walkable end-to-end pre-PixelLab.
     tokens: ~9000
+  - task: 8
+    time: "2026-05-04T10:30:00Z"
+    type: implement
+    story: US-100
+    description: "US-100: briar-wilds skeleton + ashen-isle east-gated exit"
+    result: pass
+    notes: |
+      Per the T7 plan. Six files touched:
+
+      - src/maps/terrain.ts: TerrainId union extended with 'briar-floor' /
+        'briar-thorn'; TERRAINS entries added (passable + impassable
+        respectively, both pointing at wangTilesetId 'briar-wilds-floor-thorn').
+      - src/maps/tilesets.ts: TILESETS gains 'briar-wilds-floor-thorn' with
+        placeholder atlasKey 'tileset-ashen-isle-grass-sand' (so the resolver
+        finds frames pre-PixelLab). T9 swaps the atlasKey to the real one.
+      - src/data/areas/briar-wilds.ts NEW: 32x26 vertex grid, 2 drain zones
+        with 3 doubt lines each, 2 quiet zones (one carries closing reflection
+        narration of 3 lines), one-shot trigger co-located with quiet-closing
+        for briar_wilds_complete flag flip, west-edge exit returning to
+        ashen-isle, zero NPCs by design.
+      - src/data/areas/registry.ts: registers 'briar-wilds'.
+      - src/data/areas/ashen-isle.ts: east exit (49, 18) 1x2 condition
+        has_ember_mark==true; 6 conditional bramble BUSH placeholders over
+        the exit cells; first-time east-path thought at (47, 18) with
+        setFlags east_path_seen.
+      - src/scenes/GameScene.ts preload: dedupe tilesets by atlasKey so the
+        placeholder doesn't enqueue a 404 against a non-existent tilemap.
+
+      Caught: I initially used '&&' in the east-path-thought condition;
+      evaluateCondition uses 'AND' (verified at conditions.ts line 5). Fixed
+      before commit.
+
+      Build green (40 modules, dist 1583.51 kB, +0.86 kB).
+
+      Story Completion Gate (US-100 file-inspectable subset):
+        ✓ briar-wilds.ts exports AreaDefinition with terrain >= 30 wide x 24 tall (32x26)
+        ✓ briar-wilds registered in registry.ts
+        ✓ TILESETS includes 'briar-wilds-floor-thorn' entry with primary/secondary terrains
+        ✓ both new terrains added to TERRAINS with passable flags
+        ✓ ashen-isle east-edge exit at committed (49, 18) with has_ember_mark==true gate
+        ✓ conditional bramble decorations over the exit cluster
+        ✓ first-time-arrival thought trigger present
+        ✓ west-edge exit on briar-wilds returning to ashen-isle
+        ✓ closing-reflection trigger present (col 28, row 12, condition briar_wilds_complete==false, setFlags, type thought)
+        ✓ zero NPCs in briar-wilds
+        ✗ PixelLab Wang tileset generated — pending T9
+        ✗ object kinds bramble-cluster/dead-tree/twisted-root — pending T10
+        ✗ atlas frame-pick verification artefact — pending T11
+        ✗ in-engine smoke at desktop+mobile — pending operator
+        ✗ Reset Progress flag clear verification — pending operator manual-verify
+
+      Queued task 9 for the PixelLab Wang tileset generation.
+    tokens: ~16000
