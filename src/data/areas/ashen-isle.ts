@@ -269,18 +269,21 @@ const ashenDecorations: DecorationDefinition[] = [
   { col: 6, row: 34, spriteFrame: FRAME.FLOWER },
   { col: 44, row: 25, spriteFrame: FRAME.BUSH },
   { col: 30, row: 33, spriteFrame: FRAME.BUSH },
-  // ───── East-edge bramble cluster (US-100) ─────
-  // Pre-Ember the brambles render and visually block the east exit. Post-Ember
-  // they hide (visibility-only — not collision; the east exit cells are FLOOR
-  // tiles, so collision is naturally clear once the condition flips). Frame
-  // is a placeholder bush; T11 swaps to a PixelLab-generated bramble-cluster
-  // frame matching the briar-wilds aesthetic.
-  { col: 47, row: 17, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
-  { col: 47, row: 18, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
-  { col: 48, row: 17, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
-  { col: 48, row: 18, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
-  { col: 49, row: 18, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
-  { col: 49, row: 19, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
+];
+
+// ───── East-edge bramble objects (US-100) ─────
+// Conditional ObjectInstances using the PixelLab bramble-cluster asset. Each
+// cell is impassable while has_ember_mark == false — collision and visibility
+// flip together when the Ember is granted (existing conditional-object path).
+// Replaces the earlier BUSH-decoration placeholder; brambles now both LOOK
+// like brambles and physically block the path pre-Ember.
+const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
+  { kind: 'bramble-cluster', col: 47, row: 17, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 47, row: 18, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 48, row: 17, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 48, row: 18, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 49, row: 18, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 49, row: 19, condition: 'has_ember_mark == false' },
 ];
 
 // Stage-1 migration source: the existing FLOOR/WALL authoring array remains
@@ -298,7 +301,7 @@ export const ashenIsle: AreaDefinition = {
   decorationsTileset: 'tiny-town',
   map: ashenTileMap,
   terrain: deriveTerrainFromTileMap(ashenTileMap, 'grass'),
-  objects: deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'),
+  objects: [...deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'), ...ashenEastBrambles],
   npcs: [
     // Old Man stands in the doorway of his cottage (40, 28 — the door FLOOR
     // tile). With wanderRadius 1 he drifts a step south to (40, 29) and back,

@@ -114,13 +114,13 @@ export const TILESETS: Record<string, TilesetDefinition> = {
       fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
     },
   },
-  // ───── Briar Wilds (US-100, skeleton) ─────
-  // Placeholder atlasKey points at ashen-isle-grass-sand so the build resolves
-  // and the area is walkable end-to-end before the PixelLab generation in T9.
-  // T9 swaps atlasKey to 'tileset-briar-wilds-floor-thorn' alongside the real
-  // PixelLab atlas + provenance commit.
+  // ───── Briar Wilds (US-100) ─────
+  // PixelLab Wang tileset, briar-floor (lower) -> briar-thorn (upper).
+  // Generated 2026-05-04 against mcp__pixellab__ (personal account) — Learning
+  // EP-05 budget logged in phase log T12. Atlas committed to
+  // assets/tilesets/briar-wilds-floor-thorn/tilemap.{png,json}.
   'briar-wilds-floor-thorn': {
-    atlasKey: 'tileset-ashen-isle-grass-sand',
+    atlasKey: 'tileset-briar-wilds-floor-thorn',
     wang: {
       primaryTerrain: 'briar-floor',
       secondaryTerrain: 'briar-thorn',

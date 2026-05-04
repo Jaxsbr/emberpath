@@ -34,7 +34,14 @@ export type ObjectKindId =
   // Fog Marsh — passable
   | 'dry-reed'
   | 'mushroom'
-  | 'lantern-broken';
+  | 'lantern-broken'
+  // Briar Wilds — impassable. `briar-dead-tree` is a separate kind from
+  // fog-marsh's `dead-tree` because the briar-wilds asset is its own PixelLab
+  // generation with the briar palette, not the marsh palette.
+  | 'bramble-cluster'
+  | 'briar-dead-tree'
+  // Briar Wilds — passable
+  | 'twisted-root';
 
 export interface ObjectKindDefinition {
   id: ObjectKindId;
@@ -84,6 +91,11 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'dry-reed':       { id: 'dry-reed',       atlasKey: 'object-dry-reed',       assetPath: 'objects/fog-marsh/dry-reed.png',       passable: true },
   'mushroom':       { id: 'mushroom',       atlasKey: 'object-mushroom',       assetPath: 'objects/fog-marsh/mushroom.png',       passable: true },
   'lantern-broken': { id: 'lantern-broken', atlasKey: 'object-lantern-broken', assetPath: 'objects/fog-marsh/lantern-broken.png', passable: true },
+
+  // Briar Wilds (US-100/T12) — PixelLab personal-account generations.
+  'bramble-cluster': { id: 'bramble-cluster', atlasKey: 'object-bramble-cluster', assetPath: 'objects/briar-wilds/bramble-cluster.png', passable: false },
+  'briar-dead-tree': { id: 'briar-dead-tree', atlasKey: 'object-briar-dead-tree', assetPath: 'objects/briar-wilds/briar-dead-tree.png', passable: false },
+  'twisted-root':    { id: 'twisted-root',    atlasKey: 'object-twisted-root',    assetPath: 'objects/briar-wilds/twisted-root.png',    passable: true },
 };
 
 export function hasObjectKind(id: string): id is ObjectKindId {

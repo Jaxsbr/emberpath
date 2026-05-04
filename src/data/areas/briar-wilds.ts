@@ -115,10 +115,45 @@ const triggers: TriggerDefinition[] = [
   },
 ];
 
-// Skeleton has no decorations — PixelLab object kinds populate sparse thorn
-// scatter and dead-tree clusters in T11. Empty array preserves the
-// AreaDefinition contract.
+// Skeleton has no decorations — terrain + objects carry the visual load.
 const decorations: DecorationDefinition[] = [];
+
+// ───── Object scatter (T12 — PixelLab content) ─────
+// Sparse impassable bramble + dead-tree pockets along the trial road, plus
+// passable twisted-root ground decoration in the drain zones (visual cue
+// for the false-hope read). Player path stays open: a clear vertical lane
+// roughly cols 1-7 down the west side and cols 22-26 across the middle
+// keeps the route to quiet-closing reachable. Edges are dressed thicker.
+const briarObjects: import('../../maps/objects').ObjectInstance[] = [
+  // North edge cluster — frames the area
+  { kind: 'briar-dead-tree', col: 5, row: 2 },
+  { kind: 'bramble-cluster', col: 12, row: 2 },
+  { kind: 'briar-dead-tree', col: 20, row: 1 },
+  { kind: 'bramble-cluster', col: 25, row: 3 },
+  { kind: 'briar-dead-tree', col: 30, row: 2 },
+  // West edge cluster — leaves col 0 entry open at row 12-14
+  { kind: 'bramble-cluster', col: 1, row: 4 },
+  { kind: 'bramble-cluster', col: 2, row: 9 },
+  { kind: 'bramble-cluster', col: 1, row: 19 },
+  // Middle obstacles between drain-1 and drain-2 — push the player to weave
+  { kind: 'briar-dead-tree', col: 13, row: 12 },
+  { kind: 'bramble-cluster', col: 16, row: 14 },
+  // South edge cluster
+  { kind: 'briar-dead-tree', col: 7, row: 23 },
+  { kind: 'bramble-cluster', col: 14, row: 24 },
+  { kind: 'briar-dead-tree', col: 22, row: 23 },
+  { kind: 'bramble-cluster', col: 28, row: 24 },
+  // East edge cluster — frames the closing-reflection clearing without
+  // blocking the cells inside quiet-closing (cols 27-30, rows 11-14)
+  { kind: 'bramble-cluster', col: 31, row: 9 },
+  { kind: 'briar-dead-tree', col: 31, row: 18 },
+  // Twisted-root ground decoration inside the drain zones — passable, signals
+  // false-hope visually (the trap and the lie are one — phase-goal direction)
+  { kind: 'twisted-root', col: 9, row: 9 },
+  { kind: 'twisted-root', col: 10, row: 10 },
+  { kind: 'twisted-root', col: 19, row: 17 },
+  { kind: 'twisted-root', col: 20, row: 18 },
+];
 
 export const briarWilds: AreaDefinition = {
   id: 'briar-wilds',
@@ -133,9 +168,11 @@ export const briarWilds: AreaDefinition = {
   // Vertex grid all 'briar-floor' (passable). Thorn patches arrive with the
   // PixelLab tileset content + object placement in T9-T11.
   terrain: deriveTerrainFromTileMap(briarTileMap, 'briar-floor'),
-  // No wall-class objects — the skeleton has no impassable cells. Object
-  // kinds (bramble-cluster, dead-tree, twisted-root) land in T10/T11.
-  objects: deriveObjectsFromTileMap(briarTileMap, 'wall-stone'),
+  // PixelLab-generated briar objects (T12). Sparse impassable scatter +
+  // passable twisted-root ground decoration in drain zones. The map itself
+  // has no walls, so deriveObjectsFromTileMap returns nothing — only the
+  // hand-authored briarObjects appear.
+  objects: [...deriveObjectsFromTileMap(briarTileMap, 'wall-stone'), ...briarObjects],
   npcs: [],
   props: [],
   decorations,
