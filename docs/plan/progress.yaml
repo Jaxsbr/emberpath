@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 7
-  next_task: "[US-100] Investigate: catalogue exact ashen-isle.ts east-edge available cells for the new exit (current map is 50x38; need a passable cell on/near col 49 with a clear approach); identify the conditional-decoration mechanism so brambles can be authored with `condition: 'has_ember_mark == false'` over the exit tiles; pick a (col, row) pair for both the exit and the closing-reflection trigger placement; sketch the briar-wilds.ts area shape (≥30x24 vertex grid) including west-edge return exit + closing-reflection quiet zone location near far edge. NO PixelLab calls in this investigate task — those land in the implement task with a clear prompt."
+  task_number: 8
+  next_task: "[US-100] Implement briar-wilds.ts skeleton + ashen-isle east-gated exit. Concrete plan: ashen-isle exit at (col 49, row 18) size 1x2 with condition 'has_ember_mark == true' destination 'briar-wilds' entryPoint (col 1, row 13). Conditional bramble decorations (4-6 tile-snapped) over the exit with condition 'has_ember_mark == false'. First-time thought trigger at (col 47, row 18) condition 'has_ember_mark == true && east_path_seen == false', setFlags { east_path_seen: true }, line: 'The brambles have parted. A road east.'. New file briar-wilds.ts: 32x26 grid (>=30x24 floor), tileset='briar-wilds-floor-thorn' (placeholder pointing to ashen-isle-grass-sand for now), terrain seeded all-grass placeholder pending real PixelLab content, west exit at (col 0, row 12) size 1x3 returning to ashen-isle entryPoint (col 48, row 18). 2 drain zones + 2 quiet zones (1 quiet acts as closing reflection at col 27, row 12 size 4x4 with narration sequence ending on Heart Bridge line + setFlags briar_wilds_complete). Register in registry.ts. Build green expected (placeholders). Real PixelLab tileset + objects land in tasks 9-11."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

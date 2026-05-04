@@ -192,3 +192,64 @@ entries:
       Queued task 7 as US-100 Investigate (briar-wilds area + east-gated entry
       from Ashen Isle; no PixelLab calls until implement).
     tokens: ~14000
+  - task: 7
+    time: "2026-05-04T10:10:00Z"
+    type: investigate
+    story: US-100
+    description: "US-100 investigate: catalog ashen-isle east-edge availability + sketch briar-wilds skeleton coordinates + plan PixelLab task split"
+    result: pass
+    notes: |
+      Ashen Isle (50x38): playerSpawn (9,20). Existing exits: 'ashen-to-fog' at
+      (col 23, row 2, 4x1) -> fog-marsh entry (14, 21). NPCs: Old Man (40,28),
+      Wren (22,18), Driftwood (32,6). East edge is open — col 49 at mid-rows
+      (16-22) has no NPC/exit conflicts.
+
+      ExitDefinition supports optional `condition?: string` already (line 160 of
+      types.ts) — east-gated entry uses it directly with 'has_ember_mark == true'.
+      DecorationDefinition supports `condition?: string` for visibility gating —
+      conditional brambles use 'has_ember_mark == false'.
+
+      Decision: east exit at (49, 18) size 1x2. First-time thought trigger near
+      it at (47, 18) (1 tile west of the exit so it fires before the player
+      crosses). Conditional brambles cluster over the exit cells using existing
+      tiny-town/tiny-dungeon decoration frames as placeholders until briar-wilds
+      PixelLab content lands.
+
+      Briar Wilds skeleton plan (32x26 - exceeds 30x24 floor):
+      - Tileset: register 'briar-wilds-floor-thorn' as a NEW TILESETS entry but
+        AT FIRST POINT IT to ashen-isle-grass-sand's atlasKey so the build
+        works without a new PixelLab atlas — replace in T9 with real PixelLab.
+      - New terrain ids: 'briar-floor' (passable, wangTilesetId =
+        'briar-wilds-floor-thorn'), 'briar-thorn' (impassable, same wangTilesetId).
+        Terrain seeding for skeleton: all 'briar-floor' (uniform vertex grid)
+        for walkability; introduce 'briar-thorn' patches in T9 once content lands.
+      - Player west exit: (0, 12) size 1x3 -> ashen-isle entry (48, 18).
+      - Drain zones (US-102 will populate doubts): drain-1 at (8, 8) 4x3,
+        drain-2 at (18, 16) 4x3. Each gets ≥3 doubt lines committed in T9.
+      - Quiet zones: quiet-grove at (14, 5) 3x3, quiet-closing at (27, 11) 4x4.
+        quiet-closing carries the closing-reflection narration sequence AND
+        a separate setFlags { briar_wilds_complete: true } via a co-located
+        TriggerDefinition on the same tiles (the EmberWarmthSystem only fires
+        narration; the briar_wilds_complete flag flip needs the trigger system).
+        Per US-103 design: same zone, two mechanisms.
+      - No NPCs in briar-wilds (intentional — trial endured alone, US-100 spec).
+
+      PixelLab generation strategy (T9-T11):
+      - T9: mcp__pixellab__create_topdown_tileset with primary_terrain 'briar-floor'
+        + secondary_terrain 'briar-thorn'; commit to assets/tilesets/briar-wilds/
+        + tilemap.png/json. Update TILESETS atlasKey to the real one.
+      - T10: 3 mcp__pixellab__create_map_object calls for bramble-cluster
+        (impassable), dead-tree (impassable), twisted-root (passable). Use a
+        96x96 sample render of briar terrain as background_image for style match.
+      - T11: Wire OBJECT_KINDS entries; populate briar-wilds objects with
+        sparse impassable thorn patches + decoration scatter; populate
+        ashen-isle bramble-decoration cluster with the new bramble frames.
+      - All operator-triggered against mcp__pixellab__ (personal — Learning EP-05).
+
+      Atlas frame-pick verification (T12 — Learning EP-03 compounded rule):
+      labeled-atlas preview rendered for the briar-wilds tileset and each
+      object kind; per-mask + per-object yes/no in the phase log.
+
+      Queued task 8 as the implement: skeleton with placeholder tilesets, build
+      green, area walkable end-to-end pre-PixelLab.
+    tokens: ~9000
