@@ -13,7 +13,9 @@ export type TerrainId =
   | 'path'
   | 'marsh-floor'
   | 'water'
-  | 'stone';
+  | 'stone'
+  | 'briar-floor'
+  | 'briar-thorn';
 
 export interface TerrainDefinition {
   id: TerrainId;
@@ -67,6 +69,23 @@ export const TERRAINS: Record<TerrainId, TerrainDefinition> = {
     passable: true,
     wangTilesetId: 'fog-marsh-floor-stone',
     description: 'Weathered umber stone — Fog Marsh tomb apron',
+  },
+  // Briar Wilds (US-100). Skeleton stage points the wangTilesetId at the
+  // placeholder 'briar-wilds-floor-thorn' tileset entry (which itself reuses
+  // the ashen-isle-grass-sand atlas until the PixelLab Wang generation lands).
+  // Once real PixelLab content arrives the atlasKey flips on the tileset
+  // entry — no terrain change needed.
+  'briar-floor': {
+    id: 'briar-floor',
+    passable: true,
+    wangTilesetId: 'briar-wilds-floor-thorn',
+    description: 'Briar Wilds base — softened grey-green ground beneath thorn',
+  },
+  'briar-thorn': {
+    id: 'briar-thorn',
+    passable: false,
+    wangTilesetId: 'briar-wilds-floor-thorn',
+    description: 'Twisted bramble thorn — impassable Briar Wilds barrier',
   },
 };
 

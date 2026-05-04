@@ -269,6 +269,18 @@ const ashenDecorations: DecorationDefinition[] = [
   { col: 6, row: 34, spriteFrame: FRAME.FLOWER },
   { col: 44, row: 25, spriteFrame: FRAME.BUSH },
   { col: 30, row: 33, spriteFrame: FRAME.BUSH },
+  // ───── East-edge bramble cluster (US-100) ─────
+  // Pre-Ember the brambles render and visually block the east exit. Post-Ember
+  // they hide (visibility-only — not collision; the east exit cells are FLOOR
+  // tiles, so collision is naturally clear once the condition flips). Frame
+  // is a placeholder bush; T11 swaps to a PixelLab-generated bramble-cluster
+  // frame matching the briar-wilds aesthetic.
+  { col: 47, row: 17, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
+  { col: 47, row: 18, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
+  { col: 48, row: 17, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
+  { col: 48, row: 18, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
+  { col: 49, row: 18, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
+  { col: 49, row: 19, spriteFrame: FRAME.BUSH, condition: 'has_ember_mark == false' },
 ];
 
 // Stage-1 migration source: the existing FLOOR/WALL authoring array remains
@@ -395,6 +407,22 @@ export const ashenIsle: AreaDefinition = {
       condition: 'npc_warmed_wren == true AND npc_warmed_old_man == true AND homecoming_complete == false',
       repeatable: false,
       setFlags: { homecoming_complete: true },
+    },
+    {
+      // East-path first-arrival thought (US-100). One tile west of the east
+      // exit so it fires the moment the player commits to the new road. Gated
+      // on has_ember_mark + east_path_seen so it plays exactly once after
+      // the brambles have parted.
+      id: 'east-path-thought',
+      col: 47,
+      row: 18,
+      width: 1,
+      height: 1,
+      type: 'thought',
+      actionRef: 'The brambles have parted. A road east.',
+      condition: 'has_ember_mark == true AND east_path_seen == false',
+      repeatable: false,
+      setFlags: { east_path_seen: true },
     },
   ],
   dialogues: {
@@ -759,6 +787,20 @@ export const ashenIsle: AreaDefinition = {
       height: 1,
       destinationAreaId: 'fog-marsh',
       entryPoint: { col: 14, row: 21 },
+    },
+    {
+      // East-gated exit to Briar Wilds (US-100). Ember-only — the brambles
+      // visually block pre-Ember (conditional decorations) and the condition
+      // gate suppresses the transition itself so a player without the Ember
+      // who somehow reaches the cell does not phase through.
+      id: 'ashen-to-briar',
+      col: 49,
+      row: 18,
+      width: 1,
+      height: 2,
+      destinationAreaId: 'briar-wilds',
+      entryPoint: { col: 1, row: 13 },
+      condition: 'has_ember_mark == true',
     },
   ],
   visual: { floorColor: 0x4a6741, wallColor: 0x2c2c3a },

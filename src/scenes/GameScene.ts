@@ -216,7 +216,16 @@ export class GameScene extends Phaser.Scene {
     // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
     // indices; resolveWangFrame returns them as strings which Phaser accepts directly.
     // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
+    //
+    // Dedupe by atlasKey: a placeholder tileset entry (US-100 skeleton's
+    // 'briar-wilds-floor-thorn' reuses 'tileset-ashen-isle-grass-sand') must
+    // not enqueue a second load against a tilesets/<id>/tilemap.png URL that
+    // does not exist on disk yet. The first entry with each atlasKey wins;
+    // subsequent entries skip.
+    const loadedAtlasKeys = new Set<string>();
     for (const [id, def] of Object.entries(TILESETS)) {
+      if (loadedAtlasKeys.has(def.atlasKey)) continue;
+      loadedAtlasKeys.add(def.atlasKey);
       this.load.spritesheet(def.atlasKey, `tilesets/${id}/tilemap.png`, {
         frameWidth: TILESET_SOURCE_SIZE,
         frameHeight: TILESET_SOURCE_SIZE,
