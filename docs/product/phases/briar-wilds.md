@@ -1,6 +1,6 @@
 # Phase: briar-wilds
 
-Status: draft
+Status: shipped
 
 ## Phase goal
 
