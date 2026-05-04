@@ -271,6 +271,21 @@ const ashenDecorations: DecorationDefinition[] = [
   { col: 30, row: 33, spriteFrame: FRAME.BUSH },
 ];
 
+// ───── East-edge bramble objects (US-100) ─────
+// Conditional ObjectInstances using the PixelLab bramble-cluster asset. Each
+// cell is impassable while has_ember_mark == false — collision and visibility
+// flip together when the Ember is granted (existing conditional-object path).
+// Replaces the earlier BUSH-decoration placeholder; brambles now both LOOK
+// like brambles and physically block the path pre-Ember.
+const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
+  { kind: 'bramble-cluster', col: 47, row: 17, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 47, row: 18, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 48, row: 17, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 48, row: 18, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 49, row: 18, condition: 'has_ember_mark == false' },
+  { kind: 'bramble-cluster', col: 49, row: 19, condition: 'has_ember_mark == false' },
+];
+
 // Stage-1 migration source: the existing FLOOR/WALL authoring array remains
 // the source of truth, with terrain + objects derived from it via the helpers
 // in types.ts. US-98 replaces this with hand-painted vertex data + authored
@@ -286,7 +301,7 @@ export const ashenIsle: AreaDefinition = {
   decorationsTileset: 'tiny-town',
   map: ashenTileMap,
   terrain: deriveTerrainFromTileMap(ashenTileMap, 'grass'),
-  objects: deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'),
+  objects: [...deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'), ...ashenEastBrambles],
   npcs: [
     // Old Man stands in the doorway of his cottage (40, 28 — the door FLOOR
     // tile). With wanderRadius 1 he drifts a step south to (40, 29) and back,
@@ -395,6 +410,22 @@ export const ashenIsle: AreaDefinition = {
       condition: 'npc_warmed_wren == true AND npc_warmed_old_man == true AND homecoming_complete == false',
       repeatable: false,
       setFlags: { homecoming_complete: true },
+    },
+    {
+      // East-path first-arrival thought (US-100). One tile west of the east
+      // exit so it fires the moment the player commits to the new road. Gated
+      // on has_ember_mark + east_path_seen so it plays exactly once after
+      // the brambles have parted.
+      id: 'east-path-thought',
+      col: 47,
+      row: 18,
+      width: 1,
+      height: 1,
+      type: 'thought',
+      actionRef: 'The brambles have parted. A road east.',
+      condition: 'has_ember_mark == true AND east_path_seen == false',
+      repeatable: false,
+      setFlags: { east_path_seen: true },
     },
   ],
   dialogues: {
@@ -759,6 +790,20 @@ export const ashenIsle: AreaDefinition = {
       height: 1,
       destinationAreaId: 'fog-marsh',
       entryPoint: { col: 14, row: 21 },
+    },
+    {
+      // East-gated exit to Briar Wilds (US-100). Ember-only — the brambles
+      // visually block pre-Ember (conditional decorations) and the condition
+      // gate suppresses the transition itself so a player without the Ember
+      // who somehow reaches the cell does not phase through.
+      id: 'ashen-to-briar',
+      col: 49,
+      row: 18,
+      width: 1,
+      height: 2,
+      destinationAreaId: 'briar-wilds',
+      entryPoint: { col: 1, row: 13 },
+      condition: 'has_ember_mark == true',
     },
   ],
   visual: { floorColor: 0x4a6741, wallColor: 0x2c2c3a },

@@ -1,5 +1,16 @@
 import Phaser from 'phaser';
 import { LIGHTING_CONFIG } from './lightingConfig';
+import { WARMTH_FLOOR, WARMTH_MAX } from './emberWarmth';
+
+// Lerp between two values by current warmth (US-101). Warmth is clamped at
+// the system level; this helper assumes input is in [WARMTH_FLOOR, WARMTH_MAX]
+// but defends with a Math.min/max so a stale or out-of-range value can't
+// produce a degenerate radius.
+function lerpByWarmth(warmth: number, atFloor: number, atFull: number): number {
+  const w = Math.max(WARMTH_FLOOR, Math.min(WARMTH_MAX, warmth));
+  const t = (w - WARMTH_FLOOR) / (WARMTH_MAX - WARMTH_FLOOR);
+  return atFloor + (atFull - atFloor) * t;
+}
 
 // Depth 6 — between Player ember overlay (5.5) and Thoughts (8). The Thoughts
 // layer must render above the fog so escape monologue (US-79) and ambient
@@ -45,6 +56,10 @@ export class LightingSystem {
   // having to pass it on every query.
   private lastPlayerX = 0;
   private lastPlayerY = 0;
+  // US-101 — current ember warmth in [WARMTH_FLOOR, WARMTH_MAX]. Defaults to
+  // 1.0 (full) so areas without an EmberWarmthSystem (or pre-load) read at
+  // baseline post-Ember radius. GameScene calls setPlayerWarmth(w) each frame.
+  private playerWarmth = 1.0;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -57,6 +72,7 @@ export class LightingSystem {
     this.brush = null;
     this.lights = [];
     this.hasEmber = false;
+    this.playerWarmth = 1.0;
     this.worldWidth = worldWidth;
     this.worldHeight = worldHeight;
 
@@ -122,8 +138,12 @@ export class LightingSystem {
     this.rt.clear();
     this.rt.fill(OVERLAY_COLOR, 1);
 
-    // Player light — primary. Radius/falloff selection per Ember.
-    const pRadius = hasEmber ? LIGHTING_CONFIG.playerRadiusPost : LIGHTING_CONFIG.playerRadiusPre;
+    // Player light — primary. Pre-Ember uses fixed pre values. Post-Ember
+    // lerps the radius between the warmth floor and full pair (US-101). Floor
+    // value committed >0 so the world is never pitch black even at WARMTH_FLOOR.
+    const pRadius = hasEmber
+      ? lerpByWarmth(this.playerWarmth, LIGHTING_CONFIG.playerLightRadiusFloor, LIGHTING_CONFIG.playerLightRadiusFull)
+      : LIGHTING_CONFIG.playerRadiusPre;
     const pFalloff = hasEmber ? LIGHTING_CONFIG.playerFalloffPost : LIGHTING_CONFIG.playerFalloffPre;
     this.eraseLight(playerX, playerY, pRadius + pFalloff, 1.0);
 
@@ -211,7 +231,12 @@ export class LightingSystem {
   }
 
   getPlayerRadius(): number {
-    return this.hasEmber ? LIGHTING_CONFIG.playerRadiusPost : LIGHTING_CONFIG.playerRadiusPre;
+    if (!this.hasEmber) return LIGHTING_CONFIG.playerRadiusPre;
+    return lerpByWarmth(this.playerWarmth, LIGHTING_CONFIG.playerLightRadiusFloor, LIGHTING_CONFIG.playerLightRadiusFull);
+  }
+
+  setPlayerWarmth(warmth: number): void {
+    this.playerWarmth = warmth;
   }
 
   getLightCount(): number {

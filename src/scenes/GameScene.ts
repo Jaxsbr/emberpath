@@ -24,6 +24,7 @@ import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
 import { DesaturationPipeline } from '../systems/desaturationPipeline';
 import { EmberShareSystem } from '../systems/emberShare';
+import { EmberWarmthSystem, WARMTH_FLOOR, WARMTH_MAX } from '../systems/emberWarmth';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
 
@@ -130,6 +131,10 @@ export class GameScene extends Phaser.Scene {
   // Per-flag unsubscribes for conditionalTerrain flips (US-98). One
   // subscriber per unique flag named in any ConditionalTerrainBlock.condition.
   private conditionalTerrainUnsubscribes: (() => void)[] = [];
+  // Per-flag unsubscribes for conditional decoration visibility (US-100).
+  // One subscriber per unique flag named in any DecorationDefinition.condition.
+  // Mirrors objectFlagUnsubscribes — flag flip drives setVisible re-evaluation.
+  private decorationFlagUnsubscribes: (() => void)[] = [];
   // Cell-keyed runtime passability snapshot consumed by collision +
   // npcBehavior + movement (US-94). Built once at create() AND rebuilt on
   // any flag change referenced by an object's `condition`.
@@ -190,6 +195,10 @@ export class GameScene extends Phaser.Scene {
   private hasEmberCached = false;
   private lightingSystem!: LightingSystem;
   private desaturationPipeline: DesaturationPipeline | null = null;
+  // EmberWarmthSystem (US-101) — constructed regardless of area (cheap on
+  // areas with no drain/quiet zones; safer than conditional construction
+  // because the system also handles ember_warmth load + Reset Progress).
+  private emberWarmthSystem!: EmberWarmthSystem;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -211,7 +220,16 @@ export class GameScene extends Phaser.Scene {
     // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
     // indices; resolveWangFrame returns them as strings which Phaser accepts directly.
     // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
+    //
+    // Dedupe by atlasKey: a placeholder tileset entry (US-100 skeleton's
+    // 'briar-wilds-floor-thorn' reuses 'tileset-ashen-isle-grass-sand') must
+    // not enqueue a second load against a tilesets/<id>/tilemap.png URL that
+    // does not exist on disk yet. The first entry with each atlasKey wins;
+    // subsequent entries skip.
+    const loadedAtlasKeys = new Set<string>();
     for (const [id, def] of Object.entries(TILESETS)) {
+      if (loadedAtlasKeys.has(def.atlasKey)) continue;
+      loadedAtlasKeys.add(def.atlasKey);
       this.load.spritesheet(def.atlasKey, `tilesets/${id}/tilemap.png`, {
         frameWidth: TILESET_SOURCE_SIZE,
         frameHeight: TILESET_SOURCE_SIZE,
@@ -291,6 +309,7 @@ export class GameScene extends Phaser.Scene {
     this.buildObjectCollisionMap();
     this.subscribeToConditionalObjects();
     this.subscribeToConditionalTerrain();
+    this.subscribeToConditionalDecorations();
     if (this.area.id === 'fog-marsh') {
       this.marshTrappedUnsubscribe = onFlagChange('marsh_trapped', () => {
         // Conditional-object visibility + cell-block lookup re-evaluate; the
@@ -351,6 +370,20 @@ export class GameScene extends Phaser.Scene {
     this.lightingSystem.create(this.area.mapCols * TILE_SIZE, this.area.mapRows * TILE_SIZE);
     this.registerInitialLights();
     this.attachDesaturationPipeline();
+    // US-101: construct after lighting so a future visual-binding hook can
+    // reference both. Always constructed (even on areas without drain/quiet
+    // zones) — it owns ember_warmth load + Reset Progress reseed.
+    // ThoughtBubble is wired below in the system-creation chain; pass null
+    // here and inject after the bubble exists. Zones come from the area.
+    this.emberWarmthSystem = new EmberWarmthSystem(
+      this,
+      this.area.drainZones,
+      this.area.quietZones,
+      null,
+      this.area.mapCols,
+      this.area.mapRows,
+      this.lightingSystem,
+    );
     // Fade in when entering from an area transition OR a Continue resume
     if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
@@ -365,6 +398,9 @@ export class GameScene extends Phaser.Scene {
     this.emberShare = new EmberShareSystem(this);
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    // US-101: now that the bubble exists, wire it into the warmth system so
+    // drain/quiet zone entry transitions can queue doubt/narration lines.
+    this.emberWarmthSystem.setThoughtBubble(this.thoughtBubble);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
         const script = this.area.dialogues[actionRef];
@@ -535,12 +571,21 @@ export class GameScene extends Phaser.Scene {
     // a closure here so DebugOverlaySystem stays decoupled from LightingSystem.
     this.debugOverlay.setHudProvider(() => {
       const ls = this.lightingSystem;
+      // US-99: warmed-NPC count + the absolute warmed values, so the operator
+      // can confirm the brightening at a glance without inspecting the registry.
+      let warmedCount = 0;
+      for (const id of WARMING_NPC_IDS) {
+        if (getFlag(`npc_warmed_${id}`) === true) warmedCount += 1;
+      }
       return [
         `lighting: ${LIGHTING_CONFIG.enabled ? 'on' : 'off'}  (F4)`,
         `playerRadius: ${ls.getPlayerRadius()}px`,
         `desaturation: ${(this.desaturationPipeline?.getStrength() ?? LIGHTING_CONFIG.desaturationStrength).toFixed(2)}`,
         `hasEmber: ${ls.getHasEmber()}`,
         `lights: ${ls.getLightCount()}`,
+        `warmed: ${warmedCount} @ R${LIGHTING_CONFIG.npcWarmedRadius}/I${LIGHTING_CONFIG.npcWarmedIntensity}`,
+        // US-101: HUD readout for the warmth state — value + zone classification.
+        `warmth: ${this.emberWarmthSystem.getCurrentWarmth().toFixed(2)}  zone: ${this.emberWarmthSystem.getZoneState()}`,
       ].join('\n');
     });
   }
@@ -630,6 +675,13 @@ export class GameScene extends Phaser.Scene {
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
+    // US-101: warmth update fires every walk-frame. delta is in ms; convert
+    // to seconds for the per-second drain/restore rates. Player position in
+    // pixels — the system divides by TILE_SIZE for the zone-tile overlap.
+    this.emberWarmthSystem.update(delta / 1000, this.player.x, this.player.y);
+    // Plumb warmth into LightingSystem so getPlayerRadius lerps the lit area
+    // each frame (post-Ember only; pre-Ember falls back to playerRadiusPre).
+    this.lightingSystem.setPlayerWarmth(this.emberWarmthSystem.getCurrentWarmth());
 
     // Collision bounds for trigger/exit zone checks
     const boundsX = this.player.x - halfSize;
@@ -640,12 +692,18 @@ export class GameScene extends Phaser.Scene {
 
     this.maybeAutosave();
 
-    // Ember overlay tracks the player's centre minus a fixed Y offset.
-    // Loop-invariant EP-01: single setPosition call, no allocations, no
-    // object literals — the overlay is reused frame-to-frame, only its
-    // position vector changes.
+    // Ember overlay tracks the player's centre minus a fixed Y offset; its
+    // radius and alpha lerp by current warmth (US-101).
+    // Loop-invariant EP-01: setPosition + setRadius + setAlpha mutations, no
+    // allocations, no object literals — the overlay is reused frame-to-frame.
     if (this.emberOverlay) {
+      const w = this.emberWarmthSystem.getCurrentWarmth();
+      const wt = (Math.max(WARMTH_FLOOR, Math.min(WARMTH_MAX, w)) - WARMTH_FLOOR) / (WARMTH_MAX - WARMTH_FLOOR);
+      const radius = LIGHTING_CONFIG.playerEmberRadiusFloor + (LIGHTING_CONFIG.playerEmberRadiusFull - LIGHTING_CONFIG.playerEmberRadiusFloor) * wt;
+      const alpha = LIGHTING_CONFIG.playerEmberAlphaFloor + (LIGHTING_CONFIG.playerEmberAlphaFull - LIGHTING_CONFIG.playerEmberAlphaFloor) * wt;
       this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
+      this.emberOverlay.setRadius(radius);
+      this.emberOverlay.setAlpha(alpha);
     }
 
     // Sync NPC light positions to live (post-wander) coordinates so wandering
@@ -1119,6 +1177,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // US-100 — same shape as subscribeToConditionalObjects but for decoration
+  // visibility. Without this, conditional decorations only set visibility
+  // once at renderDecorations(); a mid-area flag flip (e.g. has_ember_mark
+  // flipping while still in Ashen Isle) would leave the decoration in its
+  // initial state. Initial-render path is unchanged — this only adds the
+  // re-eval-on-change leg.
+  private subscribeToConditionalDecorations(): void {
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    for (const dec of this.area.decorations) {
+      if (!dec.condition) continue;
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(dec.condition)) !== null) {
+        flagNames.add(match[1]);
+      }
+    }
+    for (const name of flagNames) {
+      const unsub = onFlagChange(name, () => {
+        this.updateConditionalDecorations();
+      });
+      this.decorationFlagUnsubscribes.push(unsub);
+    }
+  }
+
   private renderNpcs(): void {
     // Reset across scene.restart — instance fields persist between restarts so
     // stale Phaser sprite references (already destroyed by the previous scene's
@@ -1369,6 +1452,8 @@ export class GameScene extends Phaser.Scene {
     this.objectFlagUnsubscribes = [];
     for (const unsub of this.conditionalTerrainUnsubscribes) unsub();
     this.conditionalTerrainUnsubscribes = [];
+    for (const unsub of this.decorationFlagUnsubscribes) unsub();
+    this.decorationFlagUnsubscribes = [];
     for (const sprite of this.objectSprites) sprite.destroy();
     this.objectSprites = [];
     this.conditionalObjects = [];
@@ -1497,16 +1582,17 @@ export class GameScene extends Phaser.Scene {
     const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
     const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
     const override = npc.lightOverride;
-    const baseRadius = override?.radius ?? LIGHTING_CONFIG.npcRadius;
-    const baseIntensity = override?.intensity ?? LIGHTING_CONFIG.npcIntensity;
+    // US-99: warmed state ignores any per-NPC dimmer override so restoration
+    // reads uniformly bright across every warmed NPC. Pre-warming uses the
+    // override (lets Old Man sit dimmer than baseline before the ember).
+    const radius = warmed ? LIGHTING_CONFIG.npcWarmedRadius : (override?.radius ?? LIGHTING_CONFIG.npcRadius);
+    const intensity = warmed ? LIGHTING_CONFIG.npcWarmedIntensity : (override?.intensity ?? LIGHTING_CONFIG.npcIntensity);
     const light: RegisteredLight = {
       id: npc.id,
       x: cx,
       y: cy,
-      radius: warmed ? baseRadius + LIGHTING_CONFIG.warmedRadiusBonus : baseRadius,
-      intensity: warmed
-        ? Math.min(1, baseIntensity + LIGHTING_CONFIG.warmedIntensityBonus)
-        : baseIntensity,
+      radius,
+      intensity,
       tier: override?.tier ?? 1,
     };
     this.lightingSystem.registerLight(light);

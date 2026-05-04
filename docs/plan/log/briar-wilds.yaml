@@ -1,0 +1,387 @@
+# Build Loop — Phase Log: briar-wilds
+# Schema: append-only entries list. One entry per task.
+
+phase: briar-wilds
+started: "2026-05-03T07:41:50Z"
+entries:
+  - task: 1
+    time: "2026-05-03T07:55:00Z"
+    type: investigate
+    description: "Initial state read for briar-wilds phase"
+    result: pass
+    notes: |
+      Verify (npx tsc --noEmit && npm run build) passes — 40 modules, dist ~1579 kB.
+      Source layout: src/systems/ has lighting.ts, lightingConfig.ts, thoughtBubble.ts,
+      desaturationPipeline.ts (no emberWarmth.ts yet — to be created in US-101).
+      src/data/areas/ holds types.ts, ashen-isle.ts, fog-marsh.ts, registry.ts (no
+      briar-wilds.ts — to be created in US-100).
+      LIGHTING_CONFIG (lightingConfig.ts) currently uses ADDITIVE bonus: `warmedRadiusBonus: 14`,
+      `warmedIntensityBonus: 0.15`. US-99 wants ABSOLUTE values: `npcWarmedRadius` ≥ 1.5x npcRadius
+      (≥60), `npcWarmedIntensity` ≥ 2x npcIntensity (≥0.50). Single call site identified at
+      GameScene.ts:1500-1512 (`registerNpcLight`) — adds bonus to base when warmed. Wren/Old Man
+      both flow through this same path; Driftwood uses `npc_refused_driftwood` flag and never
+      hits the warming branch.
+      Phase classified as cross-cutting (will introduce new system file emberWarmth.ts +
+      AreaDefinition optional fields drainZones/quietZones + new area file briar-wilds.ts +
+      new tileset/object kinds). Investigate-first mandate applies to all implementation tasks.
+      Queued task 2 as Investigate to confirm the warmed-NPC re-registration paths + F3 debug
+      HUD render path before implementing US-99's constant rename.
+    tokens: ~6000
+  - task: 2
+    time: "2026-05-04T08:30:00Z"
+    type: implement
+    story: US-99
+    description: "US-99: warmed-NPC absolute values + HUD readout (operator fast-path)"
+    result: pass
+    notes: |
+      Operator provided in-engine smoke before implementation: shared a screenshot
+      of warmed Old Man whose light bubble read as faint and small (only ~3 tiles
+      against the desaturation pipeline). Asked for ~2x current sphere size and
+      brighter. Skipped the queued Investigate task and went straight to implement
+      since the operator's smoke replaced the investigation purpose.
+
+      Changes:
+      - lightingConfig.ts: removed additive warmedRadiusBonus (14) and
+        warmedIntensityBonus (0.15); added absolute npcWarmedRadius=96 (2.4x base
+        npcRadius=40, well above spec floor of 1.5x=60) and npcWarmedIntensity=0.65
+        (2.6x base 0.25, above spec floor of 2x=0.50).
+      - GameScene.registerNpcLight: when warmed=true, use absolute constants and
+        IGNORE per-NPC lightOverride (so Old Man's pre-warming dimmer override
+        does not cap the warmed brightness). Pre-warming path unchanged.
+      - GameScene HUD provider: added `warmed: <count> @ R96/I0.65` line so the
+        F3 overlay confirms the warmed values at a glance (criterion 12).
+
+      Verify: tsc --noEmit + vite build green (40 modules, dist 1579.65 kB —
+      +0.11 kB vs baseline, no regression).
+
+      Story Completion Gate: file-inspectable US-99 criteria met:
+        - npcWarmedRadius defined ≥ 1.5x npcRadius ✓ (96 vs 60 floor)
+        - npcWarmedIntensity defined ≥ 2x npcIntensity ✓ (0.65 vs 0.50 floor)
+        - call sites read constants, no inline magic numbers ✓
+        - npc_warmed_wren/old_man re-registration wired ✓ (existing onFlagChange path)
+        - npc_refused_driftwood does NOT trigger registerNpcLight ✓
+        - F3 debug HUD shows warmed radius/intensity ✓
+      Manual-verify-only criteria (visit Wren before/after, Old Man, Driftwood
+      negative, area transition persistence, Reset Progress baseline restore)
+      cannot be auto-confirmed → story not auto-completed by gate; awaits
+      operator smoke recorded in briar-wilds-manual-verify.md.
+
+      Queued task 3 as operator manual-verify (US-99 closure).
+    tokens: ~12000
+  - task: 3
+    time: "2026-05-04T08:45:00Z"
+    type: implement
+    story: US-99
+    description: "US-99: bump npcWarmedRadius 96->288, npcWarmedIntensity 0.65->1.0 (operator 3x calibration)"
+    result: pass
+    notes: |
+      Operator request: "more x3" after the previous bump still read too dim.
+      Radius: 96 * 3 = 288 (7.2x base npcRadius=40, well above the 1.5x floor).
+      Intensity: 0.65 * 3 = 1.95 -> clamped at 1.0 (the registerLight max).
+      Verify green (40 modules, dist 1579.65 kB).
+      Spec floors still satisfied (npcWarmedRadius >= 60, npcWarmedIntensity >= 0.50).
+    tokens: ~3000
+  - task: 4
+    time: "2026-05-04T09:00:00Z"
+    type: implement
+    story: US-101
+    description: "US-101: EmberWarmthSystem foundation — file + constants + flag wiring + error-path + reset subscriber + HUD line"
+    result: pass
+    notes: |
+      Operator advanced past US-99's manual-verify ("proceed to next phase" =
+      next user story). Foundation-only commit so visual binding can land
+      cleanly in task 5.
+
+      New module src/systems/emberWarmth.ts:
+      - WARMTH_MAX=1.0, WARMTH_FLOOR=0.3, drain=0.08/s, restore=0.20/s, epsilon=0.005
+      - Constructor loads ember_warmth from flag store; validateWarmthValue
+        rejects non-number / non-finite / out-of-range and seeds to MAX with
+        once-per-session warn (mirrors saveState scrub-on-corrupt pattern).
+      - update(dt) is intentionally a no-op until US-102/US-103 wire zones —
+        signature stable so GameScene.update can call it now.
+      - getCurrentWarmth() / getZoneState() getters for HUD + future visual binding.
+      - onFlagChange(ember_warmth) subscriber seeds in-memory back to MAX on
+        Reset Progress; unsubscriber collected for shutdown (Learning EP-02).
+      - scene SHUTDOWN handler invokes destroy() so subscribers release across
+        scene.restart even if the owning scope forgets (defense-in-depth).
+
+      GameScene:
+      - emberWarmthSystem field + import + constructed after lighting in create
+        (always — owns flag load even on areas without zones).
+      - update() calls emberWarmthSystem.update(delta/1000) on every walk-frame
+        (after thoughtBubble.update, before maybeAutosave — the existing
+        per-frame update chain).
+      - F3 HUD provider adds 'warmth: 0.XX  zone: drain|quiet|neutral' line.
+
+      Verify: build green (40 modules, dist 1580.82 kB, +1.17 kB vs prior).
+      Quality checks: no-silent-pass / no-bare-except / agents-consistency all
+      pass; error-path-coverage met by validateWarmthValue.
+      No regression in baseline.
+
+      Story Completion Gate: foundation criteria met (file + constants + flag
+      persistence + error-path + reset subscriber + HUD + always-constructed
+      + zero-alloc update + tsc green); visual binding + zone consumption
+      criteria still ✗ — story not auto-completed. Queued task 5 for visual
+      binding (player ember overlay + lighting overlay player-light radius).
+    tokens: ~10000
+  - task: 5
+    time: "2026-05-04T09:30:00Z"
+    type: implement
+    story: US-101
+    description: "US-101: visual binding — player ember overlay + lighting overlay lerp by warmth"
+    result: pass
+    notes: |
+      LIGHTING_CONFIG: added 6 committed values (no undefined possible):
+      playerEmberRadiusFloor=4 / Full=12, playerEmberAlphaFloor=0.55 / Full=1.0,
+      playerLightRadiusFloor=80 / Full=192. Floor=80 (vs base playerRadiusPost=192)
+      keeps the world legible at WARMTH_FLOOR.
+
+      LightingSystem: lerpByWarmth(w, atFloor, atFull) module helper clamps
+      input to [FLOOR, MAX] and returns linear interpolation t = (w-FLOOR)/(MAX-FLOOR).
+      pRadius lerps in update() when hasEmber; getPlayerRadius() lerps so the
+      F3 HUD reading stays accurate. setPlayerWarmth(w) is the input setter.
+
+      GameScene update(): calls lightingSystem.setPlayerWarmth each frame after
+      emberWarmthSystem.update; ember overlay branch lerps Arc.setRadius +
+      setAlpha. Zero allocations in the per-frame path — only mutations.
+
+      Build green (40 modules, dist 1581.62 kB).
+    tokens: ~7000
+  - task: 6
+    time: "2026-05-04T09:50:00Z"
+    type: implement
+    story: US-101
+    description: "US-101 + US-102/103 prereq: AreaDefinition zone types + EmberWarmthSystem zone consumption"
+    result: pass
+    notes: |
+      types.ts: added AreaDefinition.drainZones?: DrainZoneDefinition[] and
+      quietZones?: QuietZoneDefinition[] + ThoughtSequence shape. Both zone
+      types match the spec shape ({ id, col, row, width, height, multiplier?, sequence? }).
+
+      EmberWarmthSystem extended:
+      - Constructor now takes drainZones, quietZones, thoughtBubble (nullable),
+        worldCols, worldRows. ThoughtBubbleQueue is a minimal interface (not the
+        concrete class) so the system depends on behavior, not class identity.
+      - On construction, isZoneValid filters out zones with out-of-grid coords
+        or non-positive dimensions, with once-per-zone-id warn — area still
+        loads, other zones still function (no crash on author error per US-102/103
+        error-path criterion).
+      - update(dt, playerX, playerY) walks both zone lists with indexed for-loops
+        (zero allocation). Per-zone wasInside Map tracks transitions; entry
+        (outside -> inside) fires:
+          drain: incrementFlag('doubt_count_<id>') + queue cycled doubt line
+          quiet: if !quiet_seen_<id>, queue narration + setFlag(true)
+      - Quiet wins over drain on overlap (US-103 — grace stronger than trial).
+      - Clamps to [WARMTH_FLOOR, WARMTH_MAX]; persists only when |delta| > epsilon.
+
+      GameScene wiring:
+      - Warmth system constructed with area.drainZones/quietZones (undefined on
+        existing areas; system's filter accepts undefined as 'no zones').
+      - thoughtBubble is constructed AFTER the warmth system, so a setter is
+        used to inject it post-construction (no order coupling).
+      - update() passes player x/y into warmth update.
+
+      Build green (40 modules, dist 1582.65 kB).
+
+      Story Completion Gate: US-101 now has the full code path (foundation +
+      visual binding + zone consumption + entry transitions + clamp + epsilon
+      persist). Manual-verify (in-engine smoke at desktop+mobile, drain stress,
+      Continue-from-save, Reset Progress) still ✗ — closing requires operator
+      smoke once briar-wilds.ts exists with real zones.
+
+      Queued task 7 as US-100 Investigate (briar-wilds area + east-gated entry
+      from Ashen Isle; no PixelLab calls until implement).
+    tokens: ~14000
+  - task: 7
+    time: "2026-05-04T10:10:00Z"
+    type: investigate
+    story: US-100
+    description: "US-100 investigate: catalog ashen-isle east-edge availability + sketch briar-wilds skeleton coordinates + plan PixelLab task split"
+    result: pass
+    notes: |
+      Ashen Isle (50x38): playerSpawn (9,20). Existing exits: 'ashen-to-fog' at
+      (col 23, row 2, 4x1) -> fog-marsh entry (14, 21). NPCs: Old Man (40,28),
+      Wren (22,18), Driftwood (32,6). East edge is open — col 49 at mid-rows
+      (16-22) has no NPC/exit conflicts.
+
+      ExitDefinition supports optional `condition?: string` already (line 160 of
+      types.ts) — east-gated entry uses it directly with 'has_ember_mark == true'.
+      DecorationDefinition supports `condition?: string` for visibility gating —
+      conditional brambles use 'has_ember_mark == false'.
+
+      Decision: east exit at (49, 18) size 1x2. First-time thought trigger near
+      it at (47, 18) (1 tile west of the exit so it fires before the player
+      crosses). Conditional brambles cluster over the exit cells using existing
+      tiny-town/tiny-dungeon decoration frames as placeholders until briar-wilds
+      PixelLab content lands.
+
+      Briar Wilds skeleton plan (32x26 - exceeds 30x24 floor):
+      - Tileset: register 'briar-wilds-floor-thorn' as a NEW TILESETS entry but
+        AT FIRST POINT IT to ashen-isle-grass-sand's atlasKey so the build
+        works without a new PixelLab atlas — replace in T9 with real PixelLab.
+      - New terrain ids: 'briar-floor' (passable, wangTilesetId =
+        'briar-wilds-floor-thorn'), 'briar-thorn' (impassable, same wangTilesetId).
+        Terrain seeding for skeleton: all 'briar-floor' (uniform vertex grid)
+        for walkability; introduce 'briar-thorn' patches in T9 once content lands.
+      - Player west exit: (0, 12) size 1x3 -> ashen-isle entry (48, 18).
+      - Drain zones (US-102 will populate doubts): drain-1 at (8, 8) 4x3,
+        drain-2 at (18, 16) 4x3. Each gets ≥3 doubt lines committed in T9.
+      - Quiet zones: quiet-grove at (14, 5) 3x3, quiet-closing at (27, 11) 4x4.
+        quiet-closing carries the closing-reflection narration sequence AND
+        a separate setFlags { briar_wilds_complete: true } via a co-located
+        TriggerDefinition on the same tiles (the EmberWarmthSystem only fires
+        narration; the briar_wilds_complete flag flip needs the trigger system).
+        Per US-103 design: same zone, two mechanisms.
+      - No NPCs in briar-wilds (intentional — trial endured alone, US-100 spec).
+
+      PixelLab generation strategy (T9-T11):
+      - T9: mcp__pixellab__create_topdown_tileset with primary_terrain 'briar-floor'
+        + secondary_terrain 'briar-thorn'; commit to assets/tilesets/briar-wilds/
+        + tilemap.png/json. Update TILESETS atlasKey to the real one.
+      - T10: 3 mcp__pixellab__create_map_object calls for bramble-cluster
+        (impassable), dead-tree (impassable), twisted-root (passable). Use a
+        96x96 sample render of briar terrain as background_image for style match.
+      - T11: Wire OBJECT_KINDS entries; populate briar-wilds objects with
+        sparse impassable thorn patches + decoration scatter; populate
+        ashen-isle bramble-decoration cluster with the new bramble frames.
+      - All operator-triggered against mcp__pixellab__ (personal — Learning EP-05).
+
+      Atlas frame-pick verification (T12 — Learning EP-03 compounded rule):
+      labeled-atlas preview rendered for the briar-wilds tileset and each
+      object kind; per-mask + per-object yes/no in the phase log.
+
+      Queued task 8 as the implement: skeleton with placeholder tilesets, build
+      green, area walkable end-to-end pre-PixelLab.
+    tokens: ~9000
+  - task: 8
+    time: "2026-05-04T10:30:00Z"
+    type: implement
+    story: US-100
+    description: "US-100: briar-wilds skeleton + ashen-isle east-gated exit"
+    result: pass
+    notes: |
+      Per the T7 plan. Six files touched:
+
+      - src/maps/terrain.ts: TerrainId union extended with 'briar-floor' /
+        'briar-thorn'; TERRAINS entries added (passable + impassable
+        respectively, both pointing at wangTilesetId 'briar-wilds-floor-thorn').
+      - src/maps/tilesets.ts: TILESETS gains 'briar-wilds-floor-thorn' with
+        placeholder atlasKey 'tileset-ashen-isle-grass-sand' (so the resolver
+        finds frames pre-PixelLab). T9 swaps the atlasKey to the real one.
+      - src/data/areas/briar-wilds.ts NEW: 32x26 vertex grid, 2 drain zones
+        with 3 doubt lines each, 2 quiet zones (one carries closing reflection
+        narration of 3 lines), one-shot trigger co-located with quiet-closing
+        for briar_wilds_complete flag flip, west-edge exit returning to
+        ashen-isle, zero NPCs by design.
+      - src/data/areas/registry.ts: registers 'briar-wilds'.
+      - src/data/areas/ashen-isle.ts: east exit (49, 18) 1x2 condition
+        has_ember_mark==true; 6 conditional bramble BUSH placeholders over
+        the exit cells; first-time east-path thought at (47, 18) with
+        setFlags east_path_seen.
+      - src/scenes/GameScene.ts preload: dedupe tilesets by atlasKey so the
+        placeholder doesn't enqueue a 404 against a non-existent tilemap.
+
+      Caught: I initially used '&&' in the east-path-thought condition;
+      evaluateCondition uses 'AND' (verified at conditions.ts line 5). Fixed
+      before commit.
+
+      Build green (40 modules, dist 1583.51 kB, +0.86 kB).
+
+      Story Completion Gate (US-100 file-inspectable subset):
+        ✓ briar-wilds.ts exports AreaDefinition with terrain >= 30 wide x 24 tall (32x26)
+        ✓ briar-wilds registered in registry.ts
+        ✓ TILESETS includes 'briar-wilds-floor-thorn' entry with primary/secondary terrains
+        ✓ both new terrains added to TERRAINS with passable flags
+        ✓ ashen-isle east-edge exit at committed (49, 18) with has_ember_mark==true gate
+        ✓ conditional bramble decorations over the exit cluster
+        ✓ first-time-arrival thought trigger present
+        ✓ west-edge exit on briar-wilds returning to ashen-isle
+        ✓ closing-reflection trigger present (col 28, row 12, condition briar_wilds_complete==false, setFlags, type thought)
+        ✓ zero NPCs in briar-wilds
+        ✗ PixelLab Wang tileset generated — pending T9
+        ✗ object kinds bramble-cluster/dead-tree/twisted-root — pending T10
+        ✗ atlas frame-pick verification artefact — pending T11
+        ✗ in-engine smoke at desktop+mobile — pending operator
+        ✗ Reset Progress flag clear verification — pending operator manual-verify
+
+      Queued task 9 for the PixelLab Wang tileset generation.
+    tokens: ~16000
+  - task: 9
+    time: "2026-05-04T11:00:00Z"
+    type: fix
+    story: US-100
+    description: "US-100 fix: conditional decorations re-evaluate on flag change (general subscriber)"
+    result: pass
+    notes: |
+      Operator caught the bug via in-engine smoke: brambles I added with
+      condition 'has_ember_mark == false' did NOT hide after the player got
+      the Ember in-scene. Screenshot showed the player on Ashen Isle east
+      edge with the Ember (green showing through desaturation) but brambles
+      still rendering — east path looked permanently blocked.
+
+      Root cause: GameScene had a general subscribeToConditionalObjects (for
+      object visibility/collision) and subscribeToConditionalTerrain (for
+      terrain flips) but NO equivalent for decorations. The only decoration
+      re-eval site was inside the fog-marsh-specific marsh_trapped subscriber.
+      So a mid-area has_ember_mark flip never re-ran updateConditionalDecorations.
+
+      Fix mirrors the existing subscribeToConditionalObjects pattern:
+      - new subscribeToConditionalDecorations() — extracts flag names from
+        every decoration condition with the same regex; one onFlagChange
+        listener per unique flag; callback calls updateConditionalDecorations.
+      - new decorationFlagUnsubscribes: (() => void)[] field
+      - cleanupResize unsubscribes alongside the existing arrays
+      - call site added to create() right after subscribeToConditionalTerrain
+
+      Initial-render visibility evaluation (line 909 in renderDecorations) is
+      unchanged so a fresh area load still hides brambles correctly when the
+      condition is already false at boot.
+
+      Build green (40 modules, dist 1583.93 kB).
+
+      Operator can now reload, get the Ember in-scene, walk east, brambles
+      should hide on the same tick the flag flips. Will renumber the next
+      task (PixelLab generation) to T10 in next progress update.
+    tokens: ~5000
+  - task: 10
+    time: "2026-05-04T11:30:00Z"
+    type: implement
+    story: US-103
+    description: "US-103: tier-2 lights at quiet zones"
+    result: pass
+    notes: |
+      Operator confirmed in-engine: walked into briar-wilds, drain/quiet zone
+      bubbles fire correctly. Asked to proceed.
+
+      EmberWarmthSystem extended with optional LightRegistry param (minimal
+      interface matching LightingSystem's registerLight/unregisterLight). On
+      construction, iterates valid quiet zones; registers a tier-2 light at
+      each zone centre with id 'quiet:<zoneId>', radius QUIET_ZONE_LIGHT_RADIUS=72,
+      intensity QUIET_ZONE_LIGHT_INTENSITY=0.55.
+
+      Tier-2 means LightingSystem renders at intensity 0 pre-Ember and full
+      post-Ember — the clearings only bloom when the player carries the Ember.
+
+      destroy() unregisters every stored light id (defense-in-depth alongside
+      the scene-shutdown lighting cleanup).
+
+      GameScene constructor wiring updated to pass this.lightingSystem.
+
+      Build green (40 modules, dist 1584.84 kB).
+
+      US-103 file-inspectable criteria check:
+        ✓ tier-2 light auto-registration at zone centre with the spec'd id format
+        ✓ briar-wilds defines >= 2 quiet zones with first-entry narration
+        ✓ closing-reflection beat implemented as one of the quiet zones
+        ✓ per-frame quiet check O(1), zero allocations
+        ✓ Reset Progress clears quiet_seen_* (covered by resetAllFlags)
+        ✓ async-cleanup safety (unregisterLight in destroy)
+        ✗ tile-snapped quiet decoration cluster (PixelLab content)
+        ✗ F3 debug overlay quiet zone rectangles (queued T11)
+        ✗ in-engine smoke
+        ✗ error-path: out-of-grid quiet zone skip — code path exists in
+          isZoneValid; needs a manual-verify or a runtime test
+
+      Queued task 11 for F3 zone rectangle rendering (covers both US-102 and
+      US-103 debug-overlay criteria).
+    tokens: ~6000

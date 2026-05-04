@@ -114,6 +114,20 @@ export const TILESETS: Record<string, TilesetDefinition> = {
       fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
     },
   },
+  // ───── Briar Wilds (US-100) ─────
+  // PixelLab Wang tileset, briar-floor (lower) -> briar-thorn (upper).
+  // Generated 2026-05-04 against mcp__pixellab__ (personal account) — Learning
+  // EP-05 budget logged in phase log T12. Atlas committed to
+  // assets/tilesets/briar-wilds-floor-thorn/tilemap.{png,json}.
+  'briar-wilds-floor-thorn': {
+    atlasKey: 'tileset-briar-wilds-floor-thorn',
+    wang: {
+      primaryTerrain: 'briar-floor',
+      secondaryTerrain: 'briar-thorn',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
 
   // ───── Legacy Kenney degenerate tilesets — pending US-98 deletion ─────
   // Retained so the editor's tools/editor renderer keeps loading until US-97

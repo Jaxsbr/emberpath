@@ -26,4 +26,4 @@ Produces a deployable `dist/` directory.
 
 <!-- build-loop -->
 ---
-*Built with [build-loop](docs/plan/) — init v12 | builds v12*
+*Built with [build-loop](docs/plan/) — init v12 | builds v12, v13*
