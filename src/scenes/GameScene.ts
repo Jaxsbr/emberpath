@@ -131,6 +131,10 @@ export class GameScene extends Phaser.Scene {
   // Per-flag unsubscribes for conditionalTerrain flips (US-98). One
   // subscriber per unique flag named in any ConditionalTerrainBlock.condition.
   private conditionalTerrainUnsubscribes: (() => void)[] = [];
+  // Per-flag unsubscribes for conditional decoration visibility (US-100).
+  // One subscriber per unique flag named in any DecorationDefinition.condition.
+  // Mirrors objectFlagUnsubscribes — flag flip drives setVisible re-evaluation.
+  private decorationFlagUnsubscribes: (() => void)[] = [];
   // Cell-keyed runtime passability snapshot consumed by collision +
   // npcBehavior + movement (US-94). Built once at create() AND rebuilt on
   // any flag change referenced by an object's `condition`.
@@ -305,6 +309,7 @@ export class GameScene extends Phaser.Scene {
     this.buildObjectCollisionMap();
     this.subscribeToConditionalObjects();
     this.subscribeToConditionalTerrain();
+    this.subscribeToConditionalDecorations();
     if (this.area.id === 'fog-marsh') {
       this.marshTrappedUnsubscribe = onFlagChange('marsh_trapped', () => {
         // Conditional-object visibility + cell-block lookup re-evaluate; the
@@ -1171,6 +1176,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // US-100 — same shape as subscribeToConditionalObjects but for decoration
+  // visibility. Without this, conditional decorations only set visibility
+  // once at renderDecorations(); a mid-area flag flip (e.g. has_ember_mark
+  // flipping while still in Ashen Isle) would leave the decoration in its
+  // initial state. Initial-render path is unchanged — this only adds the
+  // re-eval-on-change leg.
+  private subscribeToConditionalDecorations(): void {
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    for (const dec of this.area.decorations) {
+      if (!dec.condition) continue;
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(dec.condition)) !== null) {
+        flagNames.add(match[1]);
+      }
+    }
+    for (const name of flagNames) {
+      const unsub = onFlagChange(name, () => {
+        this.updateConditionalDecorations();
+      });
+      this.decorationFlagUnsubscribes.push(unsub);
+    }
+  }
+
   private renderNpcs(): void {
     // Reset across scene.restart — instance fields persist between restarts so
     // stale Phaser sprite references (already destroyed by the previous scene's
@@ -1421,6 +1451,8 @@ export class GameScene extends Phaser.Scene {
     this.objectFlagUnsubscribes = [];
     for (const unsub of this.conditionalTerrainUnsubscribes) unsub();
     this.conditionalTerrainUnsubscribes = [];
+    for (const unsub of this.decorationFlagUnsubscribes) unsub();
+    this.decorationFlagUnsubscribes = [];
     for (const sprite of this.objectSprites) sprite.destroy();
     this.objectSprites = [];
     this.conditionalObjects = [];
