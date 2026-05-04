@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 10
-  next_task: "[US-100] Operator-driven PixelLab Wang tileset generation for briar-wilds. Fire mcp__pixellab__create_topdown_tileset (PERSONAL account — Learning EP-05 — verify mcp__pixellab__ has remaining budget; team server NOT used). Subject: weathered grey-green briar floor blending into twisted dead-bramble thorn, kid-safe never-horror, sepia-first storybook palette, no hope-gold accents on terrain. View: high top-down. Outline: selective. Shading: basic. Detail: medium. Tile size 16x16. Primary terrain 'briar-floor', secondary 'briar-thorn'. Compose prompt via composeArtPrompt(subject, mood). On completion: commit assets/tilesets/briar-wilds-floor-thorn/tilemap.png + tilemap.json provenance; update TILESETS atlasKey to 'tileset-briar-wilds-floor-thorn'; render labeled-atlas preview via tools/atlas-preview.py and verify each Wang mask before commit lands (Learning EP-03)."
+  task_number: 11
+  next_task: "[US-102/103] F3 debug overlay rendering of drain (burnt-sienna) + quiet (hope-gold-light) zone rectangles at the existing debug depth. Mirrors the existing debugOverlay zone-rendering pattern for triggers/exits. Source: EmberWarmthSystem.getDrainZones / getQuietZones (already exposed). Tile coords -> pixel rects via TILE_SIZE. After this, remaining briar-wilds work is mostly PixelLab content (T12 tileset generation, T13 object kinds) + manual-verify smoke."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting

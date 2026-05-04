@@ -343,3 +343,45 @@ entries:
       should hide on the same tick the flag flips. Will renumber the next
       task (PixelLab generation) to T10 in next progress update.
     tokens: ~5000
+  - task: 10
+    time: "2026-05-04T11:30:00Z"
+    type: implement
+    story: US-103
+    description: "US-103: tier-2 lights at quiet zones"
+    result: pass
+    notes: |
+      Operator confirmed in-engine: walked into briar-wilds, drain/quiet zone
+      bubbles fire correctly. Asked to proceed.
+
+      EmberWarmthSystem extended with optional LightRegistry param (minimal
+      interface matching LightingSystem's registerLight/unregisterLight). On
+      construction, iterates valid quiet zones; registers a tier-2 light at
+      each zone centre with id 'quiet:<zoneId>', radius QUIET_ZONE_LIGHT_RADIUS=72,
+      intensity QUIET_ZONE_LIGHT_INTENSITY=0.55.
+
+      Tier-2 means LightingSystem renders at intensity 0 pre-Ember and full
+      post-Ember — the clearings only bloom when the player carries the Ember.
+
+      destroy() unregisters every stored light id (defense-in-depth alongside
+      the scene-shutdown lighting cleanup).
+
+      GameScene constructor wiring updated to pass this.lightingSystem.
+
+      Build green (40 modules, dist 1584.84 kB).
+
+      US-103 file-inspectable criteria check:
+        ✓ tier-2 light auto-registration at zone centre with the spec'd id format
+        ✓ briar-wilds defines >= 2 quiet zones with first-entry narration
+        ✓ closing-reflection beat implemented as one of the quiet zones
+        ✓ per-frame quiet check O(1), zero allocations
+        ✓ Reset Progress clears quiet_seen_* (covered by resetAllFlags)
+        ✓ async-cleanup safety (unregisterLight in destroy)
+        ✗ tile-snapped quiet decoration cluster (PixelLab content)
+        ✗ F3 debug overlay quiet zone rectangles (queued T11)
+        ✗ in-engine smoke
+        ✗ error-path: out-of-grid quiet zone skip — code path exists in
+          isZoneValid; needs a manual-verify or a runtime test
+
+      Queued task 11 for F3 zone rectangle rendering (covers both US-102 and
+      US-103 debug-overlay criteria).
+    tokens: ~6000
