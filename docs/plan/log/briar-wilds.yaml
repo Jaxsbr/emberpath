@@ -306,3 +306,40 @@ entries:
 
       Queued task 9 for the PixelLab Wang tileset generation.
     tokens: ~16000
+  - task: 9
+    time: "2026-05-04T11:00:00Z"
+    type: fix
+    story: US-100
+    description: "US-100 fix: conditional decorations re-evaluate on flag change (general subscriber)"
+    result: pass
+    notes: |
+      Operator caught the bug via in-engine smoke: brambles I added with
+      condition 'has_ember_mark == false' did NOT hide after the player got
+      the Ember in-scene. Screenshot showed the player on Ashen Isle east
+      edge with the Ember (green showing through desaturation) but brambles
+      still rendering — east path looked permanently blocked.
+
+      Root cause: GameScene had a general subscribeToConditionalObjects (for
+      object visibility/collision) and subscribeToConditionalTerrain (for
+      terrain flips) but NO equivalent for decorations. The only decoration
+      re-eval site was inside the fog-marsh-specific marsh_trapped subscriber.
+      So a mid-area has_ember_mark flip never re-ran updateConditionalDecorations.
+
+      Fix mirrors the existing subscribeToConditionalObjects pattern:
+      - new subscribeToConditionalDecorations() — extracts flag names from
+        every decoration condition with the same regex; one onFlagChange
+        listener per unique flag; callback calls updateConditionalDecorations.
+      - new decorationFlagUnsubscribes: (() => void)[] field
+      - cleanupResize unsubscribes alongside the existing arrays
+      - call site added to create() right after subscribeToConditionalTerrain
+
+      Initial-render visibility evaluation (line 909 in renderDecorations) is
+      unchanged so a fresh area load still hides brambles correctly when the
+      condition is already false at boot.
+
+      Build green (40 modules, dist 1583.93 kB).
+
+      Operator can now reload, get the Ember in-scene, walk east, brambles
+      should hide on the same tick the flag flips. Will renumber the next
+      task (PixelLab generation) to T10 in next progress update.
+    tokens: ~5000
