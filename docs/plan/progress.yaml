@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 14
-  next_task: "[phase] Update AGENTS.md to reflect new modules + behavior rules: src/systems/emberWarmth.ts ownership row; AreaDefinition.drainZones?/quietZones? in data/areas/types.ts row; src/data/areas/briar-wilds.ts ownership row; new briar-floor / briar-thorn terrains in maps/terrain.ts row; new bramble-cluster / briar-dead-tree / twisted-root object kinds in maps/objects.ts row; new tileset entry in maps/tilesets.ts row. Add Behavior rules: 'Ember warmth state' (system, drain/restore, hard floor, visual binding, persistence); 'Drain zones' (entry/escalation, doubt voices, no collision, no fail state); 'Quiet places' (restoration, narration on first entry, tier-2 lighting, drain-overlap precedence). Update POI lighting rule with new npcWarmedRadius/Intensity absolute constants. Add east-gated exit + conditional bramble-objects to Conditional exits/decorations rule. New asset directories: assets/tilesets/briar-wilds-floor-thorn/, assets/objects/briar-wilds/."
+  task_number: 15
+  next_task: "[phase] Operator manual-verify in-engine smoke per docs/plan/briar-wilds-manual-verify.md sections US-99..US-103. After smoke confirms zero blockers, mark phase_complete: true (Phase Completion Gate runs done-when audit + AGENTS consistency + error-path spot check) and the loop enters review (PR creation + auto review-pr + handle-pr-review)."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
