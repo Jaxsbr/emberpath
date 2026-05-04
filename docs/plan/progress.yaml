@@ -27,8 +27,8 @@ state:
   status: running
 
   # --- Task orchestration (owner: iterator) ---
-  task_number: 11
-  next_task: "[US-102/103] F3 debug overlay rendering of drain (burnt-sienna) + quiet (hope-gold-light) zone rectangles at the existing debug depth. Mirrors the existing debugOverlay zone-rendering pattern for triggers/exits. Source: EmberWarmthSystem.getDrainZones / getQuietZones (already exposed). Tile coords -> pixel rects via TILE_SIZE. After this, remaining briar-wilds work is mostly PixelLab content (T12 tileset generation, T13 object kinds) + manual-verify smoke."
+  task_number: 12
+  next_task: "[US-100/102/103] PixelLab Wang tileset generation for briar-wilds + style-matched object kinds. OPERATOR-DRIVEN against mcp__pixellab__ (personal — Learning EP-05). Tileset: primary 'briar-floor' / secondary 'briar-thorn'; subject + mood per phase-goal design direction. Object kinds: bramble-cluster (impassable), dead-tree (impassable), twisted-root (passable). Atlas frame-pick verification (Learning EP-03) lands with each commit. Once content is in, T13 wires the new atlasKey + object kinds + populates briar-wilds.ts with sparse thorn / decoration scatter and ashen-isle's bramble decoration cluster swaps from BUSH placeholder to the new bramble-cluster frame."
   last_result: pass
   consecutive_fails: 0
   phase_classification: cross-cutting
