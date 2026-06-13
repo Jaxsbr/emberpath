@@ -468,7 +468,11 @@ export class GameScene extends Phaser.Scene {
     // until the intro finishes and play resumes.
     this.objectiveBanner = new ObjectiveBannerSystem(this);
     if (this.area.objective) {
-      this.objectiveBanner.setObjective(this.area.objective);
+      // When we faded in (area transition / Continue resume), hold the banner's
+      // attention beat until the fade clears so the goal blooms in on a visible
+      // screen rather than invisibly under the black. Fresh start has no fade.
+      const objectiveDelay = data?.entryPoint || data?.resumePosition ? FADE_DURATION : 0;
+      this.objectiveBanner.setObjective(this.area.objective, objectiveDelay);
     }
     // Subtle water animation (Jaco request): luminance shimmer over the water
     // cells tagged during renderTileMap. Reads as light drifting on dark water
