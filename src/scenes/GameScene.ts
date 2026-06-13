@@ -16,6 +16,7 @@ import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
 import { WaterShimmerSystem } from '../systems/waterShimmer';
 import { AmbientMotesSystem } from '../systems/ambientMotes';
+import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { AnimationSystem } from '../systems/animation';
@@ -146,6 +147,7 @@ export class GameScene extends Phaser.Scene {
   private waterTiles: { sprite: Phaser.GameObjects.Sprite; col: number; row: number }[] = [];
   private waterShimmer!: WaterShimmerSystem;
   private ambientMotes!: AmbientMotesSystem;
+  private signpostWayfinding!: SignpostWayfindingSystem;
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
   // Conditional decorations: visibility re-evaluated on flag changes only,
   // never per-frame (Learning EP-01).
@@ -484,6 +486,7 @@ export class GameScene extends Phaser.Scene {
     // as frozen dioramas. On the main camera, so the desat pipeline greys them in
     // the cold world and warms them inside Pip's ember light.
     this.ambientMotes = new AmbientMotesSystem(this);
+    this.signpostWayfinding = new SignpostWayfindingSystem(this, this.area.signposts ?? []);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
         const script = this.area.dialogues[actionRef];
@@ -881,6 +884,7 @@ export class GameScene extends Phaser.Scene {
     // keeps its own call.)
     const npcLivePositions = this.npcBehavior.getLivePositions();
     this.npcInteraction.update(this.player.x, this.player.y);
+    this.signpostWayfinding.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
     // US-101: warmth update fires every walk-frame. delta is in ms; convert
     // to seconds for the per-second drain/restore rates. Player position in
@@ -1790,6 +1794,7 @@ export class GameScene extends Phaser.Scene {
     this.destroyEmberOverlay();
     this.lightingSystem?.destroy();
     this.ambientMotes?.destroy();
+    this.signpostWayfinding?.destroy();
   }
 
   // Register lights for every NPC, trigger, and decoration declared in the
