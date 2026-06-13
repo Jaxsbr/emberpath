@@ -59,6 +59,17 @@ export const LIGHTING_CONFIG = {
   // nothing; the world looks identical to the keeper-rescue baseline (Rule 4a
   // variant baseline check).
   enabled: true,
+  // Display alpha of the dark overlay — the "grey-out" model (Jaco 2026-06-13).
+  // 1.0 = the classic "dark-out" look (unlit world is black, the player carries a
+  // pool of LIGHT). Lower values thin the darkness so the whole world stays
+  // VISIBLE while the desaturation pipeline still reads the overlay's *texture*
+  // alpha as its colour mask — i.e. the player carries a pool of COLOUR through a
+  // grey, hope-drained-but-legible world. This dims only how the overlay is drawn;
+  // the sampled mask alpha (and so the colour reveal) is untouched. 0.0 = pure
+  // grey-out (no darkness at all). 0.45 chosen by playtest: the world reads clearly
+  // (so a first-timer is never lost) while staying dim/drained enough that Pip's
+  // warm pool feels like restored colour against it.
+  overlayDisplayAlpha: 0.45,
   // Fog wall flash on collision (US-79).
   fogFlashDurationMs: 250,
   fogFlashIntensity: 0.6,
