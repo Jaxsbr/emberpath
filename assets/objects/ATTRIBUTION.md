@@ -16,7 +16,7 @@ The style-match constraint forces the object palette / outline weight / shading 
 - `image_size: { width: 32, height: 32 }`
 - `inpainting`: default oval 60% (PixelLab's auto-pick when `background_image` provided without explicit inpainting)
 
-## Ashen Isle (10 kinds)
+## Ashen Isle (12 kinds)
 
 | kind | passable | description | object_id |
 |---|---|---|---|
@@ -30,6 +30,8 @@ The style-match constraint forces the object palette / outline weight / shading 
 | bush | true | small green-brown bush cluster, top-down storybook | `9b14b223-9261-4376-917f-f9e0baaaf31d` |
 | flower | true | small pale flower clump, top-down, sepia, no hope-gold | `9ab77405-b995-4776-bfc4-ec4fa72bbe8b` |
 | sign-wood | true | small wooden sign post, no text, top-down storybook | `37f166a9-fc66-4f58-842e-ebbaba8b633d` |
+| boat-row | false | small weathered wooden rowboat seen from above, single bench, empty hull, moored dinghy, muted sepia, deep umber outline (frame 3 of a `create_1_direction_object` candidate set; review object `69839419-3738-46bf-bf53-b0b6e3189558` dismissed after extraction) | `69839419-3738-46bf-bf53-b0b6e3189558` |
+| barrel-wood | false | single weathered wooden barrel seen from above, round top, iron hoop bands, aged staves, muted sepia, deep umber outline (frame 1 of a `create_1_direction_object` candidate set; review object `4ef96cd9-474c-4b6b-9504-9fd468bfbec0` dismissed after extraction) | `4ef96cd9-474c-4b6b-9504-9fd468bfbec0` |
 
 ## Fog Marsh (8 kinds)
 

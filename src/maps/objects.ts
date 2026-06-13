@@ -21,6 +21,9 @@ export type ObjectKindId =
   | 'fence-rail'
   | 'cliff-stone'
   | 'tree-pine'
+  // Ashen Isle — dock props (PixelLab style-matched, weathered sepia/umber)
+  | 'boat-row'
+  | 'barrel-wood'
   // Ashen Isle — passable
   | 'bush'
   | 'flower'
@@ -78,6 +81,8 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'fence-rail':  { id: 'fence-rail',  atlasKey: 'object-fence-rail',  assetPath: 'objects/ashen-isle/fence-rail.png',  passable: false },
   'cliff-stone': { id: 'cliff-stone', atlasKey: 'object-cliff-stone', assetPath: 'objects/ashen-isle/cliff-stone.png', passable: false },
   'tree-pine':   { id: 'tree-pine',   atlasKey: 'object-tree-pine',   assetPath: 'objects/ashen-isle/tree-pine.png',   passable: false },
+  'boat-row':    { id: 'boat-row',    atlasKey: 'object-boat-row',    assetPath: 'objects/ashen-isle/boat-row.png',    passable: false },
+  'barrel-wood': { id: 'barrel-wood', atlasKey: 'object-barrel-wood', assetPath: 'objects/ashen-isle/barrel-wood.png', passable: false },
   'bush':        { id: 'bush',        atlasKey: 'object-bush',        assetPath: 'objects/ashen-isle/bush.png',        passable: true },
   'flower':      { id: 'flower',      atlasKey: 'object-flower',      assetPath: 'objects/ashen-isle/flower.png',      passable: true },
   'sign-wood':   { id: 'sign-wood',   atlasKey: 'object-sign-wood',   assetPath: 'objects/ashen-isle/sign-wood.png',   passable: true },

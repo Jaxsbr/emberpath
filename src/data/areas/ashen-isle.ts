@@ -277,6 +277,17 @@ const ashenDecorations: DecorationDefinition[] = [
 // flip together when the Ember is granted (existing conditional-object path).
 // Replaces the earlier BUSH-decoration placeholder; brambles now both LOOK
 // like brambles and physically block the path pre-Ember.
+// Dock props — weathered sepia/umber world objects (PixelLab, 2026-06-13) that
+// dress the otherwise-bare exit landing so the dock reads as a real, lived-in
+// shore rather than a blank cobble strip. Placed on the dock FLOOR cells flanking
+// the 24-25 walking lane (so they never block the exit) with the water/cliff edge
+// immediately beside each: a rowboat moored at the west edge, a cargo barrel at
+// the east edge. Impassable.
+const ashenDockProps: import('../../maps/objects').ObjectInstance[] = [
+  { kind: 'boat-row', col: 23, row: 2 },
+  { kind: 'barrel-wood', col: 26, row: 2 },
+];
+
 const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
   { kind: 'bramble-cluster', col: 47, row: 17, condition: 'has_ember_mark == false' },
   { kind: 'bramble-cluster', col: 47, row: 18, condition: 'has_ember_mark == false' },
@@ -301,7 +312,7 @@ export const ashenIsle: AreaDefinition = {
   decorationsTileset: 'tiny-town',
   map: ashenTileMap,
   terrain: deriveTerrainFromTileMap(ashenTileMap, 'grass'),
-  objects: [...deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'), ...ashenEastBrambles],
+  objects: [...deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'), ...ashenDockProps, ...ashenEastBrambles],
   npcs: [
     // Old Man stands in the doorway of his cottage (40, 28 — the door FLOOR
     // tile). With wanderRadius 1 he drifts a step south to (40, 29) and back,
