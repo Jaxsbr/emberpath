@@ -110,6 +110,16 @@ const SURRENDER_DURATION_MS = 4000;
 // Closed exit centre in world pixels — col 14.5 (cols 13-16), row 22.
 const SURRENDER_TARGET_X = 14.5 * TILE_SIZE;
 const SURRENDER_TARGET_Y = 22 * TILE_SIZE;
+// Stillness cue (C4-b / F5): a soft pale ring that gathers around Pip while she
+// holds still, so a first-time player gets visible feedback that being still is
+// *doing* something — the surrender trigger was previously a silent 4s wait that
+// felt arbitrary. Rendered on the UI camera (projected to Pip's screen pos) so it
+// survives the marsh desaturation, same as the NPC presence auras.
+const STILLNESS_CUE_KEY = 'stillness-cue';
+const STILLNESS_CUE_TEX_SIZE = 96;
+const STILLNESS_CUE_DIAMETER = PLAYER_SIZE * 3.4;
+const STILLNESS_CUE_MAX_ALPHA = 0.7;
+const SURRENDER_HINT_DURATION_MS = 5200;
 
 // Fox-pip sprite animation constants
 // Idle: 4 frames per direction; Walk: 8 frames per direction (matches PixelLab output)
@@ -199,6 +209,12 @@ export class GameScene extends Phaser.Scene {
   // surrender does not survive a force-close (spec: surrender must be a single
   // continuous moment of giving up).
   private surrenderTimerMs = 0;
+  // C4-b / F5: one-shot "be still" inner-thought hint, fired the first frame the
+  // player is eligible-and-still so they learn to stop struggling; the gather
+  // ring gives ongoing feedback. Reset implicitly — the scene is recreated per
+  // area load, so a fresh marsh entry re-arms the hint.
+  private surrenderHintShown = false;
+  private stillnessCue: Phaser.GameObjects.Image | null = null;
   // Per-flag unsubscribes for NPC spawnCondition watchers (US-71). Collected as
   // GameScene parses each conditional NPC's condition for flag names; invoked
   // from cleanupResize. activeNpcs is the filtered list passed to subsystems
@@ -373,11 +389,16 @@ export class GameScene extends Phaser.Scene {
         const cy = 22 * TILE_SIZE;
         this.lightingSystem?.flashFog(cx, cy);
         const n = (value as number | undefined) ?? 0;
+        // The voice walks from "the way is gone" to the end of her own effort.
+        // It must NOT tell her to keep searching once she can surrender
+        // (SURRENDER_MIN_ATTEMPTS = 2) — that fought the stillness trigger and
+        // made the rescue feel arbitrary (F5). The "be still" cue is delivered
+        // separately by updateSurrender when she stops near the exit.
         const line =
-          n === 1 ? 'The path is gone.' :
-          n === 2 ? 'There must be a way back.' :
-          n === 3 ? 'I cannot find it.' :
-          'I cannot do this.';
+          n === 1 ? 'The way out is gone.' :
+          n === 2 ? 'I push and push. It will not open.' :
+          n === 3 ? 'My legs are so tired.' :
+          'I cannot do this on my own.';
         this.showThought(line);
       });
     }
@@ -963,32 +984,97 @@ export class GameScene extends Phaser.Scene {
   private updateSurrender(delta: number, hasInput: boolean): void {
     // One-shot — once surrendered, the flag stays until reset and we don't
     // need to keep evaluating.
-    if (getFlag('marsh_surrendered') === true) return;
-    if (getFlag('marsh_trapped') !== true) {
-      this.surrenderTimerMs = 0;
+    if (getFlag('marsh_surrendered') === true) {
+      this.updateStillnessCue(0);
       return;
     }
+    const trapped = getFlag('marsh_trapped') === true;
     const attempts = (getFlag('escape_attempts') as number | undefined) ?? 0;
-    if (attempts < SURRENDER_MIN_ATTEMPTS) {
-      this.surrenderTimerMs = 0;
-      return;
-    }
     const dx = this.player.x - SURRENDER_TARGET_X;
     const dy = this.player.y - SURRENDER_TARGET_Y;
     const proxLimit = SURRENDER_PROXIMITY_TILES * TILE_SIZE;
-    if (dx * dx + dy * dy > proxLimit * proxLimit) {
+    const inProximity = dx * dx + dy * dy <= proxLimit * proxLimit;
+    const eligible = trapped && attempts >= SURRENDER_MIN_ATTEMPTS && inProximity;
+
+    // Movement, leaving the spot, or not-yet-eligible all reset the moment —
+    // surrender must be one continuous stillness. The gather ring follows the
+    // (now zero) timer back to invisible.
+    if (!eligible || hasInput) {
       this.surrenderTimerMs = 0;
+      this.updateStillnessCue(0);
       return;
     }
-    if (hasInput) {
-      this.surrenderTimerMs = 0;
-      return;
+
+    // Eligible AND still: tell her once to stop struggling (F5 — the trigger was
+    // silent before), then accumulate. The hint is gated to the still branch so
+    // it never collides with the escape-attempt monologue (which fires on input).
+    if (!this.surrenderHintShown && !this.dialogueSystem.isActive) {
+      this.showThought('I am so tired. Maybe I should stop. And be still.', SURRENDER_HINT_DURATION_MS);
+      this.surrenderHintShown = true;
     }
     this.surrenderTimerMs += delta;
+    this.updateStillnessCue(this.surrenderTimerMs / SURRENDER_DURATION_MS);
     if (this.surrenderTimerMs >= SURRENDER_DURATION_MS) {
       if (this.dialogueSystem.isActive) return;
       setFlag('marsh_surrendered', true);
+      this.updateStillnessCue(0);
     }
+  }
+
+  // Soft pale ring that gathers around Pip as the stillness timer fills, giving a
+  // first-time player visible proof that holding still is working (F5). `ratio`
+  // is surrenderTimerMs / SURRENDER_DURATION_MS, clamped 0..1; 0 fades it out.
+  // Lazily created (no-op until first needed). UI-camera object projected to
+  // Pip's screen position so it survives the marsh desaturation.
+  // Loop-invariant EP-01: lazy one-time texture/image creation, then in-place
+  // setPosition/setDisplaySize/setAlpha only — no per-frame allocation.
+  private updateStillnessCue(ratio: number): void {
+    const r = ratio <= 0 ? 0 : ratio >= 1 ? 1 : ratio;
+    if (r <= 0 && !this.stillnessCue) return; // never spawned, nothing to hide
+    this.ensureStillnessCue();
+    const cue = this.stillnessCue;
+    if (!cue) return;
+    if (r <= 0) {
+      if (cue.visible) cue.setVisible(false);
+      return;
+    }
+    const cam = this.cameras.main;
+    const sx = (this.player.x - cam.worldView.centerX) * cam.zoom + cam.width * 0.5;
+    const sy = (this.player.y - cam.worldView.centerY) * cam.zoom + cam.height * 0.5;
+    // Gather inward as it fills (1.5x → 1.0x) so it reads as "drawing together".
+    const d = STILLNESS_CUE_DIAMETER * cam.zoom * (1.5 - 0.5 * r);
+    if (!cue.visible) cue.setVisible(true);
+    cue.setPosition(sx, sy);
+    cue.setDisplaySize(d, d);
+    cue.setAlpha(STILLNESS_CUE_MAX_ALPHA * r);
+  }
+
+  private ensureStillnessCue(): void {
+    if (this.stillnessCue) return;
+    if (!this.textures.exists(STILLNESS_CUE_KEY)) {
+      const canvas = this.textures.createCanvas(STILLNESS_CUE_KEY, STILLNESS_CUE_TEX_SIZE, STILLNESS_CUE_TEX_SIZE);
+      if (!canvas) return;
+      const ctx = canvas.getContext();
+      const c = STILLNESS_CUE_TEX_SIZE / 2;
+      // Pale calm ring (transparent centre so Pip stays clear), warm-cream so it
+      // reads as gentle grace gathering rather than the Ember's hot gold.
+      const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+      gradient.addColorStop(0.0, 'rgba(250,244,224,0)');
+      gradient.addColorStop(0.55, 'rgba(248,238,206,0)');
+      gradient.addColorStop(0.78, 'rgba(250,240,210,0.6)');
+      gradient.addColorStop(1.0, 'rgba(245,232,196,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, STILLNESS_CUE_TEX_SIZE, STILLNESS_CUE_TEX_SIZE);
+      canvas.refresh();
+    }
+    const cue = this.add.image(this.player.x, this.player.y, STILLNESS_CUE_KEY);
+    cue.setOrigin(0.5, 0.5);
+    cue.setBlendMode(Phaser.BlendModes.ADD);
+    cue.setDepth(NPC_PRESENCE_DEPTH);
+    cue.setVisible(false);
+    // UI-camera object (survives desaturation) — main camera must ignore it.
+    this.cameras.main.ignore(cue);
+    this.stillnessCue = cue;
   }
 
   // Throttled walk-frame autosave. Returns before any localStorage IO when the
