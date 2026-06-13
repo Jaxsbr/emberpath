@@ -112,10 +112,9 @@ docs/
   tilesets/            # Per-tileset frame-intent vocabulary (US-61) — one file per atlas
     tiny-town.md       # Frames used by ashen-isle.ts + reserved-for-future appendix
     tiny-dungeon.md    # Frames used by fog-marsh.ts + reserved-for-future appendix
-  plan/                # Build-loop scaffolding — phase-goal, log, archive, manual-verify checklists
-    save-resume-manual-verify.md  # Per-area autosave + reset-mechanism + error-path runtime checklist (US-65)
-    world-legibility-manual-verify.md  # Reads-as observer tests + per-area runtime checklist (US-58..61)
-    fog-marsh-dead-end-manual-verify.md  # Threshold + exit closure + visual closure + escape attempts + tampered-flag runtime checklist (US-66..69)
+  plan/                # Engineering reference (build-loop process residue pruned)
+    LEARNINGS.md       # Cross-phase engineering learnings (EP-01..EP-06) — cited by specs + behavior rules below
+    editor-known-issues.md  # Open backlog for the area-authoring editor tool
 tools/
   generate-scene-art.ts # Scene-art generation printer (US-91) — walks SCENE_ASSETS, composes each beat's prompt via composeArtPrompt, prints exact mcp__pixellab__create_object invocation blocks for an agent to fire (PixelLab MCP requires agent context)
   editor/              # Standalone Vite dev tool — area map, dialogue tree, story flow
