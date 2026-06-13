@@ -210,6 +210,21 @@ export interface ConditionalTerrainBlock {
   }[];
 }
 
+// Wayfinding signpost (C7, Jaco idea 2026-06-14). A sign the player can walk up
+// to: entering its radius fades in a white outline highlight on the sign plus a
+// short destination label ("Dock → Fog Marsh") so a first-time player can read
+// where a path leads — turning the existing decorative signposts into real
+// directions (North Star clarity track). Place `col`,`row` on the matching sign
+// object so the highlight aligns with the rendered sign; `kind` selects the
+// atlas/footprint for the outline clone and defaults to 'sign-wood'. Keep
+// `label` to a couple of kid-readable words.
+export interface SignpostDefinition {
+  col: number;
+  row: number;
+  label: string;
+  kind?: ObjectKindId;
+}
+
 export interface AreaDefinition {
   id: string;
   name: string;
@@ -255,6 +270,9 @@ export interface AreaDefinition {
   // player always knows where to head — guidance isn't only the reactive
   // thought bubbles you stumble into. Keep it one kid-readable sentence.
   objective?: string;
+  // Wayfinding signposts (C7). Optional; areas without any read the same as
+  // before. Each entry lights its sign + shows a destination label on approach.
+  signposts?: SignpostDefinition[];
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
   // Drain zones (US-102) — twisted false-hope patches that drain ember warmth

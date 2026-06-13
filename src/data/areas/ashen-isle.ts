@@ -886,6 +886,13 @@ export const ashenIsle: AreaDefinition = {
   },
   introStoryScene: 'ashen-isle-intro',
   objective: 'Find the smoke. Someone needs you.',
+  // Wayfinding signposts (C7). The dock post at the north coast (the sign-wood
+  // in ashenScenery at 26,5) sits right beside the boardwalk exit to Fog Marsh
+  // (exit zone cols 23-26, row 2) — walking up to it now lights the sign and
+  // tells the player where that road goes.
+  signposts: [
+    { col: 26, row: 5, label: 'Dock → Fog Marsh' },
+  ],
   playerSpawn: { col: 9, row: 20 },
   exits: [
     {
