@@ -46,6 +46,10 @@ export class LightingSystem {
   private scene: Phaser.Scene;
   private rt: Phaser.GameObjects.RenderTexture | null = null;
   private brush: Phaser.GameObjects.Image | null = null;
+  // Warm hope-gold bloom drawn just beneath the dark overlay (#29) so the
+  // overlay's erased player-light hole masks it to the lit pool. Reused
+  // frame-to-frame (zero alloc, EP-01); only position/scale/alpha mutate.
+  private warmBloom: Phaser.GameObjects.Image | null = null;
   private lights: RegisteredLight[] = [];
   private hasEmber = false;
   private toggleKey: Phaser.Input.Keyboard.Key | null = null;
@@ -70,6 +74,7 @@ export class LightingSystem {
     // scene.restart so destroyed Phaser objects would otherwise be re-read.
     this.rt = null;
     this.brush = null;
+    this.warmBloom = null;
     this.lights = [];
     this.hasEmber = false;
     this.playerWarmth = 1.0;
@@ -112,6 +117,18 @@ export class LightingSystem {
     this.brush = new Phaser.GameObjects.Image(this.scene, 0, 0, BRUSH_TEXTURE_KEY);
     this.brush.setOrigin(0.5, 0.5);
 
+    // Warm bloom (#29). Reuses the radial gradient brush, tinted hope-gold and
+    // ADD-blended so it glows rather than paints over the art. Depth just below
+    // the dark overlay (6) but above world entities, so the overlay's erased
+    // light hole is exactly its mask — the warmth shows only inside the lit pool.
+    this.warmBloom = this.scene.add.image(0, 0, BRUSH_TEXTURE_KEY);
+    this.warmBloom.setOrigin(0.5, 0.5);
+    this.warmBloom.setTint(LIGHTING_CONFIG.playerWarmBloomColor);
+    this.warmBloom.setBlendMode(Phaser.BlendModes.ADD);
+    this.warmBloom.setDepth(OVERLAY_DEPTH - 0.4);
+    this.warmBloom.setVisible(false);
+    this.scene.cameras.getCamera('ui')?.ignore(this.warmBloom);
+
     // F4 toggles LIGHTING_CONFIG.enabled at runtime for A/B comparison with the
     // keeper-rescue baseline (Rule 4a variant baseline). Production builds keep
     // the binding active — there's no harm and authors can debug deployed sites.
@@ -127,6 +144,7 @@ export class LightingSystem {
     if (!this.rt || !this.brush) return;
     if (!LIGHTING_CONFIG.enabled) {
       if (this.rt.visible) this.rt.setVisible(false);
+      if (this.warmBloom?.visible) this.warmBloom.setVisible(false);
       return;
     }
     if (!this.rt.visible) this.rt.setVisible(true);
@@ -146,6 +164,21 @@ export class LightingSystem {
       : LIGHTING_CONFIG.playerRadiusPre;
     const pFalloff = hasEmber ? LIGHTING_CONFIG.playerFalloffPost : LIGHTING_CONFIG.playerFalloffPre;
     this.eraseLight(playerX, playerY, pRadius + pFalloff, 1.0);
+
+    // Warm bloom over the lit pool (#29). Alpha grows with warmth post-Ember;
+    // a gentle floor pre-Ember so the opening never reads cold-green. The dark
+    // overlay above (depth 6) masks it to the player's light hole.
+    if (this.warmBloom) {
+      if (!this.warmBloom.visible) this.warmBloom.setVisible(true);
+      const bloomRadius = pRadius * LIGHTING_CONFIG.playerWarmBloomScale;
+      this.warmBloom.setPosition(playerX, playerY);
+      this.warmBloom.setScale((bloomRadius * 2) / BRUSH_SIZE);
+      this.warmBloom.setAlpha(
+        hasEmber
+          ? lerpByWarmth(this.playerWarmth, LIGHTING_CONFIG.playerWarmBloomAlphaFloor, LIGHTING_CONFIG.playerWarmBloomAlphaFull)
+          : LIGHTING_CONFIG.playerWarmBloomAlphaPre,
+      );
+    }
 
     // Registered lights — POI, NPC, tier-2. Indexed loop avoids iterator
     // allocation (Learning EP-01).
@@ -286,8 +319,10 @@ export class LightingSystem {
   destroy(): void {
     this.rt?.destroy();
     this.brush?.destroy();
+    this.warmBloom?.destroy();
     this.rt = null;
     this.brush = null;
+    this.warmBloom = null;
     this.lights = [];
     this.toggleKey = null;
   }
