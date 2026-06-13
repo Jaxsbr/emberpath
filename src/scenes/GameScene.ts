@@ -53,6 +53,29 @@ const EMBER_OFFSET_Y = -28;
 const EMBER_GLOW_KEY = 'player-ember-glow';
 const EMBER_GLOW_TEX_SIZE = 64;
 const EMBER_DEPTH = 5.5;
+// NPC presence marker (C4-a, 2026-06-13). Audit F4: post the grey-out model the
+// whole world is visible, but an un-warmed NPC reads as just another grey shape —
+// nothing says "a soul to approach." A faint warm amber aura (the same soft
+// additive radial-glow brush as Pip's ember, dimmer + cooler) haloes each
+// un-warmed NPC so a first-time player always has clear targets to walk toward.
+// It is a UI-camera object (so it survives the world desaturation, see
+// createNpcPresenceGlow), which means it composites OVER the main camera — the
+// NPC sprite never reads as washed out only because the glow texture is a ring
+// (transparent centre), not a filled disc. It breathes gently (phase-varied per
+// NPC so they don't pulse in lockstep), and is removed the moment the NPC is warmed — the full warmed light
+// (npcWarmedRadius) is the payoff that replaces the waiting spark.
+const NPC_PRESENCE_GLOW_KEY = 'npc-presence-glow';
+const NPC_PRESENCE_TEX_SIZE = 64;
+const NPC_PRESENCE_DEPTH = 4.6;
+const NPC_PRESENCE_DIAMETER = NPC_SIZE * 2.4;
+const NPC_PRESENCE_BASE_ALPHA = 0.5;
+// Stable per-NPC phase offset (0..2π) from the id so auras breathe out of sync
+// without Math.random (unavailable / non-deterministic in this build).
+function npcPresencePhase(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
+  return (h / 360) * Math.PI * 2;
+}
 // NPCs that can be warmed via the ember-share verb (US-85). Each ID maps to a
 // `npc_warmed_<id>` flag; on flip-to-true the matching NPC's tier-1 light is
 // re-registered at brighter values and alpha-gated decorations within its new
@@ -157,6 +180,10 @@ export class GameScene extends Phaser.Scene {
   };
   private npcEntities: Phaser.GameObjects.GameObject[] = [];
   private npcSpritesById: Map<string, Phaser.GameObjects.Sprite> = new Map();
+  // Faint warm "presence" auras for un-warmed NPCs (C4-a discoverability). Keyed
+  // by NPC id; created alongside the sprite, removed on warming. Reset in
+  // renderNpcs alongside npcSpritesById.
+  private npcPresenceGlowById: Map<string, Phaser.GameObjects.Image> = new Map();
   private npcBehavior!: NpcBehaviorSystem;
   private activeDialogueNpcId: string | null = null;
   private boundWindowResize: (() => void) | null = null;
@@ -572,12 +599,29 @@ export class GameScene extends Phaser.Scene {
       if (getFlag(flagName) === true) {
         const npc = this.activeNpcs.find((n) => n.id === npcId);
         if (npc) this.registerNpcLight(npc, true);
+        // Already warmed on resume — the waiting-spark aura is moot (createNpc...
+        // already skipped it, but stay defensive against ordering).
+        this.removeNpcPresenceGlow(npcId);
       }
       const unsubscribe = onFlagChange(flagName, (_, value) => {
         const npc = this.activeNpcs.find((n) => n.id === npcId);
         if (npc) {
           this.registerNpcLight(npc, value === true);
           this.maybeUpdateAlphaGates(true);
+          // Warming flips the faint waiting-spark aura off — the full warmed
+          // light is the payoff. On reset-to-baseline (value false/undefined),
+          // bring the aura back at the NPC's spawn cell so the soul reads as a
+          // target again.
+          if (value === true) {
+            this.removeNpcPresenceGlow(npcId);
+          } else {
+            const off = (TILE_SIZE - NPC_SIZE) / 2;
+            this.createNpcPresenceGlow(
+              npc,
+              npc.col * TILE_SIZE + off + NPC_SIZE / 2,
+              npc.row * TILE_SIZE + off + NPC_SIZE / 2,
+            );
+          }
         }
         // Cumulative desaturation reduction (US-86) — warmingsCount changed,
         // recompute and push the new effective value to the pipeline. Recomputed
@@ -678,6 +722,60 @@ export class GameScene extends Phaser.Scene {
     this.emberOverlay = null;
   }
 
+  // Pre-bake the NPC presence aura once: amber, softer + cooler than Pip's
+  // white-hot ember so an un-warmed soul reads as a faint waiting spark, not a
+  // second ember to confuse the player.
+  private ensureNpcPresenceTexture(): void {
+    if (this.textures.exists(NPC_PRESENCE_GLOW_KEY)) return;
+    const canvas = this.textures.createCanvas(NPC_PRESENCE_GLOW_KEY, NPC_PRESENCE_TEX_SIZE, NPC_PRESENCE_TEX_SIZE);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    const c = NPC_PRESENCE_TEX_SIZE / 2;
+    // Halo (transparent centre → amber ring → transparent edge): rendered by the
+    // UI camera it sits ON TOP of the NPC sprite, so a filled core would wash out
+    // the face. A ring lets the NPC read clearly while a warm aura surrounds it.
+    const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+    gradient.addColorStop(0.0, 'rgba(255,214,150,0)');    // transparent centre — NPC shows
+    gradient.addColorStop(0.42, 'rgba(255,206,140,0.55)'); // warm ring peak
+    gradient.addColorStop(0.62, 'rgba(245,175,95,0.42)');  // amber falloff
+    gradient.addColorStop(1.0, 'rgba(235,150,70,0)');      // transparent edge
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, NPC_PRESENCE_TEX_SIZE, NPC_PRESENCE_TEX_SIZE);
+    canvas.refresh();
+  }
+
+  // Create the faint waiting-spark aura behind an un-warmed NPC. No-op if the
+  // NPC is already warmed (continue-from-save) or already has an aura.
+  // Rendered by the UI camera (which has no desaturation pipeline, unlike the
+  // main camera) so the warm aura survives the drained-world grey-out — the same
+  // trick the objective banner uses. The main camera ignores it; the update loop
+  // projects the NPC's world position to screen coords each frame. `cx/cy` are
+  // world coords used only for the initial placement before the first projection.
+  private createNpcPresenceGlow(npc: NpcDefinition, cx: number, cy: number): void {
+    if (this.npcPresenceGlowById.has(npc.id)) return;
+    if (getFlag(`npc_warmed_${npc.id}`) === true) return;
+    this.ensureNpcPresenceTexture();
+    const glow = this.add.image(cx, cy, NPC_PRESENCE_GLOW_KEY);
+    glow.setOrigin(0.5, 0.5);
+    glow.setBlendMode(Phaser.BlendModes.ADD);
+    glow.setDepth(NPC_PRESENCE_DEPTH);
+    glow.setDisplaySize(NPC_PRESENCE_DIAMETER, NPC_PRESENCE_DIAMETER);
+    glow.setAlpha(NPC_PRESENCE_BASE_ALPHA);
+    // UI-camera object: main camera must NOT draw it (would double-render a
+    // desaturated copy under the warm one). It is absent from the UI ignore list
+    // built in setupCamera, so the UI camera renders it.
+    this.cameras.main.ignore(glow);
+    this.npcPresenceGlowById.set(npc.id, glow);
+  }
+
+  private removeNpcPresenceGlow(npcId: string): void {
+    const glow = this.npcPresenceGlowById.get(npcId);
+    if (glow) {
+      glow.destroy();
+      this.npcPresenceGlowById.delete(npcId);
+    }
+  }
+
   update(time: number, delta: number): void {
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
@@ -742,6 +840,12 @@ export class GameScene extends Phaser.Scene {
     this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
 
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
+    // Single post-update snapshot of NPC live positions, shared by the presence
+    // auras and the lighting sync below. getLivePositions allocates a fresh Map
+    // per call, so take it ONCE here. (The collision check above runs before
+    // npcBehavior.update and legitimately needs the pre-move positions, so it
+    // keeps its own call.)
+    const npcLivePositions = this.npcBehavior.getLivePositions();
     this.npcInteraction.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
     // US-101: warmth update fires every walk-frame. delta is in ms; convert
@@ -783,11 +887,37 @@ export class GameScene extends Phaser.Scene {
       this.emberOverlay.setAlpha(Math.min(1, alpha * alphaPulse));
     }
 
+    // NPC presence auras (C4-a): follow their (possibly wandering) NPCs and
+    // breathe gently so un-warmed souls read as live points to approach. Phase
+    // is varied per NPC (stable id hash) so they don't pulse in lockstep.
+    // Loop-invariant EP-01: in-place glow mutation only; reuses the shared
+    // npcLivePositions snapshot taken above (no per-frame allocation here).
+    if (this.npcPresenceGlowById.size > 0) {
+      // The glow lives on the UI camera (no zoom, scroll 0), so project each
+      // NPC's world position to screen pixels and scale the aura by main-camera
+      // zoom so it tracks the on-screen NPC sprite 1:1.
+      const cam = this.cameras.main;
+      const zoom = cam.zoom;
+      const viewCx = cam.worldView.centerX;
+      const viewCy = cam.worldView.centerY;
+      const halfW = cam.width * 0.5;
+      const halfH = cam.height * 0.5;
+      for (const [id, glow] of this.npcPresenceGlowById) {
+        const p = npcLivePositions.get(id);
+        if (p) {
+          glow.setPosition((p.x - viewCx) * zoom + halfW, (p.y - viewCy) * zoom + halfH);
+        }
+        const pulse = Math.sin(time * 0.0022 + npcPresencePhase(id));
+        const d = NPC_PRESENCE_DIAMETER * zoom * (1 + 0.06 * pulse);
+        glow.setDisplaySize(d, d);
+        glow.setAlpha(NPC_PRESENCE_BASE_ALPHA * (1 + 0.18 * pulse));
+      }
+    }
+
     // Sync NPC light positions to live (post-wander) coordinates so wandering
-    // NPCs carry their light. The live-positions Map is already allocated each
-    // frame by npcBehavior.getLivePositions for collision/interaction; this
+    // NPCs carry their light. Reuses the shared npcLivePositions snapshot; this
     // call only iterates the lights array in-place (Learning EP-01).
-    this.lightingSystem.syncPositions(this.npcBehavior.getLivePositions());
+    this.lightingSystem.syncPositions(npcLivePositions);
 
     // Lighting overlay — re-rendered each frame so the player's light moves
     // smoothly. hasEmberCached is updated by the onFlagChange subscriber so
@@ -1298,6 +1428,10 @@ export class GameScene extends Phaser.Scene {
     // the destroyed sprite from the map and crash on .play() at the next tick.
     this.npcEntities = [];
     this.npcSpritesById.clear();
+    // Presence auras are GameObjects destroyed by the scene shutdown on restart;
+    // clear the stale references so spawnNpcSprite recreates fresh ones (mirrors
+    // npcSpritesById).
+    this.npcPresenceGlowById.clear();
     for (const npc of this.activeNpcs) {
       this.spawnNpcSprite(npc);
     }
@@ -1317,6 +1451,7 @@ export class GameScene extends Phaser.Scene {
       sprite.play(`npc-${npc.sprite}-idle-south`);
       this.npcEntities.push(sprite);
       this.npcSpritesById.set(npc.id, sprite);
+      this.createNpcPresenceGlow(npc, cx, cy);
       return sprite;
     }
     console.error(`NPC '${npc.id}' references unknown sprite id '${npc.sprite}' — falling back to rectangle render.`);
@@ -1324,6 +1459,7 @@ export class GameScene extends Phaser.Scene {
     rect.setOrigin(0, 0);
     rect.setDepth(5);
     this.npcEntities.push(rect);
+    this.createNpcPresenceGlow(npc, cx, cy);
     return null;
   }
 
