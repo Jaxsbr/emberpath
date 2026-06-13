@@ -406,7 +406,7 @@ export const fogMarsh: AreaDefinition = {
           imageLabel: 'The Keeper draws near',
         },
         {
-          text: 'A spark passes from the Keeper to Pip — small, warm, unmistakable. The ember settles in his chest like it had always been there, just waiting.',
+          text: 'A spark passes from the Keeper to Pip — small, warm, unmistakable. The ember settles in her chest like it had always been there, just waiting.',
           imageColor: 0xf2c878,
           imageLabel: 'The ember passes',
         },
