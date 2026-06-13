@@ -15,6 +15,7 @@ import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
 import { WaterShimmerSystem } from '../systems/waterShimmer';
+import { AmbientMotesSystem } from '../systems/ambientMotes';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { AnimationSystem } from '../systems/animation';
@@ -144,6 +145,7 @@ export class GameScene extends Phaser.Scene {
   // handed to WaterShimmerSystem survives a redrawTerrainOnly rebuild.
   private waterTiles: { sprite: Phaser.GameObjects.Sprite; col: number; row: number }[] = [];
   private waterShimmer!: WaterShimmerSystem;
+  private ambientMotes!: AmbientMotesSystem;
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
   // Conditional decorations: visibility re-evaluated on flag changes only,
   // never per-frame (Learning EP-01).
@@ -478,6 +480,10 @@ export class GameScene extends Phaser.Scene {
     // cells tagged during renderTileMap. Reads as light drifting on dark water
     // without breaking the drained/grey vision.
     this.waterShimmer = new WaterShimmerSystem(this, this.waterTiles);
+    // Drifting ambient motes (C4-d): a little life in the air so areas don't read
+    // as frozen dioramas. On the main camera, so the desat pipeline greys them in
+    // the cold world and warms them inside Pip's ember light.
+    this.ambientMotes = new AmbientMotesSystem(this);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
         const script = this.area.dialogues[actionRef];
@@ -810,6 +816,9 @@ export class GameScene extends Phaser.Scene {
     // Water shimmer runs every frame (including during dialogue, below) so the
     // sea never freezes while the player reads.
     this.waterShimmer.update(time);
+    // Ambient motes drift every frame too (same rationale as the shimmer — the
+    // world should never read as fully frozen).
+    this.ambientMotes.update(time, delta);
     // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
     // trigger-zone evaluation, and exit-zone checks all sit in the body below
     // this chain so a single early-return covers all four.
@@ -1780,6 +1789,7 @@ export class GameScene extends Phaser.Scene {
     this.warmingUnsubscribes = [];
     this.destroyEmberOverlay();
     this.lightingSystem?.destroy();
+    this.ambientMotes?.destroy();
   }
 
   // Register lights for every NPC, trigger, and decoration declared in the
