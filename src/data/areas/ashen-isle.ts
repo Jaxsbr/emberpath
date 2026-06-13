@@ -7,6 +7,7 @@ import {
   deriveTerrainFromTileMap,
   deriveObjectsFromTileMap,
 } from './types';
+import { TerrainId } from '../../maps/terrain';
 
 const F = TILE_FLOOR;
 const W = TILE_WALL;
@@ -188,68 +189,14 @@ function buildAshenMap(): StoredTile[][] {
 // Decorations — visible vocabulary composed over the collision map.
 // =============================================================================
 
-const CLIFF_VARIANTS = [FRAME.CLIFF_A, FRAME.CLIFF_B, FRAME.CLIFF_C];
-
+// Decorations are now reserved for the one element that needs a feature the
+// object layer lacks: the US-81 post-Ember reveal sign, which couples an
+// `alphaGatedByLight` flag with a tier-2 `light` (ObjectInstance has neither).
+// Every other structure — paths, buildings, fences, trees — moved to real
+// terrain (paths) or PixelLab style-matched objects (everything else) below,
+// retiring the tiny-town frame atlas that desaturated into grey "gravestones."
 const ashenDecorations: DecorationDefinition[] = [
-  // North coast — cliff (substituting for water) on rows 0-3 with dock /
-  // path breaks. Rows 0-1 are full-width cliff (the open water beyond the
-  // shore); rows 2-3 are cliff on either side of the dock/path break so the
-  // dock reads as cutting through the rocky shore.
-  ...rectVariants(0, 49, 0, 1, CLIFF_VARIANTS),
-  ...rectVariants(0, 22, 2, 3, CLIFF_VARIANTS),
-  ...rectVariants(27, 49, 2, 3, CLIFF_VARIANTS),
-
-  // Dock at exit zone — wooden boardwalk reads as the way off the island.
-  ...hline(23, 26, 2, FRAME.DOCK),
-
-  // Main vertical path — cols 24 + 25 from the dock down to the south edge.
-  ...vline(24, 4, 36, FRAME.PATH),
-  ...vline(25, 4, 36, FRAME.PATH),
-
-  // West branch — row 20 cols 10-23, joining the player's gate to the main path.
-  ...hline(10, 23, 20, FRAME.PATH),
-
-  // East branch — row 22 cols 26-41, joining the main path to the Old Man's gate.
-  ...hline(26, 41, 22, FRAME.PATH),
-
-  // Player's cottage — 5×4 building at rows 12-15 cols 8-12.
-  ...hline(8, 12, 12, FRAME.ROOF),
-  ...hline(8, 12, 13, FRAME.ROOF),
-  ...hline(8, 12, 14, FRAME.WALL_FRONT),
-  ...hline(8, 9, 15, FRAME.WALL_FRONT),
-  { col: 10, row: 15, spriteFrame: FRAME.DOOR },
-  ...hline(11, 12, 15, FRAME.WALL_FRONT),
-
-  // Player's fenced yard perimeter at rows 11-19 cols 5-14, gate at (9, 19).
-  ...fencePerimeter(5, 14, 11, 19, FRAME.FENCE, { col: 9, row: 19 }),
-
-  // Old Man's cottage — 5×4 building at rows 24-28 cols 38-42.
-  ...hline(38, 42, 24, FRAME.ROOF),
-  ...hline(38, 42, 25, FRAME.ROOF),
-  ...hline(38, 42, 26, FRAME.WALL_FRONT),
-  ...hline(38, 42, 27, FRAME.WALL_FRONT),
-  ...hline(38, 39, 28, FRAME.WALL_FRONT),
-  { col: 40, row: 28, spriteFrame: FRAME.DOOR },
-  ...hline(41, 42, 28, FRAME.WALL_FRONT),
-
-  // Old Man's fenced yard perimeter at rows 23-31 cols 35-44, gates at
-  // (39, 23) north and (39, 31) south (US-78 — south gate added so the
-  // player can reach the doorway without circling the entire yard).
-  ...fencePerimeter(35, 44, 23, 31, FRAME.FENCE, [
-    { col: 39, row: 23 },
-    { col: 39, row: 31 },
-  ]),
-
-  // Yard-interior path inside Old Man's yard — runs from the gate at (39, 23)
-  // south to the Old Man's stoop at (39, 28), placing him on a path tile
-  // adjacent to his door at (40, 28) (US-59 done-when).
-  ...vline(39, 24, 28, FRAME.PATH),
-
-  // Scattered decorations across open grass — sign by the dock plus a mix of
-  // bushes, trees, and flowers in the bands away from the path so no single
-  // frame dominates the decoration vocabulary.
-  { col: 26, row: 5, spriteFrame: FRAME.SIGN },
-  // Post-Ember reveal (US-81). A second sign on the dock path that is INVISIBLE
+  // Post-Ember reveal (US-81). A sign on the dock path that is INVISIBLE
   // pre-Ember — the player walked past it without seeing it. Once Pip carries
   // the Ember, the tier-2 light at this position renders, and the alpha-gated
   // decoration becomes visible. Paired with the 'ashen-isle-mark' trigger below
@@ -261,14 +208,91 @@ const ashenDecorations: DecorationDefinition[] = [
     alphaGatedByLight: true,
     light: { tier: 2, radius: 56, intensity: 0.4 },
   },
-  { col: 8, row: 6, spriteFrame: FRAME.TREE },
-  { col: 36, row: 7, spriteFrame: FRAME.TREE },
-  { col: 3, row: 9, spriteFrame: FRAME.TREE },
-  { col: 28, row: 10, spriteFrame: FRAME.FLOWER },
-  { col: 12, row: 32, spriteFrame: FRAME.TREE },
-  { col: 6, row: 34, spriteFrame: FRAME.FLOWER },
-  { col: 44, row: 25, spriteFrame: FRAME.BUSH },
-  { col: 30, row: 33, spriteFrame: FRAME.BUSH },
+];
+
+// ───── Ashen Isle objects (US-98 legibility overhaul) ─────
+// The old map rendered paths/fences/buildings/scenery from the tiny-town
+// decoration atlas, which desaturated into grey gravestone-like blocks
+// (Jaco feedback 2026-06-13: "why is everything made of gravestones"). They are
+// re-authored here as PixelLab style-matched objects so the world reads as a
+// real lived-in island. Collision parity is preserved: every building/fence
+// object is `passable: false` (same as the WALL cells it replaces); doors are
+// walkable (see objects.ts). The map-edge perimeter keeps its derived
+// wall-stone border for collision; only the visible interior structures change.
+type OInst = import('../../maps/objects').ObjectInstance;
+
+function rectObjects(col0: number, col1: number, row0: number, row1: number, kind: OInst['kind']): OInst[] {
+  const out: OInst[] = [];
+  for (let r = row0; r <= row1; r++) {
+    for (let c = col0; c <= col1; c++) out.push({ kind, col: c, row: r });
+  }
+  return out;
+}
+
+// Fence perimeter as fence-rail objects (mirrors the old `fencePerimeter`
+// decoration helper, with the same gate gaps left open / walkable).
+function fenceObjects(
+  col0: number,
+  col1: number,
+  row0: number,
+  row1: number,
+  gates: { col: number; row: number }[],
+): OInst[] {
+  const isGate = (c: number, r: number): boolean =>
+    gates.some((g) => g.col === c && g.row === r);
+  const out: OInst[] = [];
+  for (let c = col0; c <= col1; c++) {
+    if (!isGate(c, row0)) out.push({ kind: 'fence-rail', col: c, row: row0 });
+    if (!isGate(c, row1)) out.push({ kind: 'fence-rail', col: c, row: row1 });
+  }
+  for (let r = row0 + 1; r <= row1 - 1; r++) {
+    if (!isGate(col0, r)) out.push({ kind: 'fence-rail', col: col0, row: r });
+    if (!isGate(col1, r)) out.push({ kind: 'fence-rail', col: col1, row: r });
+  }
+  return out;
+}
+
+const ashenBuildings: OInst[] = [
+  // Player's cottage (rows 12-15 cols 8-12): thatched roof over a plank front,
+  // open doorway at (10,15).
+  ...rectObjects(8, 12, 12, 13, 'wall-roof'),
+  ...rectObjects(8, 12, 14, 14, 'wall-front'),
+  { kind: 'wall-front', col: 8, row: 15 },
+  { kind: 'wall-front', col: 9, row: 15 },
+  { kind: 'door-wood', col: 10, row: 15 },
+  { kind: 'wall-front', col: 11, row: 15 },
+  { kind: 'wall-front', col: 12, row: 15 },
+  // Old Man's cottage (rows 24-28 cols 38-42): doorway at (40,28) where he stands.
+  ...rectObjects(38, 42, 24, 25, 'wall-roof'),
+  ...rectObjects(38, 42, 26, 27, 'wall-front'),
+  { kind: 'wall-front', col: 38, row: 28 },
+  { kind: 'wall-front', col: 39, row: 28 },
+  { kind: 'door-wood', col: 40, row: 28 },
+  { kind: 'wall-front', col: 41, row: 28 },
+  { kind: 'wall-front', col: 42, row: 28 },
+];
+
+const ashenFences: OInst[] = [
+  // Player's yard (rows 11-19 cols 5-14), gate at (9,19).
+  ...fenceObjects(5, 14, 11, 19, [{ col: 9, row: 19 }]),
+  // Old Man's yard (rows 23-31 cols 35-44), gates north (39,23) + south (39,31).
+  ...fenceObjects(35, 44, 23, 31, [
+    { col: 39, row: 23 },
+    { col: 39, row: 31 },
+  ]),
+];
+
+// Scattered scenery (trees block, bushes/flowers/signs are walkable). The
+// dock signpost plus a light scatter in the grass bands away from the paths.
+const ashenScenery: OInst[] = [
+  { kind: 'sign-wood', col: 26, row: 5 },
+  { kind: 'tree-pine', col: 8, row: 6 },
+  { kind: 'tree-pine', col: 36, row: 7 },
+  { kind: 'tree-pine', col: 3, row: 9 },
+  { kind: 'flower', col: 28, row: 10 },
+  { kind: 'tree-pine', col: 12, row: 32 },
+  { kind: 'flower', col: 6, row: 34 },
+  { kind: 'bush', col: 30, row: 33 },
 ];
 
 // ───── East-edge bramble objects (US-100) ─────
@@ -283,9 +307,16 @@ const ashenDecorations: DecorationDefinition[] = [
 // the 24-25 walking lane (so they never block the exit) with the water/cliff edge
 // immediately beside each: a rowboat moored at the west edge, a cargo barrel at
 // the east edge. Impassable.
+// Dock furniture — a wooden pier reaching off the north shore out over the
+// water, a rowboat moored at its seaward end, and a cargo barrel on the beach
+// beside it. The pier (2×3) and boat (2×2) render at true scale via their
+// `footprint`; both anchor in the impassable sea (rows 0-1) so they decorate
+// without blocking the walkable shore or the exit landing. The player walks the
+// path up cols 24-25 onto the pier head (row 2 = the ashen->fog exit zone).
 const ashenDockProps: import('../../maps/objects').ObjectInstance[] = [
-  { kind: 'boat-row', col: 23, row: 2 },
-  { kind: 'barrel-wood', col: 26, row: 2 },
+  { kind: 'pier-wood', col: 24, row: 0 },
+  { kind: 'boat-row', col: 26, row: 0 },
+  { kind: 'barrel-wood', col: 22, row: 2 },
 ];
 
 const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
@@ -303,6 +334,65 @@ const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
 // objects.
 const ashenTileMap = buildAshenMap();
 
+// Cells now covered by explicit building/fence objects — excluded from the
+// derived wall-stone border so collision isn't doubled and no grey block draws
+// under the new art. Doors (FLOOR cells) are harmless extras in this set.
+const explicitWallCells = new Set<string>(
+  [...ashenBuildings, ...ashenFences].map((o) => `${o.col},${o.row}`),
+);
+// Derived wall-stone, kept ONLY for the world-edge perimeter: drop the north
+// coast (rows 0-3, now water/beach terrain) and every explicitly-objectified
+// building/fence cell. What survives is the thin map-edge border collision.
+const ashenBorderWalls: OInst[] = deriveObjectsFromTileMap(ashenTileMap, 'wall-stone').filter(
+  (o) => o.row > 3 && !explicitWallCells.has(`${o.col},${o.row}`),
+);
+
+// North-coast terrain paint (US-98). `deriveTerrainFromTileMap` fills the whole
+// vertex grid with grass; here we overpaint the top rows so the coast is real
+// water meeting a sand beach instead of the old faked grey cliff. Terrain is a
+// (rows+1)×(cols+1) vertex grid; a cell blocks only when ALL 4 of its vertices
+// are impassable, so:
+//   vertex rows 0-2 = water  -> cells in rows 0-1 are all-water (impassable sea)
+//   vertex row 3    = sand   -> cell row 2 blends water/sand (the passable
+//                               shoreline landing), cell row 3 blends sand/grass
+// The matching all-water cells render via `ashen-isle-sand-water` (the only
+// tileset with water as primary); the shore cells pick it for their water/sand
+// vertex pair. Coast `wall-stone` objects are dropped below so no grey blocks
+// draw over the water — rows 0-1 stay blocked by the all-water terrain, and the
+// beach (rows 2-3) becomes walkable, which is natural and harmless.
+function buildAshenTerrain(): TerrainId[][] {
+  const t = deriveTerrainFromTileMap(ashenTileMap, 'grass');
+  const cols = ashenTileMap[0].length; // 50 cells -> 51 vertices (0..50)
+  for (let c = 0; c <= cols; c++) {
+    t[0][c] = 'water';
+    t[1][c] = 'water';
+    t[2][c] = 'water';
+    t[3][c] = 'sand';
+  }
+  // Walkable paths painted as `sand` terrain so they render via the existing
+  // grass-sand Wang tileset — a warm, trodden sandy lane with feathered grassy
+  // edges — instead of the old tiny-town frame-51 decoration that desaturated
+  // into a column of grey "gravestone" blocks (Jaco feedback 2026-06-13). To
+  // make a CELL fully sand, all 4 of its vertices must be sand; the edge cells
+  // pick up a natural grass/sand transition. Path cells (matching the old
+  // PATH decoration runs): main lane cols 24-25 rows 4-36, the spawn→main west
+  // branch row 20 cols 9-23, and the main→Old-Man east branch row 22 cols 26-41.
+  const paintCellSand = (col: number, row: number): void => {
+    for (const [dc, dr] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const vr = row + dr;
+      const vc = col + dc;
+      if (t[vr] && t[vr][vc] !== undefined) t[vr][vc] = 'sand';
+    }
+  };
+  for (let r = 4; r <= 36; r++) {
+    paintCellSand(24, r);
+    paintCellSand(25, r);
+  }
+  for (let c = 9; c <= 23; c++) paintCellSand(c, 20);
+  for (let c = 26; c <= 41; c++) paintCellSand(c, 22);
+  return t;
+}
+
 export const ashenIsle: AreaDefinition = {
   id: 'ashen-isle',
   name: 'Ashen Isle',
@@ -311,8 +401,20 @@ export const ashenIsle: AreaDefinition = {
   tileset: 'ashen-isle-grass-sand',
   decorationsTileset: 'tiny-town',
   map: ashenTileMap,
-  terrain: deriveTerrainFromTileMap(ashenTileMap, 'grass'),
-  objects: [...deriveObjectsFromTileMap(ashenTileMap, 'wall-stone'), ...ashenDockProps, ...ashenEastBrambles],
+  terrain: buildAshenTerrain(),
+  objects: [
+    // Map-edge perimeter only. Auto-derived wall-stone is dropped on (a) the
+    // north coast rows 0-3 (now impassable all-water + walkable beach terrain)
+    // and (b) every cell now covered by an explicit building/fence object, so
+    // no grey block draws under the new art or re-introduces the gravestone
+    // coast/structures Jaco flagged. What remains is the thin world-edge border.
+    ...ashenBorderWalls,
+    ...ashenBuildings,
+    ...ashenFences,
+    ...ashenScenery,
+    ...ashenDockProps,
+    ...ashenEastBrambles,
+  ],
   npcs: [
     // Old Man stands in the doorway of his cottage (40, 28 — the door FLOOR
     // tile). With wanderRadius 1 he drifts a step south to (40, 29) and back,
@@ -358,33 +460,23 @@ export const ashenIsle: AreaDefinition = {
       width: 1,
       height: 1,
       type: 'thought',
-      actionRef: 'A mark on the dock, faintly warm. Someone walked this way before me.',
+      actionRef: 'A warm mark on the dock. Someone walked here before me.',
       condition: 'has_ember_mark == true',
       repeatable: false,
     },
     {
       // Fires as the player takes their first eastward step on the west path
-      // branch — the spawn-adjacent grass-thought from the original layout.
+      // branch — the spawn-adjacent grass-thought. Repurposed for C2-a to echo
+      // the cinematic's goal as a concrete next step, so the very first thought
+      // after the intro points forward ("find the smoke") rather than restating
+      // the confusion the intro already set up.
       id: 'start-thought',
       col: 11,
       row: 20,
       width: 3,
       height: 1,
       type: 'thought',
-      actionRef: 'Where am I? Everything feels... grey.',
-      repeatable: false,
-    },
-    {
-      // South interior — fires only after the player has spoken with the
-      // Old Man, so the story scene caps the conversational thread.
-      id: 'ashen-isle-vision',
-      col: 24,
-      row: 33,
-      width: 2,
-      height: 2,
-      type: 'story',
-      actionRef: 'ashen-isle-intro',
-      condition: 'spoke_to_old_man == true',
+      actionRef: 'I should find that smoke. Someone is out there.',
       repeatable: false,
     },
     {
@@ -395,7 +487,7 @@ export const ashenIsle: AreaDefinition = {
       width: 2,
       height: 2,
       type: 'thought',
-      actionRef: 'The walls hum faintly, as if remembering something.',
+      actionRef: 'The walls make a soft sound. Like they remember something.',
       repeatable: true,
     },
     {
@@ -415,9 +507,9 @@ export const ashenIsle: AreaDefinition = {
       height: 1,
       type: 'thought',
       actionRef:
-        'Two warmer than they were.\n' +
-        'What stays is mine to carry.\n' +
-        'There is more light to share, beyond this island...',
+        'I helped two of them feel warm.\n' +
+        'I will carry my light with me.\n' +
+        'There is more light to share, far past this island...',
       condition: 'npc_warmed_wren == true AND npc_warmed_old_man == true AND homecoming_complete == false',
       repeatable: false,
       setFlags: { homecoming_complete: true },
@@ -433,7 +525,7 @@ export const ashenIsle: AreaDefinition = {
       width: 1,
       height: 1,
       type: 'thought',
-      actionRef: 'The brambles have parted. A road east.',
+      actionRef: 'The thorns have opened up. A road goes east.',
       condition: 'has_ember_mark == true AND east_path_seen == false',
       repeatable: false,
       setFlags: { east_path_seen: true },
@@ -442,8 +534,9 @@ export const ashenIsle: AreaDefinition = {
   dialogues: {
     // Old Man Fading dialogue (US-78). Three nodes, ≤200 chars total. Tone:
     // dim, resigned, no exclamations. No theological vocabulary — show, don't
-    // preach. The greeting sets spoke_to_old_man so the south-interior story
-    // trigger ('ashen-isle-vision') stays gated as before.
+    // preach. The greeting sets spoke_to_old_man as a "met the Old Man" marker
+    // (the opening cinematic now plays at New Game start via introStoryScene —
+    // C2-a — so this flag no longer gates a story trigger).
     'old-man-intro': {
       id: 'old-man-intro',
       startNodeId: 'greeting',
@@ -452,20 +545,20 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Old Man',
-          text: 'You walk. I forgot how.',
+          text: 'You can walk. I forgot how to do that.',
           nextId: 'middle',
           setFlags: { spoke_to_old_man: true },
         },
         {
           id: 'middle',
           speaker: 'Old Man',
-          text: 'I was bright once. The fog took me slow.',
+          text: 'I used to shine. The grey fog took it away, bit by bit.',
           nextId: 'farewell',
         },
         {
           id: 'farewell',
           speaker: 'Old Man',
-          text: 'Go where the path goes. Mine ended.',
+          text: 'Follow your path. Mine has stopped here.',
         },
       ],
     },
@@ -474,8 +567,7 @@ export const ashenIsle: AreaDefinition = {
     // is unset (Reset Progress, fresh New Game). Tone: still short, still dim,
     // but no longer hopeless — the Old Man recognises the light he himself
     // does not carry. The greeting does NOT re-set spoke_to_old_man (the flag
-    // is already true from the pre-Ember conversation; resetting it has no
-    // effect on the existing south-interior story trigger gate).
+    // is already true from the pre-Ember conversation).
     // old-man-warmed (US-84). Most specific Old Man variant — checked first by
     // selectScriptForNpc (iterates dictionary in insertion order, returns the
     // first whose condition matches). When npc_warmed_old_man is true, this
@@ -490,13 +582,13 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Old Man',
-          text: 'You\'re back. Sit a moment, walker.',
+          text: 'You came back. Come sit with me.',
           nextId: 'parting',
         },
         {
           id: 'parting',
           speaker: 'Old Man',
-          text: 'I\'d forgotten how the morning felt.',
+          text: 'I forgot how nice the morning feels. Now I remember.',
         },
       ],
     },
@@ -517,19 +609,19 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Old Man',
-          text: 'Something has stirred. The little one — she\'s humming again.',
+          text: 'Something woke up in me. The little bird is humming again.',
           nextId: 'middle',
         },
         {
           id: 'middle',
           speaker: 'Old Man',
-          text: 'Maybe there\'s a corner of me left. Just a corner.',
+          text: 'Maybe a small part of me is still here. Just a small part.',
           nextId: 'offer',
         },
         {
           id: 'offer',
           speaker: 'Old Man',
-          text: 'If you\'ve any to spare. I won\'t ask twice.',
+          text: 'If you have a little light to give. I will only ask once.',
           choices: [
             { text: 'Share warmth', nextId: 'received', firePulseTarget: 'old-man' },
             { text: 'Just sitting with you', nextId: 'company' },
@@ -544,7 +636,7 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'parting',
           speaker: 'Old Man',
-          text: 'There. Yes. Bring it back when you walk this way.',
+          text: 'There. Yes. Come see me again when you pass by.',
         },
         {
           id: 'company',
@@ -568,13 +660,13 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Old Man',
-          text: 'You carry it now. Then you are not yet me.',
+          text: 'You carry the light now. So you are not faded like me. Not yet.',
           nextId: 'middle',
         },
         {
           id: 'middle',
           speaker: 'Old Man',
-          text: 'I\'ve heard such promises before. They burn out.',
+          text: 'I have heard hopeful words before. The light always died.',
           choices: [
             { text: 'Share warmth', nextId: 'wary_decline' },
             { text: 'Walk on', nextId: 'farewell' },
@@ -583,12 +675,12 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'wary_decline',
           speaker: 'Old Man',
-          text: 'No. Not yet. I\'ve been wrong before.',
+          text: 'No. Not yet. I was fooled before.',
         },
         {
           id: 'farewell',
           speaker: 'Old Man',
-          text: 'Go on. The path is more than this.',
+          text: 'Go on. There is so much more than this grey place.',
         },
       ],
     },
@@ -615,13 +707,13 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Wren',
-          text: 'Oh — you walked! I forgot how it sounded.',
+          text: 'Oh — you walked! I forgot what walking sounds like.',
           nextId: 'middle',
         },
         {
           id: 'middle',
           speaker: 'Wren',
-          text: 'Mama said brightness comes from inside, but mine went grey too.',
+          text: 'Mama said the light comes from inside us. But mine went grey too.',
           nextId: 'offer',
         },
         {
@@ -672,7 +764,7 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'parting',
           speaker: 'Wren',
-          text: 'I feel it still. Bright in here, just under the wings.',
+          text: 'I can still feel the light. It is warm, right under my wings.',
         },
       ],
     },
@@ -699,19 +791,19 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Driftwood',
-          text: 'Ah — a walker. Most don\'t, these days. Where did you come from, friend?',
+          text: 'Oh — you can walk. Most can\'t now. Where did you come from, friend?',
           nextId: 'middle',
         },
         {
           id: 'middle',
           speaker: 'Driftwood',
-          text: 'I\'ve seen a hundred islands. Bright ones, dim ones. They all dim, in the end.',
+          text: 'I have seen so many islands. Bright ones and grey ones. They all go grey one day.',
           nextId: 'offer',
         },
         {
           id: 'offer',
           speaker: 'Driftwood',
-          text: 'Suppose you\'d like to share some? You\'re sweet to ask.',
+          text: 'I bet you want to share some light? That is kind of you.',
           choices: [
             {
               text: 'Share warmth',
@@ -725,18 +817,18 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'decline',
           speaker: 'Driftwood',
-          text: 'Kind of you. Truly. But I\'ve got my own light — the sea, the road. I\'m alright.',
+          text: 'That is kind. Really. But I have my own light. The sea and the road. I am okay.',
           nextId: 'parting',
         },
         {
           id: 'parting',
           speaker: 'Driftwood',
-          text: 'Walk well, walker. May yours last longer than mine did.',
+          text: 'Walk well, friend. I hope your light lasts longer than mine.',
         },
         {
           id: 'small_talk',
           speaker: 'Driftwood',
-          text: 'Then enjoy the dock a while. The water remembers everyone.',
+          text: 'Then stay by the dock a while. The water has seen everyone who passes.',
         },
       ],
     },
@@ -749,13 +841,13 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Driftwood',
-          text: 'Still walking? Good. The dock is here when you\'re tired.',
+          text: 'Still walking? Good. The dock is here when you get tired.',
           nextId: 'parting',
         },
         {
           id: 'parting',
           speaker: 'Driftwood',
-          text: 'Take care of that little ember of yours. Pretty thing.',
+          text: 'Take care of that little spark of yours. It is pretty.',
         },
       ],
     },
@@ -763,30 +855,37 @@ export const ashenIsle: AreaDefinition = {
   storyScenes: {
     'ashen-isle-intro': {
       id: 'ashen-isle-intro',
+      // C2-a: opening cinematic, played once at New Game start. Reading level
+      // pitched to a young child (Jaco's daughter is the bar — short sentences,
+      // common words, concrete images), allegory intact: the world is grey and
+      // drained, but a small warm spark waits inside Pip, and the last beat hands
+      // the player ONE clear goal — go find the one by the smoke.
       beats: [
         {
-          text: 'You open your eyes to a grey sky. Ash drifts like snow, settling on everything.',
+          text: 'You wake up. The sky is grey. Soft ash falls down like snow.',
           imageColor: 0x3a3a4a,
           imageLabel: 'Ashen sky',
         },
         {
-          text: 'The ground beneath you is cracked and dry. A faint warmth rises from below, as though the earth itself remembers fire.',
+          text: 'The ground is dry and cracked. But deep inside you, something feels warm. Like a tiny spark.',
           imageColor: 0x5a4030,
           imageLabel: 'Cracked earth',
         },
         {
-          text: 'In the distance, a thin trail of smoke curls upward. Someone — or something — is out there.',
+          text: 'Far away, smoke goes up into the sky. Someone is out there.',
           imageColor: 0x2a2a3a,
           imageLabel: 'Distant smoke',
         },
         {
-          text: 'You stand. Your legs feel heavy, but your heart feels heavier. You cannot remember how you got here.',
+          text: 'You stand up. You do not know how you got here. The little spark says: go and find them.',
           imageColor: 0x444455,
           imageLabel: 'Standing figure',
         },
       ],
     },
   },
+  introStoryScene: 'ashen-isle-intro',
+  objective: 'Find the smoke. Someone needs you.',
   playerSpawn: { col: 9, row: 20 },
   exits: [
     {

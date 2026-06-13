@@ -245,6 +245,16 @@ export interface AreaDefinition {
   triggers: TriggerDefinition[];
   dialogues: Record<string, DialogueScript>;
   storyScenes: Record<string, StorySceneDefinition>;
+  // Optional opening cinematic (C2-a). When set, GameScene plays this story
+  // scene once at a true New Game start in this area (no area-transition
+  // entryPoint, no Continue resumePosition), gated by the `ashen_intro_played`
+  // flag so it never repeats. The id must exist in `storyScenes`.
+  introStoryScene?: string;
+  // Standing "what to do next" cue (C2-b). When set, GameScene shows this single
+  // short, concrete goal in a screen-fixed top-centre banner so a first-time
+  // player always knows where to head — guidance isn't only the reactive
+  // thought bubbles you stumble into. Keep it one kid-readable sentence.
+  objective?: string;
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
   // Drain zones (US-102) — twisted false-hope patches that drain ember warmth

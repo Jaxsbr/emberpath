@@ -42,8 +42,8 @@ const drainZones: DrainZoneDefinition[] = [
     doubts: {
       lines: [
         'This path is too long...',
-        'Did the Ember really change anything?',
-        'You should have stayed at the village...',
+        'Did that little spark really help at all?',
+        'Maybe I should have stayed in the village...',
       ],
     },
   },
@@ -55,9 +55,9 @@ const drainZones: DrainZoneDefinition[] = [
     height: 3,
     doubts: {
       lines: [
-        'No one knows you are out here.',
-        'The light is so small now.',
-        'Maybe the brambles never really parted...',
+        'No one knows I am out here.',
+        'My light is so small now.',
+        'Maybe the thorns never really opened for me...',
       ],
     },
   },
@@ -77,7 +77,7 @@ const quietZones: QuietZoneDefinition[] = [
     width: 3,
     height: 3,
     narration: {
-      lines: ["Pip's ember steadies.", 'The bramble parts here.'],
+      lines: ["Pip's little spark grows calm and strong.", 'The thorns open up here.'],
     },
   },
   {
@@ -88,9 +88,9 @@ const quietZones: QuietZoneDefinition[] = [
     height: 4,
     narration: {
       lines: [
-        'The wilds end at this clearing.',
-        'Pip looks back — bright pockets of grace, where she left them.',
-        'A long stone bridge waits ahead, its stones scarred by something old...',
+        'The thorny woods end in this open spot.',
+        'Pip looks back. Far away, she can see warm, glowing spots — the friends she helped.',
+        'A long stone bridge is ahead. Its stones are old and cracked, like something hurt them long ago...',
       ],
     },
   },

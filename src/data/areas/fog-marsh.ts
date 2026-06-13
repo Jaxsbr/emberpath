@@ -263,7 +263,7 @@ export const fogMarsh: AreaDefinition = {
       width: 3,
       height: 1,
       type: 'thought',
-      actionRef: 'The air is thick here. Each breath tastes of damp earth and something older.',
+      actionRef: 'The air is heavy here. Each breath smells like wet mud. And something very old.',
       repeatable: false,
     },
     {
@@ -291,7 +291,7 @@ export const fogMarsh: AreaDefinition = {
       width: 1,
       height: 2,
       type: 'thought',
-      actionRef: 'The fog rolls in behind me. The path is gone.',
+      actionRef: 'The fog closes in behind me. The path is gone now.',
       repeatable: false,
       setFlags: { marsh_trapped: true },
     },
@@ -332,13 +332,13 @@ export const fogMarsh: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Marsh Hermit',
-          text: 'Another soul wandering into the fog? Most turn back before reaching this far.',
+          text: 'Another little traveler in the fog? Most turn back before they get this far.',
           nextId: 'question',
         },
         {
           id: 'question',
           speaker: 'Marsh Hermit',
-          text: 'The marsh tests those who enter. What do you seek here?',
+          text: 'The marsh is hard on everyone who comes. What are you looking for?',
           choices: [
             { text: 'A way through the fog.', nextId: 'way-through', setFlags: { spoke_to_marsh_hermit: true } },
             { text: 'I followed a path from the Ashen Isle.', nextId: 'from-ashen', setFlags: { spoke_to_marsh_hermit: true } },
@@ -347,19 +347,19 @@ export const fogMarsh: AreaDefinition = {
         {
           id: 'way-through',
           speaker: 'Marsh Hermit',
-          text: 'Through? There is no through. Only deeper. But deeper is sometimes where the light hides.',
+          text: 'Through? There is no way through. Only down, deeper in. And sometimes the light is hiding down there.',
           nextId: 'advice',
         },
         {
           id: 'from-ashen',
           speaker: 'Marsh Hermit',
-          text: 'The Ashen Isle... I remember it. Grey skies and old men with older stories.',
+          text: 'The Ashen Isle... I remember it. Grey skies. Old folks with very old stories.',
           nextId: 'advice',
         },
         {
           id: 'advice',
           speaker: 'Marsh Hermit',
-          text: 'Listen to the stones if you can. They remember what the fog has forgotten.',
+          text: 'Listen to the stones if you can. They still remember things the fog made everyone forget.',
         },
       ],
     },
@@ -379,13 +379,13 @@ export const fogMarsh: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'The Keeper',
-          text: 'You walked deeper than the path. Most do not.',
+          text: 'You went deeper than the path goes. Most do not.',
           nextId: 'action',
         },
         {
           id: 'action',
           speaker: 'The Keeper',
-          text: 'You cannot find the way. I am the way. Take this — and follow.',
+          text: 'You cannot find the way out by yourself. I am the way. Take this light — and follow me.',
           setFlags: { has_ember_mark: true, keeper_met: true, marsh_trapped: false },
         },
       ],
@@ -401,17 +401,17 @@ export const fogMarsh: AreaDefinition = {
       id: 'ember-given',
       beats: [
         {
-          text: 'The Keeper steps closer through the fog. His feathers catch a light that does not seem to come from any sun.',
+          text: 'The Keeper steps closer through the fog. His feathers glow with a soft light. It does not come from the sun.',
           imageColor: 0xd9a657,
           imageLabel: 'The Keeper draws near',
         },
         {
-          text: 'A spark passes from the Keeper to Pip — small, warm, unmistakable. The ember settles in her chest like it had always been there, just waiting.',
+          text: 'A small, warm spark passes from the Keeper to Pip. It rests in her chest. It feels like it was always meant to be there.',
           imageColor: 0xf2c878,
           imageLabel: 'The ember passes',
         },
         {
-          text: 'For a moment, the fog thins. The path south, dark and gone before, is dim but visible again. The Keeper does not speak. There is no need.',
+          text: 'For a moment, the fog thins out. The path south was gone. Now Pip can just see it again. The Keeper says nothing. He does not need to.',
           imageColor: 0xe8d8b8,
           imageLabel: 'The fog parts',
         },
@@ -421,12 +421,12 @@ export const fogMarsh: AreaDefinition = {
       id: 'marsh-depths',
       beats: [
         {
-          text: 'The fog parts for a moment. Below the murky water, something glows — faint and warm, like a coal refusing to die.',
+          text: 'The fog opens for a moment. Deep under the dark water, something glows. It is small and warm, like a little fire that will not go out.',
           imageColor: 0x2a3a2a,
           imageLabel: 'Glowing depths',
         },
         {
-          text: 'A voice, not heard but felt: "What was lost can be found. What was broken can be mended. But first, you must see."',
+          text: 'A voice. Pip does not hear it. She feels it: "What is lost can be found. What is broken can be fixed. But first, you must see."',
           imageColor: 0x3a4a3a,
           imageLabel: 'Voice in the fog',
         },

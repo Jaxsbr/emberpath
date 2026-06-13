@@ -84,10 +84,16 @@ export const LIGHTING_CONFIG = {
   // warms as the Ember grows (grace made visible). A gentle pre-Ember floor keeps
   // the opening from ever reading cold-green.
   playerWarmBloomColor: 0xf2c878,
-  playerWarmBloomAlphaPre: 0.22,
-  playerWarmBloomAlphaFloor: 0.30,
-  playerWarmBloomAlphaFull: 0.52,
+  // Toned down + tightened (Jaco 2026-06-13): the previous full-pool gold wash
+  // (alpha 0.52, scale 0.9) drowned out the world's true colours once Pip held
+  // the Ember. Now the gold is a much fainter, tighter CORE halo — the wide lit
+  // pool reveals real colour (blue water, green grass) while a warm glow stays
+  // concentrated on Pip so it's still obvious she carries the Ember. The light
+  // RADIUS (visibility) is unchanged — only the gold add shrank.
+  playerWarmBloomAlphaPre: 0.14,
+  playerWarmBloomAlphaFloor: 0.18,
+  playerWarmBloomAlphaFull: 0.30,
   // Bloom fills this fraction of the player light radius (concentrates the warmth
   // toward centre so the pool edge still reads as the cooler revealed world).
-  playerWarmBloomScale: 0.9,
+  playerWarmBloomScale: 0.55,
 };
