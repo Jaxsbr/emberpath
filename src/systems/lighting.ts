@@ -148,6 +148,14 @@ export class LightingSystem {
       return;
     }
     if (!this.rt.visible) this.rt.setVisible(true);
+    // Grey-out model (Jaco 2026-06-13): thin the *displayed* darkness so the
+    // world stays visible, while the RT's texture alpha (sampled by the desat
+    // pipeline as its colour mask) is left untouched — ember spread reads as
+    // returning colour, not an expanding light hole. setAlpha is a display-only
+    // property; it does not mutate the rendered-into texture the shader binds.
+    if (this.rt.alpha !== LIGHTING_CONFIG.overlayDisplayAlpha) {
+      this.rt.setAlpha(LIGHTING_CONFIG.overlayDisplayAlpha);
+    }
     this.hasEmber = hasEmber;
     this.lastPlayerX = playerX;
     this.lastPlayerY = playerY;
