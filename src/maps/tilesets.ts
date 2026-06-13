@@ -86,6 +86,22 @@ export const TILESETS: Record<string, TilesetDefinition> = {
       fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
     },
   },
+  // The Ashen Isle coast: still coastal water (lower) -> sepia sandy shore
+  // (upper), with a damp-sand foam waterline transition. Generated 2026-06-13
+  // (mcp__pixellab__create_topdown_tileset, id d19be21e), chained off the
+  // ashen-isle-grass-sand sand base for a seamless shore. Replaces the faked
+  // grey "cliff" decorations that read as gravestones — gives the north dock
+  // real water meeting a sand beach. `water` is the only tileset registering
+  // water as primary, so all-water cells resolve here.
+  'ashen-isle-sand-water': {
+    atlasKey: 'tileset-ashen-isle-sand-water',
+    wang: {
+      primaryTerrain: 'water',
+      secondaryTerrain: 'sand',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
   // ───── PixelLab Wang tilesets — Fog Marsh chain ─────
   'fog-marsh-floor-path': {
     atlasKey: 'tileset-fog-marsh-floor-path',

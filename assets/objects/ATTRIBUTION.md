@@ -32,6 +32,7 @@ The style-match constraint forces the object palette / outline weight / shading 
 | sign-wood | true | small wooden sign post, no text, top-down storybook | `37f166a9-fc66-4f58-842e-ebbaba8b633d` |
 | boat-row | false | small weathered wooden rowboat seen from above, single bench, empty hull, moored dinghy, muted sepia, deep umber outline (frame 3 of a `create_1_direction_object` candidate set; review object `69839419-3738-46bf-bf53-b0b6e3189558` dismissed after extraction) | `69839419-3738-46bf-bf53-b0b6e3189558` |
 | barrel-wood | false | single weathered wooden barrel seen from above, round top, iron hoop bands, aged staves, muted sepia, deep umber outline (frame 1 of a `create_1_direction_object` candidate set; review object `4ef96cd9-474c-4b6b-9504-9fd468bfbec0` dismissed after extraction) | `4ef96cd9-474c-4b6b-9504-9fd468bfbec0` |
+| pier-wood | false | top-down wooden dock jetty, a straight rectangular boardwalk of weathered brown planks running vertically with wooden support posts at the corners (regenerated 2026-06-13 via `create_map_object`; replaced an earlier broken cone-shaped gen so the dock reads as a real pier over water — Jaco dock feedback) | `f22be14d-4607-4c45-8bc1-f5fdbd5ac8e2` |
 
 ## Fog Marsh (8 kinds)
 

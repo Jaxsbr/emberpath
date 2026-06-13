@@ -10,6 +10,7 @@ Generated 2026-04-30 via the personal `mcp__pixellab__create_topdown_tileset` se
 |---|---|---|---|---|---|
 | grass→sand | `2d11fd17-da93-4e4d-9094-f3e0b7aa3de3` (reroll — original `ad38f433-0670-487b-8d76-3901582b78ce` rendered grass too brown; reroll allows mossy green #7A8A55 as the dominant grass hue while keeping sand stable via `upper_base_tile_id` chained from the original sand) | muted mossy-green grass with sepia undertones | pale dry sand with faint stippled grain | dry sepia weeds and stray pebbles where mossy grass meets sand | 0.25 |
 | sand→path | `dd2ef281-17f7-49aa-be44-fa211016ef25` | pale dry sand with faint stippled grain (chained from grass→sand) | compacted sepia path of small flat stones | compacted sepia stones | 0.25 |
+| water→sand | `d19be21e-ce03-4b5b-a17c-4dceb96eada8` (generated 2026-06-13 via `mcp__pixellab__create_topdown_tileset`, chained off the grass→sand sand base so the shore reads seamlessly; water registered as primary so all-water cells resolve here) | coastal water in deep umber and slate-blue with gentle ripples | pale dry sand shore (chained from grass→sand) | damp-sand foam waterline | 0.5 |
 
 ### Fog Marsh chain
 
@@ -21,7 +22,7 @@ Generated 2026-04-30 via the personal `mcp__pixellab__create_topdown_tileset` se
 
 ### Generation budget reconciliation
 
-Spec budget: ≤ 1 reroll per tileset (10 generations max). Personal server cost: **6 generations, 1 reroll** (grass→sand operator-driven reroll for grass colour).
+Spec budget: ≤ 1 reroll per tileset (10 generations max). Personal server cost: **6 generations, 1 reroll** (grass→sand operator-driven reroll for grass colour). The Ashen Isle coast `water→sand` tileset (2026-06-13) adds **1 generation** on the subscription account for the dock legibility overhaul — real coastal water replacing the faked grey "cliff" decorations that read as gravestones.
 
 (See `docs/plan/LEARNINGS.md` § EP-05 for the prior-batch retro: a first attempt fired against the maxed-out `mcp__pixellab-team__` server burned 9 generations on that account before the operator caught the wrong-server mistake. The personal-server batch above is the successful retry.)
 

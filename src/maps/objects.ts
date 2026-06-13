@@ -24,6 +24,7 @@ export type ObjectKindId =
   // Ashen Isle — dock props (PixelLab style-matched, weathered sepia/umber)
   | 'boat-row'
   | 'barrel-wood'
+  | 'pier-wood'
   // Ashen Isle — passable
   | 'bush'
   | 'flower'
@@ -77,12 +78,21 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'wall-stone':  { id: 'wall-stone',  atlasKey: 'object-wall-stone',  assetPath: 'objects/ashen-isle/wall-stone.png',  passable: false },
   'wall-front':  { id: 'wall-front',  atlasKey: 'object-wall-front',  assetPath: 'objects/ashen-isle/wall-front.png',  passable: false },
   'wall-roof':   { id: 'wall-roof',   atlasKey: 'object-wall-roof',   assetPath: 'objects/ashen-isle/wall-roof.png',   passable: false },
-  'door-wood':   { id: 'door-wood',   atlasKey: 'object-door-wood',   assetPath: 'objects/ashen-isle/door-wood.png',   passable: false },
+  // Door cells stay walkable: the original FLOOR door tiles posed dialogue
+  // (e.g. the Old Man stands ON his own door cell at 40,28). A blocking door
+  // would trap the NPC and break posing, so the door reads as "standing in the
+  // open doorway" — passable by design.
+  'door-wood':   { id: 'door-wood',   atlasKey: 'object-door-wood',   assetPath: 'objects/ashen-isle/door-wood.png',   passable: true },
   'fence-rail':  { id: 'fence-rail',  atlasKey: 'object-fence-rail',  assetPath: 'objects/ashen-isle/fence-rail.png',  passable: false },
   'cliff-stone': { id: 'cliff-stone', atlasKey: 'object-cliff-stone', assetPath: 'objects/ashen-isle/cliff-stone.png', passable: false },
   'tree-pine':   { id: 'tree-pine',   atlasKey: 'object-tree-pine',   assetPath: 'objects/ashen-isle/tree-pine.png',   passable: false },
-  'boat-row':    { id: 'boat-row',    atlasKey: 'object-boat-row',    assetPath: 'objects/ashen-isle/boat-row.png',    passable: false },
+  // Boat + pier read at true scale via `footprint` (US-98) — a 32px boat looked
+  // like a toy on the dock (Jaco feedback 2026-06-13). Both moor in impassable
+  // water; collision keys their anchor cell only, so the multi-tile footprint is
+  // purely visual and never blocks the walkable shore.
+  'boat-row':    { id: 'boat-row',    atlasKey: 'object-boat-row',    assetPath: 'objects/ashen-isle/boat-row.png',    passable: false, footprint: { w: 2, h: 2 } },
   'barrel-wood': { id: 'barrel-wood', atlasKey: 'object-barrel-wood', assetPath: 'objects/ashen-isle/barrel-wood.png', passable: false },
+  'pier-wood':   { id: 'pier-wood',   atlasKey: 'object-pier-wood',   assetPath: 'objects/ashen-isle/pier-wood.png',   passable: false, footprint: { w: 2, h: 3 } },
   'bush':        { id: 'bush',        atlasKey: 'object-bush',        assetPath: 'objects/ashen-isle/bush.png',        passable: true },
   'flower':      { id: 'flower',      atlasKey: 'object-flower',      assetPath: 'objects/ashen-isle/flower.png',      passable: true },
   'sign-wood':   { id: 'sign-wood',   atlasKey: 'object-sign-wood',   assetPath: 'objects/ashen-isle/sign-wood.png',   passable: true },

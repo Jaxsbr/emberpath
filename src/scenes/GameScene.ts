@@ -13,6 +13,8 @@ import { moveWithCollision } from '../systems/movement';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
 import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
+import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
+import { WaterShimmerSystem } from '../systems/waterShimmer';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { AnimationSystem } from '../systems/animation';
@@ -43,8 +45,13 @@ const KEEPER_INPUT_SUSPEND_MS = 1000;
 // depth between Entities at 5 and Thoughts at 8) so it always shows above
 // the player but below thought bubbles.
 const EMBER_OFFSET_Y = -28;
-const EMBER_RADIUS = 6;
-const EMBER_COLOR = 0xf2c878;
+// Soft ember glow (replaces the old flat orange Arc — Jaco 2026-06-13: "just an
+// orange circle, looks pretty bad"). A pre-baked warm radial-gradient texture
+// (white-hot core → gold → transparent) drawn ADD-blended so it reads as a
+// living glow rather than a hard disc, with a gentle breathing pulse so the
+// Ember feels alive on Pip. Render radius lerps with warmth (US-101).
+const EMBER_GLOW_KEY = 'player-ember-glow';
+const EMBER_GLOW_TEX_SIZE = 64;
 const EMBER_DEPTH = 5.5;
 // NPCs that can be warmed via the ember-share verb (US-85). Each ID maps to a
 // `npc_warmed_<id>` flag; on flip-to-true the matching NPC's tier-1 light is
@@ -93,11 +100,17 @@ export class GameScene extends Phaser.Scene {
   private npcInteraction!: NpcInteractionSystem;
   private dialogueSystem!: DialogueSystem;
   private thoughtBubble!: ThoughtBubbleSystem;
+  private objectiveBanner!: ObjectiveBannerSystem;
   private triggerZone!: TriggerZoneSystem;
   private debugOverlay!: DebugOverlaySystem;
   private animationSystem!: AnimationSystem;
   private player!: Phaser.GameObjects.Sprite;
   private tileLayer: Phaser.GameObjects.GameObject[] = [];
+  // Water cells (any corner is `water` terrain) tagged during renderTileMap for
+  // the shimmer system. Mutated in place (.length=0 + push) so the reference
+  // handed to WaterShimmerSystem survives a redrawTerrainOnly rebuild.
+  private waterTiles: { sprite: Phaser.GameObjects.Sprite; col: number; row: number }[] = [];
+  private waterShimmer!: WaterShimmerSystem;
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
   // Conditional decorations: visibility re-evaluated on flag changes only,
   // never per-frame (Learning EP-01).
@@ -179,7 +192,7 @@ export class GameScene extends Phaser.Scene {
   // and Continue-from-save). Destroyed when the flag is unset (Reset Progress
   // notifies via resetAllFlags). The unsubscribe handle is invoked on
   // cleanupResize.
-  private emberOverlay: Phaser.GameObjects.Arc | null = null;
+  private emberOverlay: Phaser.GameObjects.Image | null = null;
   private hasEmberMarkUnsubscribe: (() => void) | null = null;
   // Warming-flag onFlagChange unsubscribes (US-85). One per NPC in
   // WARMING_NPC_IDS. Each subscriber re-registers the NPC's tier-1 light at
@@ -401,6 +414,18 @@ export class GameScene extends Phaser.Scene {
     // US-101: now that the bubble exists, wire it into the warmth system so
     // drain/quiet zone entry transitions can queue doubt/narration lines.
     this.emberWarmthSystem.setThoughtBubble(this.thoughtBubble);
+    // C2-b: standing "what to do next" cue. Screen-fixed banner showing the
+    // area's one concrete goal so a first-time player is never lost. On a fresh
+    // start the intro StoryScene overlays GameScene, so the banner is hidden
+    // until the intro finishes and play resumes.
+    this.objectiveBanner = new ObjectiveBannerSystem(this);
+    if (this.area.objective) {
+      this.objectiveBanner.setObjective(this.area.objective);
+    }
+    // Subtle water animation (Jaco request): luminance shimmer over the water
+    // cells tagged during renderTileMap. Reads as light drifting on dark water
+    // without breaking the drained/grey vision.
+    this.waterShimmer = new WaterShimmerSystem(this, this.waterTiles);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
         const script = this.area.dialogues[actionRef];
@@ -588,6 +613,24 @@ export class GameScene extends Phaser.Scene {
         `warmth: ${this.emberWarmthSystem.getCurrentWarmth().toFixed(2)}  zone: ${this.emberWarmthSystem.getZoneState()}`,
       ].join('\n');
     });
+
+    // First-time-player opening cinematic (C2-a). On a TRUE New Game start —
+    // no area-transition entryPoint and no Continue resumePosition — play this
+    // area's intro story scene once, then mark `ashen_intro_played` so it never
+    // repeats (a later transition back into this area passes an entryPoint and
+    // is doubly guarded by the flag). Deferred one tick via delayedCall(0) so
+    // create() fully returns and the scene is RUNNING before launchStoryScene
+    // pauses it — pausing mid-create is unsafe in Phaser's scene lifecycle.
+    const isFreshStart = !data?.entryPoint && !data?.resumePosition;
+    if (
+      isFreshStart &&
+      this.area.introStoryScene &&
+      getFlag('ashen_intro_played') !== true
+    ) {
+      const introId = this.area.introStoryScene;
+      setFlag('ashen_intro_played', true);
+      this.time.delayedCall(0, () => this.launchStoryScene(introId));
+    }
   }
 
   // Idempotent — returns early when the overlay already exists. Created at
@@ -597,14 +640,37 @@ export class GameScene extends Phaser.Scene {
   private maybeCreateEmberOverlay(): void {
     if (this.emberOverlay) return;
     if (!this.player) return;
-    this.emberOverlay = this.add.circle(
+    this.ensureEmberGlowTexture();
+    this.emberOverlay = this.add.image(
       this.player.x,
       this.player.y + EMBER_OFFSET_Y,
-      EMBER_RADIUS,
-      EMBER_COLOR,
+      EMBER_GLOW_KEY,
     );
+    this.emberOverlay.setOrigin(0.5, 0.5);
+    // ADD-blend so the glow lifts off Pip and the world rather than painting a
+    // flat fill over them — the white-hot core reads as a real ember.
+    this.emberOverlay.setBlendMode(Phaser.BlendModes.ADD);
     this.emberOverlay.setDepth(EMBER_DEPTH);
     this.cameras.getCamera('ui')?.ignore(this.emberOverlay);
+  }
+
+  // Pre-bake the warm ember-glow gradient once: white-hot core fading out
+  // through gold to a transparent orange edge. Mirrors the lighting brush
+  // (lighting.ts) but warm-tinted and softer so the ember reads as a glow.
+  private ensureEmberGlowTexture(): void {
+    if (this.textures.exists(EMBER_GLOW_KEY)) return;
+    const canvas = this.textures.createCanvas(EMBER_GLOW_KEY, EMBER_GLOW_TEX_SIZE, EMBER_GLOW_TEX_SIZE);
+    if (!canvas) return;
+    const ctx = canvas.getContext();
+    const c = EMBER_GLOW_TEX_SIZE / 2;
+    const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+    gradient.addColorStop(0.0, 'rgba(255,248,228,1)');   // white-hot core
+    gradient.addColorStop(0.32, 'rgba(255,205,120,0.92)'); // warm gold
+    gradient.addColorStop(0.68, 'rgba(240,150,55,0.38)');  // ember orange falloff
+    gradient.addColorStop(1.0, 'rgba(240,150,55,0)');      // transparent edge
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, EMBER_GLOW_TEX_SIZE, EMBER_GLOW_TEX_SIZE);
+    canvas.refresh();
   }
 
   private destroyEmberOverlay(): void {
@@ -612,12 +678,15 @@ export class GameScene extends Phaser.Scene {
     this.emberOverlay = null;
   }
 
-  update(_time: number, delta: number): void {
+  update(time: number, delta: number): void {
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
     // Suppress during conditional NPC spawn fade (US-71) — same zone-level
     // mutual exclusion pattern as transitionInProgress.
     if (this.spawnInProgress) return;
+    // Water shimmer runs every frame (including during dialogue, below) so the
+    // sea never freezes while the player reads.
+    this.waterShimmer.update(time);
     // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
     // trigger-zone evaluation, and exit-zone checks all sit in the body below
     // this chain so a single early-return covers all four.
@@ -701,9 +770,17 @@ export class GameScene extends Phaser.Scene {
       const wt = (Math.max(WARMTH_FLOOR, Math.min(WARMTH_MAX, w)) - WARMTH_FLOOR) / (WARMTH_MAX - WARMTH_FLOOR);
       const radius = LIGHTING_CONFIG.playerEmberRadiusFloor + (LIGHTING_CONFIG.playerEmberRadiusFull - LIGHTING_CONFIG.playerEmberRadiusFloor) * wt;
       const alpha = LIGHTING_CONFIG.playerEmberAlphaFloor + (LIGHTING_CONFIG.playerEmberAlphaFull - LIGHTING_CONFIG.playerEmberAlphaFloor) * wt;
+      // Gentle breathing pulse so the ember feels alive (not a static dot):
+      // slow size + alpha shimmer, deeper as warmth grows.
+      const pulse = Math.sin(time * 0.0035);
+      const sizePulse = 1 + 0.1 * pulse;
+      const alphaPulse = 1 + 0.12 * pulse;
+      // The soft gradient fades to 0 well before its texture edge, so render it
+      // larger than the bare radius for the glow to read; alpha carries intensity.
+      const diameter = radius * 2 * 1.9 * sizePulse;
       this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
-      this.emberOverlay.setRadius(radius);
-      this.emberOverlay.setAlpha(alpha);
+      this.emberOverlay.setDisplaySize(diameter, diameter);
+      this.emberOverlay.setAlpha(Math.min(1, alpha * alphaPulse));
     }
 
     // Sync NPC light positions to live (post-wander) coordinates so wandering
@@ -823,6 +900,7 @@ export class GameScene extends Phaser.Scene {
 
   private renderTileMap(): void {
     this.tileLayer = [];
+    this.waterTiles.length = 0;
 
     // Fallback: unknown tileset id — render flat-color tiles so the scene still
     // loads with a clear console error (US-48 error-path). Exit overlays are
@@ -858,6 +936,10 @@ export class GameScene extends Phaser.Scene {
         sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
         sprite.setDepth(0);
         this.tileLayer.push(sprite);
+        // Tag watery cells (any corner is water) for the shimmer system.
+        if (tl === 'water' || tr === 'water' || br === 'water' || bl === 'water') {
+          this.waterTiles.push({ sprite, col, row });
+        }
       }
     }
   }
@@ -1130,7 +1212,12 @@ export class GameScene extends Phaser.Scene {
         def.atlasKey,
       );
       sprite.setOrigin(0, 0);
-      sprite.setDisplaySize(TILE_SIZE, TILE_SIZE);
+      // Multi-tile objects (US-98 footprint) render scaled to their cell
+      // footprint, not forced to a single tile. Defaults to {1,1} so every
+      // existing object is unchanged; a {2,2} boat or {2,3} pier now reads at
+      // true scale instead of a 32px miniature (Jaco dock feedback, 2026-06-13).
+      const fp = def.footprint ?? { w: 1, h: 1 };
+      sprite.setDisplaySize(fp.w * TILE_SIZE, fp.h * TILE_SIZE);
       sprite.setDepth(2.5);
       this.objectSprites.push(sprite);
       if (inst.condition) {
