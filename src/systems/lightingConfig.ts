@@ -65,4 +65,18 @@ export const LIGHTING_CONFIG = {
   // Alpha-gating recheck threshold (US-77). Decoration alpha is re-evaluated
   // only when player has moved more than this many px since last evaluation.
   alphaGateRecheckPx: 8,
+  // Warm bloom over the player's lit pool (#29). Without this the lit pool just
+  // reveals the ground's true colour (green moss on Ashen Isle), so the Ember —
+  // the master-prd's "warm gold light" — reads cool/sickly. A hope-gold radial
+  // is drawn just beneath the dark overlay, so it's masked to the player's light
+  // hole, and its alpha grows with warmth: the light the fox carries visibly
+  // warms as the Ember grows (grace made visible). A gentle pre-Ember floor keeps
+  // the opening from ever reading cold-green.
+  playerWarmBloomColor: 0xf2c878,
+  playerWarmBloomAlphaPre: 0.22,
+  playerWarmBloomAlphaFloor: 0.30,
+  playerWarmBloomAlphaFull: 0.52,
+  // Bloom fills this fraction of the player light radius (concentrates the warmth
+  // toward centre so the pool edge still reads as the cooler revealed world).
+  playerWarmBloomScale: 0.9,
 };
