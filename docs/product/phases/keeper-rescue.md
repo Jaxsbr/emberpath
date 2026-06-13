@@ -14,7 +14,7 @@ Rescue Pip from the Fog Marsh dead-end. After `fog-marsh-dead-end` lands the pla
 
 - **Keeper appears, doesn't ask permission.** The spawn condition fires the appearance; the player has no menu choice. Grace is given (master-prd.md: "the ember mark is given, not earned").
 - **One conversation, one story scene, one new flag.** No dialogue branches, no skill checks, no inventory. Tap to advance (master-prd.md: "Action over explanation").
-- **Ember Mark is visible.** After the story scene, Pip's sprite carries a subtle warm-light overlay (small ember above his head, or a tinted glow). The player sees they've changed.
+- **Ember Mark is visible.** After the story scene, Pip's sprite carries a subtle warm-light overlay (small ember above her head, or a tinted glow). The player sees they've changed.
 - **Path re-opens by undoing the trap.** Rather than introducing a third decoration state or `OR` parser, the Keeper rescue **flips `marsh_trapped: false` as part of the same flag write that grants the ember.** All three Phase 1 effects (collision flip, decoration swap, exit gate) reverse using the same single-flag mechanism, in reverse — same vocabulary, same mechanism.
 
 The build-loop's `frontend-design` skill does NOT apply — this phase introduces no UI.
