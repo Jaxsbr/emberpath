@@ -151,7 +151,12 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
 
   // Briar Wilds (US-100/T12) — PixelLab personal-account generations.
   'bramble-cluster': { id: 'bramble-cluster', atlasKey: 'object-bramble-cluster', assetPath: 'objects/briar-wilds/bramble-cluster.png', passable: false },
-  'briar-dead-tree': { id: 'briar-dead-tree', atlasKey: 'object-briar-dead-tree', assetPath: 'objects/briar-wilds/briar-dead-tree.png', passable: false },
+  // Gnarled leafless dead tree (regenerated 2026-06-14, directive #332 area 3) —
+  // renders 2×2 (64px) so the bare twisted branches read as a real tree, not a
+  // 32px spiky token (the same "trees are a joke" fix applied to Ashen's oak/pine).
+  // Collision keys the anchor cell only, so the branch spread overhangs the other
+  // 3 cells as walkable — standard top-down idiom.
+  'briar-dead-tree': { id: 'briar-dead-tree', atlasKey: 'object-briar-dead-tree', assetPath: 'objects/briar-wilds/briar-dead-tree.png', passable: false, footprint: { w: 2, h: 2 } },
   'twisted-root':    { id: 'twisted-root',    atlasKey: 'object-twisted-root',    assetPath: 'objects/briar-wilds/twisted-root.png',    passable: true },
 };
 
