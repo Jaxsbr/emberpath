@@ -89,6 +89,11 @@ export class DialogueSystem {
   // Read by getEndStoryScene() from the GameScene.setOnEnd callback to chain
   // a story scene after dialogue close (US-72).
   private endStoryScene: string | null = null;
+  // Captured from the currently-shown DialogueNode.endThought so it survives the
+  // close() lifecycle, just like endStoryScene. Whichever terminal node the
+  // dialogue ends on sets the value last; read by getEndThought() from
+  // GameScene.setOnEnd to fire a Pip inner-thought after dialogue close.
+  private endThought: string | null = null;
   private onChoiceCallback: ((choice: DialogueChoice) => void) | null = null;
 
   constructor(scene: Phaser.Scene) {
@@ -198,6 +203,10 @@ export class DialogueSystem {
     return this.endStoryScene;
   }
 
+  getEndThought(): string | null {
+    return this.endThought;
+  }
+
   setOnChoice(cb: (choice: DialogueChoice) => void): void {
     this.onChoiceCallback = cb;
   }
@@ -208,6 +217,7 @@ export class DialogueSystem {
     this.active = true;
     this.script = script;
     this.endStoryScene = script.endStoryScene ?? null;
+    this.endThought = null;
     this.currentBoxHeight = BOX_HEIGHT;
     this.createBox();
     const startNode = script.nodes.find(n => n.id === script.startNodeId);
@@ -298,6 +308,10 @@ export class DialogueSystem {
 
   private showNode(node: DialogueNode): void {
     this.currentNode = node;
+    // Track the current node's endThought so it survives close() (which nulls
+    // this.script before onEndCallback). Whichever node the dialogue closes on
+    // is the last one shown, so its value wins — node-scoped by construction.
+    this.endThought = node.endThought ?? null;
     // Fire node.setFlags BEFORE the typewriter starts so a downstream
     // onFlagChange subscriber sees the new value within the same call stack
     // as showNode (US-72 Keeper rescue: action node sets has_ember_mark +
@@ -717,6 +731,7 @@ export class DialogueSystem {
     // Reset the captured endStoryScene AFTER the callback fires so
     // getEndStoryScene() returns the correct value during the callback.
     this.endStoryScene = null;
+    this.endThought = null;
   }
 
   private ignoreOnMainCamera(obj: Phaser.GameObjects.GameObject): void {

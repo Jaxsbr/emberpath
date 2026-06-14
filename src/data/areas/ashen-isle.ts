@@ -727,7 +727,12 @@ export const ashenIsle: AreaDefinition = {
               firePulseTarget: 'wren',
               condition: 'has_ember_mark == true AND npc_warmed_wren == false',
             },
-            { text: 'Not yet', nextId: 'demure' },
+            // Pre-Ember: Pip can't share a warmth she hasn't received yet. This
+            // is honest inability, not refusal — the grace beat. The endThought
+            // on `grey-too` sends her toward the smoke to go receive first.
+            { text: 'My light is grey too', nextId: 'grey-too', condition: 'has_ember_mark == false' },
+            // Post-Ember but not ready to warm Wren yet: a graceful "not now".
+            { text: 'Not yet', nextId: 'demure', condition: 'has_ember_mark == true AND npc_warmed_wren == false' },
           ],
         },
         {
@@ -740,6 +745,12 @@ export const ashenIsle: AreaDefinition = {
           id: 'thanks',
           speaker: 'Wren',
           text: 'I\'ll keep it close. Thank you.',
+        },
+        {
+          id: 'grey-too',
+          speaker: 'Wren',
+          text: 'Oh. Yours is grey too. That\'s okay. Go find your light. I\'ll be here.',
+          endThought: 'I have no warmth to give yet. I should find the smoke first.',
         },
         {
           id: 'demure',

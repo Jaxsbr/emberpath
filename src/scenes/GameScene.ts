@@ -563,6 +563,15 @@ export class GameScene extends Phaser.Scene {
       const endStoryScene = this.dialogueSystem.getEndStoryScene();
       if (endStoryScene) {
         this.launchStoryScene(endStoryScene);
+      } else {
+        // Node-scoped Pip inner-thought fired when the dialogue closes from a
+        // node that declared endThought (Wren grace beat: the pre-Ember "no
+        // warmth yet" exit nudges Pip toward the smoke). Skipped when a story
+        // scene is chained — that scene would immediately cover the bubble.
+        const endThought = this.dialogueSystem.getEndThought();
+        if (endThought) {
+          this.showThought(endThought);
+        }
       }
     });
     this.dialogueSystem.setOnChoice((choice) => {
