@@ -46,6 +46,7 @@ interface Ember {
   phase: number;
   twPhase: number;
   baseAlpha: number;
+  cycle: number;
 }
 
 export class TitleScene extends Phaser.Scene {
@@ -53,7 +54,6 @@ export class TitleScene extends Phaser.Scene {
   private resetText!: Phaser.GameObjects.Text;
   private embers: Ember[] = [];
   private glow: Phaser.GameObjects.Image | null = null;
-  private titleText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'TitleScene' });
@@ -71,7 +71,7 @@ export class TitleScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#15131f');
     this.createAtmosphere();
 
-    this.titleText = this.add.text(width / 2, height / 3, 'Emberpath', {
+    const titleText = this.add.text(width / 2, height / 3, 'Emberpath', {
       fontFamily: TITLE_FONT,
       fontSize: '64px',
       color: EMBER_GOLD,
@@ -80,10 +80,10 @@ export class TitleScene extends Phaser.Scene {
       padding: { x: 28, y: 24 },
     }).setOrigin(0.5).setDepth(10);
     // Soft ember glow behind the letters — the title itself looks lit.
-    this.titleText.setShadow(0, 0, EMBER_DEEP, 22, true, true);
+    titleText.setShadow(0, 0, EMBER_DEEP, 22, true, true);
     // Gentle breathing so the title feels alive, like Pip's ember.
     this.tweens.add({
-      targets: this.titleText,
+      targets: titleText,
       alpha: { from: 0.82, to: 1 },
       duration: 2200,
       yoyo: true,
@@ -163,6 +163,7 @@ export class TitleScene extends Phaser.Scene {
         phase: this.rand(i * 4.1) * Math.PI * 2,
         twPhase: this.rand(i * 6.3 + 0.4) * Math.PI * 2,
         baseAlpha,
+        cycle: 0,
       };
       img.setPosition(ember.x, ember.y);
       this.embers.push(ember);
@@ -178,9 +179,15 @@ export class TitleScene extends Phaser.Scene {
       e.y += EMBER_RISE * e.speed * dt;
       e.x += Math.sin(t * EMBER_SWAY_SPEED + e.phase) * EMBER_SWAY_AMP * dt;
       // Recycle across the bottom edge once an ember rises off the top.
+      // Advance a per-ember cycle counter and seed the new x from THAT (not from
+      // the just-reset y, which is a constant — seeding off it sent every ember
+      // back to the same column each lap, so the field retraced fixed streaks
+      // instead of drifting). Counter-based seed keeps it deterministic (no
+      // Math.random, resume-safe) while giving a fresh spread every lap.
       if (e.y < -16) {
         e.y = height + 16;
-        e.x = this.rand((e.phase + e.y) * 1.3) * width;
+        e.cycle += 1;
+        e.x = this.rand(e.phase * 3.7 + e.cycle * 1.7 + 0.13) * width;
       }
       const twinkle = 0.7 + 0.3 * Math.sin(t * EMBER_TWINKLE_SPEED + e.twPhase);
       e.img.setPosition(e.x, e.y);
