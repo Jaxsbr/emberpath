@@ -211,6 +211,10 @@ const fogMarshTileMap = buildFogMarshMap();
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
   name: 'Fog Marsh',
+  // C12 — the area borrows the Tiny Dungeon tileset as a substitute, so its floor
+  // and walls read as grey stone. A drifting mist + center-clear fog veil give the
+  // player the fog the area is named for, softening the dungeon read.
+  fogOverlay: true,
   // Objective banner (C10 — Fog Marsh had none, a "don't know where to go" gap).
   // Base goal sends the cold player deeper toward the light; the ladder re-points
   // as the marsh story flips its flags (the banner re-resolves live — both flags

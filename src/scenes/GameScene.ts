@@ -16,6 +16,7 @@ import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
 import { WaterShimmerSystem } from '../systems/waterShimmer';
 import { AmbientMotesSystem } from '../systems/ambientMotes';
+import { FogOverlaySystem } from '../systems/fogOverlay';
 import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
@@ -148,6 +149,7 @@ export class GameScene extends Phaser.Scene {
   private waterTiles: { sprite: Phaser.GameObjects.Sprite; col: number; row: number }[] = [];
   private waterShimmer!: WaterShimmerSystem;
   private ambientMotes!: AmbientMotesSystem;
+  private fogOverlay: FogOverlaySystem | null = null;
   private smokeBeacon!: SmokeBeaconSystem;
   private signpostWayfinding!: SignpostWayfindingSystem;
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
@@ -498,6 +500,9 @@ export class GameScene extends Phaser.Scene {
     // as frozen dioramas. On the main camera, so the desat pipeline greys them in
     // the cold world and warms them inside Pip's ember light.
     this.ambientMotes = new AmbientMotesSystem(this);
+    // Atmospheric fog (C12): drifting pale mist banks so a "fog" area reads as fog,
+    // not as its grey-stone substitute tileset. Opt-in per area; null when unset.
+    this.fogOverlay = this.area.fogOverlay ? new FogOverlaySystem(this) : null;
     // Distant beacon (C6 smoke / C13 glow-only): a far warm target the player
     // walks toward. smokeBeacon rises a plume ("find the smoke"); lightBeacon is
     // glow-only (a goal where smoke would mis-read, e.g. Briar's far clearing).
@@ -851,6 +856,7 @@ export class GameScene extends Phaser.Scene {
     // Ambient motes drift every frame too (same rationale as the shimmer — the
     // world should never read as fully frozen).
     this.ambientMotes.update(time, delta);
+    this.fogOverlay?.update(time, delta);
     // Smoke beacon drifts every frame too (distant goal, never frozen).
     this.smokeBeacon.update(time, delta);
     // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
@@ -1863,6 +1869,8 @@ export class GameScene extends Phaser.Scene {
     this.destroyEmberOverlay();
     this.lightingSystem?.destroy();
     this.ambientMotes?.destroy();
+    this.fogOverlay?.destroy();
+    this.fogOverlay = null;
     this.smokeBeacon?.destroy();
     this.signpostWayfinding?.destroy();
   }
