@@ -82,6 +82,12 @@ export interface DialogueNode {
   // (overlay create on has_ember_mark; collision/decoration restore on
   // marsh_trapped) fire within the same call stack as showNode.
   setFlags?: Record<string, string | number | boolean>;
+  // Optional Pip inner-thought fired when the dialogue closes *from this node*.
+  // Node-scoped sibling of DialogueScript.endStoryScene: it fires only when the
+  // dialogue ends on THIS terminal node, never on other exits of the same
+  // script. Used for the Wren grace beat — the pre-Ember "I have no warmth yet"
+  // exit nudges Pip toward the smoke, while the warm-share exit stays silent.
+  endThought?: string;
 }
 
 export interface DialogueScript {
