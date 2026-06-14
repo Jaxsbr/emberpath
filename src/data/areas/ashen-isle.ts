@@ -252,24 +252,23 @@ function fenceObjects(
   return out;
 }
 
+// Two cohesive cottages (PixelLab, 2026-06-14) replace the old per-tile Kenney
+// house blocks (Jaco: "our house is a joke"). Each is ONE 4×4 cottage image
+// (`cottage` kind) with collision laid as `collision-block` cells under the
+// upper body (roof + walls); the bottom front/door row is left walkable so the
+// player walks right up to the doorway — and the Old Man still poses in his open
+// doorway at (40,28). Object collision keys the anchor cell only, hence the
+// explicit collision-block grid rather than relying on the cottage footprint.
+function cottage(anchorCol: number, anchorRow: number): OInst[] {
+  return [
+    ...rectObjects(anchorCol, anchorCol + 3, anchorRow, anchorRow + 2, 'collision-block'),
+    { kind: 'cottage', col: anchorCol, row: anchorRow },
+  ];
+}
+
 const ashenBuildings: OInst[] = [
-  // Player's cottage (rows 12-15 cols 8-12): thatched roof over a plank front,
-  // open doorway at (10,15).
-  ...rectObjects(8, 12, 12, 13, 'wall-roof'),
-  ...rectObjects(8, 12, 14, 14, 'wall-front'),
-  { kind: 'wall-front', col: 8, row: 15 },
-  { kind: 'wall-front', col: 9, row: 15 },
-  { kind: 'door-wood', col: 10, row: 15 },
-  { kind: 'wall-front', col: 11, row: 15 },
-  { kind: 'wall-front', col: 12, row: 15 },
-  // Old Man's cottage (rows 24-28 cols 38-42): doorway at (40,28) where he stands.
-  ...rectObjects(38, 42, 24, 25, 'wall-roof'),
-  ...rectObjects(38, 42, 26, 27, 'wall-front'),
-  { kind: 'wall-front', col: 38, row: 28 },
-  { kind: 'wall-front', col: 39, row: 28 },
-  { kind: 'door-wood', col: 40, row: 28 },
-  { kind: 'wall-front', col: 41, row: 28 },
-  { kind: 'wall-front', col: 42, row: 28 },
+  ...cottage(9, 12), // player's cottage in the west yard
+  ...cottage(39, 25), // Old Man's cottage; doorway lands at his pose cell (40,28)
 ];
 
 const ashenFences: OInst[] = [
@@ -286,11 +285,20 @@ const ashenFences: OInst[] = [
 // dock signpost plus a light scatter in the grass bands away from the paths.
 const ashenScenery: OInst[] = [
   { kind: 'sign-wood', col: 26, row: 5 },
+  // Tree groves — mixed pine + broadleaf (PixelLab, 2026-06-14) for a lived-in,
+  // varied island instead of identical 32px tokens (Jaco: "our trees are a
+  // joke"). All 2×2 (canopy overhangs as walkable shade); kept off the sand
+  // paths (cols 24-25; the row-20 west branch; the row-22 east branch) and out
+  // of the fenced yards, loosely clustered into little groves.
+  { kind: 'tree-oak', col: 5, row: 4 },
   { kind: 'tree-pine', col: 8, row: 6 },
-  { kind: 'tree-pine', col: 36, row: 7 },
   { kind: 'tree-pine', col: 3, row: 9 },
-  { kind: 'flower', col: 28, row: 10 },
+  { kind: 'tree-oak', col: 36, row: 7 },
+  { kind: 'tree-pine', col: 44, row: 9 },
+  { kind: 'tree-oak', col: 6, row: 28 },
   { kind: 'tree-pine', col: 12, row: 32 },
+  { kind: 'tree-oak', col: 33, row: 33 },
+  { kind: 'flower', col: 28, row: 10 },
   { kind: 'flower', col: 6, row: 34 },
   { kind: 'bush', col: 30, row: 33 },
 ];
@@ -340,6 +348,18 @@ const ashenTileMap = buildAshenMap();
 const explicitWallCells = new Set<string>(
   [...ashenBuildings, ...ashenFences].map((o) => `${o.col},${o.row}`),
 );
+// The new cottages cover less ground than the old per-tile house blocks, but the
+// FULL original footprints were WALL cells in the source map. Drop the derived
+// wall-stone across those whole rectangles so no stray grey block draws beside
+// the cottage art (collision now comes from the cottage collision-block grid).
+for (const f of [
+  { c0: 8, c1: 12, r0: 12, r1: 15 }, // old player house
+  { c0: 38, c1: 42, r0: 24, r1: 28 }, // old Old-Man house
+]) {
+  for (let r = f.r0; r <= f.r1; r++) {
+    for (let c = f.c0; c <= f.c1; c++) explicitWallCells.add(`${c},${r}`);
+  }
+}
 // Derived wall-stone, kept ONLY for the world-edge perimeter: drop the north
 // coast (rows 0-3, now water/beach terrain) and every explicitly-objectified
 // building/fence cell. What survives is the thin map-edge border collision.

@@ -13,6 +13,11 @@
 // the closed string-literal union prevents user-input-driven id construction.
 
 export type ObjectKindId =
+  // Shared — invisible collision filler (transparent PNG). Lets a single large
+  // decorative object (e.g. a multi-cell cottage) carry per-cell collision: the
+  // art draws on top, these block the body cells underneath. Collision keys the
+  // anchor cell only (buildObjectCollisionMap), so one block = one blocked cell.
+  | 'collision-block'
   // Ashen Isle — impassable
   | 'wall-stone'
   | 'wall-front'
@@ -21,6 +26,11 @@ export type ObjectKindId =
   | 'fence-rail'
   | 'cliff-stone'
   | 'tree-pine'
+  | 'tree-oak'
+  // Ashen Isle — cohesive multi-cell building (PixelLab, hand-painted). The
+  // visible structure is one image spanning its footprint; collision comes from
+  // collision-block cells laid under the body (door cell left open).
+  | 'cottage'
   // Ashen Isle — dock props (PixelLab style-matched, weathered sepia/umber)
   | 'boat-row'
   | 'barrel-wood'
@@ -75,6 +85,10 @@ export interface ObjectKindDefinition {
 // single 32×32 image with a transparent background.
 
 export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
+  // Shared — invisible per-cell collision (transparent 1×1 PNG, scaled to the
+  // cell at render so it draws nothing). Used to give a large multi-cell art
+  // object real collision over its body.
+  'collision-block': { id: 'collision-block', atlasKey: 'object-collision-block', assetPath: 'objects/_shared/collision-block.png', passable: false },
   // Ashen Isle
   'wall-stone':  { id: 'wall-stone',  atlasKey: 'object-wall-stone',  assetPath: 'objects/ashen-isle/wall-stone.png',  passable: false },
   'wall-front':  { id: 'wall-front',  atlasKey: 'object-wall-front',  assetPath: 'objects/ashen-isle/wall-front.png',  passable: false },
@@ -86,7 +100,16 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'door-wood':   { id: 'door-wood',   atlasKey: 'object-door-wood',   assetPath: 'objects/ashen-isle/door-wood.png',   passable: true },
   'fence-rail':  { id: 'fence-rail',  atlasKey: 'object-fence-rail',  assetPath: 'objects/ashen-isle/fence-rail.png',  passable: false },
   'cliff-stone': { id: 'cliff-stone', atlasKey: 'object-cliff-stone', assetPath: 'objects/ashen-isle/cliff-stone.png', passable: false },
-  'tree-pine':   { id: 'tree-pine',   atlasKey: 'object-tree-pine',   assetPath: 'objects/ashen-isle/tree-pine.png',   passable: false },
+  // Trees render at 2×2 (64px) so the hand-painted canopy + trunk read as a real
+  // tree, not a 32px token (Jaco 2026-06-14: "our trees are a joke"). Collision
+  // keys the anchor cell only, so the canopy overhangs the other 3 cells as
+  // walkable shade — standard top-down idiom.
+  'tree-pine':   { id: 'tree-pine',   atlasKey: 'object-tree-pine',   assetPath: 'objects/ashen-isle/tree-pine.png',   passable: false, footprint: { w: 2, h: 2 } },
+  'tree-oak':    { id: 'tree-oak',    atlasKey: 'object-tree-oak',    assetPath: 'objects/ashen-isle/tree-oak.png',    passable: false, footprint: { w: 2, h: 2 } },
+  // Cohesive cottage — one 128px image over a 4×4 footprint. Collision is laid
+  // separately as collision-block cells under the body (door cell left open), so
+  // the anchor-only object collision rule doesn't leave the house walk-through.
+  'cottage':     { id: 'cottage',     atlasKey: 'object-cottage',     assetPath: 'objects/ashen-isle/cottage.png',     passable: false, footprint: { w: 4, h: 4 } },
   // Boat + pier read at true scale via `footprint` (US-98) — a 32px boat looked
   // like a toy on the dock (Jaco feedback 2026-06-13). Both moor in impassable
   // water; collision keys their anchor cell only, so the multi-tile footprint is
