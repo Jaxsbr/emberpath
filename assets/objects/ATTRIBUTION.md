@@ -48,6 +48,14 @@ The style-match constraint forces the object palette / outline weight / shading 
 | mushroom | true | small marsh mushroom cluster, top-down | `47d4375a-fd93-4de3-ad95-d026c7ce91f9` |
 | lantern-broken | true | small extinguished iron lantern, dim sepia, top-down (reroll — original 500'd) | `13ee3437-a890-4a8e-9ea1-5a6aa379f971` |
 
+## Briar Wilds (3 kinds)
+
+| kind | passable | description | object_id |
+|---|---|---|---|
+| bramble-cluster | false | gnarled thorn-bramble clump, top-down storybook (T12 PixelLab gen — object_id not recorded at generation time) | — |
+| briar-dead-tree | false | dead leafless gnarled tree seen from DIRECTLY ABOVE — bare twisted branches radiate outward from a central dark trunk like a cracked starburst, no canopy, weathered grey-brown deadwood, 128×128 over a `tall` 4×4 footprint (regenerated TOP-DOWN 2026-06-14 via `create_map_object`, Slice 7c — replaced the earlier 2×2/64px version so the dead tree reads as a real multi-tile tree like Ashen's oak/pine and Y-sorts on its trunk base, per directives #344+#346) | `eae13c25-15f4-4e83-8500-9c03ea924a16` |
+| twisted-root | true | gnarled exposed root tangle on the ground, passable, top-down storybook (T12 PixelLab gen — object_id not recorded at generation time) | — |
+
 ## Generation budget reconciliation
 
 Spec budget: ≤ 1 reroll per object (≤ 36 generations max for 18 objects).

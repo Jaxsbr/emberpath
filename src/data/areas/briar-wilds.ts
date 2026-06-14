@@ -164,90 +164,67 @@ const lightAnchors: TriggerDefinition[] = [
 // Skeleton has no decorations — terrain + objects carry the visual load.
 const decorations: DecorationDefinition[] = [];
 
-// ───── Object scatter (T12 — PixelLab content) ─────
-// Sparse impassable bramble + dead-tree pockets along the trial road, plus
-// passable twisted-root ground decoration in the drain zones (visual cue
-// for the false-hope read). Player path stays open: a clear vertical lane
-// roughly cols 1-7 down the west side and cols 22-26 across the middle
-// keeps the route to quiet-closing reachable. Edges are dressed thicker.
+// ───── Object placement (Slice 7c — directives #344 + #346) ─────
+// CLUSTERED, not scattered (#344 §2). The dead tree is now a TOP-DOWN `tall` 4×4
+// object (#346, like Ashen's oak/pine): a 128px image spanning cols c..c+3 /
+// rows r..r+3 from its top-left anchor, Y-sorted on its trunk base so Pip walks
+// behind the upper branches from above and in front from below, and colliding
+// ONLY on the trunk-base cell (c+1, r+3) — the rest of the spread is walkable
+// shade. So trees are placed in PAIRS that frame the wood as two thorny bands
+// (a NORTH band, anchor rows 1-3 → spread rows 1-6, and a SOUTH band, anchor
+// rows 18-20 → spread rows 18-23), with brambles + twisted-roots packed around
+// each pair as undergrowth and the map edges lined densest (#344 §2). The centre
+// is deliberate NEGATIVE SPACE: the lit breadcrumb corridor (rows 11-14), the
+// two quiet clearings (grove cols 14-16/rows 5-7, closing cols 27-30/rows 11-14),
+// the west entry (cols 0-2, rows 12-14), the beacon/closing trigger (~28,12) and
+// the grove gap (cols 14-17 in the north band) all stay open so the route from
+// spawn to the closing clearing reads as the thorns parting toward the light.
+// Every trunk-base collision cell and every bramble is verified off that route.
 const briarObjects: import('../../maps/objects').ObjectInstance[] = [
-  // North edge cluster — frames the area
-  { kind: 'briar-dead-tree', col: 5, row: 2 },
-  { kind: 'bramble-cluster', col: 12, row: 2 },
-  { kind: 'briar-dead-tree', col: 20, row: 1 },
-  { kind: 'bramble-cluster', col: 25, row: 3 },
-  { kind: 'briar-dead-tree', col: 30, row: 2 },
-  // West edge cluster — leaves col 0 entry open at row 12-14
-  { kind: 'bramble-cluster', col: 1, row: 4 },
-  { kind: 'bramble-cluster', col: 2, row: 9 },
-  { kind: 'bramble-cluster', col: 1, row: 19 },
-  // Middle obstacles between drain-1 and drain-2 — push the player to weave.
-  // Kept as 1×1 brambles (not the now-2×2 dead tree) so nothing big sits on the
-  // central lit lane (rows 11-14) and hides the breadcrumb the player follows.
-  { kind: 'bramble-cluster', col: 13, row: 12 },
-  { kind: 'bramble-cluster', col: 16, row: 14 },
-  // South edge cluster
-  { kind: 'briar-dead-tree', col: 7, row: 23 },
-  { kind: 'bramble-cluster', col: 14, row: 24 },
-  { kind: 'briar-dead-tree', col: 22, row: 23 },
-  { kind: 'bramble-cluster', col: 28, row: 24 },
-  // East edge cluster — frames the closing-reflection clearing without
-  // blocking the cells inside quiet-closing (cols 27-30, rows 11-14)
-  { kind: 'bramble-cluster', col: 31, row: 9 },
-  // Anchored at col 30 (not 31) so the 2×2 tree renders on-map at the east edge.
-  { kind: 'briar-dead-tree', col: 30, row: 18 },
-  // Twisted-root ground decoration inside the drain zones — passable, signals
-  // false-hope visually (the trap and the lie are one — phase-goal direction)
-  { kind: 'twisted-root', col: 9, row: 9 },
-  { kind: 'twisted-root', col: 10, row: 10 },
-  { kind: 'twisted-root', col: 19, row: 17 },
-  { kind: 'twisted-root', col: 20, row: 18 },
-];
-
-// ───── Density pass (directive #332, area 3) ─────
-// Briar read as a near-empty void: the breadcrumb of lit clearings worked for
-// wayfinding, but between them the wood was bare floor dotted with a few tiny
-// tokens. This thickens it into a real thorny wood — gnarled dead trees (now
-// 2×2) FRAME each lit clearing from just above/below so the clearing reads as
-// an opening in the thorns, brambles line the north/south map edges, and a few
-// more twisted-roots deepen the drain zones. Every anchor is kept OFF the lit
-// corridor (rows 11-14 along the breadcrumb), the two quiet clearings
-// (grove 14-16/5-7, closing 27-30/11-14), the breadcrumb light cells, the
-// beacon/closing trigger (28-29/12-13), and the west entry (cols 0-2) — so the
-// route from spawn to the closing clearing stays fully open. Impassable
-// collision keys the anchor cell only, so the 2×2 branch spread overhangs as
-// walkable shade. Additive set-dressing; no map/terrain/zone/flag changes.
-const briarDressing: import('../../maps/objects').ObjectInstance[] = [
-  // Dead trees framing the clearings (above/below the breadcrumb) and edges.
-  { kind: 'briar-dead-tree', col: 3, row: 9 },
-  { kind: 'briar-dead-tree', col: 12, row: 9 },
-  { kind: 'briar-dead-tree', col: 10, row: 16 },
-  { kind: 'briar-dead-tree', col: 16, row: 9 },
-  { kind: 'briar-dead-tree', col: 19, row: 9 },
-  { kind: 'briar-dead-tree', col: 24, row: 8 },
-  { kind: 'briar-dead-tree', col: 24, row: 16 },
-  { kind: 'briar-dead-tree', col: 21, row: 9 },
-  { kind: 'briar-dead-tree', col: 8, row: 3 },
-  // South-edge tree line.
-  { kind: 'briar-dead-tree', col: 5, row: 21 },
-  { kind: 'briar-dead-tree', col: 12, row: 21 },
-  { kind: 'briar-dead-tree', col: 19, row: 21 },
-  { kind: 'briar-dead-tree', col: 25, row: 21 },
-  // Brambles lining the north edge.
-  { kind: 'bramble-cluster', col: 3, row: 1 }, { kind: 'bramble-cluster', col: 8, row: 0 },
-  { kind: 'bramble-cluster', col: 16, row: 1 }, { kind: 'bramble-cluster', col: 22, row: 0 },
-  { kind: 'bramble-cluster', col: 27, row: 1 },
-  // Brambles lining the south edge.
-  { kind: 'bramble-cluster', col: 2, row: 24 }, { kind: 'bramble-cluster', col: 9, row: 25 },
-  { kind: 'bramble-cluster', col: 15, row: 24 }, { kind: 'bramble-cluster', col: 22, row: 25 },
-  { kind: 'bramble-cluster', col: 29, row: 24 },
-  // A few mid brambles thickening the gaps (off the lit corridor).
-  { kind: 'bramble-cluster', col: 4, row: 8 }, { kind: 'bramble-cluster', col: 7, row: 16 },
-  { kind: 'bramble-cluster', col: 26, row: 16 }, { kind: 'bramble-cluster', col: 19, row: 4 },
-  { kind: 'bramble-cluster', col: 26, row: 7 }, { kind: 'bramble-cluster', col: 25, row: 10 },
-  { kind: 'bramble-cluster', col: 31, row: 15 },
-  // Extra twisted-root (passable) deepening the drain-zone false-hope read.
-  { kind: 'twisted-root', col: 9, row: 8 }, { kind: 'twisted-root', col: 11, row: 10 },
+  // ── NORTH band — paired dead trees framing above the corridor ──
+  // NW pair (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 0, row: 1 }, { kind: 'briar-dead-tree', col: 3, row: 3 },
+  { kind: 'bramble-cluster', col: 5, row: 1 }, { kind: 'bramble-cluster', col: 2, row: 5 },
+  { kind: 'bramble-cluster', col: 6, row: 4 },
+  // North-left pair (left shoulder of the grove clearing).
+  { kind: 'briar-dead-tree', col: 7, row: 1 }, { kind: 'briar-dead-tree', col: 10, row: 3 },
+  { kind: 'bramble-cluster', col: 9, row: 0 }, { kind: 'bramble-cluster', col: 12, row: 2 },
+  { kind: 'bramble-cluster', col: 8, row: 5 },
+  // (cols 14-17 left open — the grove clearing is the gap in the thorns)
+  // North-right pair (right shoulder of the grove clearing).
+  { kind: 'briar-dead-tree', col: 18, row: 1 }, { kind: 'briar-dead-tree', col: 21, row: 3 },
+  { kind: 'bramble-cluster', col: 17, row: 4 }, { kind: 'bramble-cluster', col: 20, row: 0 },
+  { kind: 'bramble-cluster', col: 23, row: 5 },
+  // NE pair (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 24, row: 1 }, { kind: 'briar-dead-tree', col: 27, row: 2 },
+  { kind: 'bramble-cluster', col: 26, row: 0 }, { kind: 'bramble-cluster', col: 30, row: 3 },
+  { kind: 'bramble-cluster', col: 29, row: 5 },
+  // ── SOUTH band — paired dead trees framing below the corridor ──
+  // SW pair.
+  { kind: 'briar-dead-tree', col: 0, row: 18 }, { kind: 'briar-dead-tree', col: 3, row: 20 },
+  { kind: 'bramble-cluster', col: 5, row: 24 }, { kind: 'bramble-cluster', col: 2, row: 18 },
+  { kind: 'bramble-cluster', col: 6, row: 22 },
+  // South-left pair.
+  { kind: 'briar-dead-tree', col: 7, row: 19 }, { kind: 'briar-dead-tree', col: 10, row: 21 },
+  { kind: 'bramble-cluster', col: 9, row: 25 }, { kind: 'bramble-cluster', col: 13, row: 21 },
+  { kind: 'bramble-cluster', col: 8, row: 18 },
+  // South-right pair.
+  { kind: 'briar-dead-tree', col: 17, row: 19 }, { kind: 'briar-dead-tree', col: 20, row: 21 },
+  { kind: 'bramble-cluster', col: 16, row: 24 }, { kind: 'bramble-cluster', col: 19, row: 18 },
+  { kind: 'bramble-cluster', col: 23, row: 22 },
+  // SE pair (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 24, row: 18 }, { kind: 'briar-dead-tree', col: 27, row: 20 },
+  { kind: 'bramble-cluster', col: 26, row: 25 }, { kind: 'bramble-cluster', col: 30, row: 20 },
+  { kind: 'bramble-cluster', col: 29, row: 18 },
+  // ── Corridor-fringe brambles — thicken the gaps just outside the lit lane
+  //    (rows 9-10 / 15-16), never on rows 11-14, so the breadcrumb stays clear.
+  { kind: 'bramble-cluster', col: 13, row: 9 }, { kind: 'bramble-cluster', col: 26, row: 9 },
+  { kind: 'bramble-cluster', col: 7, row: 16 }, { kind: 'bramble-cluster', col: 20, row: 16 },
+  // ── Twisted-root ground decoration (passable) inside the two drain zones —
+  //    the false-hope read (the trap and the lie are one).
+  { kind: 'twisted-root', col: 9, row: 9 }, { kind: 'twisted-root', col: 10, row: 10 },
+  { kind: 'twisted-root', col: 11, row: 10 },
+  { kind: 'twisted-root', col: 19, row: 17 }, { kind: 'twisted-root', col: 20, row: 18 },
   { kind: 'twisted-root', col: 18, row: 16 }, { kind: 'twisted-root', col: 21, row: 18 },
 ];
 
@@ -281,7 +258,7 @@ export const briarWilds: AreaDefinition = {
   // passable twisted-root ground decoration in drain zones. The map itself
   // has no walls, so deriveObjectsFromTileMap returns nothing — only the
   // hand-authored briarObjects appear.
-  objects: [...deriveObjectsFromTileMap(briarTileMap, 'wall-stone'), ...briarObjects, ...briarDressing],
+  objects: [...deriveObjectsFromTileMap(briarTileMap, 'wall-stone'), ...briarObjects],
   npcs: [],
   props: [],
   decorations,
