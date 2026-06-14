@@ -498,9 +498,14 @@ export class GameScene extends Phaser.Scene {
     // as frozen dioramas. On the main camera, so the desat pipeline greys them in
     // the cold world and warms them inside Pip's ember light.
     this.ambientMotes = new AmbientMotesSystem(this);
-    // Distant smoke beacon (C6): the far "find the smoke" target rising off the
-    // dock water. No-op in areas without a smokeBeacon.
-    this.smokeBeacon = new SmokeBeaconSystem(this, this.area.smokeBeacon);
+    // Distant beacon (C6 smoke / C13 glow-only): a far warm target the player
+    // walks toward. smokeBeacon rises a plume ("find the smoke"); lightBeacon is
+    // glow-only (a goal where smoke would mis-read, e.g. Briar's far clearing).
+    // An area has at most one; no-op when neither is set.
+    const beaconCfg =
+      this.area.smokeBeacon ??
+      (this.area.lightBeacon ? { ...this.area.lightBeacon, plume: false } : undefined);
+    this.smokeBeacon = new SmokeBeaconSystem(this, beaconCfg);
     this.signpostWayfinding = new SignpostWayfindingSystem(this, this.area.signposts ?? []);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {

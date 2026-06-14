@@ -287,6 +287,12 @@ export interface AreaDefinition {
   // target for a "find the smoke"-style objective. Place it on impassable
   // water/horizon so it reads as distant, not something the player walks into.
   smokeBeacon?: { col: number; row: number };
+  // Glow-only beacon (C13, Issue #59). Same system as smokeBeacon but with the
+  // smoke plume omitted — a standalone warm light the player walks TOWARD as a
+  // wayfinding goal. Used where a smoke column would mis-read (e.g. Briar Wilds'
+  // far clearing where "the thorns open up" toward the light). Place on the goal
+  // tile. UI-camera, so it survives desaturation and is tileset-independent.
+  lightBeacon?: { col: number; row: number };
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
   // Drain zones (US-102) — twisted false-hope patches that drain ember warmth

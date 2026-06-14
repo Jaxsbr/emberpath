@@ -194,6 +194,14 @@ export const briarWilds: AreaDefinition = {
   storyScenes: {},
   drainZones,
   quietZones,
+  // Glow-only wayfinding beacon (C13, Issue #59). Briar read as a void with the
+  // banner saying "keep going east" but nothing visible to aim at. This warm glow
+  // sits on the far-east goal clearing (quiet-closing / the completion trigger at
+  // ~28,12) so a cold player has a light to walk toward — the literal payoff of
+  // "the thorns open up here" toward the light. UI-camera, so it survives the
+  // desaturation pass and is independent of the deferred real Briar tileset. No
+  // smoke plume (would mis-read as a fire); just the glow. Wayfinding, no doctrine.
+  lightBeacon: { col: 28, row: 12 },
   // Player enters from the west edge. Exit back to Ashen Isle on the same edge.
   playerSpawn: { col: 1, row: 13 },
   exits: [
