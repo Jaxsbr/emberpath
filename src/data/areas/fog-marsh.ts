@@ -250,6 +250,20 @@ export const fogMarsh: AreaDefinition = {
       condition: 'marsh_trapped == true',
       text: 'You are stuck. Stop pulling. Hold still and wait.',
     },
+    {
+      // C12c (2026-06-14): point the cold player to the Marsh Hermit FIRST, before
+      // they walk north and spring the trap. He sits east on the row-10 boardwalk
+      // (24,10) with a warm NPC-presence glow, but the base "go deeper / look for
+      // the light" objective sends players north past him — so a literal-following
+      // player misses his dialogue AND the `marsh-vision` story beat it gates
+      // (the `marsh-depths` trigger requires spoke_to_marsh_hermit). Ordered LAST
+      // so trapped/surrendered/keeper above still win once those flags flip; this
+      // rung only shows pre-trap while the Hermit is unmet, then falls through to
+      // the base "go deeper" objective once met. Wayfinding only — his guidance
+      // and the grace meaning live in his dialogue and the Keeper, not here.
+      condition: 'spoke_to_marsh_hermit == false',
+      text: 'A light glows nearby. Go and see who it is.',
+    },
   ],
   mapCols: 30,
   mapRows: 24,
