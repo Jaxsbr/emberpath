@@ -195,26 +195,112 @@ const fogMarshTileMap = buildFogMarshMap();
 // dry path (col 14 rows 10-21, cols 15-24 row 10) and the impassable reed
 // perimeter; dry-reed/mushroom are passable so they never block movement.
 const fogMarshReedTufts: ObjectInstance[] = [
-  // Re-grouped (Slice 6, 2026-06-14, directive #344) — the tufts no longer
-  // scatter one-per-spot; they pack as passable undergrowth tight around the
-  // three west-side dead-tree clusters (see `fogMarshDeadTrees`), mixing
-  // dry-reed + mushroom so the deadwood reads as a living-and-dying thicket
-  // rather than loose dressing. All OFF the dry path (col 14 rows 10-21, cols
-  // 15-24 row 10), off the impassable reed perimeter, and off every dead-tree
-  // trunk-base cell — dry-reed/mushroom are passable so they never block.
-  // North cluster (rows 2-6)
-  { kind: 'dry-reed', col: 4, row: 6 },
-  { kind: 'mushroom', col: 8, row: 6 },
-  { kind: 'dry-reed', col: 11, row: 4 },
-  // Mid cluster (rows 9-13)
-  { kind: 'dry-reed', col: 4, row: 13 },
+  // Sense-of-place rework (G4-B, 2026-06-15, FB-1 fail B / Jaco #482). The
+  // Slice-6 pass left the deadwood reading as evenly-spaced trees on a clean
+  // grey floor — a dev grid, not a choked dying marsh. The tufts now pack
+  // DENSELY around and between the (tightened) west-side dead-tree stands so
+  // each stand reads as an organic thicket of deadwood + undergrowth, with the
+  // gaps between stands kept thin (deliberate negative space). Mixed dry-reed +
+  // mushroom. All passable — they never block — and all OFF the dry path (col
+  // 14 rows 10-21, cols 15-24 row 10) and the impassable reed perimeter.
+  // Density raised again (G4-B v2, 2026-06-15) — the cold art-review found the
+  // thin reed/mushroom sprites read as faint specks on bare floor. The tufts now
+  // pack nearly every floor cell inside each knot (alternating reed/mushroom),
+  // so the ground reads as a choked, overgrown marsh rather than clean stone.
+  // ── North knot (rows 2-7) ──
+  { kind: 'dry-reed', col: 2, row: 4 },
+  { kind: 'mushroom', col: 5, row: 3 },
+  { kind: 'dry-reed', col: 6, row: 4 },
+  { kind: 'mushroom', col: 7, row: 3 },
+  { kind: 'dry-reed', col: 3, row: 6 },
+  { kind: 'mushroom', col: 5, row: 6 },
+  { kind: 'dry-reed', col: 8, row: 5 },
+  { kind: 'mushroom', col: 2, row: 6 },
+  { kind: 'dry-reed', col: 8, row: 3 },
+  // ── Mid knot (rows 9-13) ──
+  { kind: 'mushroom', col: 3, row: 11 },
+  { kind: 'dry-reed', col: 5, row: 12 },
+  { kind: 'mushroom', col: 7, row: 11 },
+  { kind: 'dry-reed', col: 4, row: 10 },
+  { kind: 'mushroom', col: 6, row: 10 },
+  { kind: 'dry-reed', col: 8, row: 11 },
+  { kind: 'mushroom', col: 2, row: 12 },
+  { kind: 'dry-reed', col: 9, row: 12 },
+  { kind: 'mushroom', col: 4, row: 13 },
+  // ── South knot (rows 16-21) ──
+  { kind: 'dry-reed', col: 2, row: 18 },
+  { kind: 'mushroom', col: 5, row: 17 },
+  { kind: 'dry-reed', col: 6, row: 18 },
+  { kind: 'mushroom', col: 7, row: 19 },
+  { kind: 'dry-reed', col: 3, row: 20 },
+  { kind: 'mushroom', col: 5, row: 21 },
+  { kind: 'dry-reed', col: 8, row: 18 },
+  { kind: 'mushroom', col: 2, row: 20 },
+  { kind: 'dry-reed', col: 9, row: 19 },
+  // ── Thin bridging undergrowth in the gaps (rows 8, 14-15) — keeps the marsh
+  // continuous without filling the negative space that separates the knots.
+  { kind: 'dry-reed', col: 4, row: 8 },
   { kind: 'mushroom', col: 7, row: 8 },
-  { kind: 'dry-reed', col: 8, row: 13 },
-  { kind: 'mushroom', col: 5, row: 15 },
-  // South cluster (rows 16-20)
-  { kind: 'dry-reed', col: 4, row: 20 },
-  { kind: 'mushroom', col: 8, row: 20 },
-  { kind: 'dry-reed', col: 11, row: 17 },
+  { kind: 'dry-reed', col: 3, row: 15 },
+  { kind: 'mushroom', col: 8, row: 14 },
+];
+
+// Marsh-stone clusters at the deadwood bases (G4-B v2, 2026-06-15). The guide
+// puts rocks at cluster bases; here they also add bigger, higher-contrast
+// silhouette mass than the small reed/mushroom tufts, so the choked ground reads
+// at game zoom. Impassable, but they sit in the WEST scenery half (cols 2-9) —
+// the player's route is the east dry path, with a passable cols 10-13 buffer —
+// so they read as "the marsh is too thick this way," never blocking progression.
+const fogMarshGroundStones: ObjectInstance[] = [
+  { kind: 'marsh-stone', col: 6, row: 5 },
+  { kind: 'marsh-stone', col: 3, row: 3 },
+  { kind: 'marsh-stone', col: 6, row: 11 },
+  { kind: 'marsh-stone', col: 3, row: 13 },
+  { kind: 'marsh-stone', col: 6, row: 20 },
+  { kind: 'marsh-stone', col: 2, row: 17 },
+];
+
+// East-half lived-in pass (G4-B v3, 2026-06-15). The cold art-review found the
+// WEST stands good but the EAST half a dev-grid: a "uniform grey room" of bare
+// floor, a ruler-straight perimeter reed line, and a tidy ruin box. The route
+// itself (col 14 path, the row-10 boardwalk to the Hermit, the south mouth) must
+// stay OPEN — it is the deliberate "way through" negative space the cold player
+// reads. So this clutter lands only in the OFF-ROUTE south-east quadrant (cols
+// 17-27, rows 11-21) and at the ruin's south base, applying the same west-half
+// vocabulary (clustered reed/mushroom + tumbled marsh-stones in irregular bunches
+// with gaps) so the eye stops reading a bare floor + lone reed wall. Around the
+// ruin, tumbled stones + reeds creeping the base make it read as a FALLEN ruin the
+// marsh is reclaiming, not a freshly-built box. All marsh-stones are impassable
+// but sit off every route cell, the door approach (col 24 rows 10-11), the
+// boardwalk (row 10 cols 15-24) and the perimeter — they never wall progression.
+const fogMarshEastClutter: ObjectInstance[] = [
+  // SE marsh patch — bunch 1 (cols 18-20, rows 13-15)
+  { kind: 'dry-reed', col: 18, row: 13 },
+  { kind: 'marsh-stone', col: 20, row: 13 },
+  { kind: 'mushroom', col: 19, row: 14 },
+  { kind: 'dry-reed', col: 18, row: 15 },
+  { kind: 'mushroom', col: 20, row: 15 },
+  // SE marsh patch — bunch 2 (cols 22-25, rows 17-19)
+  { kind: 'marsh-stone', col: 23, row: 17 },
+  { kind: 'dry-reed', col: 25, row: 17 },
+  { kind: 'mushroom', col: 22, row: 18 },
+  { kind: 'dry-reed', col: 24, row: 18 },
+  { kind: 'marsh-stone', col: 24, row: 19 },
+  // SE marsh patch — bunch 3 (cols 17-18, rows 18-20)
+  { kind: 'mushroom', col: 17, row: 18 },
+  { kind: 'dry-reed', col: 18, row: 19 },
+  { kind: 'marsh-stone', col: 17, row: 20 },
+  // Scattered loose stones — ground variation breaking the bare-floor read
+  { kind: 'marsh-stone', col: 26, row: 14 },
+  { kind: 'marsh-stone', col: 21, row: 20 },
+  { kind: 'marsh-stone', col: 27, row: 17 },
+  // Ruin south base — tumbled rubble + marsh creep (fallen, reclaimed read)
+  { kind: 'marsh-stone', col: 21, row: 11 },
+  { kind: 'marsh-stone', col: 22, row: 11 },
+  { kind: 'marsh-stone', col: 26, row: 11 },
+  { kind: 'marsh-stone', col: 25, row: 12 },
+  { kind: 'dry-reed', col: 23, row: 11 },
+  { kind: 'mushroom', col: 26, row: 12 },
 ];
 
 // Dead-tree clusters (Slice 6, 2026-06-14, directives #344 + #346) — the marsh
@@ -226,20 +312,35 @@ const fogMarshReedTufts: ObjectInstance[] = [
 // player still reads as "the way through." Each tree is a `tall` 4×4 object
 // anchored top-left; it Y-sorts on its trunk base and collides ONLY at
 // (col+1, row+3), so the bare branch spread overhangs walkable ground and the
-// trunks never wall off a route. Clusters of 3 with gaps at rows 7-8 / 14-15.
+// trunks never wall off a route.
+//
+// Sense-of-place rework (G4-B, 2026-06-15, FB-1 fail B / Jaco #482): the stands
+// were tightened from evenly-spaced singles into irregular groups whose canopies
+// OVERLAP — anchors ~2 cols apart so the bare crowns knit into one mass per stand
+// instead of reading as a row of separate trees on a clean floor. North + south
+// stands grew to 4 (irregular), mid stays 3. Trunk collision cells stay distinct
+// and all west of the dry path (col 14) — the deadwood is scenery, never a route.
+// Gaps at rows 8 and 14-15 keep the three stands legibly separate (negative space).
 const fogMarshDeadTrees: ObjectInstance[] = [
-  // North cluster — trunks (3,5) (7,5) (10,6)
+  // Tightened to overlapping knots (G4-B v2, 2026-06-15 — cold art-review asked
+  // for genuine canopy overlap; the thin bare-branch silhouette needs anchors
+  // 1-2 cols apart to knit). Each stand is now a clustered knot whose crowns
+  // touch into one deadwood mass rather than a spaced row. Trunk cells stay
+  // distinct and all west of the col-11 buffer / col-14 path.
+  // North knot (4) — trunks (3,5) (5,5) (4,7) (7,6)
   { kind: 'dead-tree', col: 2, row: 2 },
-  { kind: 'dead-tree', col: 6, row: 2 },
-  { kind: 'dead-tree', col: 9, row: 3 },
-  // Mid cluster — trunks (3,12) (6,12) (10,13)
-  { kind: 'dead-tree', col: 2, row: 9 },
-  { kind: 'dead-tree', col: 5, row: 9 },
-  { kind: 'dead-tree', col: 9, row: 10 },
-  // South cluster — trunks (3,19) (7,20) (10,19)
+  { kind: 'dead-tree', col: 4, row: 2 },
+  { kind: 'dead-tree', col: 3, row: 4 },
+  { kind: 'dead-tree', col: 6, row: 3 },
+  // Mid knot (3) — trunks (4,12) (6,13) (8,12)
+  { kind: 'dead-tree', col: 3, row: 9 },
+  { kind: 'dead-tree', col: 5, row: 10 },
+  { kind: 'dead-tree', col: 7, row: 9 },
+  // South knot (4) — trunks (3,19) (5,19) (4,21) (8,20)
   { kind: 'dead-tree', col: 2, row: 16 },
-  { kind: 'dead-tree', col: 6, row: 17 },
-  { kind: 'dead-tree', col: 9, row: 16 },
+  { kind: 'dead-tree', col: 4, row: 16 },
+  { kind: 'dead-tree', col: 3, row: 18 },
+  { kind: 'dead-tree', col: 7, row: 17 },
 ];
 
 // Marsh-trap closure (US-98) — terrain-flip pathway. The 8 vertices spanning
@@ -314,7 +415,9 @@ export const fogMarsh: AreaDefinition = {
   objects: [
     ...deriveObjectsFromTileMap(fogMarshTileMap, 'marsh-reeds'),
     ...fogMarshDeadTrees,
+    ...fogMarshGroundStones,
     ...fogMarshReedTufts,
+    ...fogMarshEastClutter,
   ],
   conditionalTerrain: [
     {
