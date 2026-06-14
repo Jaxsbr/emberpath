@@ -61,6 +61,19 @@ const BASE_PULSE_SPEED = 1.3;            // rad/s gentle fire flicker
 // independent of the (deferred) real Briar tileset.
 const GLOW_ONLY_SIZE = 2.6 * TILE_SIZE;  // world px
 
+// Off-screen edge homing (C16, Issue #62). The opening objective is "Find the
+// smoke" but the smoke beacon sits far north at the dock — from the spawn it
+// projects OFF-SCREEN, so a cold first-time player told to find the smoke has
+// nothing in view to walk toward (playtester complaint #1, "don't know where to
+// go"). When the beacon's projected spot falls outside the viewport, the warm
+// glow is clamped to the nearest screen edge as a homing light — always a warm
+// point in the grey to walk toward — and the smoke plume is suppressed (its
+// puffs would streak nonsensically off the edge). On-screen, nothing changes:
+// the glow snaps back to the real world spot and the plume rises as before, so
+// the cue resolves into the literal smoke column as the player nears the dock.
+const EDGE_PAD = 30;                      // screen px inset from the viewport edge
+const EDGE_GLOW_SIZE = 1.5 * TILE_SIZE;   // screen px (UI-space, not zoom-scaled)
+
 interface Puff {
   img: Phaser.GameObjects.Image;
   prog: number;    // 0 (base) .. 1 (top) — fraction of the rise completed
@@ -181,6 +194,14 @@ export class SmokeBeaconSystem {
     const baseSX = (this.baseX - viewCx) * zoom + halfW;
     const baseSY = (this.baseY - viewCy) * zoom + halfH;
 
+    // Off-screen edge homing: if the beacon's spot projects outside the viewport,
+    // the glow rides the nearest edge (clamped, padded) and the plume is hidden.
+    const w = cam.width;
+    const h = cam.height;
+    const offscreen = baseSX < 0 || baseSX > w || baseSY < 0 || baseSY > h;
+    const edgeSX = Math.min(Math.max(baseSX, EDGE_PAD), w - EDGE_PAD);
+    const edgeSY = Math.min(Math.max(baseSY, EDGE_PAD), h - EDGE_PAD);
+
     const t = timeMs * 0.001;
     const dt = deltaMs * 0.001;
     const step = (RISE_SPEED / RISE_HEIGHT) * dt;
@@ -201,14 +222,24 @@ export class SmokeBeaconSystem {
       const size = (PUFF_SIZE_MIN + (PUFF_SIZE_MAX - PUFF_SIZE_MIN) * prog) * zoom;
       p.img.setPosition(sx, sy);
       p.img.setDisplaySize(size, size);
-      p.img.setAlpha(alpha);
+      // Suppress the plume entirely while the beacon is off-screen — only the
+      // edge-clamped homing glow should show in that case.
+      p.img.setAlpha(offscreen ? 0 : alpha);
     }
 
     if (this.glow) {
-      const glowSize = (this.plume ? BASE_GLOW_SIZE : GLOW_ONLY_SIZE) * zoom;
-      this.glow.setPosition(baseSX, baseSY);
-      this.glow.setDisplaySize(glowSize, glowSize);
-      this.glow.setAlpha(BASE_GLOW_ALPHA * (0.78 + 0.22 * Math.sin(t * BASE_PULSE_SPEED)));
+      const pulse = BASE_GLOW_ALPHA * (0.78 + 0.22 * Math.sin(t * BASE_PULSE_SPEED));
+      if (offscreen) {
+        // Edge homing light: fixed UI-space size, parked at the clamped edge.
+        this.glow.setPosition(edgeSX, edgeSY);
+        this.glow.setDisplaySize(EDGE_GLOW_SIZE, EDGE_GLOW_SIZE);
+        this.glow.setAlpha(pulse);
+      } else {
+        const glowSize = (this.plume ? BASE_GLOW_SIZE : GLOW_ONLY_SIZE) * zoom;
+        this.glow.setPosition(baseSX, baseSY);
+        this.glow.setDisplaySize(glowSize, glowSize);
+        this.glow.setAlpha(pulse);
+      }
     }
   }
 
