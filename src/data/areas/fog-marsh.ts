@@ -7,6 +7,7 @@ import {
   deriveTerrainFromTileMap,
   deriveObjectsFromTileMap,
 } from './types';
+import { ObjectInstance } from '../../maps/objects';
 
 const F = TILE_FLOOR;
 const W = TILE_WALL;
@@ -170,20 +171,11 @@ const fogMarshDecorations: DecorationDefinition[] = [
   // role here).
   { col: 24, row: 9, spriteFrame: FRAME.DOOR },
 
-  // Reeds / vegetation in the wet interior — eight scattered entries placed
-  // strictly OFF the dry path (col 14 rows 10-21 and cols 15-24 row 10 are
-  // the path; nothing here lands on those cells). Two-frame variant keeps
-  // the marsh from looking stamped.
-  { col: 5, row: 4, spriteFrame: FRAME.REED_A },
-  { col: 9, row: 6, spriteFrame: FRAME.REED_B },
-  { col: 17, row: 5, spriteFrame: FRAME.REED_A },
-  { col: 5, row: 12, spriteFrame: FRAME.REED_B },
-  { col: 9, row: 14, spriteFrame: FRAME.REED_A },
-  { col: 19, row: 13, spriteFrame: FRAME.REED_B },
-  { col: 5, row: 18, spriteFrame: FRAME.REED_A },
-  { col: 19, row: 19, spriteFrame: FRAME.REED_B },
-  { col: 22, row: 16, spriteFrame: FRAME.REED_A },
-  { col: 7, row: 20, spriteFrame: FRAME.REED_B },
+  // (C12b) Interior reeds moved off the tiny-dungeon atlas: the old log-pile
+  // "reed" frames (92/93) read as wooden crates in the grey-out. Real passable
+  // marsh tufts (dry-reed / mushroom PixelLab objects) now carry the interior
+  // vegetation — see `fogMarshReedTufts` in the `objects` array above. Nothing
+  // left here; the positions are preserved there, all strictly OFF the dry path.
 
   // (US-98) — South-exit closure decorations removed. The terrain-flip
   // pathway (`conditionalTerrain` block on this AreaDefinition) replaces
@@ -196,6 +188,24 @@ const fogMarshDecorations: DecorationDefinition[] = [
 
 // Stage-1 migration source — see ashen-isle.ts for the migration note.
 const fogMarshTileMap = buildFogMarshMap();
+
+// (C12b, 2026-06-14) Interior marsh life — passable PixelLab tufts scattered in
+// the wet ground, replacing the old tiny-dungeon log-pile "reed" decorations
+// that read as crates. Same positions as the retired decorations, all OFF the
+// dry path (col 14 rows 10-21, cols 15-24 row 10) and the impassable reed
+// perimeter; dry-reed/mushroom are passable so they never block movement.
+const fogMarshReedTufts: ObjectInstance[] = [
+  { kind: 'dry-reed', col: 5, row: 4 },
+  { kind: 'dry-reed', col: 9, row: 6 },
+  { kind: 'mushroom', col: 17, row: 5 },
+  { kind: 'dry-reed', col: 5, row: 12 },
+  { kind: 'dry-reed', col: 9, row: 14 },
+  { kind: 'dry-reed', col: 19, row: 13 },
+  { kind: 'dry-reed', col: 5, row: 18 },
+  { kind: 'dry-reed', col: 19, row: 19 },
+  { kind: 'mushroom', col: 22, row: 16 },
+  { kind: 'dry-reed', col: 7, row: 20 },
+];
 
 // Marsh-trap closure (US-98) — terrain-flip pathway. The 8 vertices spanning
 // row 22 cols 13-16 + row 23 cols 13-16 flip from `path` (default state) to
@@ -247,7 +257,15 @@ export const fogMarsh: AreaDefinition = {
   decorationsTileset: 'tiny-dungeon',
   map: fogMarshTileMap,
   terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
-  objects: deriveObjectsFromTileMap(fogMarshTileMap, 'wall-tomb'),
+  // C12b (2026-06-14, Issue #67): the impassable boundary is now a reed/cattail
+  // bank, not a stone-block crypt wall — same cells, same collision, marsh
+  // vocabulary. Plus a scatter of passable dry-reed tufts + a mushroom for
+  // interior marsh life (these replace the old tiny-dungeon log-pile "reed"
+  // DECORATIONS that read as crates — see fogMarshDecorations).
+  objects: [
+    ...deriveObjectsFromTileMap(fogMarshTileMap, 'marsh-reeds'),
+    ...fogMarshReedTufts,
+  ],
   conditionalTerrain: [
     {
       condition: 'marsh_trapped == true',
