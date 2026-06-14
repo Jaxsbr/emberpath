@@ -11,6 +11,7 @@ import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
 import { moveWithCollision } from '../systems/movement';
 import { NpcInteractionSystem } from '../systems/npcInteraction';
+import { InscribedStoneSystem } from '../systems/inscribedStone';
 import { DialogueSystem } from '../systems/dialogue';
 import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
@@ -144,6 +145,7 @@ export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
+  private inscribedStone!: InscribedStoneSystem;
   private dialogueSystem!: DialogueSystem;
   private thoughtBubble!: ThoughtBubbleSystem;
   private objectiveBanner!: ObjectiveBannerSystem;
@@ -466,6 +468,7 @@ export class GameScene extends Phaser.Scene {
       this.area.mapCols,
       this.area.mapRows,
       this.lightingSystem,
+      this.area.inscribedStones,
     );
     // Fade in when entering from an area transition OR a Continue resume
     if (data?.entryPoint || data?.resumePosition) {
@@ -484,6 +487,16 @@ export class GameScene extends Phaser.Scene {
     // US-101: now that the bubble exists, wire it into the warmth system so
     // drain/quiet zone entry transitions can queue doubt/narration lines.
     this.emberWarmthSystem.setThoughtBubble(this.thoughtBubble);
+    // the-word phase (US-W3): the "remember" verb at inscribed stones. Needs
+    // both lighting (to bloom a remembered stone's warm pool) and the thought
+    // bubble (to read the lines / show the pre-Word "cannot read this yet"
+    // thought), so it's constructed here after both exist. Empty list = no-op.
+    this.inscribedStone = new InscribedStoneSystem(
+      this,
+      this.area.inscribedStones ?? [],
+      this.lightingSystem,
+      this.thoughtBubble,
+    );
     // C2-b: standing "what to do next" cue. Screen-fixed banner showing the
     // area's one concrete goal so a first-time player is never lost. On a fresh
     // start the intro StoryScene overlays GameScene, so the banner is hidden
@@ -939,6 +952,7 @@ export class GameScene extends Phaser.Scene {
     // keeps its own call.)
     const npcLivePositions = this.npcBehavior.getLivePositions();
     this.npcInteraction.update(this.player.x, this.player.y);
+    this.inscribedStone.update(this.player.x, this.player.y);
     this.signpostWayfinding.update(this.player.x, this.player.y);
     this.thoughtBubble.update(this.player.x, this.player.y);
     // US-101: warmth update fires every walk-frame. delta is in ms; convert

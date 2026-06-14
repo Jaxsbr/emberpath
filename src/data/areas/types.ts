@@ -313,6 +313,13 @@ export interface AreaDefinition {
   // play first-entry narration. Briar Wilds defines ≥2 (one carries the
   // closing-reflection beat).
   quietZones?: QuietZoneDefinition[];
+  // Inscribed stones (the-word phase, US-W3/US-W4) — carved stones that read as
+  // unreadable before Pip receives the Word and become readable after. Once
+  // *remembered* (`remembered_<id>` flag set), a stone steadies the ember: while
+  // the player stands within its radius, drain zones no longer pull warmth down
+  // (the Word stabilises the ember in the dry places). Opt-in; omitting is a
+  // no-op.
+  inscribedStones?: InscribedStoneDefinition[];
   // Retained for editor's map-overview mode — the game scene now renders via tileset.
   visual: { floorColor: number; wallColor: number };
 }
@@ -352,6 +359,24 @@ export interface QuietZoneDefinition {
   height: number;
   restoreMultiplier?: number;
   narration?: ThoughtSequence;
+}
+
+// Inscribed stone (the-word phase, US-W3/US-W4) — a carved stone at a tile
+// coordinate. Before Pip receives the Word (`has_word` flag), tapping it shows
+// `preWordThought` (she can't read the marks yet). After the Word, tapping it
+// shows `rememberedLines` in sequence and sets `remembered_<id>` — the act of
+// *remembering* a gift she was given. Once remembered, the stone steadies the
+// ember within `steadyRadius` pixels of its tile centre: drain zones overlapping
+// that radius stop pulling warmth down. `steadyRadius` defaults to 96px (3 tiles)
+// if omitted. All player-facing text is young-child level + allegorical (the
+// Word / Bible / Jesus are never named in-game).
+export interface InscribedStoneDefinition {
+  id: string;
+  col: number;
+  row: number;
+  steadyRadius?: number;
+  preWordThought: string;
+  rememberedLines: string[];
 }
 
 // ───── Stage-1 migration helpers ─────

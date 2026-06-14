@@ -16,6 +16,7 @@ import {
   deriveObjectsFromTileMap,
   DrainZoneDefinition,
   QuietZoneDefinition,
+  InscribedStoneDefinition,
   TriggerDefinition,
   DecorationDefinition,
 } from './types';
@@ -93,6 +94,30 @@ const quietZones: QuietZoneDefinition[] = [
         'A long stone bridge is ahead. Its stones are old and cracked, like something hurt them long ago...',
       ],
     },
+  },
+];
+
+// ───── Inscribed stones (the-word phase, US-W3/US-W4) ─────
+// One carved stone sits inside drain-1 (cols 8–11 / rows 8–10). Before Pip
+// receives the Word she can't read the marks; once she has it, remembering the
+// stone steadies her ember so drain-1 no longer pulls her warmth down — the
+// literal "the Word stabilises the ember in the dry places."
+//
+// ⟨DRAFT — pending Jaco's word-level approval, the-word decision #2⟩
+// All lines are placeholder young-child / allegorical text. Do NOT ship as-is;
+// these need Jaco's sign-off (the PR carrying this stays OPEN for that).
+const inscribedStones: InscribedStoneDefinition[] = [
+  {
+    id: 'briar-stone-1',
+    col: 10,
+    row: 9,
+    steadyRadius: 96,
+    preWordThought: 'There are marks carved on this stone. Pip cannot read them yet.',
+    rememberedLines: [
+      'Pip remembers the words she was given.',
+      'I am not alone. A light goes with me, even in the thorns.',
+      'Her little ember holds steady and warm.',
+    ],
   },
 ];
 
@@ -226,6 +251,11 @@ const briarObjects: import('../../maps/objects').ObjectInstance[] = [
   { kind: 'twisted-root', col: 11, row: 10 },
   { kind: 'twisted-root', col: 19, row: 17 }, { kind: 'twisted-root', col: 20, row: 18 },
   { kind: 'twisted-root', col: 18, row: 16 }, { kind: 'twisted-root', col: 21, row: 18 },
+  // ── the-word phase: the inscribed stone's SPRITE + collision (the "remember"
+  //    verb + steady radius live in `inscribedStones` below — keep this cell in
+  //    sync with briar-stone-1's col/row). A plain carved stone block so the
+  //    player notices a place to stop, inside drain-1.
+  { kind: 'cliff-stone', col: 10, row: 9 },
 ];
 
 export const briarWilds: AreaDefinition = {
@@ -267,6 +297,7 @@ export const briarWilds: AreaDefinition = {
   storyScenes: {},
   drainZones,
   quietZones,
+  inscribedStones,
   // Glow-only wayfinding beacon (C13, Issue #59). Briar read as a void with the
   // banner saying "keep going east" but nothing visible to aim at. This warm glow
   // sits on the far-east goal clearing (quiet-closing / the completion trigger at
