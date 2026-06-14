@@ -71,8 +71,19 @@ const GLOW_ONLY_SIZE = 2.6 * TILE_SIZE;  // world px
 // puffs would streak nonsensically off the edge). On-screen, nothing changes:
 // the glow snaps back to the real world spot and the plume rises as before, so
 // the cue resolves into the literal smoke column as the player nears the dock.
-const EDGE_PAD = 30;                      // screen px inset from the viewport edge
-const EDGE_GLOW_SIZE = 1.5 * TILE_SIZE;   // screen px (UI-space, not zoom-scaled)
+// Edge homing must be UNMISTAKABLE. A cold-judge playtest (session 25) found the
+// first edge beacon too easy to miss: at spawn the player's OWN warm light pool
+// dominates the eye, so a small faint corner glow read as "a tiny orange dot" and
+// the child stayed lost for the critical first seconds. So the edge beacon is now
+// large, bright, and carries a warm directional ARROW pointing off-screen toward
+// the goal — "the light you want is that way, go." All UI-space (not zoom-scaled)
+// so it reads at a constant, deliberate size regardless of camera zoom.
+const EDGE_PAD = 40;                       // screen px inset from the viewport edge
+const EDGE_GLOW_SIZE = 2.3 * TILE_SIZE;    // screen px (UI-space, not zoom-scaled)
+const EDGE_GLOW_ALPHA = 0.95;              // brighter than the on-screen base glow
+const EDGE_ARROW_SIZE = 1.1 * TILE_SIZE;   // screen px (chevron long axis)
+const ARROW_TEX_KEY = 'smoke-edge-arrow';
+const ARROW_TEX_SIZE = 32;
 
 interface Puff {
   img: Phaser.GameObjects.Image;
@@ -88,6 +99,9 @@ export class SmokeBeaconSystem {
   private baseY = 0;
   private puffs: Puff[] = [];
   private glow: Phaser.GameObjects.Image | null = null;
+  // Directional chevron shown only while the beacon is off-screen — points from
+  // the clamped edge toward the true (off-screen) goal so "go this way" is explicit.
+  private arrow: Phaser.GameObjects.Image | null = null;
   private active = false;
   // When false the smoke plume is omitted and only the warm glow renders, as a
   // standalone "walk toward the light" landmark (glow-only mode, C13).
@@ -145,6 +159,22 @@ export class SmokeBeaconSystem {
         canvas.refresh();
       }
     }
+    // Warm chevron for the off-screen edge homing arrow. Drawn pointing +x (right)
+    // at rotation 0; the update loop rotates it to the live goal direction.
+    if (!this.scene.textures.exists(ARROW_TEX_KEY)) {
+      const canvas = this.scene.textures.createCanvas(ARROW_TEX_KEY, ARROW_TEX_SIZE, ARROW_TEX_SIZE);
+      if (canvas) {
+        const ctx = canvas.getContext();
+        ctx.fillStyle = 'rgba(255,196,116,1)';
+        ctx.beginPath();
+        ctx.moveTo(ARROW_TEX_SIZE - 3, ARROW_TEX_SIZE / 2); // apex (right)
+        ctx.lineTo(7, 5);
+        ctx.lineTo(7, ARROW_TEX_SIZE - 5);
+        ctx.closePath();
+        ctx.fill();
+        canvas.refresh();
+      }
+    }
   }
 
   private build(): void {
@@ -158,6 +188,16 @@ export class SmokeBeaconSystem {
     // desaturated copy underneath). Absent from the UI ignore list, so the UI
     // camera renders it — same rule the NPC presence glow follows.
     this.scene.cameras.main.ignore(this.glow);
+
+    // Edge homing arrow — created in both plume and glow-only modes (every beacon
+    // can fall off-screen). Hidden until the beacon projects outside the viewport.
+    this.arrow = this.scene.add.image(this.baseX, this.baseY, ARROW_TEX_KEY);
+    this.arrow.setOrigin(0.5, 0.5);
+    this.arrow.setBlendMode(Phaser.BlendModes.ADD);
+    this.arrow.setDepth(SMOKE_DEPTH + 1); // above its glow
+    this.arrow.setAlpha(0);
+    this.arrow.setVisible(false);
+    this.scene.cameras.main.ignore(this.arrow);
 
     // Glow-only landmark: no smoke column, so the rising-puff pool is skipped.
     if (!this.plume) return;
@@ -228,17 +268,35 @@ export class SmokeBeaconSystem {
     }
 
     if (this.glow) {
-      const pulse = BASE_GLOW_ALPHA * (0.78 + 0.22 * Math.sin(t * BASE_PULSE_SPEED));
       if (offscreen) {
-        // Edge homing light: fixed UI-space size, parked at the clamped edge.
+        // Edge homing light: large + bright, parked at the clamped edge so it wins
+        // the eye against the player's own glow pool.
+        const flick = 0.85 + 0.15 * Math.sin(t * BASE_PULSE_SPEED);
         this.glow.setPosition(edgeSX, edgeSY);
         this.glow.setDisplaySize(EDGE_GLOW_SIZE, EDGE_GLOW_SIZE);
-        this.glow.setAlpha(pulse);
+        this.glow.setAlpha(EDGE_GLOW_ALPHA * flick);
       } else {
         const glowSize = (this.plume ? BASE_GLOW_SIZE : GLOW_ONLY_SIZE) * zoom;
         this.glow.setPosition(baseSX, baseSY);
         this.glow.setDisplaySize(glowSize, glowSize);
-        this.glow.setAlpha(pulse);
+        this.glow.setAlpha(BASE_GLOW_ALPHA * (0.78 + 0.22 * Math.sin(t * BASE_PULSE_SPEED)));
+      }
+    }
+
+    if (this.arrow) {
+      if (offscreen) {
+        // Point the chevron from the clamped edge toward the true (off-screen)
+        // beacon spot. The texture's apex is drawn pointing +x; the +π term is the
+        // empirically-verified offset (cold-judge session 25, arrow-crop) that
+        // makes the apex face the goal rather than back into the screen.
+        const ang = Math.atan2(baseSY - halfH, baseSX - halfW) + Math.PI;
+        this.arrow.setPosition(edgeSX, edgeSY);
+        this.arrow.setRotation(ang);
+        this.arrow.setDisplaySize(EDGE_ARROW_SIZE, EDGE_ARROW_SIZE);
+        this.arrow.setAlpha(EDGE_GLOW_ALPHA * (0.9 + 0.1 * Math.sin(t * BASE_PULSE_SPEED)));
+        this.arrow.setVisible(true);
+      } else if (this.arrow.visible) {
+        this.arrow.setVisible(false);
       }
     }
   }
@@ -248,6 +306,8 @@ export class SmokeBeaconSystem {
     this.puffs = [];
     this.glow?.destroy();
     this.glow = null;
+    this.arrow?.destroy();
+    this.arrow = null;
     this.active = false;
   }
 }
