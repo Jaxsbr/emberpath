@@ -410,11 +410,37 @@ const ashenDressing: OInst[] = [
   { kind: 'flower', col: 27, row: 11 },
   { kind: 'flower', col: 29, row: 12 },
   { kind: 'flower', col: 7, row: 34 },
-  // Bushes flanking the cottage doorways (inside the yards).
-  { kind: 'bush', col: 7, row: 14 },
-  { kind: 'bush', col: 13, row: 14 },
+  // Bushes flanking the Old Man's doorway (the player's yard is dressed as a
+  // full tended garden in ashenHomeGarden below).
   { kind: 'bush', col: 38, row: 29 },
   { kind: 'bush', col: 42, row: 29 },
+];
+
+// ───── Player's cottage garden (Jaco #482, 2026-06-15) ─────
+// The opening homestead read as a nice house marooned in a uniform field with a
+// thin, hard-to-read fence — "dev-tutorial vibes." This dresses the fenced yard
+// (rows 12-18, cols 6-13, around the 4×4 cottage and the central walkway) as a
+// lived-in garden: flower & herb beds along both inner fence lines, bushes
+// flanking the door, and a soft border framing the walkway. All passable
+// (flower/bush/grass-tuft) and kept entirely OFF the door cell (10,15) and the
+// walkway (cols 9-10 rows 16-18) so the player always walks straight in.
+const ashenHomeGarden: OInst[] = [
+  // West bed — along the inner fence (col 5), flanking the door's west side.
+  { kind: 'flower', col: 6, row: 12 }, { kind: 'flower', col: 7, row: 12 },
+  { kind: 'bush', col: 6, row: 13 }, { kind: 'flower', col: 7, row: 13 },
+  { kind: 'bush', col: 7, row: 14 },
+  { kind: 'flower', col: 6, row: 15 }, { kind: 'bush', col: 6, row: 16 },
+  { kind: 'flower', col: 7, row: 16 }, { kind: 'bush', col: 6, row: 17 },
+  { kind: 'flower', col: 6, row: 18 }, { kind: 'grass-tuft', col: 7, row: 18 },
+  // East bed — along the inner fence (col 14), flanking the door's east side.
+  { kind: 'bush', col: 13, row: 12 }, { kind: 'flower', col: 13, row: 13 },
+  { kind: 'bush', col: 13, row: 14 },
+  { kind: 'flower', col: 13, row: 15 }, { kind: 'bush', col: 13, row: 16 },
+  { kind: 'flower', col: 13, row: 17 }, { kind: 'grass-tuft', col: 13, row: 18 },
+  // South border — frames the walkway as it leaves the door.
+  { kind: 'grass-tuft', col: 8, row: 17 }, { kind: 'flower', col: 8, row: 18 },
+  { kind: 'grass-tuft', col: 11, row: 17 }, { kind: 'flower', col: 11, row: 18 },
+  { kind: 'bush', col: 12, row: 18 },
 ];
 
 // ───── East-edge bramble objects (US-100) ─────
@@ -524,6 +550,14 @@ function buildAshenTerrain(): TerrainId[][] {
   }
   for (let c = 9; c <= 23; c++) paintCellSand(c, 20);
   for (let c = 26; c <= 41; c++) paintCellSand(c, 22);
+  // Cottage walkway (Jaco #482 — the home read as "marooned"). A short tended
+  // path from the door (10,15) down through the yard to the gate (9,19), two
+  // cells wide where the yard allows, so the homestead connects to the west
+  // branch lane (row 20) instead of floating on bare grass. All cells are FLOOR
+  // inside the fenced yard; (9,19) is the gate.
+  for (const [c, r] of [[9, 16], [10, 16], [9, 17], [10, 17], [9, 18], [10, 18], [9, 19]] as [number, number][]) {
+    paintCellSand(c, r);
+  }
   return t;
 }
 
@@ -547,6 +581,7 @@ export const ashenIsle: AreaDefinition = {
     ...ashenFences,
     ...ashenScenery,
     ...ashenDressing,
+    ...ashenHomeGarden,
     ...ashenGroves,
     ...ashenUndergrowth,
     ...ashenDockProps,
