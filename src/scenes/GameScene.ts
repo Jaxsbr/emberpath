@@ -57,6 +57,15 @@ const EMBER_OFFSET_Y = -28;
 const EMBER_GLOW_KEY = 'player-ember-glow';
 const EMBER_GLOW_TEX_SIZE = 64;
 const EMBER_DEPTH = 5.5;
+// Y-sort entity band (#346). The player, NPCs, and `tall` objects (trees) all
+// render in [ENTITY_DEPTH_BASE, ENTITY_DEPTH_BASE + ENTITY_DEPTH_SPAN), keyed
+// on the world-y of their ground contact: an entity lower on the map (larger y)
+// draws on top. This lets Pip pass behind a tree's canopy when she's above its
+// trunk and in front when below. The span stays under EMBER_DEPTH (5.5) so the
+// ember/lighting overlays always composite above every entity. Tile/decoration/
+// prop layers (0–3) and non-tall objects (2.5) are unaffected.
+const ENTITY_DEPTH_BASE = 5;
+const ENTITY_DEPTH_SPAN = 0.49;
 // NPC presence marker (C4-a, 2026-06-13). Audit F4: post the grey-out model the
 // whole world is visible, but an un-warmed NPC reads as just another grey shape —
 // nothing says "a soul to approach." A faint warm amber aura (the same soft
@@ -912,8 +921,17 @@ export class GameScene extends Phaser.Scene {
       },
     );
     this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
+    // Y-sort the player each frame on her feet (collision-box bottom) so she
+    // draws behind a tree canopy when above its trunk and in front when below
+    // (#346). Pure arithmetic, no per-frame allocation (Learning EP-01).
+    this.player.setDepth(this.ySortDepth(this.player.y + halfSize));
 
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
+    // Y-sort wandering NPCs the same way after their positions settle this
+    // frame, so a tree between Pip and an NPC layers correctly for both.
+    for (const sprite of this.npcSpritesById.values()) {
+      sprite.setDepth(this.ySortDepth(sprite.y + NPC_SIZE / 2));
+    }
     // Single post-update snapshot of NPC live positions, shared by the presence
     // auras and the lighting sync below. getLivePositions allocates a fresh Map
     // per call, so take it ONCE here. (The collision check above runs before
@@ -1371,6 +1389,16 @@ export class GameScene extends Phaser.Scene {
   // and sets `objectBlockMap.set("col,row", true)` for every visible
   // impassable object. Per-frame collision is O(1) lookup against this Map
   // (Learning EP-01: never iterate area.objects in the collision hot path).
+  // Y-sort depth (#346) for an entity or tall object, given the world-y of its
+  // ground contact (player feet, NPC feet, tree trunk base). Maps y over the
+  // map height into the entity band so a lower-on-screen thing draws on top.
+  // Pure arithmetic — safe to call per frame for the player/NPCs.
+  private ySortDepth(groundY: number): number {
+    const worldH = this.area.mapRows * TILE_SIZE;
+    const t = worldH > 0 ? Phaser.Math.Clamp(groundY / worldH, 0, 1) : 0;
+    return ENTITY_DEPTH_BASE + t * ENTITY_DEPTH_SPAN;
+  }
+
   private buildObjectCollisionMap(): void {
     const m = this.passability.objectBlockMap;
     m.clear();
@@ -1382,7 +1410,20 @@ export class GameScene extends Phaser.Scene {
         continue;
       }
       if (!def.passable) {
-        m.set(`${inst.col},${inst.row}`, true);
+        // Base-only collision (#346): a kind with collisionFootprint blocks just
+        // its declared sub-region (e.g. a tree's trunk-base cell) so the player
+        // can walk around/under the rest of the footprint. Absent = legacy
+        // single-anchor-cell behavior (every existing kind unchanged).
+        const cf = def.collisionFootprint;
+        if (cf) {
+          for (let dy = 0; dy < cf.h; dy++) {
+            for (let dx = 0; dx < cf.w; dx++) {
+              m.set(`${inst.col + cf.dx + dx},${inst.row + cf.dy + dy}`, true);
+            }
+          }
+        } else {
+          m.set(`${inst.col},${inst.row}`, true);
+        }
       }
     }
   }
@@ -1488,7 +1529,12 @@ export class GameScene extends Phaser.Scene {
       // true scale instead of a 32px miniature (Jaco dock feedback, 2026-06-13).
       const fp = def.footprint ?? { w: 1, h: 1 };
       sprite.setDisplaySize(fp.w * TILE_SIZE, fp.h * TILE_SIZE);
-      sprite.setDepth(2.5);
+      // Tall objects (#346, trees) Y-sort against the player/NPCs on their base
+      // (bottom of the footprint = trunk base), so Pip passes behind from above
+      // and in front from below. Everything else keeps the flat object depth.
+      sprite.setDepth(
+        def.tall ? this.ySortDepth((inst.row + fp.h) * TILE_SIZE) : 2.5,
+      );
       this.objectSprites.push(sprite);
       if (inst.condition) {
         sprite.setVisible(evaluateCondition(inst.condition));

@@ -281,26 +281,85 @@ const ashenFences: OInst[] = [
   ]),
 ];
 
-// Scattered scenery (trees block, bushes/flowers/signs are walkable). The
-// dock signpost plus a light scatter in the grass bands away from the paths.
+// Dock signpost only — the trees moved to clustered groves below.
 const ashenScenery: OInst[] = [
   { kind: 'sign-wood', col: 26, row: 5 },
-  // Tree groves — mixed pine + broadleaf (PixelLab, 2026-06-14) for a lived-in,
-  // varied island instead of identical 32px tokens (Jaco: "our trees are a
-  // joke"). All 2×2 (canopy overhangs as walkable shade); kept off the sand
-  // paths (cols 24-25; the row-20 west branch; the row-22 east branch) and out
-  // of the fenced yards, loosely clustered into little groves.
-  { kind: 'tree-oak', col: 5, row: 4 },
-  { kind: 'tree-pine', col: 8, row: 6 },
-  { kind: 'tree-pine', col: 3, row: 9 },
-  { kind: 'tree-oak', col: 36, row: 7 },
-  { kind: 'tree-pine', col: 44, row: 9 },
-  { kind: 'tree-oak', col: 6, row: 28 },
-  { kind: 'tree-pine', col: 12, row: 32 },
-  { kind: 'tree-oak', col: 33, row: 33 },
-  { kind: 'flower', col: 28, row: 10 },
-  { kind: 'flower', col: 6, row: 34 },
-  { kind: 'bush', col: 30, row: 33 },
+];
+
+// ───── Tree groves (Jaco directives #344 + #346, 2026-06-14) ─────
+// Replaces the old loose scatter ("Random loose placed trees, there is no
+// cohesion" — #344). Trees are now CLUSTERED into 8 groves of 3-4, mixed
+// oak+pine, with overlapping canopies and dense undergrowth packed around each
+// base (ashenUndergrowth below). Each tree is a 3×4 `tall` object (#346): the
+// high-top-down canopy fills the top, the trunk base sits at the bottom-center
+// cell (anchor +1,+3), Y-sorts against Pip, and collides on the trunk cell only
+// so she walks around and under the canopy. Trunk cells + impassable undergrowth
+// are kept OFF every path (lane cols 24-25; west branch row 20 cols 9-23; east
+// branch row 22 cols 26-41), both fenced yards, NPC poses (Wren 22,18 / Old Man
+// 40,28 / Driftwood 32,6), the dock (rows 0-3), the east brambles (47-49 rows
+// 17-19), and the spawn (9,20). Groves frame the map edges; the lit lane stays a
+// clearing. Anchor (col,row) → canopy rows row..row+2, trunk base cell (col+1,
+// row+3).
+const ashenGroves: OInst[] = [
+  // NW corner treeline
+  { kind: 'tree-oak', col: 2, row: 4 }, { kind: 'tree-pine', col: 5, row: 4 },
+  { kind: 'tree-pine', col: 3, row: 7 }, { kind: 'tree-oak', col: 7, row: 6 },
+  // North-central (between the yard top and the lane)
+  { kind: 'tree-pine', col: 15, row: 5 }, { kind: 'tree-oak', col: 18, row: 4 },
+  { kind: 'tree-pine', col: 17, row: 7 },
+  // NE corner
+  { kind: 'tree-oak', col: 42, row: 4 }, { kind: 'tree-pine', col: 45, row: 5 },
+  { kind: 'tree-oak', col: 43, row: 8 },
+  // SW grove (just south of spawn — the demonstrative grove)
+  { kind: 'tree-pine', col: 3, row: 26 }, { kind: 'tree-oak', col: 6, row: 27 },
+  { kind: 'tree-pine', col: 2, row: 30 }, { kind: 'tree-oak', col: 8, row: 30 },
+  // South-central
+  { kind: 'tree-oak', col: 15, row: 28 }, { kind: 'tree-pine', col: 18, row: 29 },
+  { kind: 'tree-pine', col: 14, row: 31 },
+  // SE, left of the Old Man's yard
+  { kind: 'tree-oak', col: 27, row: 30 }, { kind: 'tree-pine', col: 30, row: 30 },
+  { kind: 'tree-oak', col: 29, row: 32 },
+  // SE, right of the Old Man's yard
+  { kind: 'tree-pine', col: 45, row: 27 }, { kind: 'tree-oak', col: 46, row: 29 },
+  { kind: 'tree-pine', col: 45, row: 31 },
+];
+
+// Dense undergrowth packed around each grove's trunks (#344 — "shrubs are dense
+// around them"). Passable bush/flower/grass-tuft fill the gaps so each grove
+// reads as a thicket-with-clearing, not lawn ornaments; a few impassable `rock`
+// boulders anchor the edges (all kept off paths/yards). Grouped per grove.
+const ashenUndergrowth: OInst[] = [
+  // NW grove (trunks ~3,7 / 6,7 / 4,10 / 8,9)
+  { kind: 'bush', col: 2, row: 8 }, { kind: 'bush', col: 5, row: 8 },
+  { kind: 'grass-tuft', col: 4, row: 9 }, { kind: 'grass-tuft', col: 7, row: 8 },
+  { kind: 'flower', col: 6, row: 10 }, { kind: 'rock', col: 1, row: 6 },
+  { kind: 'bush', col: 9, row: 9 }, { kind: 'grass-tuft', col: 3, row: 11 },
+  // North-central grove (trunks ~16,8 / 19,7 / 18,10)
+  { kind: 'bush', col: 15, row: 8 }, { kind: 'grass-tuft', col: 17, row: 9 },
+  { kind: 'flower', col: 19, row: 9 }, { kind: 'bush', col: 20, row: 8 },
+  { kind: 'grass-tuft', col: 16, row: 11 }, { kind: 'rock', col: 21, row: 10 },
+  // NE grove (trunks ~43,7 / 46,8 / 44,11)
+  { kind: 'bush', col: 42, row: 8 }, { kind: 'grass-tuft', col: 45, row: 9 },
+  { kind: 'flower', col: 43, row: 10 }, { kind: 'bush', col: 46, row: 11 },
+  { kind: 'rock', col: 48, row: 7 }, { kind: 'grass-tuft', col: 44, row: 12 },
+  // SW grove (trunks ~4,29 / 7,30 / 3,33 / 9,33)
+  { kind: 'bush', col: 3, row: 30 }, { kind: 'bush', col: 6, row: 31 },
+  { kind: 'grass-tuft', col: 5, row: 32 }, { kind: 'grass-tuft', col: 8, row: 31 },
+  { kind: 'flower', col: 4, row: 34 }, { kind: 'flower', col: 7, row: 34 },
+  { kind: 'rock', col: 1, row: 31 }, { kind: 'bush', col: 10, row: 33 },
+  { kind: 'grass-tuft', col: 2, row: 28 },
+  // South-central grove (trunks ~16,31 / 19,32 / 15,34)
+  { kind: 'bush', col: 16, row: 32 }, { kind: 'grass-tuft', col: 18, row: 33 },
+  { kind: 'flower', col: 14, row: 33 }, { kind: 'bush', col: 20, row: 32 },
+  { kind: 'rock', col: 21, row: 31 }, { kind: 'grass-tuft', col: 17, row: 35 },
+  // SE-left grove (trunks ~28,33 / 31,33 / 30,35)
+  { kind: 'bush', col: 27, row: 33 }, { kind: 'grass-tuft', col: 29, row: 34 },
+  { kind: 'flower', col: 31, row: 34 }, { kind: 'bush', col: 32, row: 33 },
+  { kind: 'rock', col: 33, row: 34 }, { kind: 'grass-tuft', col: 28, row: 35 },
+  // SE-right grove (trunks ~46,30 / 48,32 / 46,34)
+  { kind: 'bush', col: 45, row: 31 }, { kind: 'grass-tuft', col: 47, row: 32 },
+  { kind: 'flower', col: 46, row: 33 }, { kind: 'bush', col: 48, row: 34 },
+  { kind: 'rock', col: 46, row: 28 }, { kind: 'grass-tuft', col: 45, row: 35 },
 ];
 
 // ───── Decoration density pass (2026-06-14, Jaco directive #332) ─────
@@ -323,7 +382,6 @@ const ashenDressing: OInst[] = [
   { kind: 'rock', col: 22, row: 21 },
   { kind: 'rock', col: 30, row: 23 },
   { kind: 'rock', col: 37, row: 21 },
-  { kind: 'rock', col: 16, row: 8 },
   { kind: 'rock', col: 45, row: 33 },
   // Grass tufts — fill the open bands (NW, central, around both yards, south).
   { kind: 'grass-tuft', col: 3, row: 6 },
@@ -489,6 +547,8 @@ export const ashenIsle: AreaDefinition = {
     ...ashenFences,
     ...ashenScenery,
     ...ashenDressing,
+    ...ashenGroves,
+    ...ashenUndergrowth,
     ...ashenDockProps,
     ...ashenEastBrambles,
   ],

@@ -80,6 +80,20 @@ export interface ObjectKindDefinition {
   // editor (US-97) and the future multi-cell collision lookup; stage 1's
   // `buildObjectCollisionMap` keys cells per (col,row) regardless of footprint.
   footprint?: { w: number; h: number };
+  // Tall object (#346) — opts the kind into Y-sorted rendering. Tall objects
+  // are drawn in the entity depth band [5, 5.49) keyed on the world-y of their
+  // base, so the player passes BEHIND the object when standing above its base
+  // (canopy occludes her) and IN FRONT when standing below. Non-tall objects
+  // keep the flat decoration depth (2.5). Used for trees so a multi-tile canopy
+  // reads with real depth instead of always painting under or over the player.
+  tall?: boolean;
+  // Optional collision sub-region relative to the anchor cell, in CELLS (#346).
+  // When present, `buildObjectCollisionMap` blocks ONLY these cells instead of
+  // the single anchor cell — so a tall tree blocks just its trunk-base cell and
+  // the player can walk around and under the overhanging canopy. dx/dy offset
+  // the region from the anchor (col+dx, row+dy); w/h is its cell span. Absent =
+  // legacy single-anchor-cell behavior (preserves every existing object).
+  collisionFootprint?: { dx: number; dy: number; w: number; h: number };
 }
 
 // PixelLab style-matched object PNGs (US-96). Generated against a 32×32
@@ -103,12 +117,15 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'door-wood':   { id: 'door-wood',   atlasKey: 'object-door-wood',   assetPath: 'objects/ashen-isle/door-wood.png',   passable: true },
   'fence-rail':  { id: 'fence-rail',  atlasKey: 'object-fence-rail',  assetPath: 'objects/ashen-isle/fence-rail.png',  passable: false },
   'cliff-stone': { id: 'cliff-stone', atlasKey: 'object-cliff-stone', assetPath: 'objects/ashen-isle/cliff-stone.png', passable: false },
-  // Trees render at 2×2 (64px) so the hand-painted canopy + trunk read as a real
-  // tree, not a 32px token (Jaco 2026-06-14: "our trees are a joke"). Collision
-  // keys the anchor cell only, so the canopy overhangs the other 3 cells as
-  // walkable shade — standard top-down idiom.
-  'tree-pine':   { id: 'tree-pine',   atlasKey: 'object-tree-pine',   assetPath: 'objects/ashen-isle/tree-pine.png',   passable: false, footprint: { w: 2, h: 2 } },
-  'tree-oak':    { id: 'tree-oak',    atlasKey: 'object-tree-oak',    assetPath: 'objects/ashen-isle/tree-oak.png',    passable: false, footprint: { w: 2, h: 2 } },
+  // Trees render at 4×4 (128×128, exact 1:1 — no distortion) so Pip (≈2 tiles /
+  // 68px) reads SMALL against a real tree, not eye-to-eye with a token (Jaco
+  // #346, 2026-06-14). The PNGs are high-top-down canopies (round oak / layered
+  // pine) with a small trunk base at the bottom-center. Trees are `tall`
+  // (Y-sorted — Pip walks behind the canopy from above, in front from below) and
+  // collide ONLY on a single bottom-row trunk cell (col+1, row+3), so the player
+  // can walk around and under the overhanging canopy.
+  'tree-pine':   { id: 'tree-pine',   atlasKey: 'object-tree-pine',   assetPath: 'objects/ashen-isle/tree-pine.png',   passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
+  'tree-oak':    { id: 'tree-oak',    atlasKey: 'object-tree-oak',    assetPath: 'objects/ashen-isle/tree-oak.png',    passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
   // Cohesive cottage — one 128px image over a 4×4 footprint. Collision is laid
   // separately as collision-block cells under the body (door cell left open), so
   // the anchor-only object collision rule doesn't leave the house walk-through.
