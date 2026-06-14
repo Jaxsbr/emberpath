@@ -115,6 +115,52 @@ const triggers: TriggerDefinition[] = [
   },
 ];
 
+// ───── Light anchors (C13 — Briar "near-black void" clarity, Issue #72) ─────
+// Cold playtest: a first-time player dropped into Briar saw a near-black void —
+// the global grey-out model (dark overlay + full desaturation) over a dark floor
+// left no readable ground and nothing to walk toward but the lone far-east
+// beacon. These are LIGHT-ONLY triggers (the documented "wayfinding without
+// exposition" use of TriggerDefinition.light): each registers a tier-1 light
+// that erases the dark overlay AND, because the same RT is the desaturation
+// colour-mask, lets the floor's true GREEN read inside the pool. So the player
+// sees a breadcrumb of small green clearings stepping west→east toward the goal
+// — literally "the thorns open up here" (the quiet-grove line). They never fire
+// (never-true condition + empty actionRef = pure light, no thought, no flags),
+// and the drain zones are deliberately left dark so the trial still feels bleak
+// between the rest-pockets. Data-only, no new art; reversible. Tunable by eye.
+const NEVER = 'briar_light_anchor == true'; // sentinel flag, never set → never fires
+const lightAnchor = (
+  id: string,
+  col: number,
+  row: number,
+  radius: number,
+  intensity: number,
+): TriggerDefinition => ({
+  id,
+  col,
+  row,
+  width: 1,
+  height: 1,
+  type: 'thought',
+  actionRef: '',
+  condition: NEVER,
+  repeatable: false,
+  light: { radius, intensity, tier: 1 },
+});
+const lightAnchors: TriggerDefinition[] = [
+  // Main breadcrumb across the middle band (rows 12–13), spaced ~6 tiles so the
+  // next clearing is in view as you reach the current one. Avoids the drain
+  // zones (drain-1 ~cols 8–11/rows 8–10, drain-2 ~cols 18–21/rows 16–18), which
+  // stay dark on purpose.
+  lightAnchor('briar-light-1', 5, 13, 72, 0.75), // just east of spawn — pulls the player in off the start
+  lightAnchor('briar-light-2', 11, 13, 72, 0.75),
+  lightAnchor('briar-light-3', 17, 12, 72, 0.75),
+  lightAnchor('briar-light-4', 23, 12, 80, 0.8),
+  lightAnchor('briar-light-5', 28, 12, 96, 0.85), // closing clearing, co-located with the beacon — a warm green arrival
+  // The northern rest clearing — honours quiet-grove's "the thorns open up here".
+  lightAnchor('briar-light-grove', 15, 6, 80, 0.8),
+];
+
 // Skeleton has no decorations — terrain + objects carry the visual load.
 const decorations: DecorationDefinition[] = [];
 
@@ -189,7 +235,7 @@ export const briarWilds: AreaDefinition = {
   npcs: [],
   props: [],
   decorations,
-  triggers,
+  triggers: [...triggers, ...lightAnchors],
   dialogues: {},
   storyScenes: {},
   drainZones,
