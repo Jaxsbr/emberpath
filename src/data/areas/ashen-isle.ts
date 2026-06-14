@@ -303,6 +303,62 @@ const ashenScenery: OInst[] = [
   { kind: 'bush', col: 30, row: 33 },
 ];
 
+// ───── Decoration density pass (2026-06-14, Jaco directive #332) ─────
+// The island read as bare grey floor between a few sparse props ("lacks so
+// much"). This dresses it to the density of a real top-down village
+// (ref/terrain-ground/test_map_1.png): boulders lining the sand paths, grass
+// tufts filling the open bands, flower clusters, and bushes flanking the cottage
+// doorways. Everything here is set-dressing — grass-tuft/flower/bush are
+// passable; `rock` is impassable but sits BESIDE the paths in open grass (never
+// on a path cell, gate, door approach, or fence), so it adds texture without
+// ever blocking a route. Cells checked against: main lane cols 24-25 rows 4-36,
+// west branch row 20 cols 9-23, east branch row 22 cols 26-41, both fenced yards.
+const ashenDressing: OInst[] = [
+  // Boulders beside the path edges + a couple as open-grass landmarks.
+  { kind: 'rock', col: 23, row: 8 },
+  { kind: 'rock', col: 26, row: 12 },
+  { kind: 'rock', col: 23, row: 28 },
+  { kind: 'rock', col: 26, row: 32 },
+  { kind: 'rock', col: 8, row: 21 },
+  { kind: 'rock', col: 22, row: 21 },
+  { kind: 'rock', col: 30, row: 23 },
+  { kind: 'rock', col: 37, row: 21 },
+  { kind: 'rock', col: 16, row: 8 },
+  { kind: 'rock', col: 45, row: 33 },
+  // Grass tufts — fill the open bands (NW, central, around both yards, south).
+  { kind: 'grass-tuft', col: 3, row: 6 },
+  { kind: 'grass-tuft', col: 7, row: 9 },
+  { kind: 'grass-tuft', col: 2, row: 12 },
+  { kind: 'grass-tuft', col: 16, row: 5 },
+  { kind: 'grass-tuft', col: 19, row: 9 },
+  { kind: 'grass-tuft', col: 14, row: 3 },
+  { kind: 'grass-tuft', col: 4, row: 16 },
+  { kind: 'grass-tuft', col: 15, row: 16 },
+  { kind: 'grass-tuft', col: 6, row: 21 },
+  { kind: 'grass-tuft', col: 28, row: 14 },
+  { kind: 'grass-tuft', col: 30, row: 18 },
+  { kind: 'grass-tuft', col: 20, row: 28 },
+  { kind: 'grass-tuft', col: 16, row: 26 },
+  { kind: 'grass-tuft', col: 34, row: 26 },
+  { kind: 'grass-tuft', col: 45, row: 28 },
+  { kind: 'grass-tuft', col: 37, row: 33 },
+  { kind: 'grass-tuft', col: 33, row: 29 },
+  { kind: 'grass-tuft', col: 8, row: 34 },
+  { kind: 'grass-tuft', col: 20, row: 34 },
+  { kind: 'grass-tuft', col: 10, row: 28 },
+  // Flower clusters (grouped with the existing singles for a "bed" feel).
+  { kind: 'flower', col: 8, row: 17 },
+  { kind: 'flower', col: 11, row: 17 },
+  { kind: 'flower', col: 27, row: 11 },
+  { kind: 'flower', col: 29, row: 12 },
+  { kind: 'flower', col: 7, row: 34 },
+  // Bushes flanking the cottage doorways (inside the yards).
+  { kind: 'bush', col: 7, row: 14 },
+  { kind: 'bush', col: 13, row: 14 },
+  { kind: 'bush', col: 38, row: 29 },
+  { kind: 'bush', col: 42, row: 29 },
+];
+
 // ───── East-edge bramble objects (US-100) ─────
 // Conditional ObjectInstances using the PixelLab bramble-cluster asset. Each
 // cell is impassable while has_ember_mark == false — collision and visibility
@@ -432,6 +488,7 @@ export const ashenIsle: AreaDefinition = {
     ...ashenBuildings,
     ...ashenFences,
     ...ashenScenery,
+    ...ashenDressing,
     ...ashenDockProps,
     ...ashenEastBrambles,
   ],

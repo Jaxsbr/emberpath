@@ -38,7 +38,10 @@ export type ObjectKindId =
   // Ashen Isle — passable
   | 'bush'
   | 'flower'
+  | 'grass-tuft'
   | 'sign-wood'
+  // Ashen Isle — impassable natural set-dressing (boulder lining the paths)
+  | 'rock'
   // Fog Marsh — impassable
   | 'wall-tomb'
   | 'marsh-reeds'
@@ -119,7 +122,16 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'pier-wood':   { id: 'pier-wood',   atlasKey: 'object-pier-wood',   assetPath: 'objects/ashen-isle/pier-wood.png',   passable: false, footprint: { w: 2, h: 3 } },
   'bush':        { id: 'bush',        atlasKey: 'object-bush',        assetPath: 'objects/ashen-isle/bush.png',        passable: true },
   'flower':      { id: 'flower',      atlasKey: 'object-flower',      assetPath: 'objects/ashen-isle/flower.png',      passable: true },
+  // Passable ground tuft — lived-in grass detail scattered through the open
+  // bands so the island reads as a real place, not bare floor (Jaco directive
+  // 2026-06-14: the areas "lack so much"). Reference: dense top-down village
+  // groundcover (ref/terrain-ground).
+  'grass-tuft':  { id: 'grass-tuft',  atlasKey: 'object-grass-tuft',  assetPath: 'objects/ashen-isle/grass-tuft.png',  passable: true },
   'sign-wood':   { id: 'sign-wood',   atlasKey: 'object-sign-wood',   assetPath: 'objects/ashen-isle/sign-wood.png',   passable: true },
+  // Impassable mossy boulder — lines the sand-path edges and dots the grass as a
+  // natural feature (same reference). Collision keys the anchor cell only; placed
+  // beside paths in open grass so it never blocks a route.
+  'rock':        { id: 'rock',        atlasKey: 'object-rock',        assetPath: 'objects/ashen-isle/rock.png',        passable: false },
 
   // Fog Marsh
   'wall-tomb':      { id: 'wall-tomb',      atlasKey: 'object-wall-tomb',      assetPath: 'objects/fog-marsh/wall-tomb.png',      passable: false },
