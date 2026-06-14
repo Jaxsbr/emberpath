@@ -358,13 +358,13 @@ export const fogMarsh: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Marsh Hermit',
-          text: 'Another little traveler in the fog? Most turn back before they get this far.',
+          text: 'Another little one, out in the fog? Most turn back before they come this far.',
           nextId: 'question',
         },
         {
           id: 'question',
           speaker: 'Marsh Hermit',
-          text: 'The marsh is hard on everyone who comes. What are you looking for?',
+          text: 'The marsh is hard on everyone. What are you looking for?',
           choices: [
             { text: 'A way through the fog.', nextId: 'way-through', setFlags: { spoke_to_marsh_hermit: true } },
             { text: 'I followed a path from the Ashen Isle.', nextId: 'from-ashen', setFlags: { spoke_to_marsh_hermit: true } },
@@ -373,19 +373,19 @@ export const fogMarsh: AreaDefinition = {
         {
           id: 'way-through',
           speaker: 'Marsh Hermit',
-          text: 'Through? There is no way through. Only down, deeper in. And sometimes the light is hiding down there.',
+          text: 'Through? There is no way through. You can only go down, deeper in. Sometimes the light hides down there.',
           nextId: 'advice',
         },
         {
           id: 'from-ashen',
           speaker: 'Marsh Hermit',
-          text: 'The Ashen Isle... I remember it. Grey skies. Old folks with very old stories.',
+          text: 'The Ashen Isle... I remember it. Grey skies. Old people with very old stories.',
           nextId: 'advice',
         },
         {
           id: 'advice',
           speaker: 'Marsh Hermit',
-          text: 'Listen to the stones if you can. They still remember things the fog made everyone forget.',
+          text: 'Listen to the stones if you can. They remember things the fog made everyone forget.',
         },
       ],
     },
