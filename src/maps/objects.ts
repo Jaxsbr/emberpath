@@ -31,6 +31,7 @@ export type ObjectKindId =
   | 'sign-wood'
   // Fog Marsh — impassable
   | 'wall-tomb'
+  | 'marsh-reeds'
   | 'door-tomb'
   | 'dead-tree'
   | 'gravestone'
@@ -99,6 +100,12 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
 
   // Fog Marsh
   'wall-tomb':      { id: 'wall-tomb',      atlasKey: 'object-wall-tomb',      assetPath: 'objects/fog-marsh/wall-tomb.png',      passable: false },
+  // C12b (2026-06-14): the impassable marsh boundary. Replaces wall-tomb as the
+  // derived wall kind so the perimeter reads as a dense reed/cattail bank ("the
+  // marsh is too thick this way") instead of a grey stone-block crypt wall — the
+  // single biggest "dungeon, not fog" signal (Issue #67). Organic silhouette
+  // survives the grey-out where the hard rectangular block read as a dungeon.
+  'marsh-reeds':    { id: 'marsh-reeds',    atlasKey: 'object-marsh-reeds',    assetPath: 'objects/fog-marsh/marsh-reeds.png',    passable: false },
   'door-tomb':      { id: 'door-tomb',      atlasKey: 'object-door-tomb',      assetPath: 'objects/fog-marsh/door-tomb.png',      passable: false },
   'dead-tree':      { id: 'dead-tree',      atlasKey: 'object-dead-tree',      assetPath: 'objects/fog-marsh/dead-tree.png',      passable: false },
   'gravestone':     { id: 'gravestone',     atlasKey: 'object-gravestone',     assetPath: 'objects/fog-marsh/gravestone.png',     passable: false },
