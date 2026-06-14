@@ -187,6 +187,11 @@ export class GameScene extends Phaser.Scene {
   // One subscriber per unique flag named in any DecorationDefinition.condition.
   // Mirrors objectFlagUnsubscribes — flag flip drives setVisible re-evaluation.
   private decorationFlagUnsubscribes: (() => void)[] = [];
+  // Per-flag unsubscribes for the changing objective banner (C8 follow-up). One
+  // subscriber per unique flag named in any area.conditionalObjective entry; a
+  // flip re-resolves which goal is active and re-sets the banner (replaying its
+  // attention beat). Mirrors the decoration/object subscriber shape.
+  private objectiveFlagUnsubscribes: (() => void)[] = [];
   // Cell-keyed runtime passability snapshot consumed by collision +
   // npcBehavior + movement (US-94). Built once at create() AND rebuilt on
   // any flag change referenced by an object's `condition`.
@@ -473,13 +478,18 @@ export class GameScene extends Phaser.Scene {
     // start the intro StoryScene overlays GameScene, so the banner is hidden
     // until the intro finishes and play resumes.
     this.objectiveBanner = new ObjectiveBannerSystem(this);
-    if (this.area.objective) {
+    const activeObjective = this.resolveObjective();
+    if (activeObjective) {
       // When we faded in (area transition / Continue resume), hold the banner's
       // attention beat until the fade clears so the goal blooms in on a visible
       // screen rather than invisibly under the black. Fresh start has no fade.
       const objectiveDelay = data?.entryPoint || data?.resumePosition ? FADE_DURATION : 0;
-      this.objectiveBanner.setObjective(this.area.objective, objectiveDelay);
+      this.objectiveBanner.setObjective(activeObjective, objectiveDelay);
     }
+    // C8 follow-up: watch the flags that drive the changing objective so the
+    // banner re-points the moment the story moves (e.g. the Keeper grants the
+    // Ember → the goal flips from "find the smoke" to "carry your light home").
+    this.subscribeToConditionalObjective();
     // Subtle water animation (Jaco request): luminance shimmer over the water
     // cells tagged during renderTileMap. Reads as light drifting on dark water
     // without breaking the drained/grey vision.
@@ -1504,6 +1514,42 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // C8 follow-up — pick the objective to show right now. Walk
+  // area.conditionalObjective top-to-bottom and return the first entry whose
+  // flag condition holds; otherwise fall back to the opening area.objective.
+  // Returns undefined only when the area declares no objective at all.
+  private resolveObjective(): string | undefined {
+    for (const entry of this.area.conditionalObjective ?? []) {
+      if (evaluateCondition(entry.condition)) return entry.text;
+    }
+    return this.area.objective;
+  }
+
+  // C8 follow-up — same flag-name-extraction shape as the object/decoration
+  // subscribers, but the action re-resolves the active objective and re-sets the
+  // banner. setObjective is idempotent for unchanged text (no rebuild / no
+  // replayed beat), so a flip that doesn't change the winning entry is a no-op;
+  // a flip that does change it plays the attention beat. No-op when the area has
+  // no conditionalObjective.
+  private subscribeToConditionalObjective(): void {
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    for (const entry of this.area.conditionalObjective ?? []) {
+      let match: RegExpExecArray | null;
+      flagNameRe.lastIndex = 0;
+      while ((match = flagNameRe.exec(entry.condition)) !== null) {
+        flagNames.add(match[1]);
+      }
+    }
+    for (const name of flagNames) {
+      const unsub = onFlagChange(name, () => {
+        const next = this.resolveObjective();
+        if (next) this.objectiveBanner.setObjective(next);
+      });
+      this.objectiveFlagUnsubscribes.push(unsub);
+    }
+  }
+
   // US-100 — same shape as subscribeToConditionalObjects but for decoration
   // visibility. Without this, conditional decorations only set visibility
   // once at renderDecorations(); a mid-area flag flip (e.g. has_ember_mark
@@ -1787,6 +1833,8 @@ export class GameScene extends Phaser.Scene {
     this.conditionalTerrainUnsubscribes = [];
     for (const unsub of this.decorationFlagUnsubscribes) unsub();
     this.decorationFlagUnsubscribes = [];
+    for (const unsub of this.objectiveFlagUnsubscribes) unsub();
+    this.objectiveFlagUnsubscribes = [];
     for (const sprite of this.objectSprites) sprite.destroy();
     this.objectSprites = [];
     this.conditionalObjects = [];

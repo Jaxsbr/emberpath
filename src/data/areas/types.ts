@@ -270,6 +270,15 @@ export interface AreaDefinition {
   // player always knows where to head — guidance isn't only the reactive
   // thought bubbles you stumble into. Keep it one kid-readable sentence.
   objective?: string;
+  // Objective that changes as the story moves (C8 follow-up). `objective` above
+  // is the opening goal; once the player progresses, the banner should point at
+  // the NEXT step instead of standing stale ("Find the smoke" still showing
+  // after the smoke is found). Each entry is a flag condition + the goal to show
+  // while it holds; GameScene picks the FIRST matching entry (top to bottom) and
+  // falls back to `objective` when none match. A genuine change replays the
+  // banner's attention beat (objectiveBanner.ts), so the player sees it update.
+  // Keep every line one kid-readable sentence. Wayfinding only — no doctrine.
+  conditionalObjective?: { condition: string; text: string }[];
   // Wayfinding signposts (C7). Optional; areas without any read the same as
   // before. Each entry lights its sign + shows a destination label on approach.
   signposts?: SignpostDefinition[];
