@@ -224,6 +224,15 @@ export const fogMarsh: AreaDefinition = {
       text: 'You have a light now. Carry it home. Go back south.',
     },
     {
+      // After surrender the Keeper appears (spawnCondition marsh_trapped &&
+      // marsh_surrendered && !keeper_met). Without this entry the banner fell
+      // through to the "hold still" line below and stayed stale while the Keeper
+      // stood lit right beside Pip (C11 cold audit, 2026-06-14). Point the player
+      // to him — wayfinding only; the grace meaning is carried by his dialogue.
+      condition: 'marsh_surrendered == true',
+      text: 'Someone is here in the fog now. Go to him.',
+    },
+    {
       condition: 'marsh_trapped == true',
       text: 'You are stuck. Stop pulling. Hold still and wait.',
     },
