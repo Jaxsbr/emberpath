@@ -299,6 +299,11 @@ export interface AreaDefinition {
   // far clearing where "the thorns open up" toward the light). Place on the goal
   // tile. UI-camera, so it survives desaturation and is tileset-independent.
   lightBeacon?: { col: number; row: number };
+  // Atmospheric fog overlay (C12). When true, a drifting bank of pale mist plus a
+  // center-clear screen veil is layered over the scene so the area reads as actual
+  // fog — used by Fog Marsh, whose dungeon-substitute tileset otherwise reads as
+  // grey stone, not marsh. Procedural (no assets). Opt-in; omitting it is a no-op.
+  fogOverlay?: boolean;
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
   // Drain zones (US-102) — twisted false-hope patches that drain ember warmth
