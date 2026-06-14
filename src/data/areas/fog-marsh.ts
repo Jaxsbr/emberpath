@@ -211,6 +211,23 @@ const fogMarshTileMap = buildFogMarshMap();
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
   name: 'Fog Marsh',
+  // Objective banner (C10 — Fog Marsh had none, a "don't know where to go" gap).
+  // Base goal sends the cold player deeper toward the light; the ladder re-points
+  // as the marsh story flips its flags (the banner re-resolves live — both flags
+  // flip while this scene is alive). First matching entry wins, top to bottom.
+  // Wayfinding only — the grace/surrender meaning is carried by the Keeper, not
+  // here; "hold still" mirrors the already-shipped surrender cue (C4-b).
+  objective: 'Go deeper into the fog. Look for the light.',
+  conditionalObjective: [
+    {
+      condition: 'keeper_met == true',
+      text: 'You have a light now. Carry it home. Go back south.',
+    },
+    {
+      condition: 'marsh_trapped == true',
+      text: 'You are stuck. Stop pulling. Hold still and wait.',
+    },
+  ],
   mapCols: 30,
   mapRows: 24,
   tileset: 'fog-marsh-floor-path',
