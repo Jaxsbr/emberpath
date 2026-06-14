@@ -158,6 +158,19 @@ const briarObjects: import('../../maps/objects').ObjectInstance[] = [
 export const briarWilds: AreaDefinition = {
   id: 'briar-wilds',
   name: 'Briar Wilds',
+  // Objective banner (C10 — Briar Wilds had none). Base goal points the cold
+  // player east across the thorns to the far clearing; once they reach it
+  // (briar_wilds_complete flips at the closing trigger, live in-scene) the goal
+  // becomes a reflective close rather than standing stale. No east exit exists
+  // yet (heart-bridge unbuilt), so the closing line is non-directional on
+  // purpose. Wayfinding only — no doctrine.
+  objective: 'Find your way through the thorny woods. Keep going east.',
+  conditionalObjective: [
+    {
+      condition: 'briar_wilds_complete == true',
+      text: 'You crossed the thorns. Your light made it through.',
+    },
+  ],
   mapCols: 32,
   mapRows: 26,
   // Tileset placeholder — entry exists in TILESETS pointing at the
