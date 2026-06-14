@@ -16,6 +16,7 @@ import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
 import { WaterShimmerSystem } from '../systems/waterShimmer';
 import { AmbientMotesSystem } from '../systems/ambientMotes';
+import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
@@ -147,6 +148,7 @@ export class GameScene extends Phaser.Scene {
   private waterTiles: { sprite: Phaser.GameObjects.Sprite; col: number; row: number }[] = [];
   private waterShimmer!: WaterShimmerSystem;
   private ambientMotes!: AmbientMotesSystem;
+  private smokeBeacon!: SmokeBeaconSystem;
   private signpostWayfinding!: SignpostWayfindingSystem;
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
   // Conditional decorations: visibility re-evaluated on flag changes only,
@@ -486,6 +488,9 @@ export class GameScene extends Phaser.Scene {
     // as frozen dioramas. On the main camera, so the desat pipeline greys them in
     // the cold world and warms them inside Pip's ember light.
     this.ambientMotes = new AmbientMotesSystem(this);
+    // Distant smoke beacon (C6): the far "find the smoke" target rising off the
+    // dock water. No-op in areas without a smokeBeacon.
+    this.smokeBeacon = new SmokeBeaconSystem(this, this.area.smokeBeacon);
     this.signpostWayfinding = new SignpostWayfindingSystem(this, this.area.signposts ?? []);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
@@ -822,6 +827,8 @@ export class GameScene extends Phaser.Scene {
     // Ambient motes drift every frame too (same rationale as the shimmer — the
     // world should never read as fully frozen).
     this.ambientMotes.update(time, delta);
+    // Smoke beacon drifts every frame too (distant goal, never frozen).
+    this.smokeBeacon.update(time, delta);
     // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
     // trigger-zone evaluation, and exit-zone checks all sit in the body below
     // this chain so a single early-return covers all four.
@@ -1794,6 +1801,7 @@ export class GameScene extends Phaser.Scene {
     this.destroyEmberOverlay();
     this.lightingSystem?.destroy();
     this.ambientMotes?.destroy();
+    this.smokeBeacon?.destroy();
     this.signpostWayfinding?.destroy();
   }
 

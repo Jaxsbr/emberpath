@@ -893,6 +893,13 @@ export const ashenIsle: AreaDefinition = {
   signposts: [
     { col: 26, row: 5, label: 'Dock → Fog Marsh' },
   ],
+  // Distant smoke beacon (C6). The intro promises "Far away, smoke goes up into
+  // the sky. Someone is out there." and the objective is "Find the smoke." — this
+  // is that smoke: a plume rising from the open water just off the north dock
+  // (col 28, row 3 is impassable sea, east of the boats), so when the player
+  // reaches the dock they SEE the goal across the water and the C7 sign tells
+  // them the dock leads to Fog Marsh.
+  smokeBeacon: { col: 28, row: 3 },
   playerSpawn: { col: 9, row: 20 },
   exits: [
     {

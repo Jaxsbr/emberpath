@@ -273,6 +273,11 @@ export interface AreaDefinition {
   // Wayfinding signposts (C7). Optional; areas without any read the same as
   // before. Each entry lights its sign + shows a destination label on approach.
   signposts?: SignpostDefinition[];
+  // Distant smoke beacon (C6, Issue #46). Optional. When set, a thin smoke plume
+  // rises from this tile (with a warm fire glow at its base) as the literal far
+  // target for a "find the smoke"-style objective. Place it on impassable
+  // water/horizon so it reads as distant, not something the player walks into.
+  smokeBeacon?: { col: number; row: number };
   playerSpawn: { col: number; row: number };
   exits: ExitDefinition[];
   // Drain zones (US-102) — twisted false-hope patches that drain ember warmth
