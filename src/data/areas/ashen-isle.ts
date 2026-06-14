@@ -886,6 +886,25 @@ export const ashenIsle: AreaDefinition = {
   },
   introStoryScene: 'ashen-isle-intro',
   objective: 'Find the smoke. Someone needs you.',
+  // Changing objective (C8 follow-up). The opening goal ("find the smoke") stays
+  // until the Keeper grants the Ember in Fog Marsh; coming back to Ashen Isle,
+  // the banner now points at the next step instead of the goal already met.
+  // First matching entry wins, so the both-warmed line must sit ABOVE the
+  // has-ember line. Wayfinding only — the grace beat itself lives in dialogue.
+  conditionalObjective: [
+    {
+      // Both villagers warmed → the homecoming is done; point at the road east.
+      // Matches the east-path thought's voice ("A road goes east.").
+      condition: 'npc_warmed_wren == true AND npc_warmed_old_man == true',
+      text: 'You shared your light. Follow the road east.',
+    },
+    {
+      // Has the Ember but the village is still cold → carry it home. "The ones
+      // who are waiting" echoes Wren ("I'll wait. I'm good at waiting.").
+      condition: 'has_ember_mark == true',
+      text: 'Take your light home. Warm the ones who are waiting.',
+    },
+  ],
   // Wayfinding signposts (C7). The dock post at the north coast (the sign-wood
   // in ashenScenery at 26,5) sits right beside the boardwalk exit to Fog Marsh
   // (exit zone cols 23-26, row 2) — walking up to it now lights the sign and
