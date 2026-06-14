@@ -22,6 +22,9 @@ export class NpcInteractionSystem {
   // transition — the Text is created once and reused, never destroyed per enter/exit.
   private promptVisible = false;
   private promptTween: Phaser.Tweens.Tween | null = null;
+  // Timestamp of the last showPrompt, so the bob starts at sine phase 0 (a neutral
+  // offset) on every appearance instead of wherever absolute scene time happens to land.
+  private promptShownAt = 0;
   private nearestNpc: NpcDefinition | null = null;
   private pointerDownTime = 0;
   private pointerDownPos = { x: 0, y: 0 };
@@ -127,7 +130,7 @@ export class NpcInteractionSystem {
   // reads as alive. Cheap: one sine + setPosition, no allocation.
   private positionPrompt(playerCenterX: number, playerCenterY: number): void {
     if (!this.promptText) return;
-    const bob = Math.sin(this.scene.time.now * PROMPT_BOB_SPEED) * PROMPT_BOB_AMP;
+    const bob = Math.sin((this.scene.time.now - this.promptShownAt) * PROMPT_BOB_SPEED) * PROMPT_BOB_AMP;
     this.promptText.setPosition(playerCenterX, playerCenterY + TILE_SIZE * 0.6 + bob);
   }
 
@@ -138,7 +141,12 @@ export class NpcInteractionSystem {
     const prompt = this.ensurePrompt();
     this.promptTween?.stop();
     prompt.setVisible(true);
+    // Hard-reset to a known start (alpha 0, scale 0.85) like the scale already did,
+    // so a re-show interrupting a half-done fade-out always plays the full clean
+    // fade-in rather than starting from leftover alpha. Anchor the bob phase here too.
+    prompt.setAlpha(0);
     prompt.setScale(0.85);
+    this.promptShownAt = this.scene.time.now;
     this.promptTween = this.scene.tweens.add({
       targets: prompt,
       alpha: 1,
