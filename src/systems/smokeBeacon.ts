@@ -51,6 +51,16 @@ const BASE_GLOW_SIZE = 1.7 * TILE_SIZE;  // world px
 const BASE_GLOW_ALPHA = 0.7;
 const BASE_PULSE_SPEED = 1.3;            // rad/s gentle fire flicker
 
+// Glow-only (plume disabled) landmark mode (C13, Issue #59). Some areas need a
+// distant warm light to walk TOWARD — a goal the cold player can aim at — without
+// a smoke column that reads as "a fire/someone is here". Briar Wilds is the case:
+// the trial ends in a clearing where "the thorns open up" and there is light
+// ahead, so a standalone warm glow at that clearing IS the wayfinding payoff.
+// With no plume above it the glow must read as a beacon on its own, so it sits a
+// bit larger. UI-camera like the smoke, so it survives desaturation and is fully
+// independent of the (deferred) real Briar tileset.
+const GLOW_ONLY_SIZE = 2.6 * TILE_SIZE;  // world px
+
 interface Puff {
   img: Phaser.GameObjects.Image;
   prog: number;    // 0 (base) .. 1 (top) — fraction of the rise completed
@@ -66,11 +76,18 @@ export class SmokeBeaconSystem {
   private puffs: Puff[] = [];
   private glow: Phaser.GameObjects.Image | null = null;
   private active = false;
+  // When false the smoke plume is omitted and only the warm glow renders, as a
+  // standalone "walk toward the light" landmark (glow-only mode, C13).
+  private plume = true;
 
-  constructor(scene: Phaser.Scene, beacon: { col: number; row: number } | undefined) {
+  constructor(
+    scene: Phaser.Scene,
+    beacon: { col: number; row: number; plume?: boolean } | undefined,
+  ) {
     this.scene = scene;
     if (!beacon) return;
     this.active = true;
+    this.plume = beacon.plume !== false;
     this.baseX = beacon.col * TILE_SIZE + TILE_SIZE / 2;
     this.baseY = beacon.row * TILE_SIZE + TILE_SIZE / 2;
     this.ensureTextures();
@@ -85,7 +102,7 @@ export class SmokeBeaconSystem {
   }
 
   private ensureTextures(): void {
-    if (!this.scene.textures.exists(PUFF_TEX_KEY)) {
+    if (this.plume && !this.scene.textures.exists(PUFF_TEX_KEY)) {
       const canvas = this.scene.textures.createCanvas(PUFF_TEX_KEY, PUFF_TEX_SIZE, PUFF_TEX_SIZE);
       if (canvas) {
         const ctx = canvas.getContext();
@@ -128,6 +145,9 @@ export class SmokeBeaconSystem {
     // desaturated copy underneath). Absent from the UI ignore list, so the UI
     // camera renders it — same rule the NPC presence glow follows.
     this.scene.cameras.main.ignore(this.glow);
+
+    // Glow-only landmark: no smoke column, so the rising-puff pool is skipped.
+    if (!this.plume) return;
 
     // Pool of rising puffs, staggered along the rise so the column is continuous.
     for (let i = 0; i < PUFF_COUNT; i++) {
@@ -185,8 +205,9 @@ export class SmokeBeaconSystem {
     }
 
     if (this.glow) {
+      const glowSize = (this.plume ? BASE_GLOW_SIZE : GLOW_ONLY_SIZE) * zoom;
       this.glow.setPosition(baseSX, baseSY);
-      this.glow.setDisplaySize(BASE_GLOW_SIZE * zoom, BASE_GLOW_SIZE * zoom);
+      this.glow.setDisplaySize(glowSize, glowSize);
       this.glow.setAlpha(BASE_GLOW_ALPHA * (0.78 + 0.22 * Math.sin(t * BASE_PULSE_SPEED)));
     }
   }
