@@ -41,7 +41,7 @@ The style-match constraint forces the object palette / outline weight / shading 
 |---|---|---|---|
 | wall-tomb | false | weathered umber stone tomb wall, top-down storybook | `c55b9bc2-8afe-4671-9b10-7d4b7d38e89a` |
 | door-tomb | false | heavy stone slab door, weathered sepia, top-down (reroll — original 500'd) | `fbdf5a9c-9c11-49b1-a329-05821637f20e` |
-| dead-tree | false | gnarled bare dead tree, sepia, top-down storybook | `23002717-4ee4-433a-b59f-3c0b6f95fe35` |
+| dead-tree | false | dead leafless gnarled tree seen from DIRECTLY ABOVE — a small dark trunk knot at center with bare twisted branches radiating FLAT in every compass direction like wheel spokes / a cracked starburst, no vertical trunk, no canopy, no sky; weathered damp grey-brown marsh deadwood, faint moss, 128×128 over a `tall` 4×4 footprint (regenerated TOP-DOWN 2026-06-14, Slice 6 — replaced the earlier 32px/1×1 side-on token so the marsh dead trees read as real multi-tile trees like Ashen's oak/pine and Y-sort on their trunk base, per directives #344+#346; marsh-toned twin of Briar's briar-dead-tree) | `f5b5f1cc-cc91-42de-9347-f8e9f634554e` |
 | gravestone | false | small upright stone marker, weathered, top-down (reroll — original 500'd) | `e166f4f2-9b33-45a3-a82e-c14bd57c4fe1` |
 | marsh-stone | false | weathered marsh stone half-buried, top-down | `9d6418be-1db8-4002-bf05-22b05a218fef` |
 | dry-reed | true | dry sepia marsh reeds clump, top-down | `33fb2c08-76ef-404b-a093-08d47bd65d0c` |

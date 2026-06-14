@@ -195,16 +195,51 @@ const fogMarshTileMap = buildFogMarshMap();
 // dry path (col 14 rows 10-21, cols 15-24 row 10) and the impassable reed
 // perimeter; dry-reed/mushroom are passable so they never block movement.
 const fogMarshReedTufts: ObjectInstance[] = [
-  { kind: 'dry-reed', col: 5, row: 4 },
-  { kind: 'dry-reed', col: 9, row: 6 },
-  { kind: 'mushroom', col: 17, row: 5 },
-  { kind: 'dry-reed', col: 5, row: 12 },
-  { kind: 'dry-reed', col: 9, row: 14 },
-  { kind: 'dry-reed', col: 19, row: 13 },
-  { kind: 'dry-reed', col: 5, row: 18 },
-  { kind: 'dry-reed', col: 19, row: 19 },
-  { kind: 'mushroom', col: 22, row: 16 },
-  { kind: 'dry-reed', col: 7, row: 20 },
+  // Re-grouped (Slice 6, 2026-06-14, directive #344) — the tufts no longer
+  // scatter one-per-spot; they pack as passable undergrowth tight around the
+  // three west-side dead-tree clusters (see `fogMarshDeadTrees`), mixing
+  // dry-reed + mushroom so the deadwood reads as a living-and-dying thicket
+  // rather than loose dressing. All OFF the dry path (col 14 rows 10-21, cols
+  // 15-24 row 10), off the impassable reed perimeter, and off every dead-tree
+  // trunk-base cell — dry-reed/mushroom are passable so they never block.
+  // North cluster (rows 2-6)
+  { kind: 'dry-reed', col: 4, row: 6 },
+  { kind: 'mushroom', col: 8, row: 6 },
+  { kind: 'dry-reed', col: 11, row: 4 },
+  // Mid cluster (rows 9-13)
+  { kind: 'dry-reed', col: 4, row: 13 },
+  { kind: 'mushroom', col: 7, row: 8 },
+  { kind: 'dry-reed', col: 8, row: 13 },
+  { kind: 'mushroom', col: 5, row: 15 },
+  // South cluster (rows 16-20)
+  { kind: 'dry-reed', col: 4, row: 20 },
+  { kind: 'mushroom', col: 8, row: 20 },
+  { kind: 'dry-reed', col: 11, row: 17 },
+];
+
+// Dead-tree clusters (Slice 6, 2026-06-14, directives #344 + #346) — the marsh
+// was a bare reed-rimmed floor with no real silhouettes ("lacks so much", North
+// Star id=68). Three tight clusters of gnarled dead trees fill the open WEST
+// half as a desolate deadwood, leaving the EAST half (the dry path corridor at
+// col 14, the row-10 boardwalk to the ruin, the ruin itself, the Hermit, the
+// Keeper's clearing, and the south exit) as deliberate negative space the cold
+// player still reads as "the way through." Each tree is a `tall` 4×4 object
+// anchored top-left; it Y-sorts on its trunk base and collides ONLY at
+// (col+1, row+3), so the bare branch spread overhangs walkable ground and the
+// trunks never wall off a route. Clusters of 3 with gaps at rows 7-8 / 14-15.
+const fogMarshDeadTrees: ObjectInstance[] = [
+  // North cluster — trunks (3,5) (7,5) (10,6)
+  { kind: 'dead-tree', col: 2, row: 2 },
+  { kind: 'dead-tree', col: 6, row: 2 },
+  { kind: 'dead-tree', col: 9, row: 3 },
+  // Mid cluster — trunks (3,12) (6,12) (10,13)
+  { kind: 'dead-tree', col: 2, row: 9 },
+  { kind: 'dead-tree', col: 5, row: 9 },
+  { kind: 'dead-tree', col: 9, row: 10 },
+  // South cluster — trunks (3,19) (7,20) (10,19)
+  { kind: 'dead-tree', col: 2, row: 16 },
+  { kind: 'dead-tree', col: 6, row: 17 },
+  { kind: 'dead-tree', col: 9, row: 16 },
 ];
 
 // Marsh-trap closure (US-98) — terrain-flip pathway. The 8 vertices spanning
@@ -278,6 +313,7 @@ export const fogMarsh: AreaDefinition = {
   // DECORATIONS that read as crates — see fogMarshDecorations).
   objects: [
     ...deriveObjectsFromTileMap(fogMarshTileMap, 'marsh-reeds'),
+    ...fogMarshDeadTrees,
     ...fogMarshReedTufts,
   ],
   conditionalTerrain: [
