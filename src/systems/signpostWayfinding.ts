@@ -7,8 +7,8 @@ import { SignpostDefinition } from '../data/areas/types';
 // "confused, don't know where to go". The world already has decorative wooden
 // signposts but they say nothing. This turns each declared signpost into a real
 // wayfinding cue: walk into its radius and the sign lights up — a soft white
-// outline fades in behind it, and a short destination label ("Dock → Fog
-// Marsh") fades in above it telling a first-time player where that path leads.
+// outline fades in behind it, and a short destination label ("Fog Marsh ↑")
+// fades in above it telling a first-time player where that path leads.
 // Step out of range and both fade back out.
 //
 // Reuses the C4-e talk-prompt idiom: every visual is created ONCE up front and
@@ -37,6 +37,10 @@ const FADE_OUT_MS = 150;
 // Gentle label bob so the cue breathes (matches the talk prompt's ~1 Hz, 3 px).
 const LABEL_BOB_AMP = 3; // px
 const LABEL_BOB_SPEED = 0.006; // rad/ms
+// Lift the label a full tile above the post top. The post is only ~1 tile tall,
+// so a label sitting just above it overlaps the (taller) player standing right
+// next to the sign (Jaco, 2026-06-14). One tile of clearance reads cleanly.
+const LABEL_LIFT = TILE_SIZE;
 
 interface SignEntry {
   def: SignpostDefinition;
@@ -127,7 +131,7 @@ export class SignpostWayfindingSystem {
 
       if (e.visible) {
         const bob = Math.sin(this.scene.time.now * LABEL_BOB_SPEED) * LABEL_BOB_AMP;
-        e.label.setPosition(e.centerX, e.topY - 4 + bob);
+        e.label.setPosition(e.centerX, e.topY - 4 - LABEL_LIFT + bob);
       }
     }
   }

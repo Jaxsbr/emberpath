@@ -910,7 +910,10 @@ export const ashenIsle: AreaDefinition = {
   // (exit zone cols 23-26, row 2) — walking up to it now lights the sign and
   // tells the player where that road goes.
   signposts: [
-    { col: 26, row: 5, label: 'Dock → Fog Marsh' },
+    // The dock exit is NORTH of this post (exit zone row 2). A "→" route arrow
+    // read as "go right" (Jaco, 2026-06-14); use an "↑" so the arrow IS the
+    // correct direction the player must walk.
+    { col: 26, row: 5, label: 'Fog Marsh ↑' },
   ],
   // Distant smoke beacon (C6). The intro promises "Far away, smoke goes up into
   // the sky. Someone is out there." and the objective is "Find the smoke." — this
