@@ -16,6 +16,7 @@ import { TILE_SIZE } from '../maps/constants';
 import {
   DrainZoneDefinition,
   QuietZoneDefinition,
+  InscribedStoneDefinition,
 } from '../data/areas/types';
 import { getFlag, setFlag, incrementFlag, onFlagChange } from '../triggers/flags';
 
@@ -32,6 +33,10 @@ export const QUIET_ZONE_LIGHT_RADIUS = 72;
 export const QUIET_ZONE_LIGHT_INTENSITY = 0.55;
 
 const FLAG_NAME = 'ember_warmth';
+// Default steady radius for an inscribed stone (the-word, US-W4) when the area
+// author omits one — 3 tiles, large enough that standing at the carved stone
+// clearly steadies the ember without reaching across a whole drain patch.
+export const STONE_STEADY_RADIUS_DEFAULT = 96;
 
 export type WarmthZoneState = 'drain' | 'quiet' | 'neutral';
 
@@ -78,6 +83,18 @@ export class EmberWarmthSystem {
   // cleanup, so a future scenario where the warmth system is rebuilt without
   // a full scene restart can't leak lights.
   private registeredLightIds: string[] = [];
+  // Steadied-drain (the-word, US-W4). Each inscribed stone is precomputed to its
+  // pixel centre, squared radius, and remembered-flag name once at construction
+  // so the per-frame check is zero-alloc (no string building, no sqrt). `hasWord`
+  // and each stone's `remembered` boolean are cached and kept current via
+  // onFlagChange subscriptions — the update loop never reads the flag store.
+  private steadyStones: Array<{
+    cx: number;
+    cy: number;
+    radiusSq: number;
+    remembered: boolean;
+  }> = [];
+  private hasWord: boolean = false;
 
   constructor(
     private scene: Phaser.Scene,
@@ -87,6 +104,7 @@ export class EmberWarmthSystem {
     private worldCols: number,
     private worldRows: number,
     private lighting: LightRegistry | null = null,
+    inscribedStones: InscribedStoneDefinition[] | undefined = undefined,
   ) {
     // Reset hygiene (Learning EP-02): instance fields explicitly reset at top
     // of setup so a scene restart starts from a known state.
@@ -99,6 +117,8 @@ export class EmberWarmthSystem {
     this.validQuietZones = [];
     this.unsubscribers = [];
     this.registeredLightIds = [];
+    this.steadyStones = [];
+    this.hasWord = false;
 
     // Filter zones to those with valid in-bounds coordinates and positive
     // dimensions. Authoring errors (out-of-grid coords, zero/negative size)
@@ -134,6 +154,49 @@ export class EmberWarmthSystem {
         });
         this.registeredLightIds.push(id);
       }
+    }
+
+    // Steadied-drain setup (US-W4). Precompute each inscribed stone's pixel
+    // centre + squared radius (zero per-frame string/sqrt work) and seed its
+    // remembered boolean from the flag store. Subscribe to has_word and each
+    // stone's remembered_<id> so the cached booleans stay current without the
+    // update loop ever touching the flag store.
+    this.hasWord = getFlag('has_word') === true;
+    const unsubWord = onFlagChange('has_word', (_name, value) => {
+      this.hasWord = value === true;
+    });
+    this.unsubscribers.push(unsubWord);
+    const stones = inscribedStones ?? [];
+    for (let i = 0; i < stones.length; i++) {
+      const s = stones[i];
+      if (
+        !Number.isFinite(s.col) ||
+        !Number.isFinite(s.row) ||
+        s.col < 0 ||
+        s.row < 0 ||
+        s.col >= this.worldCols ||
+        s.row >= this.worldRows
+      ) {
+        continue;
+      }
+      const radius =
+        Number.isFinite(s.steadyRadius) && (s.steadyRadius as number) > 0
+          ? (s.steadyRadius as number)
+          : STONE_STEADY_RADIUS_DEFAULT;
+      const idx = this.steadyStones.length;
+      this.steadyStones.push({
+        cx: (s.col + 0.5) * TILE_SIZE,
+        cy: (s.row + 0.5) * TILE_SIZE,
+        radiusSq: radius * radius,
+        remembered: getFlag(`remembered_${s.id}`) === true,
+      });
+      const flagName = `remembered_${s.id}`;
+      const unsub = onFlagChange(flagName, (_name, value) => {
+        if (this.steadyStones[idx]) {
+          this.steadyStones[idx].remembered = value === true;
+        }
+      });
+      this.unsubscribers.push(unsub);
     }
 
     // Load + validate. Mirrors saveState's scrub-on-corrupt pattern: any
@@ -218,13 +281,32 @@ export class EmberWarmthSystem {
       }
     }
 
+    // Steadied-drain (US-W4) — if Pip carries the Word and stands within a
+    // *remembered* stone's radius, the drain is held off this frame (the Word
+    // steadies the ember in the dry places). Zero-alloc: squared-distance check,
+    // no sqrt, no allocation. Quiet-zone restore is unaffected. An un-remembered
+    // stone, or being outside every radius, drains exactly as before (regression).
+    let steadied = false;
+    if (inDrain && this.hasWord) {
+      for (let i = 0; i < this.steadyStones.length; i++) {
+        const s = this.steadyStones[i];
+        if (!s.remembered) continue;
+        const dx = playerX - s.cx;
+        const dy = playerY - s.cy;
+        if (dx * dx + dy * dy <= s.radiusSq) {
+          steadied = true;
+          break;
+        }
+      }
+    }
+
     // Apply rates — quiet wins.
     let next = this.currentWarmth;
     if (inQuiet) {
       next += restoreRate * dt;
       this.currentZoneState = 'quiet';
     } else if (inDrain) {
-      next -= drainRate * dt;
+      if (!steadied) next -= drainRate * dt;
       this.currentZoneState = 'drain';
     } else {
       this.currentZoneState = 'neutral';
