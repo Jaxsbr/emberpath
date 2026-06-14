@@ -206,41 +206,59 @@ const decorations: DecorationDefinition[] = [];
 // spawn to the closing clearing reads as the thorns parting toward the light.
 // Every trunk-base collision cell and every bramble is verified off that route.
 const briarObjects: import('../../maps/objects').ObjectInstance[] = [
-  // ── NORTH band — paired dead trees framing above the corridor ──
-  // NW pair (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 0, row: 1 }, { kind: 'briar-dead-tree', col: 3, row: 3 },
-  { kind: 'bramble-cluster', col: 5, row: 1 }, { kind: 'bramble-cluster', col: 2, row: 5 },
-  { kind: 'bramble-cluster', col: 6, row: 4 },
-  // North-left pair (left shoulder of the grove clearing).
-  { kind: 'briar-dead-tree', col: 7, row: 1 }, { kind: 'briar-dead-tree', col: 10, row: 3 },
-  { kind: 'bramble-cluster', col: 9, row: 0 }, { kind: 'bramble-cluster', col: 12, row: 2 },
+  // Sense-of-place rework (G4-B(ii-b), 2026-06-15, FB-1 fail B). In-scene capture
+  // showed Briar's thorn bands reading as an EVEN ROW of dark bramble cones along
+  // the top/bottom edges (the dev-grid even-spacing the Fog Marsh gate flagged) —
+  // the dead trees are near-invisible in Briar's dark-void render, so the brambles
+  // carry the whole silhouette. Fix: tighten each tree pair to ~2 cols apart and
+  // CLUMP the brambles into tight adjacent bunches per knot (cones overlap into one
+  // thicket) with clear gaps BETWEEN knots, densest at the four corners. Corridor
+  // (rows 11-14), the grove gap (cols 13-18), and both clearings stay open as the
+  // route. Every bramble/trunk cell stays off rows 11-14 and the grove approach.
+  // ── NORTH band — knots framing above the corridor ──
+  // NW knot.
+  { kind: 'briar-dead-tree', col: 0, row: 1 }, { kind: 'briar-dead-tree', col: 2, row: 3 },
+  { kind: 'bramble-cluster', col: 3, row: 1 }, { kind: 'bramble-cluster', col: 4, row: 1 },
+  { kind: 'bramble-cluster', col: 4, row: 2 }, { kind: 'bramble-cluster', col: 1, row: 5 },
+  { kind: 'bramble-cluster', col: 2, row: 5 },
+  // North-left knot (left shoulder of the grove clearing).
+  { kind: 'briar-dead-tree', col: 7, row: 1 }, { kind: 'briar-dead-tree', col: 9, row: 3 },
+  { kind: 'bramble-cluster', col: 10, row: 1 }, { kind: 'bramble-cluster', col: 11, row: 1 },
+  { kind: 'bramble-cluster', col: 11, row: 2 }, { kind: 'bramble-cluster', col: 7, row: 5 },
   { kind: 'bramble-cluster', col: 8, row: 5 },
-  // (cols 14-17 left open — the grove clearing is the gap in the thorns)
-  // North-right pair (right shoulder of the grove clearing).
-  { kind: 'briar-dead-tree', col: 18, row: 1 }, { kind: 'briar-dead-tree', col: 21, row: 3 },
-  { kind: 'bramble-cluster', col: 17, row: 4 }, { kind: 'bramble-cluster', col: 20, row: 0 },
-  { kind: 'bramble-cluster', col: 23, row: 5 },
-  // NE pair (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 24, row: 1 }, { kind: 'briar-dead-tree', col: 27, row: 2 },
-  { kind: 'bramble-cluster', col: 26, row: 0 }, { kind: 'bramble-cluster', col: 30, row: 3 },
-  { kind: 'bramble-cluster', col: 29, row: 5 },
-  // ── SOUTH band — paired dead trees framing below the corridor ──
-  // SW pair.
-  { kind: 'briar-dead-tree', col: 0, row: 18 }, { kind: 'briar-dead-tree', col: 3, row: 20 },
-  { kind: 'bramble-cluster', col: 5, row: 24 }, { kind: 'bramble-cluster', col: 2, row: 18 },
-  { kind: 'bramble-cluster', col: 6, row: 22 },
-  // South-left pair.
-  { kind: 'briar-dead-tree', col: 7, row: 19 }, { kind: 'briar-dead-tree', col: 10, row: 21 },
-  { kind: 'bramble-cluster', col: 9, row: 25 }, { kind: 'bramble-cluster', col: 13, row: 21 },
-  { kind: 'bramble-cluster', col: 8, row: 18 },
-  // South-right pair.
-  { kind: 'briar-dead-tree', col: 17, row: 19 }, { kind: 'briar-dead-tree', col: 20, row: 21 },
-  { kind: 'bramble-cluster', col: 16, row: 24 }, { kind: 'bramble-cluster', col: 19, row: 18 },
-  { kind: 'bramble-cluster', col: 23, row: 22 },
-  // SE pair (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 24, row: 18 }, { kind: 'briar-dead-tree', col: 27, row: 20 },
-  { kind: 'bramble-cluster', col: 26, row: 25 }, { kind: 'bramble-cluster', col: 30, row: 20 },
-  { kind: 'bramble-cluster', col: 29, row: 18 },
+  // (cols 13-18 left open — the grove clearing is the gap in the thorns)
+  // North-right knot (right shoulder of the grove clearing).
+  { kind: 'briar-dead-tree', col: 19, row: 1 }, { kind: 'briar-dead-tree', col: 21, row: 3 },
+  { kind: 'bramble-cluster', col: 17, row: 1 }, { kind: 'bramble-cluster', col: 18, row: 1 },
+  { kind: 'bramble-cluster', col: 22, row: 2 }, { kind: 'bramble-cluster', col: 23, row: 2 },
+  { kind: 'bramble-cluster', col: 22, row: 5 },
+  // NE knot (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 24, row: 1 }, { kind: 'briar-dead-tree', col: 26, row: 3 },
+  { kind: 'bramble-cluster', col: 28, row: 1 }, { kind: 'bramble-cluster', col: 29, row: 1 },
+  { kind: 'bramble-cluster', col: 30, row: 1 }, { kind: 'bramble-cluster', col: 30, row: 2 },
+  { kind: 'bramble-cluster', col: 29, row: 4 }, { kind: 'bramble-cluster', col: 27, row: 5 },
+  // ── SOUTH band — knots framing below the corridor ──
+  // SW knot.
+  { kind: 'briar-dead-tree', col: 0, row: 18 }, { kind: 'briar-dead-tree', col: 2, row: 20 },
+  { kind: 'bramble-cluster', col: 3, row: 18 }, { kind: 'bramble-cluster', col: 4, row: 18 },
+  { kind: 'bramble-cluster', col: 4, row: 19 }, { kind: 'bramble-cluster', col: 1, row: 24 },
+  { kind: 'bramble-cluster', col: 2, row: 24 },
+  // South-left knot.
+  { kind: 'briar-dead-tree', col: 7, row: 19 }, { kind: 'briar-dead-tree', col: 9, row: 21 },
+  { kind: 'bramble-cluster', col: 10, row: 19 }, { kind: 'bramble-cluster', col: 11, row: 19 },
+  { kind: 'bramble-cluster', col: 11, row: 20 }, { kind: 'bramble-cluster', col: 7, row: 24 },
+  { kind: 'bramble-cluster', col: 8, row: 24 },
+  // (mid gap cols 13-15 left open)
+  // South-right knot.
+  { kind: 'briar-dead-tree', col: 17, row: 19 }, { kind: 'briar-dead-tree', col: 19, row: 21 },
+  { kind: 'bramble-cluster', col: 15, row: 18 }, { kind: 'bramble-cluster', col: 16, row: 18 },
+  { kind: 'bramble-cluster', col: 20, row: 22 }, { kind: 'bramble-cluster', col: 21, row: 22 },
+  { kind: 'bramble-cluster', col: 20, row: 25 },
+  // SE knot (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 24, row: 18 }, { kind: 'briar-dead-tree', col: 26, row: 20 },
+  { kind: 'bramble-cluster', col: 28, row: 18 }, { kind: 'bramble-cluster', col: 29, row: 18 },
+  { kind: 'bramble-cluster', col: 30, row: 18 }, { kind: 'bramble-cluster', col: 30, row: 19 },
+  { kind: 'bramble-cluster', col: 29, row: 22 }, { kind: 'bramble-cluster', col: 27, row: 24 },
   // ── Corridor-fringe brambles — thicken the gaps just outside the lit lane
   //    (rows 9-10 / 15-16), never on rows 11-14, so the breadcrumb stays clear.
   { kind: 'bramble-cluster', col: 13, row: 9 }, { kind: 'bramble-cluster', col: 26, row: 9 },
