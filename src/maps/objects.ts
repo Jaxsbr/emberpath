@@ -159,7 +159,14 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // survives the grey-out where the hard rectangular block read as a dungeon.
   'marsh-reeds':    { id: 'marsh-reeds',    atlasKey: 'object-marsh-reeds',    assetPath: 'objects/fog-marsh/marsh-reeds.png',    passable: false },
   'door-tomb':      { id: 'door-tomb',      atlasKey: 'object-door-tomb',      assetPath: 'objects/fog-marsh/door-tomb.png',      passable: false },
-  'dead-tree':      { id: 'dead-tree',      atlasKey: 'object-dead-tree',      assetPath: 'objects/fog-marsh/dead-tree.png',      passable: false },
+  // Gnarled leafless marsh dead tree (regenerated TOP-DOWN 2026-06-14, Slice 6 /
+  // directives #344+#346) — a 128px image over a 4×4 footprint, bare branches
+  // splaying outward as seen from straight above (marsh-toned twin of Briar's
+  // briar-dead-tree). Like Ashen's oak/pine it is `tall` (Y-sorted on its trunk
+  // base so Pip passes behind the upper branches from above and in front from
+  // below) and collides ONLY on the trunk-base cell, so the bare branch spread
+  // overhangs the rest of the 4×4 as walkable shade.
+  'dead-tree':      { id: 'dead-tree',      atlasKey: 'object-dead-tree',      assetPath: 'objects/fog-marsh/dead-tree.png',      passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
   'gravestone':     { id: 'gravestone',     atlasKey: 'object-gravestone',     assetPath: 'objects/fog-marsh/gravestone.png',     passable: false },
   'marsh-stone':    { id: 'marsh-stone',    atlasKey: 'object-marsh-stone',    assetPath: 'objects/fog-marsh/marsh-stone.png',    passable: false },
   'dry-reed':       { id: 'dry-reed',       atlasKey: 'object-dry-reed',       assetPath: 'objects/fog-marsh/dry-reed.png',       passable: true },
