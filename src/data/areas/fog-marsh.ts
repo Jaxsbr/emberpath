@@ -357,9 +357,16 @@ const fogMarshDeadTrees: ObjectInstance[] = [
 export const fogMarsh: AreaDefinition = {
   id: 'fog-marsh',
   name: 'Fog Marsh',
-  // C12 — the area borrows the Tiny Dungeon tileset as a substitute, so its floor
-  // and walls read as grey stone. A drifting mist + center-clear fog veil give the
-  // player the fog the area is named for, softening the dungeon read.
+  // The floor is the real PixelLab marsh Wang tileset `fog-marsh-floor-path`
+  // (green damp moss ↔ tan path; the water/stone chain handles its transitions) —
+  // NOT a Tiny Dungeon substitute (the floor was migrated off tiny-dungeon back in
+  // the tile-architecture pass, #23). Only the DECORATIONS still borrow tiny-dungeon
+  // frames (see `decorationsTileset` below); the impassable boundary is a reed/cattail
+  // bank (#67), not stone walls. In play the marsh reads grey only because the whole
+  // drained world is desaturated until Pip restores colour — that greys every area's
+  // floor by design, it is not a dungeon tile. A drifting mist + center-clear fog veil
+  // give the player the fog the area is named for. (Stale "borrows Tiny Dungeon →
+  // grey stone floor" comment + the phantom tileset task #90 corrected here; #95-class.)
   fogOverlay: true,
   // Objective banner (C10 — Fog Marsh had none, a "don't know where to go" gap).
   // Base goal sends the cold player deeper toward the light; the ladder re-points
