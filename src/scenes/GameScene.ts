@@ -741,6 +741,11 @@ export class GameScene extends Phaser.Scene {
     this.atonedCached = getFlag('atoned') === true;
     this.atonedUnsubscribe = onFlagChange('atoned', (_, value) => {
       this.atonedCached = value === true;
+      // The atonement permanently lifts the Fading from the whole world (US-HB6,
+      // master-prd beat 6: "trials no longer drain"). Re-push desaturation on the
+      // flip so colour stays restored in every area afterward — not just on the
+      // bridge — honouring the seal scene's "the grey is gone, not ever again".
+      this.updateEffectiveDesaturation();
     });
 
     // Heart-bridge crossing overlay (US-HB2). The `heart_bridge_crossing` counter
@@ -2199,6 +2204,17 @@ export class GameScene extends Phaser.Scene {
   // warming-flag-change events (no per-frame recomputation — Learning EP-01).
   private updateEffectiveDesaturation(): void {
     if (!this.desaturationPipeline) return;
+    // US-HB6 — atonement is a PERMANENT, world-wide state change (master-prd beat
+    // 6: "trials no longer drain"). Once `atoned` is set, the Fading is gone for
+    // good in EVERY area — the seal scene promises "the grey is gone, not ever
+    // again". So it dominates every other source of grey (warming count, the
+    // bridge crossing lift): full colour, full stop. This only ever applies after
+    // the climax — `atoned` is false for the entire rest of the playthrough, so
+    // normal play and the bridge crossing animation are untouched.
+    if (this.atonedCached) {
+      this.desaturationPipeline.setStrength(0);
+      return;
+    }
     let warmingsCount = 0;
     for (const id of WARMING_NPC_IDS) {
       if (getFlag(`npc_warmed_${id}`) === true) warmingsCount += 1;
