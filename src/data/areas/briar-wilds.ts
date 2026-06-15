@@ -1,10 +1,12 @@
 // Briar Wilds (US-100) — Stage 4 of Pip's pilgrim journey, the trials beat.
-// Skeleton commit: walkable area + west-edge return to Ashen Isle + 2 drain
-// zones + 2 quiet zones (one carries the closing reflection). PixelLab Wang
-// tileset and style-matched objects (US-95/96 pattern) land in subsequent
-// tasks; this skeleton uses the placeholder tileset 'briar-wilds-floor-thorn'
-// (atlasKey points to ashen-isle-grass-sand) so the build is green and the
-// path is walkable end-to-end before the visual content arrives.
+// Walkable area + west-edge return to Ashen Isle + 2 drain zones + 2 quiet zones
+// (one carries the closing reflection). Renders on its OWN PixelLab Wang tileset
+// 'briar-wilds-floor-thorn' (briar-floor -> briar-thorn, generated 2026-05-04,
+// committed at assets/tilesets/briar-wilds-floor-thorn/tilemap.{png,json}) — NOT
+// a placeholder and NOT the ashen-sand atlas (that earlier note was stale; the
+// registry atlasKey is 'tileset-briar-wilds-floor-thorn', loaded directly by
+// GameScene). Style-matched clustered objects (dead-tree pairs + tight bramble
+// thickets) shipped with the FB-1 sense-of-place rework (PR #91).
 //
 // One NPC only — Quill, the owl who keeps the old words — and he stands at the
 // WEST THRESHOLD (the entry), not in the thorns (the-word phase, US-W2). He gives
@@ -28,9 +30,9 @@ import {
 
 const F = TILE_FLOOR;
 
-// 32 wide × 26 tall — exceeds the spec floor of 30×24. All-floor for the
-// skeleton; thorn impassable patches are introduced when the PixelLab object
-// kinds (bramble-cluster / dead-tree) land.
+// 32 wide × 26 tall — exceeds the spec floor of 30×24. All-floor base; the
+// impassable thorn patches are carried by the placed object layer below
+// (bramble-cluster / dead-tree kinds), which has since shipped (PRs #87, #91).
 const briarTileMap: StoredTile[][] = Array.from({ length: 26 }, () =>
   Array.from({ length: 32 }, () => F as StoredTile),
 );
@@ -272,7 +274,8 @@ const lightAnchors: TriggerDefinition[] = [
   lightAnchor('briar-light-grove', 15, 6, 80, 0.8),
 ];
 
-// Skeleton has no decorations — terrain + objects carry the visual load.
+// No DecorationDefinitions in Briar — the terrain Wang tileset + the clustered
+// object layer (dead-trees, bramble thickets) carry the visual load.
 const decorations: DecorationDefinition[] = [];
 
 // ───── Object placement (Slice 7c — directives #344 + #346) ─────
@@ -374,13 +377,15 @@ export const briarWilds: AreaDefinition = {
   ],
   mapCols: 32,
   mapRows: 26,
-  // Tileset placeholder — entry exists in TILESETS pointing at the
-  // ashen-isle-grass-sand atlas until T9's PixelLab generation lands.
+  // Briar's own PixelLab Wang tileset (briar-floor -> briar-thorn). Its registry
+  // atlasKey is 'tileset-briar-wilds-floor-thorn' and GameScene loads
+  // assets/tilesets/briar-wilds-floor-thorn/tilemap.png directly — it does NOT
+  // reuse the ashen-sand atlas (earlier comment was stale).
   tileset: 'briar-wilds-floor-thorn',
   decorationsTileset: 'tiny-town',
   map: briarTileMap,
-  // Vertex grid all 'briar-floor' (passable). Thorn patches arrive with the
-  // PixelLab tileset content + object placement in T9-T11.
+  // Vertex grid all 'briar-floor' (passable). The impassable thorn patches are
+  // carried by the placed object layer (shipped — PRs #87, #91), not the terrain.
   terrain: deriveTerrainFromTileMap(briarTileMap, 'briar-floor'),
   // PixelLab-generated briar objects (T12). Sparse impassable scatter +
   // passable twisted-root ground decoration in drain zones. The map itself
