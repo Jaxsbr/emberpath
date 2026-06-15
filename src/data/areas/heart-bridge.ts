@@ -57,6 +57,18 @@ for (let c = 0; c < HEART_BRIDGE_COLS; c++) {
   parapet.push({ kind: 'marsh-stone', col: c, row: HEART_BRIDGE_ROWS - 1 });
 }
 
+// ───── The figure at the crossing (US-HB3, Decision 1 = FIGURE PRESENT) ─────
+// A wordless regal golden stag standing at the FAR THIRD of the span (cols 18–20),
+// before the seal at col 22 — so Pip walks up the bridge, meets the figure, and the
+// crossing seals just beyond it. It is a placed OBJECT, not an NPC: no dialogue, no
+// "talk" prompt, no interaction — present, not conversational, exactly as Decision 1
+// blessed it ("someone meeting her there", wordless). 3×3 footprint reads slightly
+// larger than Pip; `tall` Y-sort + a single base-cell collision let her step past it
+// (rows 1–2 stay walkable under the body) to reach the seal. No gospel text is added
+// here — what the figure DOES (the Fading drawn out, substitution) is Decisions 2–3,
+// still reserved for Jaco and not in this slice.
+const figure: ObjectInstance[] = [{ kind: 'golden-stag', col: 18, row: 1 }];
+
 // ───── Triggers ─────
 // CROSSING BANDS (US-HB2) — the paced colour-return mechanic. Three invisible
 // one-shot bands divide the span into quarters; each crossed band increments
@@ -130,7 +142,7 @@ export const heartBridge: AreaDefinition = {
   terrain: deriveTerrainFromTileMap(heartBridgeTileMap, 'stone'),
   // Map has no walls, so deriveObjectsFromTileMap returns nothing — only the
   // hand-authored parapet appears.
-  objects: [...deriveObjectsFromTileMap(heartBridgeTileMap, 'wall-stone'), ...parapet],
+  objects: [...deriveObjectsFromTileMap(heartBridgeTileMap, 'wall-stone'), ...parapet, ...figure],
   npcs: [],
   props: [],
   decorations: [],
