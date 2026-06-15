@@ -17,6 +17,7 @@ import { ThoughtBubbleSystem } from '../systems/thoughtBubble';
 import { ObjectiveBannerSystem } from '../systems/objectiveBanner';
 import { WaterShimmerSystem } from '../systems/waterShimmer';
 import { AmbientMotesSystem } from '../systems/ambientMotes';
+import { ForestEyesSystem } from '../systems/forestEyes';
 import { FogOverlaySystem } from '../systems/fogOverlay';
 import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
@@ -186,6 +187,8 @@ export class GameScene extends Phaser.Scene {
   private waterTiles: { sprite: Phaser.GameObjects.Sprite; col: number; row: number }[] = [];
   private waterShimmer!: WaterShimmerSystem;
   private ambientMotes!: AmbientMotesSystem;
+  // Eerie red eyes in the dark wilds (FB-2). Briar-only; null elsewhere.
+  private forestEyes: ForestEyesSystem | null = null;
   private fogOverlay: FogOverlaySystem | null = null;
   private smokeBeacon!: SmokeBeaconSystem;
   private signpostWayfinding!: SignpostWayfindingSystem;
@@ -576,6 +579,10 @@ export class GameScene extends Phaser.Scene {
     // as frozen dioramas. On the main camera, so the desat pipeline greys them in
     // the cold world and warms them inside Pip's ember light.
     this.ambientMotes = new AmbientMotesSystem(this);
+    // Forest eyes (FB-2): red eye-pairs that fade in at the dark edges and come
+    // and go, so Briar Wilds reads as watched. Briar-only — the eerie wilds, not
+    // the homestead or the marsh. On the UI camera so the red survives desat.
+    this.forestEyes = this.area.id === 'briar-wilds' ? new ForestEyesSystem(this) : null;
     // Atmospheric fog (C12): drifting pale mist banks so a "fog" area reads as fog,
     // not as its grey-stone substitute tileset. Opt-in per area; null when unset.
     this.fogOverlay = this.area.fogOverlay ? new FogOverlaySystem(this) : null;
@@ -1004,6 +1011,7 @@ export class GameScene extends Phaser.Scene {
     // Ambient motes drift every frame too (same rationale as the shimmer — the
     // world should never read as fully frozen).
     this.ambientMotes.update(time, delta);
+    this.forestEyes?.update(time, delta);
     this.fogOverlay?.update(time, delta);
     // Smoke beacon drifts every frame too (distant goal, never frozen).
     this.smokeBeacon.update(time, delta);
@@ -2128,6 +2136,8 @@ export class GameScene extends Phaser.Scene {
     this.destroyWordLantern();
     this.lightingSystem?.destroy();
     this.ambientMotes?.destroy();
+    this.forestEyes?.destroy();
+    this.forestEyes = null;
     this.fogOverlay?.destroy();
     this.fogOverlay = null;
     this.smokeBeacon?.destroy();
