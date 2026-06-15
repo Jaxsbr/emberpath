@@ -6,7 +6,12 @@
 // (atlasKey points to ashen-isle-grass-sand) so the build is green and the
 // path is walkable end-to-end before the visual content arrives.
 //
-// Zero NPCs in this area — by design (the trial is endured alone, US-100).
+// One NPC only — Quill, the owl who keeps the old words — and he stands at the
+// WEST THRESHOLD (the entry), not in the thorns (the-word phase, US-W2). He gives
+// Pip the Word as a sending-off and then vanishes (one-shot spawnCondition), so the
+// trial proper is still endured ALONE (US-100) — what goes with her into the thorns
+// is the Word, not a companion. This is why he can't be missed: a cold player meets
+// him the moment they enter, receives the gift, and only then walks east alone.
 
 import {
   AreaDefinition,
@@ -102,10 +107,6 @@ const quietZones: QuietZoneDefinition[] = [
 // receives the Word she can't read the marks; once she has it, remembering the
 // stone steadies her ember so drain-1 no longer pulls her warmth down — the
 // literal "the Word stabilises the ember in the dry places."
-//
-// ⟨DRAFT — pending Jaco's word-level approval, the-word decision #2⟩
-// All lines are placeholder young-child / allegorical text. Do NOT ship as-is;
-// these need Jaco's sign-off (the PR carrying this stays OPEN for that).
 const inscribedStones: InscribedStoneDefinition[] = [
   {
     id: 'briar-stone-1',
@@ -120,6 +121,91 @@ const inscribedStones: InscribedStoneDefinition[] = [
     ],
   },
 ];
+
+// ───── Quill, the owl who keeps the words (the-word phase, US-W2) ─────
+// The gift hand-off that makes the merged "remember" verb reachable in-game: a
+// short kid-level dialogue whose final node sets `has_word: true`, then chains the
+// 'word-given' story scene. Free-gift framing per master-prd + biblical-guidance —
+// the Word is GIVEN, not earned, and cannot be lost. Stays allegorical: the Word is
+// never named as the Bible, Jesus is never named. Modeled on the Keeper hand-off
+// (fog-marsh keeper-intro → ember-given): same setFlags-on-terminal-node +
+// endStoryScene-on-script pattern. Quill is found by the `${npc.id}-intro`
+// convention (GameScene), so his dialogue key MUST be 'quill-intro'.
+const quillDialogue: import('./types').DialogueScript = {
+  id: 'quill-intro',
+  startNodeId: 'greeting',
+  portraitId: 'quill',
+  endStoryScene: 'word-given',
+  nodes: [
+    {
+      id: 'greeting',
+      speaker: 'Quill',
+      text: 'You came a long way, little one. Your light is small. But it is true.',
+      nextId: 'ask',
+    },
+    {
+      id: 'ask',
+      speaker: 'Quill',
+      text: 'The thorns ahead are hard. What do you carry to help you?',
+      choices: [
+        { text: 'Only my little light.', nextId: 'gift' },
+        { text: 'Who are you?', nextId: 'who' },
+      ],
+    },
+    {
+      id: 'who',
+      speaker: 'Quill',
+      text: 'I keep old words. They were true before the fog. They are true still.',
+      nextId: 'gift',
+    },
+    {
+      id: 'gift',
+      speaker: 'Quill',
+      text: 'I have something for you. Not because you earned it. Because it is given.',
+      choices: [{ text: 'Take the words.', nextId: 'grant' }],
+    },
+    {
+      // Terminal node — grants the Word. has_word flips here; Quill's spawnCondition
+      // (has_word == false) then despawns him as the scene plays, exactly like the
+      // Keeper after keeper_met. The remember verb + steadied drain read has_word.
+      id: 'grant',
+      speaker: 'Quill',
+      text: 'Keep them close. When the dark pulls at your light, remember them — and your light will hold.',
+      setFlags: { has_word: true },
+    },
+  ],
+};
+
+// Chained from quill-intro on dialogue close. Four warm beats (gold → cream),
+// brighter than Briar's desaturated greens so the Word reads as "light given." The
+// gift framing (beats 1-2), the payoff that the stones are now readable (beat 3),
+// and Pip's own first-person carry-line (beat 4) — which echoes, without repeating,
+// the inscribed stone's remembered line.
+const wordGivenScene: import('./types').StorySceneDefinition = {
+  id: 'word-given',
+  beats: [
+    {
+      text: 'Quill opens his wings. A warm light spills out — like a book made of morning.',
+      imageColor: 0xe0b15a,
+      imageLabel: 'The words are opened',
+    },
+    {
+      text: "The words are not Pip's. They were given. She did not earn them. She cannot lose them.",
+      imageColor: 0xf2d98a,
+      imageLabel: 'A gift, not a prize',
+    },
+    {
+      text: 'Now the marks on the old stones are not just marks. Pip can read them. She can remember.',
+      imageColor: 0xe8dcc0,
+      imageLabel: 'The stones can be read',
+    },
+    {
+      text: 'I am not alone. The words go with me — even in the thorns.',
+      imageColor: 0xf4ead2,
+      imageLabel: 'Into the thorns',
+    },
+  ],
+};
 
 // ───── Triggers ─────
 // Co-located with quiet-closing's tiles — the same place serves restoration
@@ -206,59 +292,41 @@ const decorations: DecorationDefinition[] = [];
 // spawn to the closing clearing reads as the thorns parting toward the light.
 // Every trunk-base collision cell and every bramble is verified off that route.
 const briarObjects: import('../../maps/objects').ObjectInstance[] = [
-  // Sense-of-place rework (G4-B(ii-b), 2026-06-15, FB-1 fail B). In-scene capture
-  // showed Briar's thorn bands reading as an EVEN ROW of dark bramble cones along
-  // the top/bottom edges (the dev-grid even-spacing the Fog Marsh gate flagged) —
-  // the dead trees are near-invisible in Briar's dark-void render, so the brambles
-  // carry the whole silhouette. Fix: tighten each tree pair to ~2 cols apart and
-  // CLUMP the brambles into tight adjacent bunches per knot (cones overlap into one
-  // thicket) with clear gaps BETWEEN knots, densest at the four corners. Corridor
-  // (rows 11-14), the grove gap (cols 13-18), and both clearings stay open as the
-  // route. Every bramble/trunk cell stays off rows 11-14 and the grove approach.
-  // ── NORTH band — knots framing above the corridor ──
-  // NW knot.
-  { kind: 'briar-dead-tree', col: 0, row: 1 }, { kind: 'briar-dead-tree', col: 2, row: 3 },
-  { kind: 'bramble-cluster', col: 3, row: 1 }, { kind: 'bramble-cluster', col: 4, row: 1 },
-  { kind: 'bramble-cluster', col: 4, row: 2 }, { kind: 'bramble-cluster', col: 1, row: 5 },
-  { kind: 'bramble-cluster', col: 2, row: 5 },
-  // North-left knot (left shoulder of the grove clearing).
-  { kind: 'briar-dead-tree', col: 7, row: 1 }, { kind: 'briar-dead-tree', col: 9, row: 3 },
-  { kind: 'bramble-cluster', col: 10, row: 1 }, { kind: 'bramble-cluster', col: 11, row: 1 },
-  { kind: 'bramble-cluster', col: 11, row: 2 }, { kind: 'bramble-cluster', col: 7, row: 5 },
+  // ── NORTH band — paired dead trees framing above the corridor ──
+  // NW pair (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 0, row: 1 }, { kind: 'briar-dead-tree', col: 3, row: 3 },
+  { kind: 'bramble-cluster', col: 5, row: 1 }, { kind: 'bramble-cluster', col: 2, row: 5 },
+  { kind: 'bramble-cluster', col: 6, row: 4 },
+  // North-left pair (left shoulder of the grove clearing).
+  { kind: 'briar-dead-tree', col: 7, row: 1 }, { kind: 'briar-dead-tree', col: 10, row: 3 },
+  { kind: 'bramble-cluster', col: 9, row: 0 }, { kind: 'bramble-cluster', col: 12, row: 2 },
   { kind: 'bramble-cluster', col: 8, row: 5 },
-  // (cols 13-18 left open — the grove clearing is the gap in the thorns)
-  // North-right knot (right shoulder of the grove clearing).
-  { kind: 'briar-dead-tree', col: 19, row: 1 }, { kind: 'briar-dead-tree', col: 21, row: 3 },
-  { kind: 'bramble-cluster', col: 17, row: 1 }, { kind: 'bramble-cluster', col: 18, row: 1 },
-  { kind: 'bramble-cluster', col: 22, row: 2 }, { kind: 'bramble-cluster', col: 23, row: 2 },
-  { kind: 'bramble-cluster', col: 22, row: 5 },
-  // NE knot (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 24, row: 1 }, { kind: 'briar-dead-tree', col: 26, row: 3 },
-  { kind: 'bramble-cluster', col: 28, row: 1 }, { kind: 'bramble-cluster', col: 29, row: 1 },
-  { kind: 'bramble-cluster', col: 30, row: 1 }, { kind: 'bramble-cluster', col: 30, row: 2 },
-  { kind: 'bramble-cluster', col: 29, row: 4 }, { kind: 'bramble-cluster', col: 27, row: 5 },
-  // ── SOUTH band — knots framing below the corridor ──
-  // SW knot.
-  { kind: 'briar-dead-tree', col: 0, row: 18 }, { kind: 'briar-dead-tree', col: 2, row: 20 },
-  { kind: 'bramble-cluster', col: 3, row: 18 }, { kind: 'bramble-cluster', col: 4, row: 18 },
-  { kind: 'bramble-cluster', col: 4, row: 19 }, { kind: 'bramble-cluster', col: 1, row: 24 },
-  { kind: 'bramble-cluster', col: 2, row: 24 },
-  // South-left knot.
-  { kind: 'briar-dead-tree', col: 7, row: 19 }, { kind: 'briar-dead-tree', col: 9, row: 21 },
-  { kind: 'bramble-cluster', col: 10, row: 19 }, { kind: 'bramble-cluster', col: 11, row: 19 },
-  { kind: 'bramble-cluster', col: 11, row: 20 }, { kind: 'bramble-cluster', col: 7, row: 24 },
-  { kind: 'bramble-cluster', col: 8, row: 24 },
-  // (mid gap cols 13-15 left open)
-  // South-right knot.
-  { kind: 'briar-dead-tree', col: 17, row: 19 }, { kind: 'briar-dead-tree', col: 19, row: 21 },
-  { kind: 'bramble-cluster', col: 15, row: 18 }, { kind: 'bramble-cluster', col: 16, row: 18 },
-  { kind: 'bramble-cluster', col: 20, row: 22 }, { kind: 'bramble-cluster', col: 21, row: 22 },
-  { kind: 'bramble-cluster', col: 20, row: 25 },
-  // SE knot (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 24, row: 18 }, { kind: 'briar-dead-tree', col: 26, row: 20 },
-  { kind: 'bramble-cluster', col: 28, row: 18 }, { kind: 'bramble-cluster', col: 29, row: 18 },
-  { kind: 'bramble-cluster', col: 30, row: 18 }, { kind: 'bramble-cluster', col: 30, row: 19 },
-  { kind: 'bramble-cluster', col: 29, row: 22 }, { kind: 'bramble-cluster', col: 27, row: 24 },
+  // (cols 14-17 left open — the grove clearing is the gap in the thorns)
+  // North-right pair (right shoulder of the grove clearing).
+  { kind: 'briar-dead-tree', col: 18, row: 1 }, { kind: 'briar-dead-tree', col: 21, row: 3 },
+  { kind: 'bramble-cluster', col: 17, row: 4 }, { kind: 'bramble-cluster', col: 20, row: 0 },
+  { kind: 'bramble-cluster', col: 23, row: 5 },
+  // NE pair (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 24, row: 1 }, { kind: 'briar-dead-tree', col: 27, row: 2 },
+  { kind: 'bramble-cluster', col: 26, row: 0 }, { kind: 'bramble-cluster', col: 30, row: 3 },
+  { kind: 'bramble-cluster', col: 29, row: 5 },
+  // ── SOUTH band — paired dead trees framing below the corridor ──
+  // SW pair.
+  { kind: 'briar-dead-tree', col: 0, row: 18 }, { kind: 'briar-dead-tree', col: 3, row: 20 },
+  { kind: 'bramble-cluster', col: 5, row: 24 }, { kind: 'bramble-cluster', col: 2, row: 18 },
+  { kind: 'bramble-cluster', col: 6, row: 22 },
+  // South-left pair.
+  { kind: 'briar-dead-tree', col: 7, row: 19 }, { kind: 'briar-dead-tree', col: 10, row: 21 },
+  { kind: 'bramble-cluster', col: 9, row: 25 }, { kind: 'bramble-cluster', col: 13, row: 21 },
+  { kind: 'bramble-cluster', col: 8, row: 18 },
+  // South-right pair.
+  { kind: 'briar-dead-tree', col: 17, row: 19 }, { kind: 'briar-dead-tree', col: 20, row: 21 },
+  { kind: 'bramble-cluster', col: 16, row: 24 }, { kind: 'bramble-cluster', col: 19, row: 18 },
+  { kind: 'bramble-cluster', col: 23, row: 22 },
+  // SE pair (densest at the corner edge).
+  { kind: 'briar-dead-tree', col: 24, row: 18 }, { kind: 'briar-dead-tree', col: 27, row: 20 },
+  { kind: 'bramble-cluster', col: 26, row: 25 }, { kind: 'bramble-cluster', col: 30, row: 20 },
+  { kind: 'bramble-cluster', col: 29, row: 18 },
   // ── Corridor-fringe brambles — thicken the gaps just outside the lit lane
   //    (rows 9-10 / 15-16), never on rows 11-14, so the breadcrumb stays clear.
   { kind: 'bramble-cluster', col: 13, row: 9 }, { kind: 'bramble-cluster', col: 26, row: 9 },
@@ -286,7 +354,19 @@ export const briarWilds: AreaDefinition = {
   // yet (heart-bridge unbuilt), so the closing line is non-directional on
   // purpose. Wayfinding only — no doctrine.
   objective: 'Find your way through the thorny woods. Keep going east.',
+  // First-match-wins (GameScene picks the first true rung, else the base objective).
+  // Order = journey state: meet Quill → remember at the stone → cross → closed.
   conditionalObjective: [
+    {
+      // On entry Pip always has the ember (from Fog Marsh), so this points the cold
+      // player straight at the threshold owl before they can wander into the dark.
+      condition: 'has_ember_mark == true AND has_word == false',
+      text: 'An owl waits by the thorns with a gift for you. Go and meet Quill.',
+    },
+    {
+      condition: 'has_word == true AND remembered_briar-stone-1 == false',
+      text: 'Remember the words at the carved stone. They will steady your light.',
+    },
     {
       condition: 'briar_wilds_complete == true',
       text: 'You crossed the thorns. Your light made it through.',
@@ -307,12 +387,20 @@ export const briarWilds: AreaDefinition = {
   // has no walls, so deriveObjectsFromTileMap returns nothing — only the
   // hand-authored briarObjects appear.
   objects: [...deriveObjectsFromTileMap(briarTileMap, 'wall-stone'), ...briarObjects],
-  npcs: [],
+  // Quill, the word-keeper owl, at the west threshold (col 4, row 13) on the lit
+  // entry corridor — two tiles east of the player spawn (1,13), so he's the first
+  // thing a cold player meets. One-shot: spawns only while the Word is ungiven
+  // (has_ember_mark true, the entry state) and despawns the instant 'grant' flips
+  // has_word, leaving the thorns to be walked alone. sprite 'quill' falls back to a
+  // warm-amber marker until the owl sprite set lands; color tuned to read owl-ish.
+  npcs: [
+    { id: 'quill', name: 'Quill', col: 4, row: 13, color: 0xe0b15a, sprite: 'quill', wanderRadius: 0, awarenessRadius: 2, spawnCondition: 'has_ember_mark == true AND has_word == false' },
+  ],
   props: [],
   decorations,
   triggers: [...triggers, ...lightAnchors],
-  dialogues: {},
-  storyScenes: {},
+  dialogues: { 'quill-intro': quillDialogue },
+  storyScenes: { 'word-given': wordGivenScene },
   drainZones,
   quietZones,
   inscribedStones,

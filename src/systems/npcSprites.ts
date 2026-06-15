@@ -11,6 +11,7 @@ export const NPC_SPRITES: Record<string, NpcSpriteDefinition> = {
   'heron': { idleFrameCount: 4, walkFrameCount: 4 },
   'wren': { idleFrameCount: 4, walkFrameCount: 4 },
   'driftwood': { idleFrameCount: 4, walkFrameCount: 4 },
+  'quill': { idleFrameCount: 4, walkFrameCount: 4 },
 };
 
 export function hasNpcSprite(id: string): boolean {
@@ -39,6 +40,7 @@ export const NPC_PORTRAITS: Record<string, NpcPortraitDefinition> = {
   'heron': { file: 'portrait.png', filter: 'linear' },
   'wren': { file: 'portrait.png', filter: 'linear' },
   'driftwood': { file: 'portrait.png', filter: 'linear' },
+  'quill': { file: 'portrait.png', filter: 'linear' },
 };
 
 export function hasNpcPortrait(id: string): boolean {
