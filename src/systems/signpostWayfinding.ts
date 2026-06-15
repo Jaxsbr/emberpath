@@ -35,6 +35,10 @@ const LABEL_DEPTH = 150; // same band as the talk prompt — above world art
 const FADE_IN_MS = 220;
 const FADE_OUT_MS = 150;
 // Gentle label bob so the cue breathes (matches the talk prompt's ~1 Hz, 3 px).
+// The phase is anchored to each show (see `shownAt`) so the label always starts
+// at neutral sine phase 0 when it fades in — same fix the talk prompt and the
+// inscribed-stone prompt carry (C4-f class), so all three floating cues bob in
+// the same readable way instead of popping in mid-swing off the absolute clock.
 const LABEL_BOB_AMP = 3; // px
 const LABEL_BOB_SPEED = 0.006; // rad/ms
 // Lift the label a full tile above the post top. The post is only ~1 tile tall,
@@ -50,6 +54,9 @@ interface SignEntry {
   outline: Phaser.GameObjects.Image | null;
   label: Phaser.GameObjects.Text;
   visible: boolean;
+  // Timestamp of the last show, so the label bob starts at sine phase 0 on each
+  // appearance (mirrors npcInteraction/inscribedStone — the C4-f prompt fix).
+  shownAt: number;
   outlineTween: Phaser.Tweens.Tween | null;
   labelTween: Phaser.Tweens.Tween | null;
 }
@@ -113,6 +120,7 @@ export class SignpostWayfindingSystem {
       outline,
       label,
       visible: false,
+      shownAt: 0,
       outlineTween: null,
       labelTween: null,
     };
@@ -130,7 +138,7 @@ export class SignpostWayfindingSystem {
       else if (!inRange && e.visible) this.hide(e);
 
       if (e.visible) {
-        const bob = Math.sin(this.scene.time.now * LABEL_BOB_SPEED) * LABEL_BOB_AMP;
+        const bob = Math.sin((this.scene.time.now - e.shownAt) * LABEL_BOB_SPEED) * LABEL_BOB_AMP;
         e.label.setPosition(e.centerX, e.topY - 4 - LABEL_LIFT + bob);
       }
     }
@@ -138,6 +146,7 @@ export class SignpostWayfindingSystem {
 
   private show(e: SignEntry): void {
     e.visible = true;
+    e.shownAt = this.scene.time.now; // anchor the bob phase to this appearance
 
     e.labelTween?.stop();
     e.label.setVisible(true);
