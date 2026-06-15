@@ -1714,12 +1714,18 @@ export class GameScene extends Phaser.Scene {
       // true scale instead of a 32px miniature (Jaco dock feedback, 2026-06-13).
       const fp = def.footprint ?? { w: 1, h: 1 };
       sprite.setDisplaySize(fp.w * TILE_SIZE, fp.h * TILE_SIZE);
-      // Tall objects (#346, trees) Y-sort against the player/NPCs on their base
-      // (bottom of the footprint = trunk base), so Pip passes behind from above
-      // and in front from below. Everything else keeps the flat object depth.
-      sprite.setDepth(
-        def.tall ? this.ySortDepth((inst.row + fp.h) * TILE_SIZE) : 2.5,
-      );
+      // Tall objects (#346, trees) Y-sort against the player/NPCs on the UPPER
+      // edge of their collision footprint — the top of the blue trunk-base
+      // collider, NOT the sprite's bounding-box bottom. Per Jaco FB-3: Pip is
+      // BEHIND the tree the moment her feet rise above that collider line, and
+      // IN FRONT once her feet drop below it. The old (inst.row + fp.h) line sat
+      // a full tile too low (the collider's bottom edge), so Pip read as "in
+      // front" while still up beside the trunk. Falls back to the footprint
+      // bottom for any tall object lacking an explicit collider.
+      const sortY = def.collisionFootprint
+        ? (inst.row + def.collisionFootprint.dy) * TILE_SIZE
+        : (inst.row + fp.h) * TILE_SIZE;
+      sprite.setDepth(def.tall ? this.ySortDepth(sortY) : 2.5);
       this.objectSprites.push(sprite);
       if (inst.condition) {
         sprite.setVisible(evaluateCondition(inst.condition));
