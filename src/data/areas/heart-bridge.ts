@@ -58,13 +58,41 @@ for (let c = 0; c < HEART_BRIDGE_COLS; c++) {
 }
 
 // ───── Triggers ─────
+// CROSSING BANDS (US-HB2) — the paced colour-return mechanic. Three invisible
+// one-shot bands divide the span into quarters; each crossed band increments
+// `heart_bridge_crossing`, and the far-end seal trigger increments it a fourth
+// time as it grants `atoned`. The GameScene desat hook reads that counter
+// (0→4) and lifts the grey overlay one quarter per band, so colour returns to
+// the world AS Pip walks — fully restored exactly when she's across. type
+// 'thought' + empty actionRef = no text shown (same no-op idiom as the seal
+// trigger / Briar's light anchors): these are pure mechanical flag flips. The
+// figure/wording that may eventually accompany the crossing (Decisions 1–3) is
+// NOT here — this slice is the pacing mechanic only. Each band is gated so it
+// fires once per fresh crossing (re-cross only happens after a Reset clears
+// both `atoned` and the counter).
+const crossingBands: TriggerDefinition[] = [6, 12, 18].map((col, i) => ({
+  id: `heart-bridge-band-${i + 1}`,
+  col,
+  row: 1,
+  width: 1,
+  height: 3,
+  type: 'thought' as const,
+  actionRef: '',
+  condition: 'atoned == false',
+  incrementFlags: ['heart_bridge_crossing'],
+  repeatable: false,
+}));
+
 // The far-end one-shot that grants the permanent atonement state. type 'thought'
 // + empty actionRef = no thought is shown (same idiom as Briar's light anchors /
-// completion trigger): this is a pure mechanical flag flip for the shell. The
-// closing seal SCENE that will play here (US-HB3) is a later slice and replaces
-// nothing structural — it will set `atoned` via its own terminal beat once the
-// gospel Decisions land. Gated `atoned == false` so re-crossing never re-fires.
+// completion trigger): this is a pure mechanical flag flip for the shell. It also
+// increments `heart_bridge_crossing` a final (4th) time, so the colour-return
+// overlay reaches full restoration exactly as `atoned` seals. The closing seal
+// SCENE that will play here (US-HB3) is a later slice and replaces nothing
+// structural — it will set `atoned` via its own terminal beat once the gospel
+// Decisions land. Gated `atoned == false` so re-crossing never re-fires.
 const triggers: TriggerDefinition[] = [
+  ...crossingBands,
   {
     id: 'heart-bridge-crossed',
     col: 22,
@@ -75,6 +103,7 @@ const triggers: TriggerDefinition[] = [
     actionRef: '',
     condition: 'atoned == false',
     setFlags: { atoned: true },
+    incrementFlags: ['heart_bridge_crossing'],
     repeatable: false,
   },
 ];
