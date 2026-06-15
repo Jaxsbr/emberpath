@@ -95,6 +95,13 @@ export class EmberWarmthSystem {
     remembered: boolean;
   }> = [];
   private hasWord: boolean = false;
+  // Atoned hold (heart-bridge close, US-HB4 — Jaco Decision 1 "pull-but-hold" +
+  // Decision 2A "local & permanent", 2026-06-16). Once Pip is atoned the trials
+  // still pull (the doubt thoughts still fire, the zone still reads 'drain') but
+  // her light can no longer drop — so her colour-pool is permanent and travels
+  // with her in every area. The world itself stays grey until the Citadel (the
+  // global colour-return is the Citadel's climax, not the bridge's).
+  private atoned: boolean = false;
 
   constructor(
     private scene: Phaser.Scene,
@@ -119,6 +126,7 @@ export class EmberWarmthSystem {
     this.registeredLightIds = [];
     this.steadyStones = [];
     this.hasWord = false;
+    this.atoned = false;
 
     // Filter zones to those with valid in-bounds coordinates and positive
     // dimensions. Authoring errors (out-of-grid coords, zero/negative size)
@@ -166,6 +174,22 @@ export class EmberWarmthSystem {
       this.hasWord = value === true;
     });
     this.unsubscribers.push(unsubWord);
+
+    // Atoned hold (US-HB4). Seed the cached flag, then subscribe: the moment
+    // atonement fires, the ember fills to full and is secured there — no drain
+    // can lower it again. Set on flag-change only so the update loop never reads
+    // the flag store (Learning EP-01).
+    this.atoned = getFlag('atoned') === true;
+    const unsubAtoned = onFlagChange('atoned', (_name, value) => {
+      const nowAtoned = value === true;
+      this.atoned = nowAtoned;
+      if (nowAtoned) {
+        this.currentWarmth = WARMTH_MAX;
+        this.lastPersistedWarmth = WARMTH_MAX;
+        setFlag(FLAG_NAME, WARMTH_MAX);
+      }
+    });
+    this.unsubscribers.push(unsubAtoned);
     const stones = inscribedStones ?? [];
     for (let i = 0; i < stones.length; i++) {
       const s = stones[i];
@@ -210,6 +234,13 @@ export class EmberWarmthSystem {
     if (raw !== validated) {
       setFlag(FLAG_NAME, validated);
       this.lastPersistedWarmth = validated;
+    }
+    // A save loaded post-atonement starts the ember full + secured (US-HB4) —
+    // the carried colour-pool persists across reload, not just the live session.
+    if (this.atoned) {
+      this.currentWarmth = WARMTH_MAX;
+      this.lastPersistedWarmth = WARMTH_MAX;
+      if (raw !== WARMTH_MAX) setFlag(FLAG_NAME, WARMTH_MAX);
     }
 
     // Reset Progress subscriber (Learning EP-02) — when the flag is wiped,
@@ -306,7 +337,10 @@ export class EmberWarmthSystem {
       next += restoreRate * dt;
       this.currentZoneState = 'quiet';
     } else if (inDrain) {
-      if (!steadied) next -= drainRate * dt;
+      // Pull-but-hold (US-HB4): once atoned, the drain no longer lowers the
+      // ember — but inDrain stays true above, so the doubt thoughts still fire
+      // and the zone still reads 'drain'. The cost is felt; the outcome is sure.
+      if (!steadied && !this.atoned) next -= drainRate * dt;
       this.currentZoneState = 'drain';
     } else {
       this.currentZoneState = 'neutral';
