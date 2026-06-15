@@ -58,6 +58,22 @@ const EMBER_OFFSET_Y = -28;
 const EMBER_GLOW_KEY = 'player-ember-glow';
 const EMBER_GLOW_TEX_SIZE = 64;
 const EMBER_DEPTH = 5.5;
+// Carried Word lantern (US-W1 carried visual, Issue #93). After Pip receives the
+// Word from Quill (`has_word`), she carries a lit lantern — "the Word as light",
+// the same lamp she is handed in the the-word-gift scene (a lamp unto her feet).
+// A small sprite that bobs at her side with a soft warm halo, mirroring the
+// emberOverlay lifecycle: created when has_word flips true OR is already true on
+// scene create (area transitions / Continue-from-save), destroyed when unset
+// (Reset Progress via resetAllFlags). Deliberately distinct from the ember (a
+// round white-hot glow on her body): this is a recognizable lamp held at her side
+// so a first-time player gets a persistent "I carry the Word now" confirmation.
+const WORD_LANTERN_KEY = 'word-lantern-lit';
+const WORD_LANTERN_DEPTH = 5.5; // ember band — composites above every entity
+const WORD_LANTERN_OFFSET_X = 12; // held out at her side
+const WORD_LANTERN_OFFSET_Y = 0; // body level (the ember rides higher at -28)
+const WORD_LANTERN_DISPLAY_W = 16; // on-screen px (source is 48×64, kept in ratio)
+const WORD_LANTERN_DISPLAY_H = 21;
+const WORD_LANTERN_GLOW_DIAMETER = 30; // soft warm halo so the lamp reads as lit
 // Y-sort entity band (#346). The player, NPCs, and `tall` objects (trees) all
 // render in [ENTITY_DEPTH_BASE, ENTITY_DEPTH_BASE + ENTITY_DEPTH_SPAN), keyed
 // on the world-y of their ground contact: an entity lower on the map (larger y)
@@ -261,6 +277,12 @@ export class GameScene extends Phaser.Scene {
   // cleanupResize.
   private emberOverlay: Phaser.GameObjects.Image | null = null;
   private hasEmberMarkUnsubscribe: (() => void) | null = null;
+  // Carried Word lantern + its warm halo (US-W1 / Issue #93). Lifecycle mirrors
+  // emberOverlay: created on has_word flip-true or already-true at create,
+  // destroyed on unset. Unsubscribe invoked in cleanupResize.
+  private wordLantern: Phaser.GameObjects.Image | null = null;
+  private wordLanternGlow: Phaser.GameObjects.Image | null = null;
+  private hasWordUnsubscribe: (() => void) | null = null;
   // Warming-flag onFlagChange unsubscribes (US-85). One per NPC in
   // WARMING_NPC_IDS. Each subscriber re-registers the NPC's tier-1 light at
   // brighter values on flip-to-true and restores baseline on flip-to-false /
@@ -301,11 +323,12 @@ export class GameScene extends Phaser.Scene {
     // indices; resolveWangFrame returns them as strings which Phaser accepts directly.
     // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
     //
-    // Dedupe by atlasKey: a placeholder tileset entry (US-100 skeleton's
-    // 'briar-wilds-floor-thorn' reuses 'tileset-ashen-isle-grass-sand') must
-    // not enqueue a second load against a tilesets/<id>/tilemap.png URL that
-    // does not exist on disk yet. The first entry with each atlasKey wins;
-    // subsequent entries skip.
+    // Dedupe by atlasKey: two TILESETS entries may share one atlasKey (and thus
+    // one on-disk tilemap.png), so the dedupe avoids enqueuing the same image
+    // twice. The first entry with each atlasKey wins; subsequent entries skip.
+    // (Each shipped area — including Briar's own 'tileset-briar-wilds-floor-thorn'
+    // — has its own real atlas; the old "Briar reuses the ashen-sand placeholder"
+    // note was stale, corrected in #95.)
     const loadedAtlasKeys = new Set<string>();
     for (const [id, def] of Object.entries(TILESETS)) {
       if (loadedAtlasKeys.has(def.atlasKey)) continue;
@@ -323,6 +346,10 @@ export class GameScene extends Phaser.Scene {
     for (const def of Object.values(OBJECT_KINDS)) {
       this.load.image(def.atlasKey, def.assetPath);
     }
+
+    // Carried Word lantern sprite (Issue #93). A standalone overlay image (not a
+    // placed map object), shown at Pip's side while `has_word` is set.
+    this.load.image(WORD_LANTERN_KEY, 'objects/the-word/lantern-lit.png');
 
     // Load per-NPC sprite frames driven by the registry — adding a new NPC becomes
     // a registry entry plus an AreaDefinition row, with no scene-file edit.
@@ -672,6 +699,16 @@ export class GameScene extends Phaser.Scene {
       this.maybeUpdateAlphaGates(true);
     });
 
+    // Carried Word lantern (US-W1 / Issue #93). Same create-or-subscribe pattern
+    // as the ember: show it if has_word is already set on entry (Quill is in the
+    // previous area; the flag persists), and flip it on/off with the flag (the
+    // word-given dialogue sets has_word; resetAllFlags notifies with undefined).
+    if (getFlag('has_word') === true) this.maybeCreateWordLantern();
+    this.hasWordUnsubscribe = onFlagChange('has_word', (_, value) => {
+      if (value === true) this.maybeCreateWordLantern();
+      else this.destroyWordLantern();
+    });
+
     // Warming subscribers (US-85). For each NPC in WARMING_NPC_IDS, watch the
     // `npc_warmed_<id>` flag: on flip-to-true, re-register the NPC's tier-1
     // light at brighter values (idempotent overwrite — Learning #63) AND
@@ -810,6 +847,34 @@ export class GameScene extends Phaser.Scene {
   private destroyEmberOverlay(): void {
     this.emberOverlay?.destroy();
     this.emberOverlay = null;
+  }
+
+  // Carried Word lantern (Issue #93). A soft warm halo (reusing the pre-baked
+  // ember glow texture, ADD-blended) sits under a small lit-lantern sprite, both
+  // ignored by the UI camera and parked in the ember depth band so they ride
+  // above every entity. Positions/alpha are driven each frame in update().
+  private maybeCreateWordLantern(): void {
+    if (this.wordLantern) return;
+    if (!this.player) return;
+    this.ensureEmberGlowTexture();
+    this.wordLanternGlow = this.add.image(this.player.x, this.player.y, EMBER_GLOW_KEY);
+    this.wordLanternGlow.setOrigin(0.5, 0.5);
+    this.wordLanternGlow.setBlendMode(Phaser.BlendModes.ADD);
+    this.wordLanternGlow.setDepth(WORD_LANTERN_DEPTH - 0.01);
+    this.wordLanternGlow.setDisplaySize(WORD_LANTERN_GLOW_DIAMETER, WORD_LANTERN_GLOW_DIAMETER);
+    this.cameras.getCamera('ui')?.ignore(this.wordLanternGlow);
+    this.wordLantern = this.add.image(this.player.x, this.player.y, WORD_LANTERN_KEY);
+    this.wordLantern.setOrigin(0.5, 0.5);
+    this.wordLantern.setDepth(WORD_LANTERN_DEPTH);
+    this.wordLantern.setDisplaySize(WORD_LANTERN_DISPLAY_W, WORD_LANTERN_DISPLAY_H);
+    this.cameras.getCamera('ui')?.ignore(this.wordLantern);
+  }
+
+  private destroyWordLantern(): void {
+    this.wordLantern?.destroy();
+    this.wordLantern = null;
+    this.wordLanternGlow?.destroy();
+    this.wordLanternGlow = null;
   }
 
   // Pre-bake the NPC presence aura once: amber, softer + cooler than Pip's
@@ -992,6 +1057,22 @@ export class GameScene extends Phaser.Scene {
       this.emberOverlay.setPosition(this.player.x, this.player.y + EMBER_OFFSET_Y);
       this.emberOverlay.setDisplaySize(diameter, diameter);
       this.emberOverlay.setAlpha(Math.min(1, alpha * alphaPulse));
+    }
+
+    // Carried Word lantern (Issue #93): the lamp bobs gently at Pip's side and
+    // its halo flickers like a live flame, so a player who has received the Word
+    // always sees they carry it. Loop-invariant EP-01: in-place setPosition /
+    // setAlpha only — no allocation, the sprites are reused frame-to-frame.
+    if (this.wordLantern) {
+      const bob = Math.sin(time * 0.004);
+      const lx = this.player.x + WORD_LANTERN_OFFSET_X;
+      const ly = this.player.y + WORD_LANTERN_OFFSET_Y + bob * 1.5;
+      this.wordLantern.setPosition(lx, ly);
+      if (this.wordLanternGlow) {
+        const flicker = 0.82 + 0.18 * Math.sin(time * 0.012);
+        this.wordLanternGlow.setPosition(lx, ly + 1);
+        this.wordLanternGlow.setAlpha(0.55 * flicker);
+      }
     }
 
     // NPC presence auras (C4-a): follow their (possibly wandering) NPCs and
@@ -1924,9 +2005,14 @@ export class GameScene extends Phaser.Scene {
       this.hasEmberMarkUnsubscribe();
       this.hasEmberMarkUnsubscribe = null;
     }
+    if (this.hasWordUnsubscribe) {
+      this.hasWordUnsubscribe();
+      this.hasWordUnsubscribe = null;
+    }
     for (const unsub of this.warmingUnsubscribes) unsub();
     this.warmingUnsubscribes = [];
     this.destroyEmberOverlay();
+    this.destroyWordLantern();
     this.lightingSystem?.destroy();
     this.ambientMotes?.destroy();
     this.fogOverlay?.destroy();

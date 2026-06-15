@@ -56,6 +56,16 @@ The style-match constraint forces the object palette / outline weight / shading 
 | briar-dead-tree | false | dead leafless gnarled tree seen from DIRECTLY ABOVE — bare twisted branches radiate outward from a central dark trunk like a cracked starburst, no canopy, weathered grey-brown deadwood, 128×128 over a `tall` 4×4 footprint (regenerated TOP-DOWN 2026-06-14 via `create_map_object`, Slice 7c — replaced the earlier 2×2/64px version so the dead tree reads as a real multi-tile tree like Ashen's oak/pine and Y-sorts on its trunk base, per directives #344+#346) | `eae13c25-15f4-4e83-8500-9c03ea924a16` |
 | twisted-root | true | gnarled exposed root tangle on the ground, passable, top-down storybook (T12 PixelLab gen — object_id not recorded at generation time) | — |
 
+## The Word (1 asset — carried player overlay, not a placed map kind)
+
+Not a `map.objects` kind: a standalone overlay sprite drawn at Pip's side while the
+`has_word` flag is set (US-W1 / Issue #93 — "the Word as light"). Loaded directly by
+`GameScene` (`objects/the-word/lantern-lit.png`), not through `OBJECT_KINDS`.
+
+| asset | description | object_id |
+|---|---|---|
+| lantern-lit.png | small lit hand-lantern — warm flame inside a cool dark iron frame, storybook, 48×64 (PixelLab `create_map_object`, basic mode, 1 gen, 2026-06-15). Rendered at 16×21 px with a soft warm halo so it reads as a carried lamp distinct from the ember bloom | `caa6b270-3154-4390-8ffe-b0dda824bee7` |
+
 ## Generation budget reconciliation
 
 Spec budget: ≤ 1 reroll per object (≤ 36 generations max for 18 objects).
