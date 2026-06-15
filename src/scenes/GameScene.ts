@@ -211,11 +211,18 @@ export class GameScene extends Phaser.Scene {
   // Tracked as instance fields so cleanupResize can destroy them and uiCam can
   // ignore them. Reset to [] at the top of renderObjects().
   private objectSprites: Phaser.GameObjects.Image[] = [];
+  // Drop-shadow layer (FB-3) — one soft elliptical ground-contact shadow per
+  // object, rendered at depth 0.6 (above terrain/exit overlays, below
+  // decorations/objects/entities) so every object reads as grounded with light
+  // from above. Replaces the baked-in green ground patches some tree sprites
+  // shipped with. Shadows are neutral dark so the drained-area desaturation
+  // pipeline leaves them correct on the main camera.
+  private objectShadows: Phaser.GameObjects.Ellipse[] = [];
   // Conditional objects: visibility re-evaluated only on flag changes
   // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
   // condition string is available for re-eval and so buildObjectCollisionMap
   // can re-derive the cell-block flag.
-  private conditionalObjects: { sprite: Phaser.GameObjects.Image; instance: ObjectInstance }[] = [];
+  private conditionalObjects: { sprite: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Ellipse; instance: ObjectInstance }[] = [];
   // Translucent exit-zone overlays (US-92). Rendered at depth 0.5 between
   // terrain and decorations using STYLE_PALETTE.hopeGoldLight at alpha 0.25 so
   // exit invitations remain visible without a dedicated terrain frame.
@@ -1691,6 +1698,7 @@ export class GameScene extends Phaser.Scene {
   // they don't double-render.
   private renderObjects(): void {
     this.objectSprites = [];
+    this.objectShadows = [];
     this.conditionalObjects = [];
     for (const inst of this.area.objects) {
       const def = OBJECT_KINDS[inst.kind];
@@ -1727,9 +1735,38 @@ export class GameScene extends Phaser.Scene {
         : (inst.row + fp.h) * TILE_SIZE;
       sprite.setDepth(def.tall ? this.ySortDepth(sortY) : 2.5);
       this.objectSprites.push(sprite);
+
+      // Believable ground-contact shadow (FB-3, light-from-above). Pools at the
+      // object's base: for objects with a collision footprint (trees, the stag)
+      // it tucks under the trunk-base collider; otherwise it spans the sprite's
+      // bottom edge. An oblique ellipse (~0.42 aspect) reads as a flat shadow on
+      // the ground rather than a circle painted up the object. Depth 0.6 keeps
+      // it above terrain but beneath the object and any entity that walks over.
+      const cf = def.collisionFootprint;
+      let shCx: number;
+      let shBaseY: number;
+      let shW: number;
+      if (cf) {
+        shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
+        shBaseY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
+        shW = Math.max(cf.w * TILE_SIZE * 1.6, TILE_SIZE * 0.9);
+      } else {
+        shCx = (inst.col + fp.w / 2) * TILE_SIZE;
+        shBaseY = (inst.row + fp.h) * TILE_SIZE;
+        shW = fp.w * TILE_SIZE * 0.72;
+      }
+      const shH = shW * 0.42;
+      // Lift the ellipse centre up by a third of its height so it sits snug
+      // under the base contact line instead of floating below it.
+      const shadow = this.add.ellipse(shCx, shBaseY - shH * 0.35, shW, shH, 0x000000, 0.26);
+      shadow.setDepth(0.6);
+      this.objectShadows.push(shadow);
+
       if (inst.condition) {
-        sprite.setVisible(evaluateCondition(inst.condition));
-        this.conditionalObjects.push({ sprite, instance: inst });
+        const visible = evaluateCondition(inst.condition);
+        sprite.setVisible(visible);
+        shadow.setVisible(visible);
+        this.conditionalObjects.push({ sprite, shadow, instance: inst });
       }
     }
   }
@@ -1740,7 +1777,9 @@ export class GameScene extends Phaser.Scene {
     for (const entry of this.conditionalObjects) {
       const cond = entry.instance.condition;
       if (!cond) continue;
-      entry.sprite.setVisible(evaluateCondition(cond));
+      const visible = evaluateCondition(cond);
+      entry.sprite.setVisible(visible);
+      entry.shadow.setVisible(visible);
     }
   }
 
@@ -1962,6 +2001,7 @@ export class GameScene extends Phaser.Scene {
       ...this.tileLayer,
       ...this.exitOverlays,
       ...this.decorationSprites,
+      ...this.objectShadows,
       ...this.objectSprites,
       ...this.propSprites,
       this.player,
@@ -2124,6 +2164,8 @@ export class GameScene extends Phaser.Scene {
     this.objectiveFlagUnsubscribes = [];
     for (const sprite of this.objectSprites) sprite.destroy();
     this.objectSprites = [];
+    for (const shadow of this.objectShadows) shadow.destroy();
+    this.objectShadows = [];
     this.conditionalObjects = [];
     for (const rect of this.exitOverlays) rect.destroy();
     this.exitOverlays = [];
