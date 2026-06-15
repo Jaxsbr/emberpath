@@ -59,7 +59,14 @@ export type ObjectKindId =
   | 'bramble-cluster'
   | 'briar-dead-tree'
   // Briar Wilds — passable
-  | 'twisted-root';
+  | 'twisted-root'
+  // Heart Bridge — the figure who meets Pip at the crossing (US-HB3, Decision 1 =
+  // FIGURE PRESENT, Jaco 2026-06-15). A wordless regal golden stag standing at the
+  // far third of the span. Impassable presence (Pip walks past, not through);
+  // `tall` so she passes behind it from above and in front from below, like a tree.
+  // No dialogue/interaction — it is a placed object, not an NPC, so it carries no
+  // "talk" prompt. PixelLab golden-stag generation, low-top-down to match Pip.
+  | 'golden-stag';
 
 export interface ObjectKindDefinition {
   id: ObjectKindId;
@@ -183,6 +190,13 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // the bare branch spread overhangs the rest of the 4×4 as walkable shade.
   'briar-dead-tree': { id: 'briar-dead-tree', atlasKey: 'object-briar-dead-tree', assetPath: 'objects/briar-wilds/briar-dead-tree.png', passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
   'twisted-root':    { id: 'twisted-root',    atlasKey: 'object-twisted-root',    assetPath: 'objects/briar-wilds/twisted-root.png',    passable: true },
+
+  // Heart Bridge — the golden stag who meets Pip at the crossing (US-HB3). Rendered
+  // 3×3 (96px) so it reads slightly LARGER than Pip (≈68px) — a presence, not a peer.
+  // `tall` (Y-sorted on its base) so depth reads naturally as she passes; collision
+  // keys only the bottom-center base cell, so the figure's body overhangs the rest of
+  // its footprint as walkable space and Pip can step around to reach the seal.
+  'golden-stag':     { id: 'golden-stag',     atlasKey: 'object-golden-stag',     assetPath: 'objects/heart-bridge/golden-stag.png',     passable: false, footprint: { w: 3, h: 3 }, tall: true, collisionFootprint: { dx: 1, dy: 2, w: 1, h: 1 } },
 };
 
 export function hasObjectKind(id: string): id is ObjectKindId {
