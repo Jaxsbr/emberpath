@@ -92,6 +92,15 @@ const WORD_LANTERN_CAST_DEPTH = 4.55; // on the ground, below the entity band [5
 // prop layers (0–3) and non-tall objects (2.5) are unaffected.
 const ENTITY_DEPTH_BASE = 5;
 const ENTITY_DEPTH_SPAN = 0.49;
+// Behind-object reveal (FB-3 part 4). When Pip slips behind a tall object's
+// canopy it fades to BEHIND_FADE_ALPHA and gains a thin white outline so she
+// stays readable through it; both ease back over BEHIND_FADE_MS when she leaves.
+const BEHIND_FADE_ALPHA = 0.5;
+const BEHIND_FADE_MS = 180;
+// White edge glow used as the "outline" (Phaser 3.80 has no built-in Outline FX;
+// a knockout-off glow hugs the sprite's alpha edges and reads as a crisp rim).
+const BEHIND_OUTLINE_COLOR = 0xffffff;
+const BEHIND_OUTLINE_STRENGTH = 4;
 // NPC presence marker (C4-a, 2026-06-13). Audit F4: post the grey-out model the
 // whole world is visible, but an un-warmed NPC reads as just another grey shape —
 // nothing says "a soul to approach." A faint warm amber aura (the same soft
@@ -218,6 +227,23 @@ export class GameScene extends Phaser.Scene {
   // shipped with. Shadows are neutral dark so the drained-area desaturation
   // pipeline leaves them correct on the main camera.
   private objectShadows: Phaser.GameObjects.Ellipse[] = [];
+  // Behind-object reveal (FB-3 part 4) — tall objects (trees, the stag) Pip can
+  // hide behind. When her feet rise above an object's trunk-collider top AND she
+  // is horizontally under its canopy, the object fades to 50% and gains a white
+  // postFX outline so she stays visible through it; both revert the moment she
+  // steps clear. State is per-object so we only tween/toggle on a transition
+  // (Learning EP-01: the per-frame scan is allocation-free arithmetic; tweens
+  // and FX changes fire only on enter/leave). colliderTopY / xMin / xMax are
+  // precomputed at render time. Houses are out of scope until the cottage has a
+  // base-collider (it isn't a `tall` object yet) — tracked as remaining FB-3.
+  private behindFadeObjects: {
+    sprite: Phaser.GameObjects.Image;
+    colliderTopY: number;
+    xMin: number;
+    xMax: number;
+    behind: boolean;
+    outline: Phaser.FX.Glow | null;
+  }[] = [];
   // Conditional objects: visibility re-evaluated only on flag changes
   // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
   // condition string is available for re-eval and so buildObjectCollisionMap
@@ -1086,6 +1112,8 @@ export class GameScene extends Phaser.Scene {
     // draws behind a tree canopy when above its trunk and in front when below
     // (#346). Pure arithmetic, no per-frame allocation (Learning EP-01).
     this.player.setDepth(this.ySortDepth(this.player.y + halfSize));
+    // Fade + outline any tall object Pip is currently hidden behind (FB-3 pt 4).
+    this.updateBehindObjectFade();
 
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
     // Y-sort wandering NPCs the same way after their positions settle this
@@ -1699,6 +1727,7 @@ export class GameScene extends Phaser.Scene {
   private renderObjects(): void {
     this.objectSprites = [];
     this.objectShadows = [];
+    this.behindFadeObjects = [];
     this.conditionalObjects = [];
     for (const inst of this.area.objects) {
       const def = OBJECT_KINDS[inst.kind];
@@ -1762,6 +1791,21 @@ export class GameScene extends Phaser.Scene {
       shadow.setDepth(0.6);
       this.objectShadows.push(shadow);
 
+      // Register tall objects (those with a trunk-base collider) for the
+      // behind-object reveal (FB-3 part 4). "Behind" = Pip's feet above the
+      // collider top (same line that drives the depth-sort) AND horizontally
+      // under the canopy (the sprite's full width). Precompute the bounds here.
+      if (def.tall && cf) {
+        this.behindFadeObjects.push({
+          sprite,
+          colliderTopY: (inst.row + cf.dy) * TILE_SIZE,
+          xMin: inst.col * TILE_SIZE,
+          xMax: (inst.col + fp.w) * TILE_SIZE,
+          behind: false,
+          outline: null,
+        });
+      }
+
       if (inst.condition) {
         const visible = evaluateCondition(inst.condition);
         sprite.setVisible(visible);
@@ -1780,6 +1824,44 @@ export class GameScene extends Phaser.Scene {
       const visible = evaluateCondition(cond);
       entry.sprite.setVisible(visible);
       entry.shadow.setVisible(visible);
+    }
+  }
+
+  // Behind-object reveal (FB-3 part 4). Called each walk-frame: for every tall
+  // object Pip can hide behind, fade it to 50% + add a white outline while she
+  // is behind it, and revert when she steps clear. Per-frame work is just a few
+  // comparisons per object (no allocation); the alpha tween and the outline FX
+  // are only touched on an enter/leave transition (Learning EP-01).
+  private updateBehindObjectFade(): void {
+    if (this.behindFadeObjects.length === 0) return;
+    const feetY = this.player.y + PLAYER_SIZE / 2;
+    const px = this.player.x;
+    for (let i = 0; i < this.behindFadeObjects.length; i++) {
+      const o = this.behindFadeObjects[i];
+      // A hidden conditional object can't be hidden-behind; force it clear.
+      const behind =
+        o.sprite.visible && feetY < o.colliderTopY && px >= o.xMin && px <= o.xMax;
+      if (behind === o.behind) continue;
+      o.behind = behind;
+      this.tweens.killTweensOf(o.sprite);
+      this.tweens.add({
+        targets: o.sprite,
+        alpha: behind ? BEHIND_FADE_ALPHA : 1,
+        duration: BEHIND_FADE_MS,
+        ease: 'Sine.easeOut',
+      });
+      if (behind && !o.outline) {
+        // knockout=false keeps the tree visible with a white rim hugging its edges.
+        o.outline = o.sprite.postFX.addGlow(
+          BEHIND_OUTLINE_COLOR,
+          BEHIND_OUTLINE_STRENGTH,
+          0,
+          false
+        );
+      } else if (!behind && o.outline) {
+        o.sprite.postFX.remove(o.outline);
+        o.outline = null;
+      }
     }
   }
 
@@ -2166,6 +2248,9 @@ export class GameScene extends Phaser.Scene {
     this.objectSprites = [];
     for (const shadow of this.objectShadows) shadow.destroy();
     this.objectShadows = [];
+    // Sprites are destroyed via objectSprites above (their outline FX dies with
+    // them); just drop our references so a stale entry can't outlive the scene.
+    this.behindFadeObjects = [];
     this.conditionalObjects = [];
     for (const rect of this.exitOverlays) rect.destroy();
     this.exitOverlays = [];
