@@ -371,8 +371,11 @@ export const briarWilds: AreaDefinition = {
       text: 'Remember the words at the carved stone. They will steady your light.',
     },
     {
+      // The thorns are behind her; the long stone bridge foreshadowed at the
+      // east clearing is now walkable (gated on has_word, true by here). Point
+      // the cold player onto it. Wayfinding only — no doctrine.
       condition: 'briar_wilds_complete == true',
-      text: 'You crossed the thorns. Your light made it through.',
+      text: 'You crossed the thorns. The old stone bridge is just east. Cross it.',
     },
   ],
   mapCols: 32,
@@ -430,6 +433,21 @@ export const briarWilds: AreaDefinition = {
       height: 3,
       destinationAreaId: 'ashen-isle',
       entryPoint: { col: 48, row: 18 },
+    },
+    {
+      // East-edge mouth of the Heart Bridge (heart-bridge phase, US-HB1). Sits at
+      // the far clearing the whole map points toward (lightBeacon 28,12), past the
+      // completion trigger. Gated on has_word so the span only opens once Pip
+      // carries the Word out of the thorns — the atonement beat follows receiving
+      // the Word, never precedes it. Drops her at the bridge's west spawn (1,2).
+      id: 'briar-to-heart-bridge',
+      col: 31,
+      row: 11,
+      width: 1,
+      height: 3,
+      destinationAreaId: 'heart-bridge',
+      entryPoint: { col: 1, row: 2 },
+      condition: 'has_word == true',
     },
   ],
   visual: { floorColor: 0x4a5a4a, wallColor: 0x2a2a30 },

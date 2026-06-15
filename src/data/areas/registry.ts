@@ -2,11 +2,13 @@ import { AreaDefinition } from './types';
 import { ashenIsle } from './ashen-isle';
 import { fogMarsh } from './fog-marsh';
 import { briarWilds } from './briar-wilds';
+import { heartBridge } from './heart-bridge';
 
 const areas: Record<string, AreaDefinition> = {
   'ashen-isle': ashenIsle,
   'fog-marsh': fogMarsh,
   'briar-wilds': briarWilds,
+  'heart-bridge': heartBridge,
 };
 
 export function getArea(id: string): AreaDefinition | undefined {
