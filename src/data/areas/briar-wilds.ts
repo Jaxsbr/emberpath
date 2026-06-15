@@ -226,6 +226,24 @@ const triggers: TriggerDefinition[] = [
     setFlags: { briar_wilds_complete: true },
     repeatable: false,
   },
+  // bearing-fruit (Beat 7) — Briar's fruit is environmental. After the
+  // heart-bridge seal (`atoned == true`) the drain zones no longer pull Pip's
+  // warmth down (US-HB4 makes them inert on revisit). This one-shot thought, on
+  // the central corridor so it fires whichever way Pip re-enters, names what she
+  // feels: the dry place that used to drain her can't anymore. Kid-level, no
+  // theological vocabulary; pairs with the inert drains for a felt change.
+  {
+    id: 'briar-atoned-return',
+    col: 17,
+    row: 12,
+    width: 3,
+    height: 2,
+    type: 'thought',
+    actionRef: 'The thorny woods used to pull at Pip\'s light. Now it stays warm, no matter how dark it gets.',
+    condition: 'atoned == true AND briar_atoned_seen == false',
+    setFlags: { briar_atoned_seen: true },
+    repeatable: false,
+  },
 ];
 
 // ───── Light anchors (C13 — Briar "near-black void" clarity, Issue #72) ─────

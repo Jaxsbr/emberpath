@@ -477,6 +477,27 @@ const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
   { kind: 'bramble-cluster', col: 49, row: 19, condition: 'has_ember_mark == false' },
 ];
 
+// bearing-fruit (Beat 7) — visible fruit of the journey. After the heart-bridge
+// seal (`atoned == true`), life returns to the two homes Pip warmed: small
+// flower blooms appear where there was only grey before. Gated on `atoned`
+// alone (single persisted flag → robust live re-eval on flag change and on
+// scene re-entry) so the world visibly answers the change in Pip, not just the
+// dialogue. Cells are open yard/clearing floor, clear of the cottage footprint
+// (anchor 39,25 → cols 39-42 rows 25-28) and Wren's wander core (22,18, r2).
+const ashenFruitBlooms: import('../../maps/objects').ObjectInstance[] = [
+  // Old Man's yard — blooms flanking his doorway
+  { kind: 'flower', col: 37, row: 30, condition: 'atoned == true' },
+  { kind: 'flower', col: 38, row: 30, condition: 'atoned == true' },
+  { kind: 'flower', col: 42, row: 30, condition: 'atoned == true' },
+  { kind: 'flower', col: 43, row: 30, condition: 'atoned == true' },
+  // Wren's clearing — two bloom clusters flanking where she sings (clustered,
+  // not scattered per #344), just outside her r2 wander core
+  { kind: 'flower', col: 19, row: 18, condition: 'atoned == true' },
+  { kind: 'flower', col: 19, row: 19, condition: 'atoned == true' },
+  { kind: 'flower', col: 25, row: 18, condition: 'atoned == true' },
+  { kind: 'flower', col: 25, row: 19, condition: 'atoned == true' },
+];
+
 // the-word phase (US-W5) — a retroactive inscribed stone at the village's east
 // edge, beside the Briar gate. SPRITE + collision is a carved `cliff-stone` (the
 // same object Briar's stone uses, so "inscribed stone" reads consistently); the
@@ -619,6 +640,7 @@ export const ashenIsle: AreaDefinition = {
     ...ashenUndergrowth,
     ...ashenDockProps,
     ...ashenEastBrambles,
+    ...ashenFruitBlooms,
     ...ashenWordStone,
   ],
   inscribedStones: ashenInscribedStones,
@@ -780,6 +802,37 @@ export const ashenIsle: AreaDefinition = {
     // first whose condition matches). When npc_warmed_old_man is true, this
     // wins over old-man-receptive and old-man-illumined regardless of the
     // other warming flag states. 2 nodes.
+    // old-man-fruit (bearing-fruit / Beat 7). Most specific Old Man variant —
+    // inserted BEFORE old-man-warmed so selectScriptForNpc (insertion-order,
+    // first condition match wins) picks it once Pip has crossed the heart-bridge
+    // (`atoned == true`) AND warmed the Old Man. The fruit is generosity that
+    // multiplies: the man who hoarded his last warmth now gives it away and
+    // finds there is more. Kid-level, no theological vocabulary, allegory intact.
+    'old-man-fruit': {
+      id: 'old-man-fruit',
+      startNodeId: 'greeting',
+      portraitId: 'old-man',
+      condition: 'atoned == true AND npc_warmed_old_man == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Old Man',
+          text: 'You came back, friend. Sit — I made enough soup for two.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Old Man',
+          text: 'I used to keep my last bit of warmth for myself. Now I give it away.',
+          nextId: 'parting',
+        },
+        {
+          id: 'parting',
+          speaker: 'Old Man',
+          text: 'Funny thing. The more I share it, the more there seems to be.',
+        },
+      ],
+    },
     'old-man-warmed': {
       id: 'old-man-warmed',
       startNodeId: 'greeting',
@@ -963,6 +1016,29 @@ export const ashenIsle: AreaDefinition = {
           id: 'demure',
           speaker: 'Wren',
           text: 'Okay. I\'ll wait. I\'m good at waiting.',
+        },
+      ],
+    },
+    // wren-fruit (bearing-fruit / Beat 7). Inserted BEFORE wren-warmed so it
+    // wins once `atoned == true` AND Wren was warmed. Her fruit is that the
+    // warmth she received now passes ONWARD — the child who got a little light
+    // is now the one giving it. Kid-level, joyful, allegory intact.
+    'wren-fruit': {
+      id: 'wren-fruit',
+      startNodeId: 'greeting',
+      portraitId: 'wren',
+      condition: 'atoned == true AND npc_warmed_wren == true',
+      nodes: [
+        {
+          id: 'greeting',
+          speaker: 'Wren',
+          text: 'You\'re back! Listen — I can sing again. The notes don\'t come out grey.',
+          nextId: 'middle',
+        },
+        {
+          id: 'middle',
+          speaker: 'Wren',
+          text: 'I sang for the old man down the path. He smiled. Me! I helped someone.',
         },
       ],
     },
