@@ -122,6 +122,9 @@ const WARMING_NPC_IDS = ['wren', 'old-man'] as const;
 // (above the 0.40 floor).
 const DESAT_REDUCTION_PER_WARMING = 0.15;
 const DESAT_FLOOR = 0.4;
+// US-HB2: number of crossing beats on the heart bridge (3 mid-span bands + the
+// far-end seal). At the final beat the desat lift reaches 1 → full colour.
+const HEART_BRIDGE_CROSSING_BEATS = 4;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.
@@ -309,6 +312,12 @@ export class GameScene extends Phaser.Scene {
   // update each frame; kept in sync by the onFlagChange subscriber so the loop
   // never touches the flag store (Learning EP-01).
   private atonedCached = false;
+  // Cached `heart_bridge_crossing` counter (heart-bridge phase, US-HB2). Read by
+  // updateEffectiveDesaturation to lift the grey overlay one quarter per crossed
+  // band; kept in sync by its onFlagChange subscriber (set on flag-change only,
+  // never per-frame — Learning EP-01). Unsubscribe invoked in cleanupResize.
+  private heartBridgeCrossingCached = 0;
+  private heartBridgeCrossingUnsubscribe: (() => void) | null = null;
   private lightingSystem!: LightingSystem;
   private desaturationPipeline: DesaturationPipeline | null = null;
   // EmberWarmthSystem (US-101) — constructed regardless of area (cheap on
@@ -732,6 +741,20 @@ export class GameScene extends Phaser.Scene {
     this.atonedCached = getFlag('atoned') === true;
     this.atonedUnsubscribe = onFlagChange('atoned', (_, value) => {
       this.atonedCached = value === true;
+    });
+
+    // Heart-bridge crossing overlay (US-HB2). The `heart_bridge_crossing` counter
+    // advances 0→4 as Pip walks the bridge bands; each change re-pushes the
+    // effective desaturation so colour returns to the world a quarter at a time.
+    // Read on entry (a returning save mid-crossing restores the right lift) and
+    // re-evaluated only on flag-change. resetAllFlags notifies undefined → cache
+    // falls back to 0 and the grey is back. Inert outside heart-bridge because
+    // updateEffectiveDesaturation gates the lift on this.area.id.
+    const crossingValue = getFlag('heart_bridge_crossing');
+    this.heartBridgeCrossingCached = typeof crossingValue === 'number' ? crossingValue : 0;
+    this.heartBridgeCrossingUnsubscribe = onFlagChange('heart_bridge_crossing', (_, value) => {
+      this.heartBridgeCrossingCached = typeof value === 'number' ? value : 0;
+      this.updateEffectiveDesaturation();
     });
 
     // Warming subscribers (US-85). For each NPC in WARMING_NPC_IDS, watch the
@@ -2061,6 +2084,10 @@ export class GameScene extends Phaser.Scene {
       this.atonedUnsubscribe();
       this.atonedUnsubscribe = null;
     }
+    if (this.heartBridgeCrossingUnsubscribe) {
+      this.heartBridgeCrossingUnsubscribe();
+      this.heartBridgeCrossingUnsubscribe = null;
+    }
     for (const unsub of this.warmingUnsubscribes) unsub();
     this.warmingUnsubscribes = [];
     this.destroyEmberOverlay();
@@ -2177,7 +2204,18 @@ export class GameScene extends Phaser.Scene {
       if (getFlag(`npc_warmed_${id}`) === true) warmingsCount += 1;
     }
     const base = LIGHTING_CONFIG.desaturationStrength;
-    const effective = Math.max(DESAT_FLOOR, base * (1 - DESAT_REDUCTION_PER_WARMING * warmingsCount));
+    let effective = Math.max(DESAT_FLOOR, base * (1 - DESAT_REDUCTION_PER_WARMING * warmingsCount));
+    // US-HB2 heart-bridge crossing: as Pip walks the span, colour returns to the
+    // world one quarter per crossed band (heart_bridge_crossing 0→4). The lift
+    // multiplies the strength down toward 0 — and is allowed to drop BELOW
+    // DESAT_FLOOR (unlike warming) so the far end reads as full restoration, the
+    // Fading taken away. Gated to the bridge so every other area is untouched and
+    // the hook is inert outside it (Learning EP-01: set on flag-change only).
+    if (this.area.id === 'heart-bridge') {
+      const progress = Math.min(HEART_BRIDGE_CROSSING_BEATS, this.heartBridgeCrossingCached);
+      const t = progress / HEART_BRIDGE_CROSSING_BEATS;
+      effective = effective * (1 - t);
+    }
     this.desaturationPipeline.setStrength(effective);
   }
 
