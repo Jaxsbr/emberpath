@@ -287,6 +287,12 @@ export class GameScene extends Phaser.Scene {
   private wordLanternGlow: Phaser.GameObjects.Image | null = null;
   private wordLanternCast: Phaser.GameObjects.Image | null = null;
   private hasWordUnsubscribe: (() => void) | null = null;
+  // Atoned carried-change (heart-bridge phase, US-HB1). The permanent `atoned`
+  // state is granted once at the Heart Bridge crossing; thereafter the ember
+  // burns brighter and steadier everywhere (applied in update()). Cached as a
+  // primitive so the per-frame overlay update reads a boolean, not the flag
+  // store (Learning EP-01). Unsubscribe invoked in cleanupResize.
+  private atonedUnsubscribe: (() => void) | null = null;
   // Warming-flag onFlagChange unsubscribes (US-85). One per NPC in
   // WARMING_NPC_IDS. Each subscriber re-registers the NPC's tier-1 light at
   // brighter values on flip-to-true and restores baseline on flip-to-false /
@@ -299,6 +305,10 @@ export class GameScene extends Phaser.Scene {
   // each frame; reading the flag store directly would re-parse JSON on every
   // tick (Learning EP-01 facet — keep per-frame paths allocation-free).
   private hasEmberCached = false;
+  // Cached `atoned` flag (heart-bridge phase, US-HB1). Read by the ember-overlay
+  // update each frame; kept in sync by the onFlagChange subscriber so the loop
+  // never touches the flag store (Learning EP-01).
+  private atonedCached = false;
   private lightingSystem!: LightingSystem;
   private desaturationPipeline: DesaturationPipeline | null = null;
   // EmberWarmthSystem (US-101) — constructed regardless of area (cheap on
@@ -713,6 +723,17 @@ export class GameScene extends Phaser.Scene {
       else this.destroyWordLantern();
     });
 
+    // Atoned carried-change (heart-bridge phase, US-HB1). `atoned` is granted
+    // once at the Heart Bridge crossing and persists across area transitions +
+    // reload (flag store is localStorage-backed), so read it on entry to every
+    // area and lift the ember (in update()) for the rest of the run. Same
+    // create-or-subscribe + cached-primitive pattern as the ember; resetAllFlags
+    // notifies with undefined → cache falls back to false and the lift is gone.
+    this.atonedCached = getFlag('atoned') === true;
+    this.atonedUnsubscribe = onFlagChange('atoned', (_, value) => {
+      this.atonedCached = value === true;
+    });
+
     // Warming subscribers (US-85). For each NPC in WARMING_NPC_IDS, watch the
     // `npc_warmed_<id>` flag: on flip-to-true, re-register the NPC's tier-1
     // light at brighter values (idempotent overwrite — Learning #63) AND
@@ -1057,13 +1078,22 @@ export class GameScene extends Phaser.Scene {
     if (this.emberOverlay) {
       const w = this.emberWarmthSystem.getCurrentWarmth();
       const wt = (Math.max(WARMTH_FLOOR, Math.min(WARMTH_MAX, w)) - WARMTH_FLOOR) / (WARMTH_MAX - WARMTH_FLOOR);
-      const radius = LIGHTING_CONFIG.playerEmberRadiusFloor + (LIGHTING_CONFIG.playerEmberRadiusFull - LIGHTING_CONFIG.playerEmberRadiusFloor) * wt;
-      const alpha = LIGHTING_CONFIG.playerEmberAlphaFloor + (LIGHTING_CONFIG.playerEmberAlphaFull - LIGHTING_CONFIG.playerEmberAlphaFloor) * wt;
+      // Atoned (heart-bridge crossed, US-HB1): the Fading no longer dims her, so
+      // the ember rides a permanent brightness/radius lift and burns steadier
+      // (shallower breathing pulse) — a carried, visible change the player sees
+      // in every area after the bridge. Branchless scalars off the cached
+      // boolean keep the loop allocation-free (EP-01).
+      const atoned = this.atonedCached;
+      const radiusLift = atoned ? 1.12 : 1;
+      const brightLift = atoned ? 1.18 : 1;
+      const pulseAmp = atoned ? 0.4 : 1;
+      const radius = (LIGHTING_CONFIG.playerEmberRadiusFloor + (LIGHTING_CONFIG.playerEmberRadiusFull - LIGHTING_CONFIG.playerEmberRadiusFloor) * wt) * radiusLift;
+      const alpha = (LIGHTING_CONFIG.playerEmberAlphaFloor + (LIGHTING_CONFIG.playerEmberAlphaFull - LIGHTING_CONFIG.playerEmberAlphaFloor) * wt) * brightLift;
       // Gentle breathing pulse so the ember feels alive (not a static dot):
-      // slow size + alpha shimmer, deeper as warmth grows.
+      // slow size + alpha shimmer, deeper as warmth grows, calmer once atoned.
       const pulse = Math.sin(time * 0.0035);
-      const sizePulse = 1 + 0.1 * pulse;
-      const alphaPulse = 1 + 0.12 * pulse;
+      const sizePulse = 1 + 0.1 * pulseAmp * pulse;
+      const alphaPulse = 1 + 0.12 * pulseAmp * pulse;
       // The soft gradient fades to 0 well before its texture edge, so render it
       // larger than the bare radius for the glow to read; alpha carries intensity.
       const diameter = radius * 2 * 1.9 * sizePulse;
@@ -2026,6 +2056,10 @@ export class GameScene extends Phaser.Scene {
     if (this.hasWordUnsubscribe) {
       this.hasWordUnsubscribe();
       this.hasWordUnsubscribe = null;
+    }
+    if (this.atonedUnsubscribe) {
+      this.atonedUnsubscribe();
+      this.atonedUnsubscribe = null;
     }
     for (const unsub of this.warmingUnsubscribes) unsub();
     this.warmingUnsubscribes = [];
