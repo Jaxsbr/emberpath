@@ -4,13 +4,16 @@
 // Fading is taken away once and a permanent state changes — the drain places no
 // longer take her light.
 //
-// THIS SLICE (US-HB1) is the NON-DOCTRINAL SHELL only: the area, the entry from
-// Briar (gated on has_word), and the permanent `atoned` flag the crossing grants
-// — written exactly once by the far-end one-shot trigger below, no pickup path,
-// no other writer. The paced colour-return overlay (US-HB2), the closing seal
-// SCENE + any figure/wording (US-HB3), and "trials no longer drain" (US-HB4) are
-// later slices; their gospel/allegory staging is Jaco's reserved domain
-// (Decisions 1–4 in docs/product/phases/heart-bridge.md) and is NOT in here.
+// Shipped on this area: the NON-DOCTRINAL SHELL (US-HB1 — area, entry from Briar
+// gated on has_word, the permanent `atoned` flag), the paced colour-return overlay
+// (US-HB2), the wordless figure at the crossing (US-HB3 pt1, Decision 1 = FIGURE
+// PRESENT), and the CLOSING SEAL SCENE (US-HB3 pt2 — Decisions 2 + 3 answered by
+// Jaco 2026-06-15, both = A). Decision 2 = the FADING is drawn out into the stone
+// where the King stands; the Ember is KEPT and brightens (never surrendered — it is
+// the indwelling Spirit). Decision 3 = the PICTURE carries the substitution, with a
+// couple of quiet young-child lines that imply the exchange; the naming/doctrine
+// ("atonement", the gospel link) stays in the credits, never in-game. "Trials no
+// longer drain" (US-HB4) is still gated on Decision 4 and is NOT in here.
 //
 // "Received, not performed" (master-prd): the span has no fail state, no timer,
 // no skill check, no branching — walking forward is the only verb. A slow walker
@@ -69,6 +72,45 @@ for (let c = 0; c < HEART_BRIDGE_COLS; c++) {
 // still reserved for Jaco and not in this slice.
 const figure: ObjectInstance[] = [{ kind: 'golden-stag', col: 18, row: 1 }];
 
+// ───── The closing seal scene (US-HB3 pt2 — Decisions 2 + 3, both = A) ─────
+// The emotional climax (master-prd #4: "the most felt, not the longest"). It plays
+// once, at the far-end seal, AFTER `atoned` is set and the colour has fully returned
+// — so the player steps off the bridge into a world made whole, having just been
+// shown WHY. Restraint is the brief: four short warm beats, the picture doing the
+// work, the King wordless (Decision 1). Decision 2 (=A): the FADING — the last grey —
+// is drawn off Pip into the stone where he stands; her Ember does NOT leave her, it
+// stays and brightens (the indwelling Spirit is kept, never surrendered). Decision 3
+// (=A): the substitution is IMPLIED in a couple of kid-level lines ("the grey is his
+// now — not hers to carry"); the word atonement, the naming, and the gospel link are
+// reserved for the credits per master-prd + biblical-guidance. Uses the shipped
+// imageColor/imageLabel palette idiom (gold → cream, brighter than the bridge stone),
+// exactly like ember-given / word-given — no bespoke scene art is generated here.
+const bridgeSealedScene: import('./types').StorySceneDefinition = {
+  id: 'bridge-sealed',
+  beats: [
+    {
+      text: 'As Pip walks, the last of the grey lifts off her. It flows down into the stone — to where he stands.',
+      imageColor: 0xe0b15a,
+      imageLabel: 'The grey lifts away',
+    },
+    {
+      text: 'He does not speak. He only takes it in. The grey is his now — not hers to carry. Not ever again.',
+      imageColor: 0xf2d98a,
+      imageLabel: 'He takes the grey',
+    },
+    {
+      text: 'Pip’s own little light did not go out. It only grew warmer. Brighter. It was always hers to keep.',
+      imageColor: 0xf4ead2,
+      imageLabel: 'Her light stays',
+    },
+    {
+      text: 'I did not carry it across. He did. I only had to walk.',
+      imageColor: 0xfaf3e0,
+      imageLabel: 'I only walked',
+    },
+  ],
+};
+
 // ───── Triggers ─────
 // CROSSING BANDS (US-HB2) — the paced colour-return mechanic. Three invisible
 // one-shot bands divide the span into quarters; each crossed band increments
@@ -95,14 +137,14 @@ const crossingBands: TriggerDefinition[] = [6, 12, 18].map((col, i) => ({
   repeatable: false,
 }));
 
-// The far-end one-shot that grants the permanent atonement state. type 'thought'
-// + empty actionRef = no thought is shown (same idiom as Briar's light anchors /
-// completion trigger): this is a pure mechanical flag flip for the shell. It also
-// increments `heart_bridge_crossing` a final (4th) time, so the colour-return
-// overlay reaches full restoration exactly as `atoned` seals. The closing seal
-// SCENE that will play here (US-HB3) is a later slice and replaces nothing
-// structural — it will set `atoned` via its own terminal beat once the gospel
-// Decisions land. Gated `atoned == false` so re-crossing never re-fires.
+// The far-end one-shot that grants the permanent atonement state AND plays the
+// closing seal scene (US-HB3 pt2). `setFlags`/`incrementFlags` fire BEFORE the type
+// dispatch (see TriggerDefinition contract), so `atoned` seals and the crossing
+// counter reaches its final (4th) tick — full colour restored — and THEN the
+// 'bridge-sealed' story scene launches over the now-whole world. Gated
+// `atoned == false` so re-crossing never re-fires (a Reset clears both `atoned` and
+// the counter to allow a fresh crossing). The scene is the felt climax; the flag is
+// the permanent change.
 const triggers: TriggerDefinition[] = [
   ...crossingBands,
   {
@@ -111,8 +153,8 @@ const triggers: TriggerDefinition[] = [
     row: 1,
     width: 2,
     height: 3,
-    type: 'thought',
-    actionRef: '',
+    type: 'story',
+    actionRef: 'bridge-sealed',
     condition: 'atoned == false',
     setFlags: { atoned: true },
     incrementFlags: ['heart_bridge_crossing'],
@@ -148,7 +190,7 @@ export const heartBridge: AreaDefinition = {
   decorations: [],
   triggers,
   dialogues: {},
-  storyScenes: {},
+  storyScenes: { 'bridge-sealed': bridgeSealedScene },
   playerSpawn: { col: 1, row: 2 },
   exits: [
     {
