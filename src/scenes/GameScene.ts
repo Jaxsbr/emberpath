@@ -71,9 +71,12 @@ const WORD_LANTERN_KEY = 'word-lantern-lit';
 const WORD_LANTERN_DEPTH = 5.5; // ember band — composites above every entity
 const WORD_LANTERN_OFFSET_X = 12; // held out at her side
 const WORD_LANTERN_OFFSET_Y = 0; // body level (the ember rides higher at -28)
-const WORD_LANTERN_DISPLAY_W = 16; // on-screen px (source is 48×64, kept in ratio)
-const WORD_LANTERN_DISPLAY_H = 21;
-const WORD_LANTERN_GLOW_DIAMETER = 30; // soft warm halo so the lamp reads as lit
+const WORD_LANTERN_DISPLAY_W = 18; // on-screen px (source is 48×64, kept in ratio) — large enough the flame reads
+const WORD_LANTERN_DISPLAY_H = 24;
+const WORD_LANTERN_GLOW_DIAMETER = 26; // tight, bright halo — a concentrated lit point, not a wide wash
+const WORD_LANTERN_CAST_W = 28; // ground cast-glow: the flat warm pool the lamp throws at Pip's feet
+const WORD_LANTERN_CAST_H = 13;
+const WORD_LANTERN_CAST_DEPTH = 4.55; // on the ground, below the entity band [5,5.49) so it pools under Pip
 // Y-sort entity band (#346). The player, NPCs, and `tall` objects (trees) all
 // render in [ENTITY_DEPTH_BASE, ENTITY_DEPTH_BASE + ENTITY_DEPTH_SPAN), keyed
 // on the world-y of their ground contact: an entity lower on the map (larger y)
@@ -282,6 +285,7 @@ export class GameScene extends Phaser.Scene {
   // destroyed on unset. Unsubscribe invoked in cleanupResize.
   private wordLantern: Phaser.GameObjects.Image | null = null;
   private wordLanternGlow: Phaser.GameObjects.Image | null = null;
+  private wordLanternCast: Phaser.GameObjects.Image | null = null;
   private hasWordUnsubscribe: (() => void) | null = null;
   // Warming-flag onFlagChange unsubscribes (US-85). One per NPC in
   // WARMING_NPC_IDS. Each subscriber re-registers the NPC's tier-1 light at
@@ -857,6 +861,13 @@ export class GameScene extends Phaser.Scene {
     if (this.wordLantern) return;
     if (!this.player) return;
     this.ensureEmberGlowTexture();
+    // Ground cast first (lowest depth) so the lamp visibly lights the floor at Pip's feet.
+    this.wordLanternCast = this.add.image(this.player.x, this.player.y, EMBER_GLOW_KEY);
+    this.wordLanternCast.setOrigin(0.5, 0.5);
+    this.wordLanternCast.setBlendMode(Phaser.BlendModes.ADD);
+    this.wordLanternCast.setDepth(WORD_LANTERN_CAST_DEPTH);
+    this.wordLanternCast.setDisplaySize(WORD_LANTERN_CAST_W, WORD_LANTERN_CAST_H);
+    this.cameras.getCamera('ui')?.ignore(this.wordLanternCast);
     this.wordLanternGlow = this.add.image(this.player.x, this.player.y, EMBER_GLOW_KEY);
     this.wordLanternGlow.setOrigin(0.5, 0.5);
     this.wordLanternGlow.setBlendMode(Phaser.BlendModes.ADD);
@@ -875,6 +886,8 @@ export class GameScene extends Phaser.Scene {
     this.wordLantern = null;
     this.wordLanternGlow?.destroy();
     this.wordLanternGlow = null;
+    this.wordLanternCast?.destroy();
+    this.wordLanternCast = null;
   }
 
   // Pre-bake the NPC presence aura once: amber, softer + cooler than Pip's
@@ -1068,10 +1081,15 @@ export class GameScene extends Phaser.Scene {
       const lx = this.player.x + WORD_LANTERN_OFFSET_X;
       const ly = this.player.y + WORD_LANTERN_OFFSET_Y + bob * 1.5;
       this.wordLantern.setPosition(lx, ly);
+      const flicker = 0.82 + 0.18 * Math.sin(time * 0.012);
       if (this.wordLanternGlow) {
-        const flicker = 0.82 + 0.18 * Math.sin(time * 0.012);
         this.wordLanternGlow.setPosition(lx, ly + 1);
-        this.wordLanternGlow.setAlpha(0.55 * flicker);
+        this.wordLanternGlow.setAlpha(0.72 * flicker); // brighter than the old 0.55 — the flame reads as lit
+      }
+      if (this.wordLanternCast) {
+        // warm pool on the ground at Pip's feet, beneath the lamp — grounds its lit-ness
+        this.wordLanternCast.setPosition(lx, this.player.y + 10);
+        this.wordLanternCast.setAlpha(0.3 * flicker);
       }
     }
 
