@@ -129,7 +129,7 @@ export const heartBridge: AreaDefinition = {
     {
       // Once crossed, the way onward (back to the thorns for now) is open.
       condition: 'atoned == true',
-      text: 'You are across. Walk on.',
+      text: 'You made it across. Keep going.',
     },
   ],
   mapCols: HEART_BRIDGE_COLS,
