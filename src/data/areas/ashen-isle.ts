@@ -1,6 +1,7 @@
 import {
   AreaDefinition,
   DecorationDefinition,
+  InscribedStoneDefinition,
   StoredTile,
   TILE_FLOOR,
   TILE_WALL,
@@ -476,6 +477,38 @@ const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
   { kind: 'bramble-cluster', col: 49, row: 19, condition: 'has_ember_mark == false' },
 ];
 
+// the-word phase (US-W5) — a retroactive inscribed stone at the village's east
+// edge, beside the Briar gate. SPRITE + collision is a carved `cliff-stone` (the
+// same object Briar's stone uses, so "inscribed stone" reads consistently); the
+// `remember` verb + lines live in `ashenInscribedStones` below — keep this cell
+// in sync with `ashen-word-stone`'s col/row. Sits one tile NW of the Briar→Ashen
+// return corridor (player re-enters at 48,18 and walks west along row 18), clear
+// of the conditional east brambles (47-49) so the two never overlap pre-ember.
+// The payoff is reachable: the Word is granted in Briar, and Briar's west exit
+// returns here — a curious player who walks back can finally read the marks.
+const ashenWordStone: OInst[] = [{ kind: 'cliff-stone', col: 46, row: 17 }];
+
+// the-word phase (US-W5). Before the Word the marks are just cold carving Pip
+// cannot read; once Quill gives the Word in Briar, a player who walks back west
+// can remember here. No steadyRadius — Ashen has no drain zones, so this stone is
+// a flavour/wayfinding reveal (the spec's "earlier-area stones are not required
+// for the mechanic"), not a steadied patch. Lines are young-child level and
+// allegorical (the marks remember that Pip was known and loved first, and that
+// the light she carries was given, not earned) — no named scripture, per master-prd.
+const ashenInscribedStones: InscribedStoneDefinition[] = [
+  {
+    id: 'ashen-stone-1',
+    col: 46,
+    row: 17,
+    preWordThought: 'Old words are carved on this stone. Pip cannot read them yet.',
+    rememberedLines: [
+      'These words were carved long before Pip was born.',
+      'You were known before you could speak. You were loved first.',
+      'The light you carry was given to you. It will not leave you.',
+    ],
+  },
+];
+
 // Stage-1 migration source: the existing FLOOR/WALL authoring array remains
 // the source of truth, with terrain + objects derived from it via the helpers
 // in types.ts. US-98 replaces this with hand-painted vertex data + authored
@@ -586,7 +619,9 @@ export const ashenIsle: AreaDefinition = {
     ...ashenUndergrowth,
     ...ashenDockProps,
     ...ashenEastBrambles,
+    ...ashenWordStone,
   ],
+  inscribedStones: ashenInscribedStones,
   npcs: [
     // Old Man stands in the doorway of his cottage (40, 28 — the door FLOOR
     // tile). With wanderRadius 1 he drifts a step south to (40, 29) and back,
