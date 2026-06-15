@@ -37,6 +37,10 @@ import { writeSave } from '../triggers/saveState';
 
 const TARGET_VISIBLE_TILES = 10;
 const FADE_DURATION = 400;
+// The deep painted beyond the map edge for any area smaller than the viewport (the
+// Heart Bridge span, #108) — a near-black cool tone that reads as the gulf the bridge
+// crosses. Full-screen maps cover the frame, so this never shows for them.
+const VOID_DEEP_COLOR = '#0d0e14';
 // Conditional NPC spawn fade (US-71). Sprite alpha tweens from 0 to 1 over
 // KEEPER_FADE_DURATION_MS so the appearance reads as "light breaks in" rather
 // than a pop-in. Player input is suspended for KEEPER_INPUT_SUSPEND_MS — the
@@ -1919,12 +1923,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupCamera(): void {
-    const mapWidth = this.area.mapCols * TILE_SIZE;
-    const mapHeight = this.area.mapRows * TILE_SIZE;
     const cam = this.cameras.main;
     cam.setZoom(this.calculateZoom());
-    cam.setBounds(0, 0, mapWidth, mapHeight);
+    this.applyCameraBounds();
     cam.startFollow(this.player);
+    // Paint the area beyond the map a deliberate deep tone. For every full-screen map
+    // this never shows (the tiles cover the frame); for a map smaller than the viewport
+    // — the short Heart Bridge span (#108) — it renders as the dark gulf the bridge
+    // crosses instead of the page background bleeding through as a dead void.
+    cam.setBackgroundColor(VOID_DEEP_COLOR);
 
     // UI camera — no zoom/scroll, renders dialogue/joystick/thought bubbles at screen coords
     const uiCam = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'ui');
@@ -1960,6 +1967,35 @@ export class GameScene extends Phaser.Scene {
     this.events.on('destroy', this.cleanupResize, this);
   }
 
+  // Center the camera on any axis where the map is smaller than the viewport, so a
+  // short or narrow map (the Heart Bridge span, #108) floats centered in frame —
+  // the surrounding deep reads as the gulf the bridge crosses — instead of being
+  // corner-pinned with a dead void beside it. On axes where the map exceeds the
+  // viewport (every other area, both axes) the bounds equal the map and normal
+  // player-follow applies, so this is a no-op for full-screen maps.
+  private applyCameraBounds(): void {
+    const cam = this.cameras.main;
+    const zoom = cam.zoom;
+    const mapWidth = this.area.mapCols * TILE_SIZE;
+    const mapHeight = this.area.mapRows * TILE_SIZE;
+    const viewW = this.scale.width / zoom;
+    const viewH = this.scale.height / zoom;
+    let bx = 0;
+    let by = 0;
+    let bw = mapWidth;
+    let bh = mapHeight;
+    if (mapWidth < viewW) {
+      // Bounds width == view width pins scrollX to bx, centering the map horizontally.
+      bx = (mapWidth - viewW) / 2;
+      bw = viewW;
+    }
+    if (mapHeight < viewH) {
+      by = (mapHeight - viewH) / 2;
+      bh = viewH;
+    }
+    cam.setBounds(bx, by, bw, bh);
+  }
+
   private calculateZoom(): number {
     const shortSide = Math.min(this.scale.width, this.scale.height);
     const targetWorldSize = TARGET_VISIBLE_TILES * TILE_SIZE;
@@ -1970,12 +2006,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleResize(): void {
-    const mapWidth = this.area.mapCols * TILE_SIZE;
-    const mapHeight = this.area.mapRows * TILE_SIZE;
     const cam = this.cameras.main;
     // Zoom first — setBounds clamps scroll using displayWidth which depends on zoom
     cam.setZoom(this.calculateZoom());
-    cam.setBounds(0, 0, mapWidth, mapHeight);
+    this.applyCameraBounds();
     // Snap camera to player after dimension/zoom change (prevents stale scroll on rotation)
     cam.centerOn(this.player.x, this.player.y);
 
