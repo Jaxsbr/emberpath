@@ -101,6 +101,16 @@ export interface ObjectKindDefinition {
   // the region from the anchor (col+dx, row+dy); w/h is its cell span. Absent =
   // legacy single-anchor-cell behavior (preserves every existing object).
   collisionFootprint?: { dx: number; dy: number; w: number; h: number };
+  // Optional base/ground-contact sub-region (in CELLS, anchor-relative) used
+  // ONLY for Y-sort depth and the behind-object fade — NEVER for collision.
+  // A `tall` building (the cottage) handles collision via separate
+  // collision-block cells (door row left open), so it can't reuse
+  // `collisionFootprint` (that would block the doorway). `baseFootprint` lets
+  // it declare where its front wall meets the ground (dy = front row) so Pip
+  // sorts behind it from the north and fades it when hidden, with collision
+  // untouched. When absent, sort/fade fall back to `collisionFootprint`, then
+  // to the full footprint bottom — so every existing tall object is unchanged.
+  baseFootprint?: { dx: number; dy: number; w: number; h: number };
 }
 
 // PixelLab style-matched object PNGs (US-96). Generated against a 32×32
@@ -136,7 +146,11 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // Cohesive cottage — one 128px image over a 4×4 footprint. Collision is laid
   // separately as collision-block cells under the body (door cell left open), so
   // the anchor-only object collision rule doesn't leave the house walk-through.
-  'cottage':     { id: 'cottage',     atlasKey: 'object-cottage',     assetPath: 'objects/ashen-isle/cottage.png',     passable: false, footprint: { w: 4, h: 4 } },
+  // `tall` + `baseFootprint` (front-wall row, dy=3) make Pip pass BEHIND the
+  // house from the north (it occludes + fades to 50% with a white rim) and IN
+  // FRONT from the south, exactly like a tree — without touching its collision
+  // (that stays the collision-block grid, doorway open). Matches FB-3 pts 1+4.
+  'cottage':     { id: 'cottage',     atlasKey: 'object-cottage',     assetPath: 'objects/ashen-isle/cottage.png',     passable: false, footprint: { w: 4, h: 4 }, tall: true, baseFootprint: { dx: 0, dy: 3, w: 4, h: 1 } },
   // Boat + pier read at true scale via `footprint` (US-98) — a 32px boat looked
   // like a toy on the dock (Jaco feedback 2026-06-13). Both moor in impassable
   // water; collision keys their anchor cell only, so the multi-tile footprint is

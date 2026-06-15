@@ -1759,8 +1759,13 @@ export class GameScene extends Phaser.Scene {
       // a full tile too low (the collider's bottom edge), so Pip read as "in
       // front" while still up beside the trunk. Falls back to the footprint
       // bottom for any tall object lacking an explicit collider.
-      const sortY = def.collisionFootprint
-        ? (inst.row + def.collisionFootprint.dy) * TILE_SIZE
+      // baseRegion = where the object meets the ground for depth/fade purposes:
+      // a building's front-wall row (`baseFootprint`) or a tree's trunk-base
+      // (`collisionFootprint`). Distinct from collision so the cottage can sort
+      // without its door row being blocked.
+      const baseRegion = def.baseFootprint ?? def.collisionFootprint;
+      const sortY = baseRegion
+        ? (inst.row + baseRegion.dy) * TILE_SIZE
         : (inst.row + fp.h) * TILE_SIZE;
       sprite.setDepth(def.tall ? this.ySortDepth(sortY) : 2.5);
       this.objectSprites.push(sprite);
@@ -1791,14 +1796,15 @@ export class GameScene extends Phaser.Scene {
       shadow.setDepth(0.6);
       this.objectShadows.push(shadow);
 
-      // Register tall objects (those with a trunk-base collider) for the
-      // behind-object reveal (FB-3 part 4). "Behind" = Pip's feet above the
-      // collider top (same line that drives the depth-sort) AND horizontally
-      // under the canopy (the sprite's full width). Precompute the bounds here.
-      if (def.tall && cf) {
+      // Register tall objects for the behind-object reveal (FB-3 part 4).
+      // "Behind" = Pip's feet above the base-region top (the same line that
+      // drives the depth-sort) AND horizontally under the sprite's full width.
+      // Keyed on baseRegion so buildings (cottage, via baseFootprint) join too,
+      // not just trunk-collider trees. Precompute the bounds here.
+      if (def.tall && baseRegion) {
         this.behindFadeObjects.push({
           sprite,
-          colliderTopY: (inst.row + cf.dy) * TILE_SIZE,
+          colliderTopY: (inst.row + baseRegion.dy) * TILE_SIZE,
           xMin: inst.col * TILE_SIZE,
           xMax: (inst.col + fp.w) * TILE_SIZE,
           behind: false,
