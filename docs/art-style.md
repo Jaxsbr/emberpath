@@ -64,6 +64,28 @@ Tile rendering: textured, not flat. Stone needs lichen, wood needs grain, grass 
 - Fog/rain particles always welcome; they unify the palette and add the watercolor-wash feel from the cat-in-rain piece.
 - Vignette ~10–15% on edges to push the page-of-a-book read.
 
+### Ground shadows (the one canon)
+
+emberpath is **3/4 oblique** with an **overhead key light**. Every ground shadow
+in the game obeys a single rule so they all read under the same light — the
+recurring failure was buildings inventing their own shadow shape and offset:
+
+- **Shape:** a soft dark ellipse (never a hard rectangular band, never a cast-away
+  oval floating below the object).
+- **Position:** pooled **ON the visible ground-contact line** — a character's feet,
+  a tree's trunk base, a building's **visible wall base** (where the wall meets the
+  grass in the art — *not* the padded sprite-box bottom or the footprint's lower
+  edge, which sit out in the yard). The shadow's north half tucks under the sprite;
+  only a small sliver pokes **south** (down-screen).
+- **Size:** scaled to the object's footprint — small props get small shadows, a
+  house gets a wide one. Height ≈ 0.4× width.
+- **Applies to everything:** player, NPCs, trees, props, buildings. They are the
+  same shadow, just footprint-scaled. The player and NPCs carry one at their feet
+  that tracks them as they move.
+
+In engine this is the single `makeGroundShadow` helper in `GameScene.ts` — change
+the canon there, not per-object.
+
 ## Animation
 
 - Slight weight, slow easing. Breathing idle, cloak/ear sway, blink every 3–5s.
