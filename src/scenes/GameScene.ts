@@ -692,6 +692,8 @@ export class GameScene extends Phaser.Scene {
       // Track which NPC this dialogue belongs to so onEnd can release it.
       this.activeDialogueNpcId = npc.id;
     });
+    // Hide the "Space to talk" prompt while a dialogue is open (FB-10).
+    this.npcInteraction.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     this.dialogueSystem.setOnEnd(() => {
       if (this.activeDialogueNpcId) {
         this.npcBehavior.exitDialogue(this.activeDialogueNpcId);
