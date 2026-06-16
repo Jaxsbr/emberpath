@@ -235,7 +235,7 @@ export class GameScene extends Phaser.Scene {
   // from above. Replaces the baked-in green ground patches some tree sprites
   // shipped with. Shadows are neutral dark so the drained-area desaturation
   // pipeline leaves them correct on the main camera.
-  private objectShadows: Phaser.GameObjects.Ellipse[] = [];
+  private objectShadows: Phaser.GameObjects.Shape[] = [];
   // Behind-object reveal (FB-3 part 4) — tall objects (trees, the stag) Pip can
   // hide behind. When her feet rise above an object's trunk-collider top AND she
   // is horizontally under its canopy, the object fades to 50% and gains a white
@@ -264,7 +264,7 @@ export class GameScene extends Phaser.Scene {
   // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
   // condition string is available for re-eval and so buildObjectCollisionMap
   // can re-derive the cell-block flag.
-  private conditionalObjects: { sprite: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Ellipse; instance: ObjectInstance }[] = [];
+  private conditionalObjects: { sprite: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Shape; instance: ObjectInstance }[] = [];
   // Translucent exit-zone overlays (US-92). Rendered at depth 0.5 between
   // terrain and decorations using STYLE_PALETTE.hopeGoldLight at alpha 0.25 so
   // exit invitations remain visible without a dedicated terrain frame.
@@ -1757,6 +1757,11 @@ export class GameScene extends Phaser.Scene {
         console.warn(`[GameScene] Object kind '${inst.kind}' references missing atlas '${def.atlasKey}' (path '${def.assetPath}'); skipping render. Object still contributes to collision per registry passable flag.`);
         continue;
       }
+      // Invisible collision markers (collision-block under a multi-cell building)
+      // contribute collision via buildObjectCollisionMap, never render — no sprite
+      // and no ground-contact shadow (FB-8: the per-cell marker shadows stacked
+      // into a dark mass around the cottage base).
+      if (def.invisible) continue;
       const sprite = this.add.image(
         inst.col * TILE_SIZE,
         inst.row * TILE_SIZE,
@@ -1796,29 +1801,45 @@ export class GameScene extends Phaser.Scene {
       // shadows, not oversized cast-away ovals (Jaco FB-4). Depth 0.6 keeps it
       // above terrain but beneath the object and any entity that walks over.
       const cf = def.collisionFootprint;
-      let shCx: number;
-      let shBaseY: number;
-      let shW: number;
-      if (cf) {
-        // Trees / stag: pool at the trunk-base collider, width ~= its footprint
-        // (was 1.6× → read as an oversized cast-away pool).
-        shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
-        shBaseY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
-        shW = Math.max(cf.w * TILE_SIZE * 1.05, TILE_SIZE * 0.8);
+      const bf = def.baseFootprint;
+      let shadow: Phaser.GameObjects.Shape;
+      if (bf) {
+        // Buildings (cottage): ONE clean RECTANGULAR shadow on the front floor,
+        // spanning the building's base width and pooling just SOUTH of where its
+        // front wall meets the ground — a top-down "shadow from above" cast
+        // straight down in front of the base (Jaco FB-8). Footprint-relative, so
+        // it scales with any future house resize. Replaces the old per-cell
+        // collision-marker ellipse mass.
+        const shCx = (inst.col + bf.dx + bf.w / 2) * TILE_SIZE;
+        const frontGroundY = (inst.row + bf.dy + bf.h) * TILE_SIZE;
+        const shW = bf.w * TILE_SIZE * 0.9; // slight inset so it hugs the walls
+        const shH = TILE_SIZE * 0.55; // shallow front-floor band
+        shadow = this.add.rectangle(shCx, frontGroundY + shH * 0.35, shW, shH, 0x000000, 0.22);
       } else {
-        // Small props: anchor at the VISIBLE base — lifted ~0.2 tile up from the
-        // padded sprite-box bottom so the shadow hugs the art instead of
-        // detaching below it (the "floating" read in FB-4) — and keep it small.
-        shCx = (inst.col + fp.w / 2) * TILE_SIZE;
-        shBaseY = (inst.row + fp.h) * TILE_SIZE - TILE_SIZE * 0.2;
-        shW = fp.w * TILE_SIZE * 0.5;
+        let shCx: number;
+        let shBaseY: number;
+        let shW: number;
+        if (cf) {
+          // Trees / stag: pool at the trunk-base collider, width ~= its footprint
+          // (was 1.6× → read as an oversized cast-away pool).
+          shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
+          shBaseY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
+          shW = Math.max(cf.w * TILE_SIZE * 1.05, TILE_SIZE * 0.8);
+        } else {
+          // Small props: anchor at the VISIBLE base — lifted ~0.2 tile up from the
+          // padded sprite-box bottom so the shadow hugs the art instead of
+          // detaching below it (the "floating" read in FB-4) — and keep it small.
+          shCx = (inst.col + fp.w / 2) * TILE_SIZE;
+          shBaseY = (inst.row + fp.h) * TILE_SIZE - TILE_SIZE * 0.2;
+          shW = fp.w * TILE_SIZE * 0.5;
+        }
+        const shH = shW * 0.4;
+        // Centre the ellipse a touch SOUTH of the contact line (top-down light):
+        // its north half tucks under the sprite, a small sliver shows to the south.
+        // (Was lifted NORTH by 0.35·h, which read as a shadow cast away above the
+        // object — the "angular / floating" FB-4 complaint.)
+        shadow = this.add.ellipse(shCx, shBaseY + shH * 0.12, shW, shH, 0x000000, 0.26);
       }
-      const shH = shW * 0.4;
-      // Centre the ellipse a touch SOUTH of the contact line (top-down light):
-      // its north half tucks under the sprite, a small sliver shows to the south.
-      // (Was lifted NORTH by 0.35·h, which read as a shadow cast away above the
-      // object — the "angular / floating" FB-4 complaint.)
-      const shadow = this.add.ellipse(shCx, shBaseY + shH * 0.12, shW, shH, 0x000000, 0.26);
       shadow.setDepth(0.6);
       this.objectShadows.push(shadow);
 
