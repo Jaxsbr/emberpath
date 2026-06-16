@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { TILE_SIZE } from '../maps/constants';
+import { evaluateCondition } from './conditions';
+import { onFlagChange } from '../triggers/flags';
 
 // C6 — distant smoke beacon (2026-06-14, Issue #46). The opening promise is
 // "Far away, smoke goes up into the sky. Someone is out there." and the objective
@@ -106,19 +108,66 @@ export class SmokeBeaconSystem {
   // When false the smoke plume is omitted and only the warm glow renders, as a
   // standalone "walk toward the light" landmark (glow-only mode, C13).
   private plume = true;
+  // FB-20: once the beacon's goal is reached its objective is met, so it must
+  // stop pointing at a target the player already found. `cleared` is the cached
+  // result of the `clearedWhen` flag condition — re-evaluated only when a named
+  // flag changes (allocation-free per frame), matching the objective banner's
+  // subscribe-and-re-resolve idiom. When true, update() renders nothing.
+  private clearedWhen: string | undefined;
+  private cleared = false;
+  private flagUnsubscribes: Array<() => void> = [];
 
   constructor(
     scene: Phaser.Scene,
-    beacon: { col: number; row: number; plume?: boolean } | undefined,
+    beacon: { col: number; row: number; plume?: boolean; clearedWhen?: string } | undefined,
   ) {
     this.scene = scene;
     if (!beacon) return;
     this.active = true;
     this.plume = beacon.plume !== false;
+    this.clearedWhen = beacon.clearedWhen;
     this.baseX = beacon.col * TILE_SIZE + TILE_SIZE / 2;
     this.baseY = beacon.row * TILE_SIZE + TILE_SIZE / 2;
     this.ensureTextures();
     this.build();
+    // Evaluate the clear condition on entry and subscribe to its flags so a
+    // later flip (e.g. has_ember_mark granted in Fog Marsh, US-100) hides the
+    // beacon without rebuilding the scene. Hide immediately if already met.
+    this.subscribeCleared();
+    this.cleared = this.clearedWhen ? evaluateCondition(this.clearedWhen) : false;
+    if (this.cleared) this.applyCleared();
+  }
+
+  // Subscribe to every flag named in `clearedWhen` (same flag-name extraction the
+  // GameScene objective/decoration subscribers use). On any change, re-evaluate
+  // the condition; when it newly holds, hide the beacon for good.
+  private subscribeCleared(): void {
+    if (!this.clearedWhen) return;
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    let match: RegExpExecArray | null;
+    while ((match = flagNameRe.exec(this.clearedWhen)) !== null) {
+      flagNames.add(match[1]);
+    }
+    for (const name of flagNames) {
+      this.flagUnsubscribes.push(
+        onFlagChange(name, () => {
+          if (this.cleared || !this.clearedWhen) return;
+          if (evaluateCondition(this.clearedWhen)) {
+            this.cleared = true;
+            this.applyCleared();
+          }
+        }),
+      );
+    }
+  }
+
+  // Park every visual hidden once the goal is reached. update() early-returns
+  // while cleared, so nothing is touched again.
+  private applyCleared(): void {
+    this.glow?.setVisible(false);
+    this.arrow?.setVisible(false);
+    for (const p of this.puffs) p.img.setVisible(false);
   }
 
   // Deterministic pseudo-random in [0,1) from an integer seed (same trick the
@@ -222,7 +271,7 @@ export class SmokeBeaconSystem {
   // Each puff climbs, spreads, leans, and fades; on reaching the top it recycles
   // to the base with a fresh jitter. No allocation in the loop.
   update(timeMs: number, deltaMs: number): void {
-    if (!this.active) return;
+    if (!this.active || this.cleared) return;
     const cam = this.scene.cameras.main;
     if (!cam) return;
     const zoom = cam.zoom;
@@ -302,6 +351,8 @@ export class SmokeBeaconSystem {
   }
 
   destroy(): void {
+    for (const unsub of this.flagUnsubscribes) unsub();
+    this.flagUnsubscribes = [];
     for (const p of this.puffs) p.img.destroy();
     this.puffs = [];
     this.glow?.destroy();

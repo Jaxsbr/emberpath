@@ -1283,7 +1283,12 @@ export const ashenIsle: AreaDefinition = {
   // (col 28, row 3 is impassable sea, east of the boats), so when the player
   // reaches the dock they SEE the goal across the water and the C7 sign tells
   // them the dock leads to Fog Marsh.
-  smokeBeacon: { col: 28, row: 3 },
+  // Once Pip has received the Ember the smoke led her to (`has_ember_mark`), the
+  // "Find the smoke" goal is met — so the plume and its off-screen homing arrow
+  // stop showing on later returns to Ashen (FB-20). This matches the
+  // conditionalObjective banner, which advances off "Find the smoke" at the same
+  // flag, so the beacon and the banner never disagree.
+  smokeBeacon: { col: 28, row: 3, clearedWhen: 'has_ember_mark == true' },
   playerSpawn: { col: 9, row: 20 },
   exits: [
     {
