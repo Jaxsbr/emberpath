@@ -95,7 +95,7 @@ const ENTITY_DEPTH_SPAN = 0.49;
 // Behind-object reveal (FB-3 part 4). When Pip slips behind a tall object's
 // canopy it fades to BEHIND_FADE_ALPHA and gains a thin white outline so she
 // stays readable through it; both ease back over BEHIND_FADE_MS when she leaves.
-const BEHIND_FADE_ALPHA = 0.5;
+const BEHIND_FADE_ALPHA = 0.35;
 const BEHIND_FADE_MS = 180;
 // White edge glow used as the "outline" (Phaser 3.80 has no built-in Outline FX;
 // a knockout-off glow hugs the sprite's alpha edges and reads as a crisp rim).
@@ -239,6 +239,7 @@ export class GameScene extends Phaser.Scene {
   private behindFadeObjects: {
     sprite: Phaser.GameObjects.Image;
     colliderTopY: number;
+    spriteTopY: number;
     xMin: number;
     xMax: number;
     behind: boolean;
@@ -1813,6 +1814,7 @@ export class GameScene extends Phaser.Scene {
         this.behindFadeObjects.push({
           sprite,
           colliderTopY: (inst.row + baseRegion.dy) * TILE_SIZE,
+          spriteTopY: inst.row * TILE_SIZE,
           xMin: inst.col * TILE_SIZE,
           xMax: (inst.col + fp.w) * TILE_SIZE,
           behind: false,
@@ -1848,13 +1850,27 @@ export class GameScene extends Phaser.Scene {
   // are only touched on an enter/leave transition (Learning EP-01).
   private updateBehindObjectFade(): void {
     if (this.behindFadeObjects.length === 0) return;
-    const feetY = this.player.y + PLAYER_SIZE / 2;
-    const px = this.player.x;
+    // Pip's collision box (feet-anchored, PLAYER_SIZE square). "Behind" fires on a
+    // true INTERSECT of that box with the object's occluding band (FB-5): her feet
+    // sit in [spriteTop, baseTop] — i.e. up-screen of the blue base yet still down-
+    // screen of the canopy top, so the canopy actually covers her — AND her box
+    // overlaps the canopy's x-span. The old gate only tested feet-above-base +
+    // point-in-span, so it fired anywhere up-screen of the trunk even when the
+    // canopy was nowhere near her. When behind, the sprite fades to a see-through
+    // 0.35 (was a too-subtle 0.5) so Pip reads clearly THROUGH it.
+    const half = PLAYER_SIZE / 2;
+    const feetY = this.player.y + half;
+    const pLeft = this.player.x - half;
+    const pRight = this.player.x + half;
     for (let i = 0; i < this.behindFadeObjects.length; i++) {
       const o = this.behindFadeObjects[i];
       // A hidden conditional object can't be hidden-behind; force it clear.
       const behind =
-        o.sprite.visible && feetY < o.colliderTopY && px >= o.xMin && px <= o.xMax;
+        o.sprite.visible &&
+        feetY < o.colliderTopY &&
+        feetY > o.spriteTopY &&
+        pRight >= o.xMin &&
+        pLeft <= o.xMax;
       if (behind === o.behind) continue;
       o.behind = behind;
       this.tweens.killTweensOf(o.sprite);
