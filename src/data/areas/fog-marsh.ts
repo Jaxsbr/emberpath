@@ -641,6 +641,20 @@ export const fogMarsh: AreaDefinition = {
       ],
     },
   },
+  // FB-14 — point the lost player to the Keeper. The Keeper (the heron, the light
+  // the objective tells you to "look for") only appears AFTER you surrender:
+  // spawnCondition marsh_trapped && marsh_surrendered && !keeper_met. Until then a
+  // beacon would point at empty fog, so it is gated on the same surrender flags
+  // (`shownWhen`) and cleared once you reach him (`clearedWhen: keeper_met`). A
+  // glow-only landmark (no smoke plume — this is a quiet figure in the mist, not a
+  // fire), sitting on the Keeper's tile (14,8); when he's off-screen in the fog the
+  // beacon's warm edge-arrow homes the player toward him.
+  lightBeacon: {
+    col: 14,
+    row: 8,
+    shownWhen: 'marsh_trapped == true AND marsh_surrendered == true',
+    clearedWhen: 'keeper_met == true',
+  },
   // Direct-load spawn lands the player on the dry path mid-marsh. Transitions
   // from Ashen Isle land them at the south entry instead (see Ashen Isle's
   // exit-to-fog entryPoint).

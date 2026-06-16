@@ -298,13 +298,18 @@ export interface AreaDefinition {
   // edge arrow must not keep pointing at a target the player already reached.
   // Evaluated on area entry and re-checked live when a named flag changes, so it
   // stays in lockstep with the objective banner.
-  smokeBeacon?: { col: number; row: number; clearedWhen?: string };
+  // `shownWhen` (optional, FB-14): the mirror of `clearedWhen` — a flag condition
+  // that must hold for the beacon to appear at all. Omit it and the beacon shows
+  // from area entry (the default). Use it for a point-of-interest that only exists
+  // mid-area — e.g. the Fog Marsh Keeper, who appears only after the player
+  // surrenders — so the homing arrow points at it exactly while it's there.
+  smokeBeacon?: { col: number; row: number; shownWhen?: string; clearedWhen?: string };
   // Glow-only beacon (C13, Issue #59). Same system as smokeBeacon but with the
   // smoke plume omitted — a standalone warm light the player walks TOWARD as a
   // wayfinding goal. Used where a smoke column would mis-read (e.g. Briar Wilds'
   // far clearing where "the thorns open up" toward the light). Place on the goal
   // tile. UI-camera, so it survives desaturation and is tileset-independent.
-  lightBeacon?: { col: number; row: number; clearedWhen?: string };
+  lightBeacon?: { col: number; row: number; shownWhen?: string; clearedWhen?: string };
   // Atmospheric fog overlay (C12). When true, a drifting bank of pale mist plus a
   // center-clear screen veil is layered over the scene so the area reads as actual
   // fog — used by Fog Marsh, whose dungeon-substitute tileset otherwise reads as

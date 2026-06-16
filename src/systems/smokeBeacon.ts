@@ -115,21 +115,37 @@ export class SmokeBeaconSystem {
   // subscribe-and-re-resolve idiom. When true, update() renders nothing.
   private clearedWhen: string | undefined;
   private cleared = false;
+  // FB-14: the mirror of `clearedWhen`. When set, the beacon stays hidden until
+  // the condition holds — for a point-of-interest that only exists mid-area (the
+  // Fog Marsh Keeper appears only after the player surrenders). `shown` is the
+  // cached result, re-evaluated only when a named flag changes. When false,
+  // update() renders nothing.
+  private shownWhen: string | undefined;
+  private shown = true;
   private flagUnsubscribes: Array<() => void> = [];
 
   constructor(
     scene: Phaser.Scene,
-    beacon: { col: number; row: number; plume?: boolean; clearedWhen?: string } | undefined,
+    beacon:
+      | { col: number; row: number; plume?: boolean; shownWhen?: string; clearedWhen?: string }
+      | undefined,
   ) {
     this.scene = scene;
     if (!beacon) return;
     this.active = true;
     this.plume = beacon.plume !== false;
+    this.shownWhen = beacon.shownWhen;
     this.clearedWhen = beacon.clearedWhen;
     this.baseX = beacon.col * TILE_SIZE + TILE_SIZE / 2;
     this.baseY = beacon.row * TILE_SIZE + TILE_SIZE / 2;
     this.ensureTextures();
     this.build();
+    // Evaluate the show gate on entry and subscribe to its flags so the beacon
+    // appears the instant its condition holds (e.g. marsh_surrendered) without
+    // rebuilding the scene. Start hidden if it isn't met yet.
+    this.shown = this.shownWhen ? evaluateCondition(this.shownWhen) : true;
+    this.subscribeShown();
+    if (!this.shown) this.applyHidden();
     // Evaluate the clear condition on entry and subscribe to its flags so a
     // later flip (e.g. has_ember_mark granted in Fog Marsh, US-100) hides the
     // beacon without rebuilding the scene. Hide immediately if already met.
@@ -168,6 +184,48 @@ export class SmokeBeaconSystem {
     this.glow?.setVisible(false);
     this.arrow?.setVisible(false);
     for (const p of this.puffs) p.img.setVisible(false);
+  }
+
+  // FB-14: subscribe to every flag named in `shownWhen` (same extraction as
+  // subscribeCleared). On any change, re-evaluate; when the condition newly holds,
+  // reveal the beacon for good. The mirror of subscribeCleared.
+  private subscribeShown(): void {
+    if (!this.shownWhen) return;
+    const flagNameRe = /\b([a-z_][a-z0-9_]*)\s*(?:==|!=|>=|>|<=|<)/gi;
+    const flagNames = new Set<string>();
+    let match: RegExpExecArray | null;
+    while ((match = flagNameRe.exec(this.shownWhen)) !== null) {
+      flagNames.add(match[1]);
+    }
+    for (const name of flagNames) {
+      this.flagUnsubscribes.push(
+        onFlagChange(name, () => {
+          // Don't un-hide a beacon that's already been cleared (goal reached) — the
+          // clear gate wins. Harmless in the Keeper's config (its show flags never
+          // re-flip after keeper_met), but keeps `shownWhen` robust for reuse.
+          if (this.cleared || this.shown || !this.shownWhen) return;
+          if (evaluateCondition(this.shownWhen)) {
+            this.shown = true;
+            this.applyShown();
+          }
+        }),
+      );
+    }
+  }
+
+  // Park every visual hidden while the show gate is unmet. Unlike applyCleared this
+  // is reversible — applyShown restores them. update() early-returns while hidden.
+  private applyHidden(): void {
+    this.glow?.setVisible(false);
+    this.arrow?.setVisible(false);
+    for (const p of this.puffs) p.img.setVisible(false);
+  }
+
+  // Reveal the glow + plume puffs once the show gate is met; the edge arrow is left
+  // to update()'s on/off-screen logic. From here update() drives them every frame.
+  private applyShown(): void {
+    this.glow?.setVisible(true);
+    for (const p of this.puffs) p.img.setVisible(true);
   }
 
   // Deterministic pseudo-random in [0,1) from an integer seed (same trick the
@@ -271,7 +329,7 @@ export class SmokeBeaconSystem {
   // Each puff climbs, spreads, leans, and fades; on reaching the top it recycles
   // to the base with a fresh jitter. No allocation in the loop.
   update(timeMs: number, deltaMs: number): void {
-    if (!this.active || this.cleared) return;
+    if (!this.active || this.cleared || !this.shown) return;
     const cam = this.scene.cameras.main;
     if (!cam) return;
     const zoom = cam.zoom;
