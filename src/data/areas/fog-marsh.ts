@@ -7,6 +7,7 @@ import {
   deriveTerrainFromTileMap,
   deriveObjectsFromTileMap,
 } from './types';
+import { TerrainId } from '../../maps/terrain';
 import { ObjectInstance } from '../../maps/objects';
 
 const F = TILE_FLOOR;
@@ -188,6 +189,39 @@ const fogMarshDecorations: DecorationDefinition[] = [
 
 // Stage-1 migration source — see ashen-isle.ts for the migration note.
 const fogMarshTileMap = buildFogMarshMap();
+
+// (FB-13 slice 1, 2026-06-17) A real central pond. Until now the marsh had NO
+// open water terrain except the trap closure — the left "deep water" was just
+// tiny-dungeon EDGE decoration over walkable floor, so playtesters read the
+// place as a grey dead field, not a marsh. This carves an organic murky-water
+// basin into the open buffer WEST of the dry col-14 path: those cells hold no
+// clutter and no trigger, and col 14 (the through-route) and col 13 stay dry,
+// so Pip's reachability is untouched (BFS-verified) — water.passable===false
+// only blocks the interior pond cells, and the path edge renders a passable
+// water↔floor shore blend via the fog-marsh-floor-water Wang tileset.
+const FOG_MARSH_POND_CELLS: Array<[number, number]> = [
+  /* col, row — an oval basin, no narrow neck/tail (keeps cols 13–14 dry) */
+  [11, 14], [12, 14],
+  [10, 15], [11, 15], [12, 15],
+  [10, 16], [11, 16], [12, 16],
+  [10, 17], [11, 17], [12, 17],
+  [11, 18], [12, 18],
+];
+
+function buildFogMarshTerrain(): TerrainId[][] {
+  const terrain = deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor');
+  // A cell is impassable water only when all four of its corner vertices are
+  // water, so flip every vertex touched by a pond cell. Cells on the pond rim
+  // (e.g. col 13 / col 14 beside the path) keep a dry corner and stay passable,
+  // rendering as the shore transition.
+  for (const [col, row] of FOG_MARSH_POND_CELLS) {
+    terrain[row][col] = 'water';
+    terrain[row][col + 1] = 'water';
+    terrain[row + 1][col] = 'water';
+    terrain[row + 1][col + 1] = 'water';
+  }
+  return terrain;
+}
 
 // (C12b, 2026-06-14) Interior marsh life — passable PixelLab tufts scattered in
 // the wet ground, replacing the old tiny-dungeon log-pile "reed" decorations
@@ -413,7 +447,7 @@ export const fogMarsh: AreaDefinition = {
   tileset: 'fog-marsh-floor-path',
   decorationsTileset: 'tiny-dungeon',
   map: fogMarshTileMap,
-  terrain: deriveTerrainFromTileMap(fogMarshTileMap, 'marsh-floor'),
+  terrain: buildFogMarshTerrain(),
   // C12b (2026-06-14, Issue #67): the impassable boundary is now a reed/cattail
   // bank, not a stone-block crypt wall — same cells, same collision, marsh
   // vocabulary. Plus a scatter of passable dry-reed tufts + a mushroom for
