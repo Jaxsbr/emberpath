@@ -1812,17 +1812,20 @@ export class GameScene extends Phaser.Scene {
       const bf = def.baseFootprint;
       let shadow: Phaser.GameObjects.Shape;
       if (bf) {
-        // Buildings (cottage): ONE clean RECTANGULAR shadow on the front floor,
-        // spanning the building's base width and pooling just SOUTH of where its
-        // front wall meets the ground — a top-down "shadow from above" cast
-        // straight down in front of the base (Jaco FB-8). Footprint-relative, so
-        // it scales with any future house resize. Replaces the old per-cell
-        // collision-marker ellipse mass.
+        // Buildings (cottage): a soft OVAL cast shadow that pools BELOW the house,
+        // speaking the same shadow language as characters and trees (Jaco FB-21).
+        // 3/4-oblique top light → the shadow falls just SOUTH of where the front
+        // wall meets the ground, its bulk sitting BELOW the building rather than a
+        // hard rectangular band hugging the wall (that band read as part of the
+        // structure — Jaco FB-8/FB-21: "the current house shadow is wrong and
+        // should be below"). Footprint-relative, so it scales with any resize.
         const shCx = (inst.col + bf.dx + bf.w / 2) * TILE_SIZE;
         const frontGroundY = (inst.row + bf.dy + bf.h) * TILE_SIZE;
-        const shW = bf.w * TILE_SIZE * 0.9; // slight inset so it hugs the walls
-        const shH = TILE_SIZE * 0.55; // shallow front-floor band
-        shadow = this.add.rectangle(shCx, frontGroundY + shH * 0.35, shW, shH, 0x000000, 0.22);
+        const shW = bf.w * TILE_SIZE * 0.82;
+        const shH = TILE_SIZE * 0.6;
+        // Centre half a band south of the front-ground line so the whole ellipse
+        // lies below the house — a shadow cast down-screen, like Pip's own.
+        shadow = this.add.ellipse(shCx, frontGroundY + shH * 0.5, shW, shH, 0x000000, 0.24);
       } else {
         let shCx: number;
         let shBaseY: number;
