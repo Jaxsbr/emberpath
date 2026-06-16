@@ -29,6 +29,9 @@ export class NpcInteractionSystem {
   private pointerDownTime = 0;
   private pointerDownPos = { x: 0, y: 0 };
   private interactionCallback: ((npc: NpcDefinition) => void) | null = null;
+  // When this returns true a dialogue is open; the "Space to talk" prompt is
+  // suppressed and Space is left to the dialogue's own advance handler (FB-10).
+  private dialogueActiveCheck: (() => boolean) | null = null;
 
   constructor(scene: Phaser.Scene, npcs: NpcDefinition[]) {
     this.scene = scene;
@@ -43,6 +46,11 @@ export class NpcInteractionSystem {
 
   setInteractionCallback(cb: (npc: NpcDefinition) => void): void {
     this.interactionCallback = cb;
+  }
+
+  /** Wire a "is a dialogue currently open?" check so the prompt hides during dialogue (FB-10). */
+  setDialogueActiveCheck(check: () => boolean): void {
+    this.dialogueActiveCheck = check;
   }
 
   private setupInput(): void {
@@ -68,6 +76,16 @@ export class NpcInteractionSystem {
   }
 
   update(playerCenterX: number, playerCenterY: number): void {
+    // While a dialogue is open, suppress the affordance entirely: the floating
+    // "Space to talk" prompt would otherwise hover over the open dialog, and Space
+    // is the dialogue's own advance key — not a cue to re-open it (FB-10). Clearing
+    // nearestNpc also blocks a stray tap-to-talk from firing mid-dialogue.
+    if (this.dialogueActiveCheck && this.dialogueActiveCheck()) {
+      this.nearestNpc = null;
+      if (this.promptVisible) this.hidePrompt();
+      return;
+    }
+
     this.nearestNpc = this.findNearestNpcInRange(playerCenterX, playerCenterY);
 
     if (this.nearestNpc) {
