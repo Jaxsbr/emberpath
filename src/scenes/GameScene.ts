@@ -100,6 +100,20 @@ const WORD_LANTERN_CAST_DEPTH = 4.55; // on the ground, below the entity band [5
 // prop layers (0–3) and non-tall objects (2.5) are unaffected.
 const ENTITY_DEPTH_BASE = 5;
 const ENTITY_DEPTH_SPAN = 0.49;
+// Moving-entity ground shadows (FB-21). Pip and every NPC carry the canon
+// ground-contact ellipse at their feet. The foot offset is measured DOWN from
+// the sprite centre to where the feet visually meet the ground (sprites are
+// origin-centred and taller than their collision box, so the feet sit below
+// centre). Width is the visible foot-spread, not the collision box. A shadow
+// renders just under its own entity (entity y-sort depth − epsilon).
+// Pip + NPC feet-shadows scaled DOWN per Jaco #926 ("Pip and npc shadows can be
+// scaled down a bit") — tighter pool (0.82× foot-spread) and a touch fainter.
+const PLAYER_SHADOW_WIDTH = PLAYER_SIZE * 0.82;
+const PLAYER_SHADOW_FOOT_OFFSET = 22;
+const NPC_SHADOW_WIDTH = NPC_SIZE * 0.82;
+const NPC_SHADOW_FOOT_OFFSET = 20;
+const ENTITY_SHADOW_ALPHA = 0.22;
+const ENTITY_SHADOW_DEPTH_EPS = 0.02;
 // Behind-object reveal (FB-3 part 4). When Pip slips behind a tall object's
 // canopy it fades to BEHIND_FADE_ALPHA and gains a thin white outline so she
 // stays readable through it; both ease back over BEHIND_FADE_MS when she leaves.
@@ -244,6 +258,12 @@ export class GameScene extends Phaser.Scene {
   // shipped with. Shadows are neutral dark so the drained-area desaturation
   // pipeline leaves them correct on the main camera.
   private objectShadows: Phaser.GameObjects.Shape[] = [];
+  // Moving-entity ground shadows (FB-21). The player and every NPC carry the same
+  // canon ground-contact shadow as objects, but anchored at the entity's feet and
+  // repositioned each frame in update() so it tracks movement. Depth tracks the
+  // entity's own y-sort minus a hair so a shadow always sits just under its owner.
+  private playerShadow!: Phaser.GameObjects.Ellipse;
+  private npcShadowsById: Map<string, Phaser.GameObjects.Ellipse> = new Map();
   // Behind-object reveal (FB-3 part 4) — tall objects (trees, the stag) Pip can
   // hide behind. When her feet rise above an object's trunk-collider top AND she
   // is horizontally under its canopy, the object fades to 50% and gains a white
@@ -1138,14 +1158,24 @@ export class GameScene extends Phaser.Scene {
     // draws behind a tree canopy when above its trunk and in front when below
     // (#346). Pure arithmetic, no per-frame allocation (Learning EP-01).
     this.player.setDepth(this.ySortDepth(this.player.y + halfSize));
+    // Track Pip's ground shadow at her feet, just under her own sprite (FB-21).
+    // Pure setters, no allocation (Learning EP-01).
+    this.playerShadow.setPosition(this.player.x, this.player.y + PLAYER_SHADOW_FOOT_OFFSET);
+    this.playerShadow.setDepth(this.player.depth - ENTITY_SHADOW_DEPTH_EPS);
     // Fade + outline any tall object Pip is currently hidden behind (FB-3 pt 4).
     this.updateBehindObjectFade();
 
     this.npcBehavior.update(delta, { x: this.player.x, y: this.player.y });
     // Y-sort wandering NPCs the same way after their positions settle this
     // frame, so a tree between Pip and an NPC layers correctly for both.
-    for (const sprite of this.npcSpritesById.values()) {
+    for (const [id, sprite] of this.npcSpritesById) {
       sprite.setDepth(this.ySortDepth(sprite.y + NPC_SIZE / 2));
+      // Track each NPC's ground shadow at its feet, just under its own sprite.
+      const shadow = this.npcShadowsById.get(id);
+      if (shadow) {
+        shadow.setPosition(sprite.x, sprite.y + NPC_SHADOW_FOOT_OFFSET);
+        shadow.setDepth(sprite.depth - ENTITY_SHADOW_DEPTH_EPS);
+      }
     }
     // Single post-update snapshot of NPC live positions, shared by the presence
     // auras and the lighting sync below. getLivePositions allocates a fresh Map
@@ -1645,6 +1675,26 @@ export class GameScene extends Phaser.Scene {
     return ENTITY_DEPTH_BASE + t * ENTITY_DEPTH_SPAN;
   }
 
+  // Canon ground-contact shadow (FB-21). ONE rule for every shadow in the game —
+  // player, NPCs, trees, props, buildings — so they all read under the same
+  // overhead light (the recurring FB-8/FB-21 failure was buildings inventing
+  // their own shape/offset instead of obeying this). A soft dark ellipse pooled
+  // ON the ground-contact line, its north half tucked under the sprite and only a
+  // small sliver poking SOUTH (down-screen). Height is 0.4x width; the +0.12*height
+  // nudge is that south sliver. Callers pass the footprint width and the visible
+  // contact line (feet / wall base — NOT a padded sprite-box bottom); depth is set
+  // by the caller (static objects at 0.6, moving entities track their own y-sort).
+  private makeGroundShadow(
+    centerX: number,
+    contactY: number,
+    widthPx: number,
+    alpha: number,
+  ): Phaser.GameObjects.Ellipse {
+    const shW = widthPx;
+    const shH = shW * 0.4;
+    return this.add.ellipse(centerX, contactY + shH * 0.12, shW, shH, 0x000000, alpha);
+  }
+
   private buildObjectCollisionMap(): void {
     const m = this.passability.objectBlockMap;
     m.clear();
@@ -1801,55 +1851,45 @@ export class GameScene extends Phaser.Scene {
       sprite.setDepth(def.tall ? this.ySortDepth(sortY) : 2.5);
       this.objectSprites.push(sprite);
 
-      // Believable ground-contact shadow (FB-3 + FB-4 tuning). Top-down light:
-      // the shadow pools directly beneath the object's ground-contact line and
-      // pokes a small sliver SOUTH (down-screen), its north half tucked under the
-      // sprite — the overhead-light idiom from the wiki scene-layout guide. Sized
-      // to the object's footprint so small props (grass, bushes) cast small
-      // shadows, not oversized cast-away ovals (Jaco FB-4). Depth 0.6 keeps it
-      // above terrain but beneath the object and any entity that walks over.
+      // Believable ground-contact shadow (FB-3/FB-4/FB-21). TWO shapes by object
+      // kind (Jaco's art call, #926): BUILDINGS get a rectangular front-floor band
+      // at the visible wall base; trees/props/entities get a soft ellipse via the
+      // makeGroundShadow canon. Both pool on the visible ground-contact line — NOT
+      // the footprint bottom (that sits out in the yard: the FB-21 "purple"
+      // regression). Depth 0.6 keeps it above terrain but beneath the object and
+      // any entity that walks over.
       const cf = def.collisionFootprint;
       const bf = def.baseFootprint;
       let shadow: Phaser.GameObjects.Shape;
       if (bf) {
-        // Buildings (cottage): a soft OVAL cast shadow that pools BELOW the house,
-        // speaking the same shadow language as characters and trees (Jaco FB-21).
-        // 3/4-oblique top light → the shadow falls just SOUTH of where the front
-        // wall meets the ground, its bulk sitting BELOW the building rather than a
-        // hard rectangular band hugging the wall (that band read as part of the
-        // structure — Jaco FB-8/FB-21: "the current house shadow is wrong and
-        // should be below"). Footprint-relative, so it scales with any resize.
+        // Buildings (cottage): ONE clean RECTANGULAR front-floor shadow — the
+        // shape Jaco confirmed correct (#926). But it must sit at the VISIBLE
+        // WALL BASE (Jaco's blue annotation), tucked right under the front wall —
+        // NOT at the footprint bottom (`bf.dy+bf.h` = the sprite's very bottom
+        // edge, a full tile DOWN in the yard, which is exactly his rejected
+        // "purple" position, #930). The visible wall base sits at ~0.78 of the
+        // 4×4 sprite's height (same anchor the feet/oval used). Width tracks the
+        // front-wall span; band tucks just below the wall line.
         const shCx = (inst.col + bf.dx + bf.w / 2) * TILE_SIZE;
-        const frontGroundY = (inst.row + bf.dy + bf.h) * TILE_SIZE;
-        const shW = bf.w * TILE_SIZE * 0.82;
-        const shH = TILE_SIZE * 0.6;
-        // Centre half a band south of the front-ground line so the whole ellipse
-        // lies below the house — a shadow cast down-screen, like Pip's own.
-        shadow = this.add.ellipse(shCx, frontGroundY + shH * 0.5, shW, shH, 0x000000, 0.24);
+        const wallBaseY = (inst.row + fp.h * 0.78) * TILE_SIZE;
+        const shW = bf.w * TILE_SIZE * 0.9; // slight inset so it hugs the walls
+        const shH = TILE_SIZE * 0.55; // shallow front-floor band
+        shadow = this.add.rectangle(shCx, wallBaseY + shH * 0.35, shW, shH, 0x000000, 0.22);
+      } else if (cf) {
+        // Trees / stag: soft ellipse pooled at the trunk-base collider, width ~=
+        // its footprint (was 1.6× → read as an oversized cast-away pool).
+        const shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
+        const contactY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
+        const shW = Math.max(cf.w * TILE_SIZE * 1.05, TILE_SIZE * 0.8);
+        shadow = this.makeGroundShadow(shCx, contactY, shW, 0.26);
       } else {
-        let shCx: number;
-        let shBaseY: number;
-        let shW: number;
-        if (cf) {
-          // Trees / stag: pool at the trunk-base collider, width ~= its footprint
-          // (was 1.6× → read as an oversized cast-away pool).
-          shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
-          shBaseY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
-          shW = Math.max(cf.w * TILE_SIZE * 1.05, TILE_SIZE * 0.8);
-        } else {
-          // Small props: anchor at the VISIBLE base — lifted ~0.2 tile up from the
-          // padded sprite-box bottom so the shadow hugs the art instead of
-          // detaching below it (the "floating" read in FB-4) — and keep it small.
-          shCx = (inst.col + fp.w / 2) * TILE_SIZE;
-          shBaseY = (inst.row + fp.h) * TILE_SIZE - TILE_SIZE * 0.2;
-          shW = fp.w * TILE_SIZE * 0.5;
-        }
-        const shH = shW * 0.4;
-        // Centre the ellipse a touch SOUTH of the contact line (top-down light):
-        // its north half tucks under the sprite, a small sliver shows to the south.
-        // (Was lifted NORTH by 0.35·h, which read as a shadow cast away above the
-        // object — the "angular / floating" FB-4 complaint.)
-        shadow = this.add.ellipse(shCx, shBaseY + shH * 0.12, shW, shH, 0x000000, 0.26);
+        // Small props: soft ellipse at the VISIBLE base — lifted ~0.2 tile up from
+        // the padded sprite-box bottom so it hugs the art instead of detaching
+        // below it (the "floating" read in FB-4) — and kept small.
+        const shCx = (inst.col + fp.w / 2) * TILE_SIZE;
+        const contactY = (inst.row + fp.h) * TILE_SIZE - TILE_SIZE * 0.2;
+        const shW = fp.w * TILE_SIZE * 0.5;
+        shadow = this.makeGroundShadow(shCx, contactY, shW, 0.26);
       }
       shadow.setDepth(0.6);
       this.objectShadows.push(shadow);
@@ -2086,6 +2126,9 @@ export class GameScene extends Phaser.Scene {
     // the destroyed sprite from the map and crash on .play() at the next tick.
     this.npcEntities = [];
     this.npcSpritesById.clear();
+    // NPC ground shadows are GameObjects destroyed by the scene shutdown on
+    // restart; clear the stale references so spawnNpcSprite recreates fresh ones.
+    this.npcShadowsById.clear();
     // Presence auras are GameObjects destroyed by the scene shutdown on restart;
     // clear the stale references so spawnNpcSprite recreates fresh ones (mirrors
     // npcSpritesById).
@@ -2109,6 +2152,16 @@ export class GameScene extends Phaser.Scene {
       sprite.play(`npc-${npc.sprite}-idle-south`);
       this.npcEntities.push(sprite);
       this.npcSpritesById.set(npc.id, sprite);
+      // Canon ground shadow at the NPC's feet (FB-21), same as Pip's — tracked
+      // each frame in update() alongside the NPC y-sort.
+      const shadow = this.makeGroundShadow(
+        cx,
+        cy + NPC_SHADOW_FOOT_OFFSET,
+        NPC_SHADOW_WIDTH,
+        ENTITY_SHADOW_ALPHA,
+      );
+      shadow.setDepth(sprite.depth - ENTITY_SHADOW_DEPTH_EPS);
+      this.npcShadowsById.set(npc.id, shadow);
       this.createNpcPresenceGlow(npc, cx, cy);
       return sprite;
     }
@@ -2171,6 +2224,10 @@ export class GameScene extends Phaser.Scene {
         // duplicate at the sprite's world coordinates. Observed as a small
         // Keeper at fixed screen position once the conditional spawn fired.
         this.cameras.getCamera('ui')?.ignore(sprite);
+        // Same for the late-spawned NPC's ground shadow (FB-21), or the UI camera
+        // renders a screen-fixed duplicate of it.
+        const lateShadow = this.npcShadowsById.get(npc.id);
+        if (lateShadow) this.cameras.getCamera('ui')?.ignore(lateShadow);
         sprite.setAlpha(0);
         this.tweens.add({
           targets: sprite,
@@ -2211,7 +2268,9 @@ export class GameScene extends Phaser.Scene {
       ...this.objectSprites,
       ...this.propSprites,
       this.player,
+      this.playerShadow,
       ...this.npcEntities,
+      ...this.npcShadowsById.values(),
     ]);
 
     this.scale.on('resize', this.handleResize, this);
@@ -2642,6 +2701,15 @@ export class GameScene extends Phaser.Scene {
     // Native PNG resolution: 68×68px. Scale 1.0 renders at native size.
     // Collision bounding box uses PLAYER_SIZE (24px) in math directly — display size is independent.
     this.player.setScale(1);
+    // Canon ground shadow at Pip's feet (FB-21). Repositioned every frame in
+    // update() so it tracks her movement; depth follows her own y-sort there too.
+    this.playerShadow = this.makeGroundShadow(
+      x,
+      y + PLAYER_SHADOW_FOOT_OFFSET,
+      PLAYER_SHADOW_WIDTH,
+      ENTITY_SHADOW_ALPHA,
+    );
+    this.playerShadow.setDepth(this.player.depth - ENTITY_SHADOW_DEPTH_EPS);
     this.animationSystem = new AnimationSystem(this.player);
 
     // Seed autosave bookkeeping with the player's start position so the first
