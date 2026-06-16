@@ -1770,29 +1770,37 @@ export class GameScene extends Phaser.Scene {
       sprite.setDepth(def.tall ? this.ySortDepth(sortY) : 2.5);
       this.objectSprites.push(sprite);
 
-      // Believable ground-contact shadow (FB-3, light-from-above). Pools at the
-      // object's base: for objects with a collision footprint (trees, the stag)
-      // it tucks under the trunk-base collider; otherwise it spans the sprite's
-      // bottom edge. An oblique ellipse (~0.42 aspect) reads as a flat shadow on
-      // the ground rather than a circle painted up the object. Depth 0.6 keeps
-      // it above terrain but beneath the object and any entity that walks over.
+      // Believable ground-contact shadow (FB-3 + FB-4 tuning). Top-down light:
+      // the shadow pools directly beneath the object's ground-contact line and
+      // pokes a small sliver SOUTH (down-screen), its north half tucked under the
+      // sprite — the overhead-light idiom from the wiki scene-layout guide. Sized
+      // to the object's footprint so small props (grass, bushes) cast small
+      // shadows, not oversized cast-away ovals (Jaco FB-4). Depth 0.6 keeps it
+      // above terrain but beneath the object and any entity that walks over.
       const cf = def.collisionFootprint;
       let shCx: number;
       let shBaseY: number;
       let shW: number;
       if (cf) {
+        // Trees / stag: pool at the trunk-base collider, width ~= its footprint
+        // (was 1.6× → read as an oversized cast-away pool).
         shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
         shBaseY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
-        shW = Math.max(cf.w * TILE_SIZE * 1.6, TILE_SIZE * 0.9);
+        shW = Math.max(cf.w * TILE_SIZE * 1.05, TILE_SIZE * 0.8);
       } else {
+        // Small props: anchor at the VISIBLE base — lifted ~0.2 tile up from the
+        // padded sprite-box bottom so the shadow hugs the art instead of
+        // detaching below it (the "floating" read in FB-4) — and keep it small.
         shCx = (inst.col + fp.w / 2) * TILE_SIZE;
-        shBaseY = (inst.row + fp.h) * TILE_SIZE;
-        shW = fp.w * TILE_SIZE * 0.72;
+        shBaseY = (inst.row + fp.h) * TILE_SIZE - TILE_SIZE * 0.2;
+        shW = fp.w * TILE_SIZE * 0.5;
       }
-      const shH = shW * 0.42;
-      // Lift the ellipse centre up by a third of its height so it sits snug
-      // under the base contact line instead of floating below it.
-      const shadow = this.add.ellipse(shCx, shBaseY - shH * 0.35, shW, shH, 0x000000, 0.26);
+      const shH = shW * 0.4;
+      // Centre the ellipse a touch SOUTH of the contact line (top-down light):
+      // its north half tucks under the sprite, a small sliver shows to the south.
+      // (Was lifted NORTH by 0.35·h, which read as a shadow cast away above the
+      // object — the "angular / floating" FB-4 complaint.)
+      const shadow = this.add.ellipse(shCx, shBaseY + shH * 0.12, shW, shH, 0x000000, 0.26);
       shadow.setDepth(0.6);
       this.objectShadows.push(shadow);
 
