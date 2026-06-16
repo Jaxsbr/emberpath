@@ -420,9 +420,36 @@ const briarGround: ObjectInstance[] = [
   { kind: 'cliff-stone', col: 8, row: 15 },
 ];
 
+// 4. Atmosphere props (FB-2 part 2 — Jaco #696 "fencing posts on turns, creepy
+//    signs, low torches"). Reuses existing APPROVED sprites only — no new art.
+//  * fence-rail (impassable) — SWAP 4 turn-corner front-ring brambles to old fence
+//    posts. Kind change only: each stays an impassable barrier cell, so the seal and
+//    the floor BFS are provably UNCHANGED (validated in autonomy/briar-layout.cjs).
+//    Reads as an old fence half-swallowed by the thorns (the back ring still fills
+//    the cell behind it). thornSet/backThorns were computed from the cell COORDS, so
+//    swapping kind after the fact leaves both untouched.
+const fenceCells = new Set(['14,16', '10,5', '21,23', '32,11']);
+for (const b of thornBarrier)
+  if (fenceCells.has(`${b.col},${b.row}`)) b.kind = 'fence-rail';
+//  * lantern-broken (passable) at each breadcrumb light-anchor — a physical SOURCE
+//    for the otherwise-sourceless wayfinding pools: an old lantern-lit path, most
+//    lanterns broken but still faintly glowing (eerie + abandoned, and it makes the
+//    breadcrumb lights believable). Non-tall → depth 2.5, so Pip always passes in
+//    FRONT (never hidden behind a lantern). Passable → zero reachability impact.
+//  * sign-wood (passable) — one worn trail-marker at the west mouth (mood + "this is
+//    a path"). All passable; coords mirror the validator.
+const lanternCells: ReadonlyArray<readonly [number, number]> = [
+  [3, 15], [12, 11], [16, 6], [23, 9], [23, 18], [34, 15], [39, 11],
+];
+const briarProps: ObjectInstance[] = [
+  ...lanternCells.map(([col, row]): ObjectInstance => ({ kind: 'lantern-broken', col, row })),
+  { kind: 'sign-wood', col: 2, row: 14 },
+];
+
 // backThorns first → rendered BEHIND the ring-1 thornBarrier (shared depth 2.5,
 // array order = draw order), so the back balls fill the front ring's corner gaps.
-const briarObjects: ObjectInstance[] = [...backThorns, ...thornBarrier, ...deadTreeAnchors, ...briarGround];
+// Props last → drawn over the barrier (and under Pip), so the lanterns/sign read.
+const briarObjects: ObjectInstance[] = [...backThorns, ...thornBarrier, ...deadTreeAnchors, ...briarGround, ...briarProps];
 
 export const briarWilds: AreaDefinition = {
   id: 'briar-wilds',
