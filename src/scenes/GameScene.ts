@@ -95,16 +95,21 @@ const ENTITY_DEPTH_SPAN = 0.49;
 // Behind-object reveal (FB-3 part 4). When Pip slips behind a tall object's
 // canopy it fades to BEHIND_FADE_ALPHA and gains a thin white outline so she
 // stays readable through it; both ease back over BEHIND_FADE_MS when she leaves.
+// The occluder STAYS in front of Pip (keeps its Y-sort depth) but fades to this
+// see-through alpha so her body reads THROUGH the canopy — she's behind the tree,
+// just not hidden by it (FB-11: "the tree needs to be transparent but still
+// rendered over Pip"). 0.5 = half see-through.
 const BEHIND_FADE_ALPHA = 0.5;
-// While behind, the occluder is also pushed just below the entity band so Pip's
-// FULL sprite draws ON TOP of the ghosted tree — not buried under it (FB-11: "we
-// must see Pip, not just the glow she carries"). 0.05 under the band's floor.
-const BEHIND_DEPTH = ENTITY_DEPTH_BASE - 0.05;
 const BEHIND_FADE_MS = 180;
 // White edge glow used as the "outline" (Phaser 3.80 has no built-in Outline FX;
 // a knockout-off glow hugs the sprite's alpha edges and reads as a crisp rim).
 const BEHIND_OUTLINE_COLOR = 0xffffff;
 const BEHIND_OUTLINE_STRENGTH = 4;
+// FB-11 silhouette: a faint warm copy of Pip drawn above the canopy so she reads
+// through the leaves. Warm tint matches her ember; alpha kept low so she's a clear
+// "she's behind here" hint, never a solid body planted in front of the tree.
+const BEHIND_SILHOUETTE_TINT = 0xffe2a8;
+const BEHIND_SILHOUETTE_ALPHA = 0.36;
 // NPC presence marker (C4-a, 2026-06-13). Audit F4: post the grey-out model the
 // whole world is visible, but an un-warmed NPC reads as just another grey shape —
 // nothing says "a soul to approach." A faint warm amber aura (the same soft
@@ -248,8 +253,13 @@ export class GameScene extends Phaser.Scene {
     xMax: number;
     behind: boolean;
     outline: Phaser.FX.Glow | null;
-    baseDepth: number;
   }[] = [];
+  // FB-11: a faint warm copy of Pip composited just ABOVE the canopy band whenever
+  // she is behind any tall object. Her real sprite stays behind the tree (render
+  // order unchanged — the tree is still drawn over her), but this ghost shows the
+  // player WHERE she is through the leaves, so she's never lost. One reusable
+  // sprite, frame-synced each walk-frame; created lazily, never per-frame alloc.
+  private behindSilhouette: Phaser.GameObjects.Sprite | null = null;
   // Conditional objects: visibility re-evaluated only on flag changes
   // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
   // condition string is available for re-eval and so buildObjectCollisionMap
@@ -1824,7 +1834,6 @@ export class GameScene extends Phaser.Scene {
           xMax: (inst.col + fp.w) * TILE_SIZE,
           behind: false,
           outline: null,
-          baseDepth: sprite.depth,
         });
       }
 
@@ -1851,8 +1860,9 @@ export class GameScene extends Phaser.Scene {
 
   // Behind-object reveal (FB-3 part 4). Called each walk-frame: for every tall
   // object Pip can hide behind, fade it to BEHIND_FADE_ALPHA + add a white outline
-  // AND drop it below the entity band (so Pip layers on top) while she is behind
-  // it, and revert when she steps clear. Per-frame work is just a few
+  // while she is behind it, and revert when she steps clear. The occluder KEEPS its
+  // Y-sort depth — it stays rendered OVER Pip — so she reads THROUGH the transparent
+  // canopy rather than hidden by it (FB-11). Per-frame work is just a few
   // comparisons per object (no allocation); the alpha tween and the outline FX
   // are only touched on an enter/leave transition (Learning EP-01).
   private updateBehindObjectFade(): void {
@@ -1864,8 +1874,8 @@ export class GameScene extends Phaser.Scene {
     // overlaps the canopy's x-span. The old gate only tested feet-above-base +
     // point-in-span, so it fired anywhere up-screen of the trunk even when the
     // canopy was nowhere near her. When behind, the sprite fades to a see-through
-    // 0.5 AND drops under the entity band so Pip's full body — not just her ember —
-    // reads clearly ON TOP of the ghosted canopy (FB-11).
+    // 0.5 (and gains a white rim) while STAYING rendered over Pip, so her body reads
+    // THROUGH the transparent canopy — she's behind the tree, not hidden by it (FB-11).
     const half = PLAYER_SIZE / 2;
     const feetY = this.player.y + half;
     const pLeft = this.player.x - half;
@@ -1881,11 +1891,6 @@ export class GameScene extends Phaser.Scene {
         pLeft <= o.xMax;
       if (behind === o.behind) continue;
       o.behind = behind;
-      // Layer Pip ON TOP: drop the occluder just under the entity band while she's
-      // behind it (so her full sprite, not just the ember, reads over the ghost),
-      // and restore its Y-sort depth the instant she steps clear (FB-11). Depth is
-      // a hard swap, not tweened — a mid-tween depth would pop anyway.
-      o.sprite.setDepth(behind ? BEHIND_DEPTH : o.baseDepth);
       this.tweens.killTweensOf(o.sprite);
       this.tweens.add({
         targets: o.sprite,
@@ -1906,6 +1911,48 @@ export class GameScene extends Phaser.Scene {
         o.outline = null;
       }
     }
+    this.updateBehindSilhouette();
+  }
+
+  // FB-11: show Pip THROUGH the canopy. Pure transparency isn't enough — her own
+  // ember light blows the see-through leaves out to white, so even a tree faded to
+  // 0.5 (rendered over her, correct order) hides her body. Instead we keep the tree
+  // over her AND composite a faint warm copy of her current frame just above the
+  // entity band (below the ember at 5.5), so her shape always reads through the
+  // leaves without ever putting her solid body in front of the tree.
+  private updateBehindSilhouette(): void {
+    let anyBehind = false;
+    for (let i = 0; i < this.behindFadeObjects.length; i++) {
+      if (this.behindFadeObjects[i].behind) {
+        anyBehind = true;
+        break;
+      }
+    }
+    if (!anyBehind) {
+      if (this.behindSilhouette) this.behindSilhouette.setVisible(false);
+      return;
+    }
+    if (!this.behindSilhouette) {
+      this.behindSilhouette = this.add.sprite(
+        this.player.x,
+        this.player.y,
+        this.player.texture.key,
+        this.player.frame.name
+      );
+      // Just above the whole entity band [5, 5.49] so it sits over any tree, but
+      // under the ember (5.5) and lighting overlay (6) so the scene still tints it.
+      this.behindSilhouette.setDepth(ENTITY_DEPTH_BASE + ENTITY_DEPTH_SPAN + 0.005);
+      this.behindSilhouette.setTint(BEHIND_SILHOUETTE_TINT);
+      // Keep it off the UI camera (it has no scroll) so it doesn't double-render.
+      this.cameras.getCamera('ui')?.ignore(this.behindSilhouette);
+    }
+    const s = this.behindSilhouette;
+    s.setTexture(this.player.texture.key, this.player.frame.name);
+    s.setPosition(this.player.x, this.player.y);
+    s.setFlipX(this.player.flipX);
+    s.setScale(this.player.scaleX, this.player.scaleY);
+    s.setAlpha(BEHIND_SILHOUETTE_ALPHA);
+    s.setVisible(true);
   }
 
   // Subscribe to every flag named in any ObjectInstance.condition so the
@@ -2294,6 +2341,10 @@ export class GameScene extends Phaser.Scene {
     // Sprites are destroyed via objectSprites above (their outline FX dies with
     // them); just drop our references so a stale entry can't outlive the scene.
     this.behindFadeObjects = [];
+    if (this.behindSilhouette) {
+      this.behindSilhouette.destroy();
+      this.behindSilhouette = null;
+    }
     this.conditionalObjects = [];
     for (const rect of this.exitOverlays) rect.destroy();
     this.exitOverlays = [];
