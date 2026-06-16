@@ -50,12 +50,14 @@ const VOID_DEEP_COLOR = '#0d0e14';
 // beat to register the appearance before regaining control.
 const KEEPER_FADE_DURATION_MS = 500;
 const KEEPER_INPUT_SUSPEND_MS = 1000;
-// Player ember overlay (US-73). Vertical offset from the player's centre to
-// the ember's centre — placed above the head silhouette without z-fighting
-// the body sprite. The overlay renders at depth 5.5 (literal fractional
-// depth between Entities at 5 and Thoughts at 8) so it always shows above
-// the player but below thought bubbles.
-const EMBER_OFFSET_Y = -28;
+// Player ember overlay (US-73). Centred on the player's body (offset 0) so the
+// warm glow blooms evenly AROUND Pip rather than parking a bright disc above
+// her head. FB-16 (Jaco): the old head-anchored glow (a) hid her face and
+// (b) read like a holy angel halo — both unwanted. Re-anchoring to body centre
+// AND dropping the depth below the entity band (EMBER_DEPTH below 5) makes Pip's
+// sprite render ON TOP of the glow: her face stays fully readable while the
+// light haloes around her silhouette — the ember she carries, not a saint's ring.
+const EMBER_OFFSET_Y = 0;
 // Soft ember glow (replaces the old flat orange Arc — Jaco 2026-06-13: "just an
 // orange circle, looks pretty bad"). A pre-baked warm radial-gradient texture
 // (white-hot core → gold → transparent) drawn ADD-blended so it reads as a
@@ -63,7 +65,11 @@ const EMBER_OFFSET_Y = -28;
 // Ember feels alive on Pip. Render radius lerps with warmth (US-101).
 const EMBER_GLOW_KEY = 'player-ember-glow';
 const EMBER_GLOW_TEX_SIZE = 64;
-const EMBER_DEPTH = 5.5;
+// Below the entity band [5, 5.49) — like the Word-lantern ground cast (4.55) —
+// so the glow pools under/around Pip and her sprite always draws on top (FB-16:
+// keep her face readable, no bright core washing over it). Still above objects
+// and the ground so the bloom reads.
+const EMBER_DEPTH = 4.5;
 // Carried Word lantern (US-W1 carried visual, Issue #93). After Pip receives the
 // Word from Quill (`has_word`), she carries a lit lantern — "the Word as light",
 // the same lamp she is handed in the the-word-gift scene (a lamp unto her feet).
@@ -87,8 +93,10 @@ const WORD_LANTERN_CAST_DEPTH = 4.55; // on the ground, below the entity band [5
 // render in [ENTITY_DEPTH_BASE, ENTITY_DEPTH_BASE + ENTITY_DEPTH_SPAN), keyed
 // on the world-y of their ground contact: an entity lower on the map (larger y)
 // draws on top. This lets Pip pass behind a tree's canopy when she's above its
-// trunk and in front when below. The span stays under EMBER_DEPTH (5.5) so the
-// ember/lighting overlays always composite above every entity. Tile/decoration/
+// trunk and in front when below. The span tops out at 5.49, under the carried
+// Word-lantern overlays (5.49–5.5) so those composite above every entity. The
+// player ember sits BELOW the band (EMBER_DEPTH 4.5, like the lantern ground
+// cast) so Pip's sprite draws on top of her own glow (FB-16). Tile/decoration/
 // prop layers (0–3) and non-tall objects (2.5) are unaffected.
 const ENTITY_DEPTH_BASE = 5;
 const ENTITY_DEPTH_SPAN = 0.49;
@@ -921,9 +929,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Idempotent — returns early when the overlay already exists. Created at
-  // EMBER_DEPTH (5.5) so it draws above the player (Entities, depth 5) and
-  // below thought bubbles (depth 8). Added to uiCam.ignore so the UI camera
-  // does not double-render the world-space ember.
+  // EMBER_DEPTH (4.5), just below the entity band, so it pools under/around Pip
+  // and her sprite draws on top (FB-16: face readable, no halo). Added to
+  // uiCam.ignore so the UI camera does not double-render the world-space ember.
   private maybeCreateEmberOverlay(): void {
     if (this.emberOverlay) return;
     if (!this.player) return;
