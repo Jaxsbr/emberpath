@@ -19,23 +19,62 @@ import {
   AreaDefinition,
   StoredTile,
   TILE_FLOOR,
+  TILE_WALL,
   deriveTerrainFromTileMap,
-  deriveObjectsFromTileMap,
   DrainZoneDefinition,
   QuietZoneDefinition,
   InscribedStoneDefinition,
   TriggerDefinition,
   DecorationDefinition,
 } from './types';
+import type { ObjectInstance } from '../../maps/objects';
 
-const F = TILE_FLOOR;
+// ───── Winding forced-path layout (FB-2, North-Star "feel" overhaul) ─────
+// Jaco's complaint: the old 32×26 Briar was small and you could walk in a
+// STRAIGHT line east — it read as a corridor, not a wilds. This replaces it with
+// a 44×30 map whose floor is a SERPENTINE the player is forced to wind through:
+// enter west (row 15), east along A, climb riser1, east along B, descend the long
+// riser2, east along C, climb riser3, east along D to the far-east closing
+// clearing + heart-bridge mouth. Walking straight is impossible — each leg
+// dead-ends in thorns and forces a turn.
+//
+// HOW the path is forced: the grid is filled WALL, then the serpentine is carved
+// FLOOR (SEGMENTS below). Collision in Briar is object-only (terrain is all
+// passable briar-floor), so the wall has to be a real impassable OBJECT barrier:
+// `thornBarrier` places a `bramble-cluster` on every wall cell touching the path
+// (8-neighbourhood → no diagonal squeeze-through for the 24px player), sealing the
+// corridor. `deadTreeAnchors` then layers tall 4×4 dead trees into the forest for
+// height + canopy overhang. The carve + barrier generation here mirrors VERBATIM
+// the validated single-source-of-truth at autonomy/briar-layout.cjs (BFS
+// reachability spawn→both exits + every anchor, plus collision-on-floor asserts).
+const COLS = 44;
+const ROWS = 30;
+const W = TILE_WALL;
 
-// 32 wide × 26 tall — exceeds the spec floor of 30×24. All-floor base; the
-// impassable thorn patches are carried by the placed object layer below
-// (bramble-cluster / dead-tree kinds), which has since shipped (PRs #87, #91).
-const briarTileMap: StoredTile[][] = Array.from({ length: 26 }, () =>
-  Array.from({ length: 32 }, () => F as StoredTile),
+// Carve rects, inclusive [c0, r0, c1, r1]. Order/coords identical to the validator.
+const SEGMENTS: ReadonlyArray<readonly [number, number, number, number]> = [
+  [0, 14, 13, 16], //  A  entry corridor (west mouth at col 0)
+  [6, 13, 9, 16], //   drain-1 dry pocket on A
+  [11, 5, 13, 16], //  riser1 — up
+  [11, 5, 24, 7], //   B  east (north band)
+  [15, 4, 18, 8], //   quiet-grove clearing (north rest)
+  [22, 5, 24, 23], //  riser2 — the long descent
+  [22, 21, 35, 23], // C  east (south band)
+  [27, 20, 30, 23], // drain-2 dry pocket on C
+  [33, 11, 35, 23], // riser3 — up
+  [33, 10, 43, 12], // D  east to the edge (east mouth at col 43)
+  [37, 9, 42, 14], //  quiet-closing clearing (beacon + complete trigger + bridge)
+];
+
+const briarTileMap: StoredTile[][] = Array.from({ length: ROWS }, () =>
+  Array.from({ length: COLS }, () => W as StoredTile),
 );
+for (const [c0, r0, c1, r1] of SEGMENTS)
+  for (let r = r0; r <= r1; r++)
+    for (let c = c0; c <= c1; c++) briarTileMap[r][c] = TILE_FLOOR;
+
+const isFloorCell = (c: number, r: number): boolean =>
+  r >= 0 && r < ROWS && c >= 0 && c < COLS && briarTileMap[r][c] === TILE_FLOOR;
 
 // ───── Drain zones (US-102) ─────
 // Two patches with internal-weariness doubt lines. Tone is the believer's
@@ -43,10 +82,10 @@ const briarTileMap: StoredTile[][] = Array.from({ length: 26 }, () =>
 const drainZones: DrainZoneDefinition[] = [
   {
     id: 'drain-1',
-    col: 8,
-    row: 8,
+    col: 6,
+    row: 13,
     width: 4,
-    height: 3,
+    height: 4,
     doubts: {
       lines: [
         'This path is too long...',
@@ -57,10 +96,10 @@ const drainZones: DrainZoneDefinition[] = [
   },
   {
     id: 'drain-2',
-    col: 18,
-    row: 16,
+    col: 27,
+    row: 20,
     width: 4,
-    height: 3,
+    height: 4,
     doubts: {
       lines: [
         'No one knows I am out here.',
@@ -80,20 +119,20 @@ const drainZones: DrainZoneDefinition[] = [
 const quietZones: QuietZoneDefinition[] = [
   {
     id: 'quiet-grove',
-    col: 14,
-    row: 5,
-    width: 3,
-    height: 3,
+    col: 15,
+    row: 4,
+    width: 4,
+    height: 4,
     narration: {
       lines: ["Pip's little spark grows calm and strong.", 'The thorns open up here.'],
     },
   },
   {
     id: 'quiet-closing',
-    col: 27,
-    row: 11,
-    width: 4,
-    height: 4,
+    col: 37,
+    row: 9,
+    width: 5,
+    height: 5,
     narration: {
       lines: [
         'The thorny woods end in this open spot.',
@@ -105,15 +144,15 @@ const quietZones: QuietZoneDefinition[] = [
 ];
 
 // ───── Inscribed stones (the-word phase, US-W3/US-W4) ─────
-// One carved stone sits inside drain-1 (cols 8–11 / rows 8–10). Before Pip
+// One carved stone sits inside drain-1 (cols 6–9 / rows 13–16). Before Pip
 // receives the Word she can't read the marks; once she has it, remembering the
 // stone steadies her ember so drain-1 no longer pulls her warmth down — the
 // literal "the Word stabilises the ember in the dry places."
 const inscribedStones: InscribedStoneDefinition[] = [
   {
     id: 'briar-stone-1',
-    col: 10,
-    row: 9,
+    col: 8,
+    row: 15,
     steadyRadius: 96,
     preWordThought: 'There are marks carved on this stone. Pip cannot read them yet.',
     rememberedLines: [
@@ -216,8 +255,8 @@ const wordGivenScene: import('./types').StorySceneDefinition = {
 const triggers: TriggerDefinition[] = [
   {
     id: 'briar-wilds-complete',
-    col: 28,
-    row: 12,
+    col: 38,
+    row: 11,
     width: 2,
     height: 2,
     type: 'thought',
@@ -234,8 +273,8 @@ const triggers: TriggerDefinition[] = [
   // theological vocabulary; pairs with the inert drains for a felt change.
   {
     id: 'briar-atoned-return',
-    col: 17,
-    row: 12,
+    col: 11,
+    row: 14,
     width: 3,
     height: 2,
     type: 'thought',
@@ -279,102 +318,121 @@ const lightAnchor = (
   light: { radius, intensity, tier: 1 },
 });
 const lightAnchors: TriggerDefinition[] = [
-  // Main breadcrumb across the middle band (rows 12–13), spaced ~6 tiles so the
-  // next clearing is in view as you reach the current one. Avoids the drain
-  // zones (drain-1 ~cols 8–11/rows 8–10, drain-2 ~cols 18–21/rows 16–18), which
-  // stay dark on purpose.
-  lightAnchor('briar-light-1', 5, 13, 72, 0.75), // just east of spawn — pulls the player in off the start
-  lightAnchor('briar-light-2', 11, 13, 72, 0.75),
-  lightAnchor('briar-light-3', 17, 12, 72, 0.75),
-  lightAnchor('briar-light-4', 23, 12, 80, 0.8),
-  lightAnchor('briar-light-5', 28, 12, 96, 0.85), // closing clearing, co-located with the beacon — a warm green arrival
-  // The northern rest clearing — honours quiet-grove's "the thorns open up here".
-  lightAnchor('briar-light-grove', 15, 6, 80, 0.8),
+  // Breadcrumb that traces the SERPENTINE — one warm pool at each turn so the next
+  // bend is in view as you reach the current one, pulling the cold player around
+  // the snake instead of into the dark forest. Deliberately skips the two drain
+  // pockets (they stay dark so the dry beats still feel bleak between the lights).
+  lightAnchor('briar-light-1', 3, 15, 72, 0.75), //    entry, just east of spawn — pulls the player in
+  lightAnchor('briar-light-2', 12, 11, 72, 0.75), //   riser1 — "turn up here"
+  lightAnchor('briar-light-grove', 16, 6, 80, 0.8), // the north rest clearing ("the thorns open up here")
+  lightAnchor('briar-light-3', 23, 9, 72, 0.75), //    riser2 top — "turn down here"
+  lightAnchor('briar-light-4', 23, 18, 76, 0.78), //   riser2 bottom — the long descent's far end
+  lightAnchor('briar-light-5', 34, 15, 80, 0.8), //    riser3 — "turn up here"
+  lightAnchor('briar-light-6', 39, 11, 96, 0.85), //   closing clearing, co-located with the beacon — warm arrival
 ];
 
 // No DecorationDefinitions in Briar — the terrain Wang tileset + the clustered
 // object layer (dead-trees, bramble thickets) carry the visual load.
 const decorations: DecorationDefinition[] = [];
 
-// ───── Object placement (Slice 7c — directives #344 + #346) ─────
-// CLUSTERED, not scattered (#344 §2). The dead tree is now a TOP-DOWN `tall` 4×4
-// object (#346, like Ashen's oak/pine): a 128px image spanning cols c..c+3 /
-// rows r..r+3 from its top-left anchor, Y-sorted on its trunk base so Pip walks
-// behind the upper branches from above and in front from below, and colliding
-// ONLY on the trunk-base cell (c+1, r+3) — the rest of the spread is walkable
-// shade. So trees are placed in PAIRS that frame the wood as two thorny bands
-// (a NORTH band, anchor rows 1-3 → spread rows 1-6, and a SOUTH band, anchor
-// rows 18-20 → spread rows 18-23), with brambles + twisted-roots packed around
-// each pair as undergrowth and the map edges lined densest (#344 §2). The centre
-// is deliberate NEGATIVE SPACE: the lit breadcrumb corridor (rows 11-14), the
-// two quiet clearings (grove cols 14-16/rows 5-7, closing cols 27-30/rows 11-14),
-// the west entry (cols 0-2, rows 12-14), the beacon/closing trigger (~28,12) and
-// the grove gap (cols 14-17 in the north band) all stay open so the route from
-// spawn to the closing clearing reads as the thorns parting toward the light.
-// Every trunk-base collision cell and every bramble is verified off that route.
-const briarObjects: import('../../maps/objects').ObjectInstance[] = [
-  // ── NORTH band — paired dead trees framing above the corridor ──
-  // NW pair (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 0, row: 1 }, { kind: 'briar-dead-tree', col: 3, row: 3 },
-  { kind: 'bramble-cluster', col: 5, row: 1 }, { kind: 'bramble-cluster', col: 2, row: 5 },
-  { kind: 'bramble-cluster', col: 6, row: 4 },
-  // North-left pair (left shoulder of the grove clearing).
-  { kind: 'briar-dead-tree', col: 7, row: 1 }, { kind: 'briar-dead-tree', col: 10, row: 3 },
-  { kind: 'bramble-cluster', col: 9, row: 0 }, { kind: 'bramble-cluster', col: 12, row: 2 },
-  { kind: 'bramble-cluster', col: 8, row: 5 },
-  // (cols 14-17 left open — the grove clearing is the gap in the thorns)
-  // North-right pair (right shoulder of the grove clearing).
-  { kind: 'briar-dead-tree', col: 18, row: 1 }, { kind: 'briar-dead-tree', col: 21, row: 3 },
-  { kind: 'bramble-cluster', col: 17, row: 4 }, { kind: 'bramble-cluster', col: 20, row: 0 },
-  { kind: 'bramble-cluster', col: 23, row: 5 },
-  // NE pair (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 24, row: 1 }, { kind: 'briar-dead-tree', col: 27, row: 2 },
-  { kind: 'bramble-cluster', col: 26, row: 0 }, { kind: 'bramble-cluster', col: 30, row: 3 },
-  { kind: 'bramble-cluster', col: 29, row: 5 },
-  // ── SOUTH band — paired dead trees framing below the corridor ──
-  // SW pair.
-  { kind: 'briar-dead-tree', col: 0, row: 18 }, { kind: 'briar-dead-tree', col: 3, row: 20 },
-  { kind: 'bramble-cluster', col: 5, row: 24 }, { kind: 'bramble-cluster', col: 2, row: 18 },
-  { kind: 'bramble-cluster', col: 6, row: 22 },
-  // South-left pair.
-  { kind: 'briar-dead-tree', col: 7, row: 19 }, { kind: 'briar-dead-tree', col: 10, row: 21 },
-  { kind: 'bramble-cluster', col: 9, row: 25 }, { kind: 'bramble-cluster', col: 13, row: 21 },
-  { kind: 'bramble-cluster', col: 8, row: 18 },
-  // South-right pair.
-  { kind: 'briar-dead-tree', col: 17, row: 19 }, { kind: 'briar-dead-tree', col: 20, row: 21 },
-  { kind: 'bramble-cluster', col: 16, row: 24 }, { kind: 'bramble-cluster', col: 19, row: 18 },
-  { kind: 'bramble-cluster', col: 23, row: 22 },
-  // SE pair (densest at the corner edge).
-  { kind: 'briar-dead-tree', col: 24, row: 18 }, { kind: 'briar-dead-tree', col: 27, row: 20 },
-  { kind: 'bramble-cluster', col: 26, row: 25 }, { kind: 'bramble-cluster', col: 30, row: 20 },
-  { kind: 'bramble-cluster', col: 29, row: 18 },
-  // ── Corridor-fringe brambles — thicken the gaps just outside the lit lane
-  //    (rows 9-10 / 15-16), never on rows 11-14, so the breadcrumb stays clear.
-  { kind: 'bramble-cluster', col: 13, row: 9 }, { kind: 'bramble-cluster', col: 26, row: 9 },
-  { kind: 'bramble-cluster', col: 7, row: 16 }, { kind: 'bramble-cluster', col: 20, row: 16 },
-  // ── Twisted-root ground decoration (passable) inside the two drain zones —
-  //    the false-hope read (the trap and the lie are one).
-  { kind: 'twisted-root', col: 9, row: 9 }, { kind: 'twisted-root', col: 10, row: 10 },
-  { kind: 'twisted-root', col: 11, row: 10 },
-  { kind: 'twisted-root', col: 19, row: 17 }, { kind: 'twisted-root', col: 20, row: 18 },
-  { kind: 'twisted-root', col: 18, row: 16 }, { kind: 'twisted-root', col: 21, row: 18 },
-  // ── the-word phase: the inscribed stone's SPRITE + collision (the "remember"
-  //    verb + steady radius live in `inscribedStones` below — keep this cell in
-  //    sync with briar-stone-1's col/row). A plain carved stone block so the
-  //    player notices a place to stop, inside drain-1.
-  { kind: 'cliff-stone', col: 10, row: 9 },
+// ───── Object placement (FB-2 winding overhaul; dead-tree per #346) ─────
+// Two generated layers + a small hand-placed ground layer. Generation mirrors the
+// validator (autonomy/briar-layout.cjs) exactly.
+//
+// 1. thornBarrier — a `bramble-cluster` on EVERY wall cell in the 8-neighbourhood
+//    of the carved path. This is the wall: it seals the serpentine so the player
+//    is forced to wind (no diagonal squeeze-through for the 24px box, since both
+//    cells of any diagonal pinch are brambled). Impassable, 1×1, static depth.
+const thornBarrier: ObjectInstance[] = [];
+for (let r = 0; r < ROWS; r++)
+  for (let c = 0; c < COLS; c++) {
+    if (briarTileMap[r][c] !== W) continue;
+    let edge = false;
+    for (let dr = -1; dr <= 1 && !edge; dr++)
+      for (let dc = -1; dc <= 1 && !edge; dc++)
+        if (!(dr === 0 && dc === 0) && isFloorCell(c + dc, r + dr)) edge = true;
+    if (edge) thornBarrier.push({ kind: 'bramble-cluster', col: c, row: r });
+  }
+
+// 1b. backThorns (FB-2 art-gate fix) — the `bramble-cluster` sprite is a ROUND
+//    ball, so a single ring tiles with dark diamond gaps at every 4-corner
+//    junction (the art gate read PR #127's first cut as "separated dots, not a
+//    thorn wall"). Add a SECOND ring one cell deeper — wall cells 8-adjacent to a
+//    ring-1 cell, themselves wall (never floor) — so a back ball sits behind each
+//    front-ring corner gap and the barrier reads as one continuous dark thicket.
+//    Every 7th back cell is a passable `twisted-root` instead (pale undergrowth
+//    peeking through, breaks the all-balls monotony). These are all DEEP wall
+//    cells → floor reachability and the ring-1 collision seal are UNCHANGED. The
+//    back ring is rendered BEHIND ring-1 (placed first in briarObjects; non-tall
+//    objects share static depth 2.5, so array order is draw order).
+const thornSet = new Set(thornBarrier.map((b) => `${b.col},${b.row}`));
+const backThorns: ObjectInstance[] = [];
+let backIdx = 0;
+for (let r = 0; r < ROWS; r++)
+  for (let c = 0; c < COLS; c++) {
+    if (briarTileMap[r][c] !== W) continue;
+    if (thornSet.has(`${c},${r}`)) continue; // skip ring-1
+    let touches = false;
+    for (let dr = -1; dr <= 1 && !touches; dr++)
+      for (let dc = -1; dc <= 1 && !touches; dc++)
+        if (!(dr === 0 && dc === 0) && thornSet.has(`${c + dc},${r + dr}`)) touches = true;
+    if (!touches) continue;
+    backThorns.push({ kind: backIdx % 7 === 0 ? 'twisted-root' : 'bramble-cluster', col: c, row: r });
+    backIdx++;
+  }
+
+// 2. deadTreeAnchors — tall 4×4 dead trees layered into the forest for height +
+//    canopy overhang along the route (#346: collides ONLY on trunk-base (c+1,r+3),
+//    the rest is walk-under shade; Y-sorted so Pip passes behind from above). The
+//    trunk base is always a barrier wall cell (never the path), spaced ≥3 apart.
+const deadTreeAnchors: ObjectInstance[] = [];
+const TREE_MAX = 34;
+const takenBases = new Set<string>();
+for (let i = 0; i < thornBarrier.length && deadTreeAnchors.length < TREE_MAX; i++) {
+  if (i % 11 !== 0) continue;
+  const b = thornBarrier[i];
+  const anchorC = b.col - 1;
+  const anchorR = b.row - 3; // trunk base (anchorC+1, anchorR+3) == (b.col, b.row): a wall cell
+  if (anchorC < 0 || anchorR < 0 || anchorC + 3 >= COLS || anchorR + 3 >= ROWS) continue;
+  const key = `${b.col},${b.row}`;
+  if (takenBases.has(key)) continue;
+  let tooClose = false;
+  for (const k of takenBases) {
+    const [kc, kr] = k.split(',').map(Number);
+    if (Math.abs(kc - b.col) <= 2 && Math.abs(kr - b.row) <= 2) {
+      tooClose = true;
+      break;
+    }
+  }
+  if (tooClose) continue;
+  takenBases.add(key);
+  deadTreeAnchors.push({ kind: 'briar-dead-tree', col: anchorC, row: anchorR });
+}
+
+// 3. Ground layer — passable twisted-roots inside the two drain pockets (the
+//    false-hope read), plus the inscribed stone's sprite+collision (kept in sync
+//    with briar-stone-1 at 8,15 inside drain-1).
+const briarGround: ObjectInstance[] = [
+  { kind: 'twisted-root', col: 7, row: 14 }, { kind: 'twisted-root', col: 9, row: 15 },
+  { kind: 'twisted-root', col: 7, row: 16 },
+  { kind: 'twisted-root', col: 28, row: 21 }, { kind: 'twisted-root', col: 29, row: 22 },
+  { kind: 'twisted-root', col: 28, row: 23 },
+  { kind: 'cliff-stone', col: 8, row: 15 },
 ];
+
+// backThorns first → rendered BEHIND the ring-1 thornBarrier (shared depth 2.5,
+// array order = draw order), so the back balls fill the front ring's corner gaps.
+const briarObjects: ObjectInstance[] = [...backThorns, ...thornBarrier, ...deadTreeAnchors, ...briarGround];
 
 export const briarWilds: AreaDefinition = {
   id: 'briar-wilds',
   name: 'Briar Wilds',
-  // Objective banner (C10 — Briar Wilds had none). Base goal points the cold
-  // player east across the thorns to the far clearing; once they reach it
+  // Objective banner (C10 — Briar Wilds had none). Base goal sends the cold
+  // player along the lit serpentine toward the far clearing; once they reach it
   // (briar_wilds_complete flips at the closing trigger, live in-scene) the goal
-  // becomes a reflective close rather than standing stale. No east exit exists
-  // yet (heart-bridge unbuilt), so the closing line is non-directional on
-  // purpose. Wayfinding only — no doctrine.
-  objective: 'Find your way through the thorny woods. Keep going east.',
+  // becomes a reflective close. The breadcrumb lights, not a straight "go east",
+  // are the wayfinding now that the path winds. Wayfinding only — no doctrine.
+  objective: 'Wind your way through the thorny woods. Follow the warm lights.',
   // First-match-wins (GameScene picks the first true rung, else the base objective).
   // Order = journey state: meet Quill → remember at the stone → cross → closed.
   conditionalObjective: [
@@ -396,8 +454,8 @@ export const briarWilds: AreaDefinition = {
       text: 'You crossed the thorns. The old stone bridge is just east. Cross it.',
     },
   ],
-  mapCols: 32,
-  mapRows: 26,
+  mapCols: COLS,
+  mapRows: ROWS,
   // Briar's own PixelLab Wang tileset (briar-floor -> briar-thorn). Its registry
   // atlasKey is 'tileset-briar-wilds-floor-thorn' and GameScene loads
   // assets/tilesets/briar-wilds-floor-thorn/tilemap.png directly — it does NOT
@@ -408,11 +466,10 @@ export const briarWilds: AreaDefinition = {
   // Vertex grid all 'briar-floor' (passable). The impassable thorn patches are
   // carried by the placed object layer (shipped — PRs #87, #91), not the terrain.
   terrain: deriveTerrainFromTileMap(briarTileMap, 'briar-floor'),
-  // PixelLab-generated briar objects (T12). Sparse impassable scatter +
-  // passable twisted-root ground decoration in drain zones. The map itself
-  // has no walls, so deriveObjectsFromTileMap returns nothing — only the
-  // hand-authored briarObjects appear.
-  objects: [...deriveObjectsFromTileMap(briarTileMap, 'wall-stone'), ...briarObjects],
+  // The serpentine's walls are the generated thornBarrier (bramble) layer — NOT
+  // derived wall-stone objects (the map is wall-filled, so deriving would emit a
+  // stone for every forest cell). briarObjects = thornBarrier + dead trees + ground.
+  objects: briarObjects,
   // Quill, the word-keeper owl, at the west threshold (col 4, row 13) on the lit
   // entry corridor — two tiles east of the player spawn (1,13), so he's the first
   // thing a cold player meets. One-shot: spawns only while the Word is ungiven
@@ -420,7 +477,7 @@ export const briarWilds: AreaDefinition = {
   // has_word, leaving the thorns to be walked alone. sprite 'quill' falls back to a
   // warm-amber marker until the owl sprite set lands; color tuned to read owl-ish.
   npcs: [
-    { id: 'quill', name: 'Quill', col: 4, row: 13, color: 0xe0b15a, sprite: 'quill', wanderRadius: 0, awarenessRadius: 2, spawnCondition: 'has_ember_mark == true AND has_word == false' },
+    { id: 'quill', name: 'Quill', col: 5, row: 15, color: 0xe0b15a, sprite: 'quill', wanderRadius: 0, awarenessRadius: 2, spawnCondition: 'has_ember_mark == true AND has_word == false' },
   ],
   props: [],
   decorations,
@@ -430,23 +487,23 @@ export const briarWilds: AreaDefinition = {
   drainZones,
   quietZones,
   inscribedStones,
-  // Glow-only wayfinding beacon (C13, Issue #59). Briar read as a void with the
-  // banner saying "keep going east" but nothing visible to aim at. This warm glow
-  // sits on the far-east goal clearing (quiet-closing / the completion trigger at
-  // ~28,12) so a cold player has a light to walk toward — the literal payoff of
+  // Glow-only wayfinding beacon (C13, Issue #59). Briar read as a void with
+  // nothing to aim at. This warm glow sits on the far-east goal clearing
+  // (quiet-closing / the completion trigger at ~39,11) so a cold player who has
+  // wound the serpentine has a light to walk toward — the literal payoff of
   // "the thorns open up here" toward the light. UI-camera, so it survives the
   // desaturation pass and is independent of the deferred real Briar tileset. No
   // smoke plume (would mis-read as a fire); just the glow. Wayfinding, no doctrine.
-  lightBeacon: { col: 28, row: 12 },
+  lightBeacon: { col: 39, row: 11 },
   // Player enters from the west edge. Exit back to Ashen Isle on the same edge.
-  playerSpawn: { col: 1, row: 13 },
+  playerSpawn: { col: 2, row: 15 },
   exits: [
     {
       // West-edge return to Ashen Isle — drops the player at the east-exit
       // approach tile so back-and-forth navigation is symmetric.
       id: 'briar-to-ashen',
       col: 0,
-      row: 12,
+      row: 14,
       width: 1,
       height: 3,
       destinationAreaId: 'ashen-isle',
@@ -454,13 +511,13 @@ export const briarWilds: AreaDefinition = {
     },
     {
       // East-edge mouth of the Heart Bridge (heart-bridge phase, US-HB1). Sits at
-      // the far clearing the whole map points toward (lightBeacon 28,12), past the
+      // the far clearing the whole map points toward (lightBeacon 39,11), past the
       // completion trigger. Gated on has_word so the span only opens once Pip
       // carries the Word out of the thorns — the atonement beat follows receiving
       // the Word, never precedes it. Drops her at the bridge's west spawn (1,2).
       id: 'briar-to-heart-bridge',
-      col: 31,
-      row: 11,
+      col: 43,
+      row: 10,
       width: 1,
       height: 3,
       destinationAreaId: 'heart-bridge',

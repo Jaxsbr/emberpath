@@ -1316,7 +1316,9 @@ export const ashenIsle: AreaDefinition = {
       width: 1,
       height: 2,
       destinationAreaId: 'briar-wilds',
-      entryPoint: { col: 1, row: 13 },
+      // Briar's west entry corridor (segment A, rows 14-16) after the FB-2 winding
+      // overhaul — drops Pip one tile in from the west mouth, beside Quill (5,15).
+      entryPoint: { col: 1, row: 15 },
       condition: 'has_ember_mark == true AND atoned == false',
     },
   ],
