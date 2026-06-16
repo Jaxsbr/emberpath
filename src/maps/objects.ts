@@ -111,6 +111,14 @@ export interface ObjectKindDefinition {
   // untouched. When absent, sort/fade fall back to `collisionFootprint`, then
   // to the full footprint bottom — so every existing tall object is unchanged.
   baseFootprint?: { dx: number; dy: number; w: number; h: number };
+  // Pure collision marker — contributes collision via `buildObjectCollisionMap`
+  // but is NEVER rendered (no sprite, no ground-contact shadow). The transparent
+  // collision-block PNG drew nothing visually, but the FB-3/FB-4 shadow pass
+  // still pooled an ellipse under every cell — so a multi-cell cottage's grid of
+  // markers stacked into a heavy dark mass around its base (Jaco FB-8). Skipping
+  // the render entirely is correct: collision is keyed off `area.objects`, not
+  // the rendered sprite.
+  invisible?: boolean;
 }
 
 // PixelLab style-matched object PNGs (US-96). Generated against a 32×32
@@ -122,7 +130,7 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // Shared — invisible per-cell collision (transparent 1×1 PNG, scaled to the
   // cell at render so it draws nothing). Used to give a large multi-cell art
   // object real collision over its body.
-  'collision-block': { id: 'collision-block', atlasKey: 'object-collision-block', assetPath: 'objects/_shared/collision-block.png', passable: false },
+  'collision-block': { id: 'collision-block', atlasKey: 'object-collision-block', assetPath: 'objects/_shared/collision-block.png', passable: false, invisible: true },
   // Ashen Isle
   'wall-stone':  { id: 'wall-stone',  atlasKey: 'object-wall-stone',  assetPath: 'objects/ashen-isle/wall-stone.png',  passable: false },
   'wall-front':  { id: 'wall-front',  atlasKey: 'object-wall-front',  assetPath: 'objects/ashen-isle/wall-front.png',  passable: false },
