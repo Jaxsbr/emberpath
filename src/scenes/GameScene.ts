@@ -95,7 +95,11 @@ const ENTITY_DEPTH_SPAN = 0.49;
 // Behind-object reveal (FB-3 part 4). When Pip slips behind a tall object's
 // canopy it fades to BEHIND_FADE_ALPHA and gains a thin white outline so she
 // stays readable through it; both ease back over BEHIND_FADE_MS when she leaves.
-const BEHIND_FADE_ALPHA = 0.35;
+const BEHIND_FADE_ALPHA = 0.5;
+// While behind, the occluder is also pushed just below the entity band so Pip's
+// FULL sprite draws ON TOP of the ghosted tree — not buried under it (FB-11: "we
+// must see Pip, not just the glow she carries"). 0.05 under the band's floor.
+const BEHIND_DEPTH = ENTITY_DEPTH_BASE - 0.05;
 const BEHIND_FADE_MS = 180;
 // White edge glow used as the "outline" (Phaser 3.80 has no built-in Outline FX;
 // a knockout-off glow hugs the sprite's alpha edges and reads as a crisp rim).
@@ -244,6 +248,7 @@ export class GameScene extends Phaser.Scene {
     xMax: number;
     behind: boolean;
     outline: Phaser.FX.Glow | null;
+    baseDepth: number;
   }[] = [];
   // Conditional objects: visibility re-evaluated only on flag changes
   // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
@@ -1819,6 +1824,7 @@ export class GameScene extends Phaser.Scene {
           xMax: (inst.col + fp.w) * TILE_SIZE,
           behind: false,
           outline: null,
+          baseDepth: sprite.depth,
         });
       }
 
@@ -1844,8 +1850,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Behind-object reveal (FB-3 part 4). Called each walk-frame: for every tall
-  // object Pip can hide behind, fade it to 50% + add a white outline while she
-  // is behind it, and revert when she steps clear. Per-frame work is just a few
+  // object Pip can hide behind, fade it to BEHIND_FADE_ALPHA + add a white outline
+  // AND drop it below the entity band (so Pip layers on top) while she is behind
+  // it, and revert when she steps clear. Per-frame work is just a few
   // comparisons per object (no allocation); the alpha tween and the outline FX
   // are only touched on an enter/leave transition (Learning EP-01).
   private updateBehindObjectFade(): void {
@@ -1857,7 +1864,8 @@ export class GameScene extends Phaser.Scene {
     // overlaps the canopy's x-span. The old gate only tested feet-above-base +
     // point-in-span, so it fired anywhere up-screen of the trunk even when the
     // canopy was nowhere near her. When behind, the sprite fades to a see-through
-    // 0.35 (was a too-subtle 0.5) so Pip reads clearly THROUGH it.
+    // 0.5 AND drops under the entity band so Pip's full body — not just her ember —
+    // reads clearly ON TOP of the ghosted canopy (FB-11).
     const half = PLAYER_SIZE / 2;
     const feetY = this.player.y + half;
     const pLeft = this.player.x - half;
@@ -1873,6 +1881,11 @@ export class GameScene extends Phaser.Scene {
         pLeft <= o.xMax;
       if (behind === o.behind) continue;
       o.behind = behind;
+      // Layer Pip ON TOP: drop the occluder just under the entity band while she's
+      // behind it (so her full sprite, not just the ember, reads over the ghost),
+      // and restore its Y-sort depth the instant she steps clear (FB-11). Depth is
+      // a hard swap, not tweened — a mid-tween depth would pop anyway.
+      o.sprite.setDepth(behind ? BEHIND_DEPTH : o.baseDepth);
       this.tweens.killTweensOf(o.sprite);
       this.tweens.add({
         targets: o.sprite,
