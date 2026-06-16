@@ -138,6 +138,17 @@ function buildAshenMap(): StoredTile[][] {
   for (let c = 23; c <= 26; c++) m[2][c] = F;
   for (let c = 24; c <= 25; c++) m[3][c] = F;
 
+  // East gate to Briar — carry the col-49 exit zone (rows 18-19) on FLOOR, the
+  // same way the north dock carves its exit cells. Without this break the zone
+  // sat on the perimeter WALL, so the player could only ever fire the exit from
+  // a razor-thin (~1px) sliver between "can reach" and "wall blocks" — a real
+  // forward-journey softlock risk (she'd jam against the wall a pixel short and
+  // never cross). Carving the two cells lets her walk fully onto the gate and
+  // transition robustly. Col 50 is out-of-bounds (blocked), so she still can't
+  // step off the world; the exit fires the instant she enters the cell.
+  m[18][49] = F;
+  m[19][49] = F;
+
   // Player's cottage — rows 12-15 cols 8-12 are WALL except the door cell at
   // (10, 15) which stays FLOOR so dialogue can pose the player in the doorway.
   for (let r = 12; r <= 15; r++) {
@@ -782,6 +793,31 @@ export const ashenIsle: AreaDefinition = {
       repeatable: false,
       setFlags: { east_path_seen: true },
     },
+    {
+      // East-road closure thought (Issue #122). The matching half of the exit
+      // suppression above: once Pip is atoned and home, the east gate no longer
+      // transitions, so a player who wanders back toward it would otherwise hit a
+      // dead, silent edge. This one-shot thought sits just WEST of the gate (cols
+      // 46-48, the approach) and fires the moment she heads that way, framing the
+      // closed road as a settled ending ("nothing left that way; my place is
+      // here") rather than a broken exit. Gated on `atoned` + a fresh
+      // `east_road_closed_seen` flag so it plays exactly once, only after the
+      // homecoming. Kid-level voice, allegory intact (the journey's hard road is
+      // behind her; home is where she belongs now).
+      id: 'east-road-closed-thought',
+      col: 46,
+      row: 18,
+      width: 3,
+      height: 2,
+      type: 'thought',
+      actionRef:
+        'The thorny road is quiet now.\n' +
+        'There is nothing left for me that way.\n' +
+        'My place is here, with my friends.',
+      condition: 'atoned == true AND east_road_closed_seen == false',
+      repeatable: false,
+      setFlags: { east_road_closed_seen: true },
+    },
   ],
   dialogues: {
     // Old Man Fading dialogue (US-78). Three nodes, ≤200 chars total. Tone:
@@ -1268,6 +1304,12 @@ export const ashenIsle: AreaDefinition = {
       // visually block pre-Ember (conditional decorations) and the condition
       // gate suppresses the transition itself so a player without the Ember
       // who somehow reaches the cell does not phase through.
+      // Also CLOSED post-atonement (`atoned == false`): once Pip has crossed the
+      // bridge and come home, the thorny road east leads only back into already-
+      // walked Briar — re-entering it is a silent dead-end (Issue #122). Suppress
+      // the transition so the homecoming holds her here, with the friends she
+      // warmed; the `east-road-closed-thought` below frames why so it reads as
+      // closure, not a broken gate. (A Reset clears `atoned` and reopens it.)
       id: 'ashen-to-briar',
       col: 49,
       row: 18,
@@ -1275,7 +1317,7 @@ export const ashenIsle: AreaDefinition = {
       height: 2,
       destinationAreaId: 'briar-wilds',
       entryPoint: { col: 1, row: 13 },
-      condition: 'has_ember_mark == true',
+      condition: 'has_ember_mark == true AND atoned == false',
     },
   ],
   visual: { floorColor: 0x4a6741, wallColor: 0x2c2c3a },
