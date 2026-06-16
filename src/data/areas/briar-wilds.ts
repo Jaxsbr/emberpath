@@ -409,6 +409,28 @@ for (let i = 0; i < thornBarrier.length && deadTreeAnchors.length < TREE_MAX; i+
   deadTreeAnchors.push({ kind: 'briar-dead-tree', col: anchorC, row: anchorR });
 }
 
+// 2b. deepForestTrees (FB-17) — fill the SEE-BUT-UNREACHABLE void. The anchors
+//    above hug the path's barrier ring; the blank deep-wall pockets beyond it render
+//    as bare desaturated floor (the "void" Jaco flagged — a thin thorn corridor with
+//    emptiness behind). These +10 `briar-dead-tree` (same approved sprite) sit in
+//    those pockets, CLUSTERED (art guide: groups of 2-3) in the voids adjacent to the
+//    path bands so the camera reads a forest extending past the thorn wall, not an
+//    empty grey field. Each trunk base ((col+1,row+3)) is a DEEP wall cell (never
+//    floor), so reachability is provably UNCHANGED. Coords mirror autonomy/
+//    briar-layout.cjs (BFS floor=273 unchanged, ≥3 spacing from every tree base).
+const deepForestTrees: ObjectInstance[] = [
+  // SW void — south of the A entry corridor / west of riser2
+  { kind: 'briar-dead-tree', col: 3, row: 19 }, { kind: 'briar-dead-tree', col: 7, row: 20 },
+  { kind: 'briar-dead-tree', col: 0, row: 22 },
+  // N void — flanking the grove-ring trees with clearance
+  { kind: 'briar-dead-tree', col: 9, row: 0 }, { kind: 'briar-dead-tree', col: 21, row: 0 },
+  // NE-middle void — between the B/riser2 band and the D forest
+  { kind: 'briar-dead-tree', col: 26, row: 2 }, { kind: 'briar-dead-tree', col: 30, row: 0 },
+  // SE-bottom void — south of the long C band
+  { kind: 'briar-dead-tree', col: 24, row: 25 }, { kind: 'briar-dead-tree', col: 29, row: 25 },
+  { kind: 'briar-dead-tree', col: 33, row: 25 },
+];
+
 // 3. Ground layer — passable twisted-roots inside the two drain pockets (the
 //    false-hope read), plus the inscribed stone's sprite+collision (kept in sync
 //    with briar-stone-1 at 8,15 inside drain-1).
@@ -451,7 +473,7 @@ const briarProps: ObjectInstance[] = [
 // backThorns first → rendered BEHIND the ring-1 thornBarrier (shared depth 2.5,
 // array order = draw order), so the back balls fill the front ring's corner gaps.
 // Props last → drawn over the barrier (and under Pip), so the lanterns/sign read.
-const briarObjects: ObjectInstance[] = [...backThorns, ...thornBarrier, ...deadTreeAnchors, ...briarGround, ...briarProps];
+const briarObjects: ObjectInstance[] = [...backThorns, ...thornBarrier, ...deadTreeAnchors, ...deepForestTrees, ...briarGround, ...briarProps];
 
 export const briarWilds: AreaDefinition = {
   id: 'briar-wilds',
