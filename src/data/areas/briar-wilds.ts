@@ -422,13 +422,15 @@ const briarGround: ObjectInstance[] = [
 
 // 4. Atmosphere props (FB-2 part 2 — Jaco #696 "fencing posts on turns, creepy
 //    signs, low torches"). Reuses existing APPROVED sprites only — no new art.
-//  * fence-rail (impassable) — SWAP 4 turn-corner front-ring brambles to old fence
+//  * fence-rail (impassable) — SWAP 3 turn-corner front-ring brambles to old fence
 //    posts. Kind change only: each stays an impassable barrier cell, so the seal and
 //    the floor BFS are provably UNCHANGED (validated in autonomy/briar-layout.cjs).
 //    Reads as an old fence half-swallowed by the thorns (the back ring still fills
 //    the cell behind it). thornSet/backThorns were computed from the cell COORDS, so
 //    swapping kind after the fact leaves both untouched.
-const fenceCells = new Set(['14,16', '10,5', '21,23', '32,11']);
+//    FB-7 (Jaco): the start-chamber east-wall post at (14,16) — the one in Pip's
+//    opening frame — read wrong, so it's reverted to plain bramble (still a barrier).
+const fenceCells = new Set(['10,5', '21,23', '32,11']);
 for (const b of thornBarrier)
   if (fenceCells.has(`${b.col},${b.row}`)) b.kind = 'fence-rail';
 //  * lantern-broken (passable) at each breadcrumb light-anchor — a physical SOURCE
