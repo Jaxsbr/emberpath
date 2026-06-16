@@ -169,9 +169,10 @@ export const heartBridge: AreaDefinition = {
   objective: 'Walk across the bridge.',
   conditionalObjective: [
     {
-      // Once crossed, the way onward (back to the thorns for now) is open.
+      // Once crossed, the way onward leads home (the east exit now returns to
+      // Ashen for the bearing-fruit revisit).
       condition: 'atoned == true',
-      text: 'You made it across. Keep going.',
+      text: 'You made it across. Go home.',
     },
   ],
   mapCols: HEART_BRIDGE_COLS,
@@ -194,17 +195,22 @@ export const heartBridge: AreaDefinition = {
   playerSpawn: { col: 1, row: 2 },
   exits: [
     {
-      // Far (east) end — onward. No later area exists yet, so it returns to the
-      // Briar east clearing (just west of Briar's bridge mouth so the player
-      // doesn't immediately step back onto the span). Re-routes to a forward
-      // area when bearing-fruit ships.
+      // Far (east) end — onward to HOME (bearing-fruit routing, Jaco 2026-06-16:
+      // bridge → Ashen home revisit → Citadel). The crossing is done; the way
+      // forward leads Pip back to Ashen Isle, arriving at her own cottage door
+      // (the playerSpawn she began the game at) — a deliberate bookend: she ends
+      // where she started, but the world is warm now and the homes she warmed
+      // bear fruit (atoned-gated dialogue + blooms in ashen-isle.ts). This closes
+      // Issue #105 (the old route dumped the player back into the dark Briar
+      // thorns, 4/5 cold-test confusion). The onward leg to the Citadel waits on
+      // that area existing (later track).
       id: 'heart-bridge-onward',
       col: HEART_BRIDGE_COLS - 1,
       row: 1,
       width: 1,
       height: 3,
-      destinationAreaId: 'briar-wilds',
-      entryPoint: { col: 29, row: 12 },
+      destinationAreaId: 'ashen-isle',
+      entryPoint: { col: 9, row: 20 },
     },
   ],
   visual: { floorColor: 0x6a6a72, wallColor: 0x3a3a42 },

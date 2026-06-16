@@ -744,6 +744,29 @@ export const ashenIsle: AreaDefinition = {
       setFlags: { homecoming_complete: true },
     },
     {
+      // Bearing-fruit arrival thought (Beat 7, Jaco routing 2026-06-16). One-shot,
+      // fires when Pip steps back into the west yard after the heart-bridge seal
+      // (the onward exit now lands her at home, col 9 row 20). It frames the
+      // return — why she's home and what to look for (her friends, the fruit) —
+      // so the revisit reads clearly instead of feeling like a reset. Zone sits
+      // just east/south of the home spawn (cols 11-13, rows 21-22) on the natural
+      // path toward the village; gated on `atoned` so it only plays on the
+      // post-atonement homecoming, once.
+      id: 'home-return-thought',
+      col: 11,
+      row: 21,
+      width: 3,
+      height: 2,
+      type: 'thought',
+      actionRef:
+        'I crossed the bridge. The grey is gone for good.\n' +
+        'My light stayed warm the whole way home.\n' +
+        'Let me go and see my friends again.',
+      condition: 'atoned == true AND home_return_seen == false',
+      repeatable: false,
+      setFlags: { home_return_seen: true },
+    },
+    {
       // East-path first-arrival thought (US-100). One tile west of the east
       // exit so it fires the moment the player commits to the new road. Gated
       // on has_ember_mark + east_path_seen so it plays exactly once after
@@ -1186,6 +1209,15 @@ export const ashenIsle: AreaDefinition = {
   // First matching entry wins, so the both-warmed line must sit ABOVE the
   // has-ember line. Wayfinding only — the grace beat itself lives in dialogue.
   conditionalObjective: [
+    {
+      // Bearing-fruit revisit (Beat 7, Jaco routing 2026-06-16). After the
+      // heart-bridge seal (`atoned == true`) Pip returns home; the way east is
+      // already walked, so point her back into the village to see her friends —
+      // where the fruit dialogue + blooms now wait. Sits ABOVE the both-warmed
+      // rung so it wins on the post-atonement return. (First match wins.)
+      condition: 'atoned == true',
+      text: 'You carried the light home. Go and see your friends.',
+    },
     {
       // Both villagers warmed → the homecoming is done; point at the road east.
       // Matches the east-path thought's voice ("A road goes east.").
