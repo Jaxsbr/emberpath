@@ -64,6 +64,29 @@ Tile rendering: textured, not flat. Stone needs lichen, wood needs grain, grass 
 - Fog/rain particles always welcome; they unify the palette and add the watercolor-wash feel from the cat-in-rain piece.
 - Vignette ~10–15% on edges to push the page-of-a-book read.
 
+### Ground shadows (the canon)
+
+emberpath is **3/4 oblique** with an **overhead key light**. Ground shadows obey
+**two shapes** under the one light, split by object kind (Jaco's explicit art call,
+#926):
+
+- **Natural / movable objects — soft ellipse.** Player, NPCs, trees, props all get
+  a soft dark ellipse (never a cast-away oval floating below the object), pooled
+  **ON the visible ground-contact line** — a character's feet, a tree's trunk base.
+  North half tucks under the sprite; a small sliver pokes **south** (down-screen).
+  Height ≈ 0.4× width, footprint-scaled. Player + NPCs carry one at their feet that
+  tracks them as they move. Pip/NPC pools are kept tight (small), per #926. This is
+  the `makeGroundShadow` helper in `GameScene.ts`.
+- **Buildings — rectangular front-floor band.** A house casts a clean **rectangular**
+  shadow on the floor where its front wall meets the ground (top-down "shadow from
+  above" straight down), footprint-relative (`baseFootprint`). This is the deliberate
+  EXCEPTION to the ellipse — Jaco confirmed the rectangle is correct for buildings
+  (#926: "the oval is wrong, you added it back??? see the rectangular one you had
+  before.. it was correct"). Do **not** swap a building back to an ellipse.
+
+Change each canon at its source in `GameScene.ts` (the building rectangle in the
+object-shadow `bf` branch, the ellipse in `makeGroundShadow`), not per-object.
+
 ## Animation
 
 - Slight weight, slow easing. Breathing idle, cloak/ear sway, blink every 3–5s.
