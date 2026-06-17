@@ -87,8 +87,9 @@ function rectVariants(
 
 // =============================================================================
 // Map (collision data) — composed programmatically. Wet base FLOOR everywhere
-// except: outer perimeter (W), the ruin walls in the NE corner (W with FLOOR
-// at the door), and a wide impassable south band (W) with the EXIT cut into it.
+// except: outer perimeter (W), the Hermit's hut foundation in the NE corner (W
+// body with a walkable FLOOR base row), and a wide impassable south band (W)
+// with the EXIT cut into it.
 // =============================================================================
 
 function buildFogMarshMap(): StoredTile[][] {
@@ -124,17 +125,17 @@ function buildFogMarshMap(): StoredTile[][] {
     m[1][c] = W;
   }
 
-  // Ruin walls in the NE corner — outline at rows 3-9 cols 21-27 with door
-  // FLOOR at (24, 9). Interior cells stay FLOOR so the player can step inside.
-  for (let c = 21; c <= 27; c++) {
-    m[3][c] = W;
-    m[9][c] = W;
-  }
+  // Marsh Hermit's house (FB-12) — the old NE stone-block ruin box is replaced
+  // by a real 6×6 marsh hut. Its RED foundation (the top 5 rows of the body,
+  // rows 4-8 cols 21-26) is impassable; the front-wall base row (row 9, cols
+  // 21-26) stays FLOOR — the walkable BLUE base, with the door at (24,9). So the
+  // Hermit still poses in the open doorway at (24,10), and stepping onto the base
+  // fires the see-through fade. The hut art is one image drawn over this body
+  // (see `hermitHouse` in the objects array); collision-block cells under the
+  // foundation back up the W terrain.
   for (let r = 4; r <= 8; r++) {
-    m[r][21] = W;
-    m[r][27] = W;
+    for (let c = 21; c <= 26; c++) m[r][c] = W;
   }
-  m[9][24] = F;
 
   return m;
 }
@@ -153,24 +154,15 @@ const fogMarshDecorations: DecorationDefinition[] = [
   ...rectVariants(0, 1, 1, 22, EDGE_VARIANTS),
 
   // Dry path — vertical south-to-north col 14 rows 10-21, then horizontal
-  // east on row 10 cols 15-24 to the Marsh Hermit's stoop adjacent to the
-  // ruin's door. Cycled across two path frames so neither dominates.
+  // east on row 10 cols 15-24 to the Marsh Hermit's stoop at the door of his
+  // hut (FB-12). Cycled across two path frames so neither dominates.
   ...rectVariants(14, 14, 10, 21, PATH_VARIANTS),
   ...rectVariants(15, 24, 10, 10, PATH_VARIANTS),
 
-  // Ruin walls in the NE corner. Top + bottom rows + left + right cols — the
-  // door cell at (24, 9) is intentionally skipped so the wooden door frame
-  // shows through.
-  ...rectVariants(21, 27, 3, 3, [FRAME.RUIN_A, FRAME.RUIN_B, FRAME.RUIN_C]),
-  ...rectVariants(21, 21, 4, 8, [FRAME.RUIN_A, FRAME.RUIN_B, FRAME.RUIN_C]),
-  ...rectVariants(27, 27, 4, 8, [FRAME.RUIN_A, FRAME.RUIN_B, FRAME.RUIN_C]),
-  ...rect(21, 23, 9, 9, FRAME.RUIN_A),
-  ...rect(25, 27, 9, 9, FRAME.RUIN_A),
-
-  // Ruin door — wooden door frame in the south wall of the ruin (mirrors
-  // the engine's existing exit-zone rendering — same semantic, different
-  // role here).
-  { col: 24, row: 9, spriteFrame: FRAME.DOOR },
+  // (FB-12) The NE stone-block ruin box + its wooden-door decoration are gone —
+  // the Marsh Hermit now has a real 6×6 marsh hut (the `hermit-house` object in
+  // the objects array) drawn over the foundation cells. No tile-frame decorations
+  // here: the hut art carries the whole structure, door included.
 
   // (C12b) Interior reeds moved off the tiny-dungeon atlas: the old log-pile
   // "reed" frames (92/93) read as wooden crates in the grey-out. Real passable
@@ -335,17 +327,17 @@ const fogMarshGroundStones: ObjectInstance[] = [
 
 // East-half lived-in pass (G4-B v3, 2026-06-15). The cold art-review found the
 // WEST stands good but the EAST half a dev-grid: a "uniform grey room" of bare
-// floor, a ruler-straight perimeter reed line, and a tidy ruin box. The route
+// floor, a ruler-straight perimeter reed line, and a tidy box. The route
 // itself (col 14 path, the row-10 boardwalk to the Hermit, the south mouth) must
 // stay OPEN — it is the deliberate "way through" negative space the cold player
 // reads. So this clutter lands only in the OFF-ROUTE south-east quadrant (cols
-// 17-27, rows 11-21) and at the ruin's south base, applying the same west-half
+// 17-27, rows 11-21) and at the Hermit's hut base, applying the same west-half
 // vocabulary (clustered reed/mushroom + tumbled marsh-stones in irregular bunches
 // with gaps) so the eye stops reading a bare floor + lone reed wall. Around the
-// ruin, tumbled stones + reeds creeping the base make it read as a FALLEN ruin the
-// marsh is reclaiming, not a freshly-built box. All marsh-stones are impassable
-// but sit off every route cell, the door approach (col 24 rows 10-11), the
-// boardwalk (row 10 cols 15-24) and the perimeter — they never wall progression.
+// hut, tumbled stones + reeds creeping the base read as the marsh slowly
+// reclaiming the Hermit's home. All marsh-stones are impassable but sit off
+// every route cell, the door approach (col 24 rows 10-11), the boardwalk (row 10
+// cols 15-24) and the perimeter — they never wall progression.
 const fogMarshEastClutter: ObjectInstance[] = [
   // SE marsh patch — bunch 1 (cols 18-20, rows 13-15)
   { kind: 'dry-reed', col: 18, row: 13 },
@@ -367,7 +359,7 @@ const fogMarshEastClutter: ObjectInstance[] = [
   { kind: 'marsh-stone', col: 26, row: 14 },
   { kind: 'marsh-stone', col: 21, row: 20 },
   { kind: 'marsh-stone', col: 27, row: 17 },
-  // Ruin south base — tumbled rubble + marsh creep (fallen, reclaimed read)
+  // Hut south base — tumbled stones + marsh creep (the marsh reclaiming the home)
   { kind: 'marsh-stone', col: 21, row: 11 },
   { kind: 'marsh-stone', col: 22, row: 11 },
   { kind: 'marsh-stone', col: 26, row: 11 },
@@ -376,11 +368,38 @@ const fogMarshEastClutter: ObjectInstance[] = [
   { kind: 'mushroom', col: 26, row: 12 },
 ];
 
+// Marsh Hermit's house (FB-12, 2026-06-18, Jaco #974). One cohesive 6×6 marsh
+// hut — its own PixelLab generation, marsh-toned to fit the hermit (weathered
+// planks, mossy thatch, reeds at the base) — replaces the old NE stone-block
+// ruin box that stood in for the Hermit's home. Same model as the player's
+// `cottage-large`: collision is a `collision-block` grid under the top 5 rows
+// (the RED foundation, rows 4-8 cols 21-26, backing the W terrain); the
+// front-wall base row (row 9) stays walkable — the BLUE base Pip steps onto,
+// firing the see-through fade — with the door at (24,9) and the Hermit posing
+// just south in the open doorway at (24,10). Anchored top-left at (21,4) so the
+// hut image spans cols 21-26 rows 4-9.
+const hermitHouseBlocks: ObjectInstance[] = [];
+for (let r = 4; r <= 8; r++) {
+  for (let c = 21; c <= 26; c++) hermitHouseBlocks.push({ kind: 'collision-block', col: c, row: r });
+}
+const fogMarshHermitHouse: ObjectInstance[] = [
+  ...hermitHouseBlocks,
+  { kind: 'hermit-house', col: 21, row: 4 },
+];
+
+// The hut's RED-foundation cells — the derived marsh-reeds wall objects must NOT
+// render under/over the hut art, so they're dropped on these cells (the hut +
+// its collision-block grid own them). Mirrors ashen-isle's explicit-wall filter.
+const HERMIT_HOUSE_BODY = new Set<string>();
+for (let r = 4; r <= 8; r++) {
+  for (let c = 21; c <= 26; c++) HERMIT_HOUSE_BODY.add(`${c},${r}`);
+}
+
 // Dead-tree clusters (Slice 6, 2026-06-14, directives #344 + #346) — the marsh
 // was a bare reed-rimmed floor with no real silhouettes ("lacks so much", North
 // Star id=68). Three tight clusters of gnarled dead trees fill the open WEST
 // half as a desolate deadwood, leaving the EAST half (the dry path corridor at
-// col 14, the row-10 boardwalk to the ruin, the ruin itself, the Hermit, the
+// col 14, the row-10 boardwalk to the hut, the Hermit's hut, the Hermit, the
 // Keeper's clearing, and the south exit) as deliberate negative space the cold
 // player still reads as "the way through." Each tree is a `tall` 4×4 object
 // anchored top-left; it Y-sorts on its trunk base and collides ONLY at
@@ -493,7 +512,10 @@ export const fogMarsh: AreaDefinition = {
   // interior marsh life (these replace the old tiny-dungeon log-pile "reed"
   // DECORATIONS that read as crates — see fogMarshDecorations).
   objects: [
-    ...deriveObjectsFromTileMap(fogMarshTileMap, 'marsh-reeds'),
+    ...deriveObjectsFromTileMap(fogMarshTileMap, 'marsh-reeds').filter(
+      (o) => !HERMIT_HOUSE_BODY.has(`${o.col},${o.row}`),
+    ),
+    ...fogMarshHermitHouse,
     ...fogMarshDeadTrees,
     ...fogMarshGroundStones,
     ...fogMarshReedTufts,
@@ -517,7 +539,7 @@ export const fogMarsh: AreaDefinition = {
     },
   ],
   npcs: [
-    // Marsh Hermit on the dry path immediately south of the ruin's door at
+    // Marsh Hermit on the dry path immediately south of his hut's door at
     // (24, 9); his spawn at (24, 10) is the path tile adjacent to the door.
     { id: 'marsh-hermit', name: 'Marsh Hermit', col: 24, row: 10, color: 0x5a7a6b, sprite: 'marsh-hermit', wanderRadius: 1, awarenessRadius: 3 },
     // The Keeper (white heron) — appears mid-marsh once Pip has crossed the
