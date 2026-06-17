@@ -55,6 +55,9 @@ export type ObjectKindId =
   // seed-heads, distinct from the thin `dry-reed` wisp, so the water reads as a
   // real marsh edge instead of a bare hole.
   | 'cattail'
+  // Lily pads floating on the pond water (FB-13 slice 3) — flat green pads, a
+  // touch of life on the open water so the pool reads as a living marsh basin.
+  | 'lily-pad'
   | 'mushroom'
   | 'lantern-broken'
   // Briar Wilds — impassable. `briar-dead-tree` is a separate kind from
@@ -204,6 +207,7 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'marsh-stone':    { id: 'marsh-stone',    atlasKey: 'object-marsh-stone',    assetPath: 'objects/fog-marsh/marsh-stone.png',    passable: false },
   'dry-reed':       { id: 'dry-reed',       atlasKey: 'object-dry-reed',       assetPath: 'objects/fog-marsh/dry-reed.png',       passable: true },
   'cattail':        { id: 'cattail',        atlasKey: 'object-cattail',        assetPath: 'objects/fog-marsh/cattail.png',        passable: true },
+  'lily-pad':       { id: 'lily-pad',       atlasKey: 'object-lily-pad',       assetPath: 'objects/fog-marsh/lily-pad.png',       passable: true },
   'mushroom':       { id: 'mushroom',       atlasKey: 'object-mushroom',       assetPath: 'objects/fog-marsh/mushroom.png',       passable: true },
   'lantern-broken': { id: 'lantern-broken', atlasKey: 'object-lantern-broken', assetPath: 'objects/fog-marsh/lantern-broken.png', passable: true },
 

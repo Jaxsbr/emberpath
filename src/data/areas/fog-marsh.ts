@@ -304,6 +304,20 @@ const fogMarshCattails: ObjectInstance[] = [
   { kind: 'cattail', col: 12, row: 19 },
 ];
 
+// Lily pads floating on the open pond water (FB-13 slice 3, 2026-06-17). A few
+// pads scattered across the interior water cells (cols 10-12, rows 15-17) with
+// gaps between them — a touch of green life on the dark water so the pool reads
+// as a living marsh basin, not a flat void. Passable (they sit on the already-
+// impassable water, so they never affect pathing); placed on interior cells, not
+// the shore rim, so they read clearly as ON the water.
+const fogMarshLilyPads: ObjectInstance[] = [
+  { kind: 'lily-pad', col: 11, row: 15 },
+  { kind: 'lily-pad', col: 12, row: 15 },
+  { kind: 'lily-pad', col: 10, row: 16 },
+  { kind: 'lily-pad', col: 11, row: 17 },
+  { kind: 'lily-pad', col: 12, row: 17 },
+];
+
 // Marsh-stone clusters at the deadwood bases (G4-B v2, 2026-06-15). The guide
 // puts rocks at cluster bases; here they also add bigger, higher-contrast
 // silhouette mass than the small reed/mushroom tufts, so the choked ground reads
@@ -484,6 +498,7 @@ export const fogMarsh: AreaDefinition = {
     ...fogMarshGroundStones,
     ...fogMarshReedTufts,
     ...fogMarshCattails,
+    ...fogMarshLilyPads,
     ...fogMarshEastClutter,
   ],
   conditionalTerrain: [
