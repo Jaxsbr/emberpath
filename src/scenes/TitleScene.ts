@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { hasSave, loadSave, clearSave, resetWorld } from '../triggers/saveState';
+import { resetAllFlags, setFlag } from '../triggers/flags';
 import { getArea } from '../data/areas/registry';
+import { getScenario } from '../scenarios/registry';
 import { TILE_SIZE } from '../maps/constants';
 import { TERRAINS } from '../maps/terrain';
 import { OBJECT_KINDS } from '../maps/objects';
@@ -65,6 +67,11 @@ export class TitleScene extends Phaser.Scene {
     // refresh after the wipe doesn't re-trigger the wipe (history.replaceState
     // drops the consumed params).
     this.applyUrlReset();
+
+    // Test bench: `?scenario=<id>` boots straight into a mid-game state in the
+    // sandbox namespace, skipping the menu entirely. Returns true when it took
+    // over, so we don't also render the Title.
+    if (this.applyScenario()) return;
 
     const { width, height } = this.scale;
 
@@ -362,5 +369,55 @@ export class TitleScene extends Phaser.Scene {
       const cleanedUrl = `${window.location.pathname}${remaining ? '?' + remaining : ''}${window.location.hash}`;
       window.history.replaceState({}, '', cleanedUrl);
     }
+  }
+
+  // Test bench (sandbox.ts): when `?scenario=<id>` names a known scenario, wipe
+  // the sandbox namespace, write its flags, and jump straight into GameScene at
+  // its area + position — skipping the menu. The sandbox namespace was already
+  // selected at sandbox.ts import (`?scenario` implies sandbox), so resetAllFlags
+  // / setFlag here only ever touch the throwaway keys; the real save is untouched.
+  // Returns true when it booted a scenario. An unknown id falls through to the
+  // normal Title (returns false) with a console warning.
+  private applyScenario(): boolean {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('scenario');
+    if (!id) return false;
+
+    const scenario = getScenario(id);
+    if (!scenario) {
+      console.warn(`emberpath: unknown scenario '${id}' — falling back to Title`);
+      return false;
+    }
+    if (!getArea(scenario.areaId)) {
+      console.warn(`emberpath: scenario '${id}' has unknown areaId '${scenario.areaId}'`);
+      return false;
+    }
+
+    // Atomic state build: clear the sandbox namespace, then write the flags.
+    resetAllFlags();
+    for (const [name, value] of Object.entries(scenario.flags)) setFlag(name, value);
+
+    // Rewrite the URL to drop `?scenario` but keep `?sandbox=1`, so a manual
+    // refresh stays in the throwaway namespace and resumes the sandbox run
+    // (matches the applyUrlReset history.replaceState idiom).
+    params.delete('scenario');
+    params.set('sandbox', '1');
+    const remaining = params.toString();
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}${remaining ? '?' + remaining : ''}${window.location.hash}`,
+    );
+
+    // `entryPoint` (col,row) lets GameScene.createPlayer do the spawn math and,
+    // together with the scenario's `*_intro_played` flag, keeps the intro skipped.
+    // Omitted position → GameScene falls back to the area's playerSpawn.
+    const data: { areaId: string; entryPoint?: { col: number; row: number } } = {
+      areaId: scenario.areaId,
+    };
+    if (scenario.position) data.entryPoint = scenario.position;
+
+    this.scene.start('GameScene', data);
+    return true;
   }
 }

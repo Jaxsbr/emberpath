@@ -1,8 +1,12 @@
 import { clearSave } from './saveState';
+import { flagsStorageKey } from '../sandbox';
 
-const STORAGE_KEY = 'emberpath_flags';
+// Storage key is resolved through the sandbox kernel so a scenario / sandbox run
+// reads & writes a throwaway namespace and never touches the real save. See
+// sandbox.ts for the import-order contract (this module loads localStorage at
+// init, so sandbox.ts must be imported first in main.ts).
 
-type FlagValue = string | number | boolean;
+export type FlagValue = string | number | boolean;
 
 let flagStore: Record<string, FlagValue> = {};
 let writeFailureLogged = false;
@@ -16,7 +20,7 @@ const listeners: Map<string, Set<FlagChangeListener>> = new Map();
 
 function loadFromStorage(): void {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(flagsStorageKey());
     if (raw) {
       flagStore = JSON.parse(raw);
     }
@@ -27,7 +31,7 @@ function loadFromStorage(): void {
 
 function saveToStorage(): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(flagStore));
+    localStorage.setItem(flagsStorageKey(), JSON.stringify(flagStore));
   } catch (err) {
     if (!writeFailureLogged) {
       console.warn('emberpath: flags write failed', err);
@@ -90,7 +94,7 @@ export function resetAllFlags(): void {
   const previous = flagStore;
   flagStore = {};
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(flagsStorageKey());
   } catch {
     // ignore
   }

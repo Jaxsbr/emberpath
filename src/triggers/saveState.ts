@@ -1,7 +1,9 @@
 import { getAllAreaIds } from '../data/areas/registry';
 import { resetAllFlags } from './flags';
+import { saveStorageKey } from '../sandbox';
 
-const STORAGE_KEY = 'emberpath_save';
+// Storage key is resolved through the sandbox kernel so a scenario / sandbox run
+// reads & writes a throwaway namespace and never touches the real save (sandbox.ts).
 
 export interface SaveState {
   version: 1;
@@ -27,7 +29,7 @@ function isValidSave(payload: unknown): payload is SaveState {
 export function loadSave(): SaveState | null {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(STORAGE_KEY);
+    raw = localStorage.getItem(saveStorageKey());
   } catch {
     return null;
   }
@@ -36,12 +38,12 @@ export function loadSave(): SaveState | null {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    console.warn(`emberpath: corrupt save (parse error) at ${STORAGE_KEY} — clearing`);
+    console.warn(`emberpath: corrupt save (parse error) at ${saveStorageKey()} — clearing`);
     clearSave();
     return null;
   }
   if (!isValidSave(parsed)) {
-    console.warn(`emberpath: corrupt save (validation failed) at ${STORAGE_KEY} — clearing`);
+    console.warn(`emberpath: corrupt save (validation failed) at ${saveStorageKey()} — clearing`);
     clearSave();
     return null;
   }
@@ -50,7 +52,7 @@ export function loadSave(): SaveState | null {
 
 export function writeSave(state: SaveState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(saveStorageKey(), JSON.stringify(state));
   } catch (err) {
     if (!writeFailureLogged) {
       console.warn('emberpath: save write failed', err);
@@ -61,7 +63,7 @@ export function writeSave(state: SaveState): void {
 
 export function clearSave(): void {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(saveStorageKey());
   } catch {
     // localStorage may be unavailable in some environments
   }
