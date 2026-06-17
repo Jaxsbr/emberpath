@@ -149,24 +149,27 @@ function buildAshenMap(): StoredTile[][] {
   m[18][49] = F;
   m[19][49] = F;
 
-  // Player's cottage — rows 12-15 cols 8-12 are WALL except the door cell at
-  // (10, 15) which stays FLOOR so dialogue can pose the player in the doorway.
-  for (let r = 12; r <= 15; r++) {
-    for (let c = 8; c <= 12; c++) {
+  // Player's cottage — TRUE 2× (FB-6). The RED foundation body is rows 8-14 cols
+  // 6-13 (WALL); the front-wall base row 15 stays FLOOR (the walkable BLUE base),
+  // with the door at (10, 15) where dialogue poses the player. 2-tile walkable
+  // margins around the body inside the widened yard let Pip round the house so the
+  // see-through fade can fire from behind as well as from the front step.
+  for (let r = 8; r <= 14; r++) {
+    for (let c = 6; c <= 13; c++) {
       m[r][c] = W;
     }
   }
-  m[15][10] = F;
+  for (let c = 6; c <= 13; c++) m[15][c] = F; // walkable BLUE base row (front wall)
 
-  // Player's fenced yard — perimeter at rows 11-19 cols 5-14 with gate at
-  // (9, 19) to the south path branch.
-  for (let c = 5; c <= 14; c++) {
-    m[11][c] = W;
+  // Player's fenced yard — widened to rows 6-19 cols 4-16 (FB-6: contains the 2×
+  // cottage with breathing room) with the gate kept at (9, 19) to the south path.
+  for (let c = 4; c <= 16; c++) {
+    m[6][c] = W;
     m[19][c] = W;
   }
-  for (let r = 12; r <= 18; r++) {
-    m[r][5] = W;
-    m[r][14] = W;
+  for (let r = 7; r <= 18; r++) {
+    m[r][4] = W;
+    m[r][16] = W;
   }
   m[19][9] = F;
 
@@ -278,14 +281,28 @@ function cottage(anchorCol: number, anchorRow: number): OInst[] {
   ];
 }
 
+// True 2× cottage (FB-6). 8×8 footprint: the RED foundation is the top 7 rows
+// (collision-block grid), the bottom front-wall row stays walkable — the BLUE
+// base Pip steps onto (door at front-centre). Stepping onto that row fires the
+// see-through fade (GameScene behind-fade). The matching tile-map WALL band and
+// the widened yard fence are authored alongside this in `ashenTileMap`/`ashenFences`.
+function cottageLarge(anchorCol: number, anchorRow: number): OInst[] {
+  return [
+    ...rectObjects(anchorCol, anchorCol + 7, anchorRow, anchorRow + 6, 'collision-block'),
+    { kind: 'cottage-large', col: anchorCol, row: anchorRow },
+  ];
+}
+
 const ashenBuildings: OInst[] = [
-  ...cottage(9, 12), // player's cottage in the west yard
+  // Player's cottage — true 2× (FB-6). Anchored (6,8) → body cols 6-13 rows 8-14,
+  // walkable front base row 15 with the door at (10,15). Sits in the widened west yard.
+  ...cottageLarge(6, 8),
   ...cottage(39, 25), // Old Man's cottage; doorway lands at his pose cell (40,28)
 ];
 
 const ashenFences: OInst[] = [
-  // Player's yard (rows 11-19 cols 5-14), gate at (9,19).
-  ...fenceObjects(5, 14, 11, 19, [{ col: 9, row: 19 }]),
+  // Player's yard — widened for the 2× cottage (rows 6-19 cols 4-16), gate at (9,19).
+  ...fenceObjects(4, 16, 6, 19, [{ col: 9, row: 19 }]),
   // Old Man's yard (rows 23-31 cols 35-44), gates north (39,23) + south (39,31).
   ...fenceObjects(35, 44, 23, 31, [
     { col: 39, row: 23 },
@@ -313,11 +330,14 @@ const ashenScenery: OInst[] = [
 // clearing. Anchor (col,row) → canopy rows row..row+2, trunk base cell (col+1,
 // row+3).
 const ashenGroves: OInst[] = [
-  // NW corner treeline
-  { kind: 'tree-oak', col: 2, row: 4 }, { kind: 'tree-pine', col: 5, row: 4 },
-  { kind: 'tree-pine', col: 3, row: 7 }, { kind: 'tree-oak', col: 7, row: 6 },
-  // North-central (between the yard top and the lane)
-  { kind: 'tree-pine', col: 15, row: 5 }, { kind: 'tree-oak', col: 18, row: 4 },
+  // NW corner — a WEST treeline framing the left of the widened player yard.
+  // FB-6: relocated out of the old yard footprint; trunks kept in cols 0-2,
+  // fully WEST of the yard fence (col 4), so no tree grows inside the homestead.
+  { kind: 'tree-pine', col: 1, row: 4 }, { kind: 'tree-oak', col: 0, row: 7 },
+  { kind: 'tree-pine', col: 1, row: 10 }, { kind: 'tree-oak', col: 0, row: 13 },
+  // North-central (EAST of the yard, between its NE corner and the lane). FB-6
+  // nudged the inmost tree out to col 20 so no trunk lands on the col-16 fence.
+  { kind: 'tree-pine', col: 20, row: 4 }, { kind: 'tree-oak', col: 18, row: 4 },
   { kind: 'tree-pine', col: 17, row: 7 },
   // NE corner
   { kind: 'tree-oak', col: 42, row: 4 }, { kind: 'tree-pine', col: 45, row: 5 },
@@ -341,15 +361,16 @@ const ashenGroves: OInst[] = [
 // reads as a thicket-with-clearing, not lawn ornaments; a few impassable `rock`
 // boulders anchor the edges (all kept off paths/yards). Grouped per grove.
 const ashenUndergrowth: OInst[] = [
-  // NW grove (trunks ~3,7 / 6,7 / 4,10 / 8,9)
-  { kind: 'bush', col: 2, row: 8 }, { kind: 'bush', col: 5, row: 8 },
-  { kind: 'grass-tuft', col: 4, row: 9 }, { kind: 'grass-tuft', col: 7, row: 8 },
-  { kind: 'flower', col: 6, row: 10 }, { kind: 'rock', col: 1, row: 6 },
-  { kind: 'bush', col: 9, row: 9 }, { kind: 'grass-tuft', col: 3, row: 11 },
-  // North-central grove (trunks ~16,8 / 19,7 / 18,10)
-  { kind: 'bush', col: 15, row: 8 }, { kind: 'grass-tuft', col: 17, row: 9 },
-  { kind: 'flower', col: 19, row: 9 }, { kind: 'bush', col: 20, row: 8 },
-  { kind: 'grass-tuft', col: 16, row: 11 }, { kind: 'rock', col: 21, row: 10 },
+  // NW west-treeline (trunks ~2,7 / 1,10 / 2,13 / 1,16) — undergrowth kept WEST
+  // of the yard fence (cols 0-3), packed around the relocated left-edge trees.
+  { kind: 'bush', col: 1, row: 5 }, { kind: 'bush', col: 3, row: 8 },
+  { kind: 'grass-tuft', col: 2, row: 9 }, { kind: 'grass-tuft', col: 1, row: 8 },
+  { kind: 'flower', col: 3, row: 11 }, { kind: 'rock', col: 1, row: 6 },
+  { kind: 'bush', col: 2, row: 14 }, { kind: 'grass-tuft', col: 3, row: 15 },
+  // North-central grove (EAST of the yard; trunks ~21,7 / 19,7 / 18,10)
+  { kind: 'bush', col: 17, row: 8 }, { kind: 'grass-tuft', col: 19, row: 9 },
+  { kind: 'flower', col: 21, row: 9 }, { kind: 'bush', col: 22, row: 8 },
+  { kind: 'grass-tuft', col: 18, row: 11 }, { kind: 'rock', col: 21, row: 10 },
   // NE grove (trunks ~43,7 / 46,8 / 44,11)
   { kind: 'bush', col: 42, row: 8 }, { kind: 'grass-tuft', col: 45, row: 9 },
   { kind: 'flower', col: 43, row: 10 }, { kind: 'bush', col: 46, row: 11 },
@@ -397,12 +418,12 @@ const ashenDressing: OInst[] = [
   { kind: 'rock', col: 45, row: 33 },
   // Grass tufts — fill the open bands (NW, central, around both yards, south).
   { kind: 'grass-tuft', col: 3, row: 6 },
-  { kind: 'grass-tuft', col: 7, row: 9 },
+  { kind: 'grass-tuft', col: 17, row: 5 }, // FB-6: off the 2× house body (was 7,9)
   { kind: 'grass-tuft', col: 2, row: 12 },
   { kind: 'grass-tuft', col: 16, row: 5 },
   { kind: 'grass-tuft', col: 19, row: 9 },
   { kind: 'grass-tuft', col: 14, row: 3 },
-  { kind: 'grass-tuft', col: 4, row: 16 },
+  { kind: 'grass-tuft', col: 3, row: 16 }, // FB-6: off the widened west fence (was 4,16)
   { kind: 'grass-tuft', col: 15, row: 16 },
   { kind: 'grass-tuft', col: 6, row: 21 },
   { kind: 'grass-tuft', col: 28, row: 14 },
@@ -428,31 +449,36 @@ const ashenDressing: OInst[] = [
   { kind: 'bush', col: 42, row: 29 },
 ];
 
-// ───── Player's cottage garden (Jaco #482, 2026-06-15) ─────
+// ───── Player's cottage garden (Jaco #482, 2026-06-15; re-laid for the 2× cottage, FB-6) ─────
 // The opening homestead read as a nice house marooned in a uniform field with a
-// thin, hard-to-read fence — "dev-tutorial vibes." This dresses the fenced yard
-// (rows 12-18, cols 6-13, around the 4×4 cottage and the central walkway) as a
-// lived-in garden: flower & herb beds along both inner fence lines, bushes
-// flanking the door, and a soft border framing the walkway. All passable
-// (flower/bush/grass-tuft) and kept entirely OFF the door cell (10,15) and the
-// walkway (cols 9-10 rows 16-18) so the player always walks straight in.
+// thin, hard-to-read fence — "dev-tutorial vibes." With the 2× cottage (body cols
+// 6-13 rows 8-15) filling the old garden footprint, the beds move OUT to the
+// widened-yard margins (rows 6-19 cols 4-16): flower & herb beds run the inner
+// fence lines (col 5 west, cols 14-15 east), a soft south border frames the
+// walkway as it leaves the door, and a couple of tufts tuck behind the house. All
+// passable (flower/bush/grass-tuft), kept OFF the door (10,15), the front base row
+// (15), the walkway (cols 9-10 rows 16-19), and the walkable margins Pip uses to
+// round the house, so the player always walks straight in and can still slip behind.
 const ashenHomeGarden: OInst[] = [
-  // West bed — along the inner fence (col 5), flanking the door's west side.
-  { kind: 'flower', col: 6, row: 12 }, { kind: 'flower', col: 7, row: 12 },
-  { kind: 'bush', col: 6, row: 13 }, { kind: 'flower', col: 7, row: 13 },
-  { kind: 'bush', col: 7, row: 14 },
-  { kind: 'flower', col: 6, row: 15 }, { kind: 'bush', col: 6, row: 16 },
-  { kind: 'flower', col: 7, row: 16 }, { kind: 'bush', col: 6, row: 17 },
-  { kind: 'flower', col: 6, row: 18 }, { kind: 'grass-tuft', col: 7, row: 18 },
-  // East bed — along the inner fence (col 14), flanking the door's east side.
-  { kind: 'bush', col: 13, row: 12 }, { kind: 'flower', col: 13, row: 13 },
-  { kind: 'bush', col: 13, row: 14 },
-  { kind: 'flower', col: 13, row: 15 }, { kind: 'bush', col: 13, row: 16 },
-  { kind: 'flower', col: 13, row: 17 }, { kind: 'grass-tuft', col: 13, row: 18 },
-  // South border — frames the walkway as it leaves the door.
-  { kind: 'grass-tuft', col: 8, row: 17 }, { kind: 'flower', col: 8, row: 18 },
-  { kind: 'grass-tuft', col: 11, row: 17 }, { kind: 'flower', col: 11, row: 18 },
-  { kind: 'bush', col: 12, row: 18 },
+  // West bed — inner fence line (col 5), down the cottage's west side.
+  { kind: 'flower', col: 5, row: 8 }, { kind: 'bush', col: 5, row: 9 },
+  { kind: 'flower', col: 5, row: 10 }, { kind: 'bush', col: 5, row: 11 },
+  { kind: 'flower', col: 5, row: 12 }, { kind: 'grass-tuft', col: 5, row: 13 },
+  { kind: 'bush', col: 5, row: 14 }, { kind: 'flower', col: 5, row: 15 },
+  { kind: 'flower', col: 5, row: 17 },
+  // East bed — inner fence line (cols 14-15), down the cottage's east side.
+  { kind: 'bush', col: 15, row: 8 }, { kind: 'flower', col: 15, row: 9 },
+  { kind: 'bush', col: 15, row: 10 }, { kind: 'flower', col: 14, row: 11 },
+  { kind: 'flower', col: 15, row: 12 }, { kind: 'grass-tuft', col: 14, row: 13 },
+  { kind: 'bush', col: 15, row: 14 }, { kind: 'flower', col: 15, row: 16 },
+  // North border — a few sprigs behind the house (rows 6-7), left mostly open so
+  // Pip can round the back and trigger the see-through fade.
+  { kind: 'grass-tuft', col: 6, row: 7 }, { kind: 'flower', col: 13, row: 7 },
+  // South border — frames the walkway as it leaves the door (off cols 9-10).
+  { kind: 'grass-tuft', col: 7, row: 16 }, { kind: 'flower', col: 8, row: 17 },
+  { kind: 'bush', col: 7, row: 18 }, { kind: 'flower', col: 6, row: 18 },
+  { kind: 'grass-tuft', col: 11, row: 16 }, { kind: 'flower', col: 11, row: 17 },
+  { kind: 'bush', col: 12, row: 18 }, { kind: 'flower', col: 13, row: 18 },
 ];
 
 // ───── East-edge bramble objects (US-100) ─────

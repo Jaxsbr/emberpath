@@ -31,6 +31,12 @@ export type ObjectKindId =
   // visible structure is one image spanning its footprint; collision comes from
   // collision-block cells laid under the body (door cell left open).
   | 'cottage'
+  // Ashen Isle — the SAME cottage art at true 2× scale (FB-6, Jaco: "houses
+  // render too small"). An 8×8-footprint variant of `cottage` reusing the same
+  // painted image; collision is the RED foundation body (collision-block grid),
+  // the front-wall base row is the walkable BLUE step that fires the see-through
+  // fade. Distinct kind so only the rescaled house adopts the bigger geometry.
+  | 'cottage-large'
   // Ashen Isle — dock props (PixelLab style-matched, weathered sepia/umber)
   | 'boat-row'
   | 'barrel-wood'
@@ -166,6 +172,14 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // FRONT from the south, exactly like a tree — without touching its collision
   // (that stays the collision-block grid, doorway open). Matches FB-3 pts 1+4.
   'cottage':     { id: 'cottage',     atlasKey: 'object-cottage',     assetPath: 'objects/ashen-isle/cottage.png',     passable: false, footprint: { w: 4, h: 4 }, tall: true, baseFootprint: { dx: 0, dy: 3, w: 4, h: 1 } },
+  // True 2× cottage (FB-6). Same painted image (own atlas key, same file) drawn
+  // over an 8×8 footprint so it reads as a real building, not a dollhouse. The
+  // collision RED foundation is the top 7 rows (laid as a collision-block grid in
+  // the area file); the bottom front-wall row (`baseFootprint` dy:7) is the
+  // walkable BLUE base — stepping onto it fires the see-through fade so Pip is
+  // visible THROUGH the house (the GameScene behind-fade uses the base row bottom
+  // as the trigger line for buildings).
+  'cottage-large': { id: 'cottage-large', atlasKey: 'object-cottage-large', assetPath: 'objects/ashen-isle/cottage.png', passable: false, footprint: { w: 8, h: 8 }, tall: true, baseFootprint: { dx: 0, dy: 7, w: 8, h: 1 } },
   // Boat + pier read at true scale via `footprint` (US-98) — a 32px boat looked
   // like a toy on the dock (Jaco feedback 2026-06-13). Both moor in impassable
   // water; collision keys their anchor cell only, so the multi-tile footprint is
