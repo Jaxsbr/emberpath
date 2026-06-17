@@ -278,7 +278,13 @@ export class GameScene extends Phaser.Scene {
   // base-collider (it isn't a `tall` object yet) — tracked as remaining FB-3.
   private behindFadeObjects: {
     sprite: Phaser.GameObjects.Image;
-    colliderTopY: number;
+    // The line below which Pip's feet must drop for the object to count as "in
+    // front." For trees this is the canopy-base collider top (she's behind the
+    // moment her feet rise above the trunk). For BUILDINGS it's the BOTTOM of the
+    // walkable BLUE base row, so simply stepping ONTO the house's front step fires
+    // the see-through fade (FB-6: "walk into the blue base → see Pip through it"),
+    // not only when she rounds it from behind.
+    triggerBottomY: number;
     spriteTopY: number;
     xMin: number;
     xMax: number;
@@ -1918,9 +1924,16 @@ export class GameScene extends Phaser.Scene {
       // Keyed on baseRegion so buildings (cottage, via baseFootprint) join too,
       // not just trunk-collider trees. Precompute the bounds here.
       if (def.tall && baseRegion) {
+        // Buildings (baseFootprint) trigger the fade the instant Pip steps onto
+        // the walkable front (BLUE) base row, so the line is that row's BOTTOM;
+        // trees (collisionFootprint only) keep the canopy-base top so the fade
+        // fires when she passes behind the trunk.
+        const triggerBottomY = def.baseFootprint
+          ? (inst.row + baseRegion.dy + baseRegion.h) * TILE_SIZE
+          : (inst.row + baseRegion.dy) * TILE_SIZE;
         this.behindFadeObjects.push({
           sprite,
-          colliderTopY: (inst.row + baseRegion.dy) * TILE_SIZE,
+          triggerBottomY,
           spriteTopY: inst.row * TILE_SIZE,
           xMin: inst.col * TILE_SIZE,
           xMax: (inst.col + fp.w) * TILE_SIZE,
@@ -1977,7 +1990,7 @@ export class GameScene extends Phaser.Scene {
       // A hidden conditional object can't be hidden-behind; force it clear.
       const behind =
         o.sprite.visible &&
-        feetY < o.colliderTopY &&
+        feetY < o.triggerBottomY &&
         feetY > o.spriteTopY &&
         pRight >= o.xMin &&
         pLeft <= o.xMax;
