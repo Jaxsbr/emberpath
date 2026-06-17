@@ -19,6 +19,7 @@ import { WaterShimmerSystem } from '../systems/waterShimmer';
 import { AmbientMotesSystem } from '../systems/ambientMotes';
 import { ForestEyesSystem } from '../systems/forestEyes';
 import { LeafFallSystem } from '../systems/leafFall';
+import { FrogPondSystem } from '../systems/frogPond';
 import { FogOverlaySystem } from '../systems/fogOverlay';
 import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
@@ -232,6 +233,8 @@ export class GameScene extends Phaser.Scene {
   private forestEyes: ForestEyesSystem | null = null;
   // Drifting dead leaves in the wilds (FB-2). Briar-only; null elsewhere.
   private leafFall: LeafFallSystem | null = null;
+  // A frog surfacing in the marsh pond (FB-13). Fog-marsh-only; null elsewhere.
+  private frogPond: FrogPondSystem | null = null;
   private fogOverlay: FogOverlaySystem | null = null;
   private smokeBeacon!: SmokeBeaconSystem;
   private signpostWayfinding!: SignpostWayfindingSystem;
@@ -666,6 +669,18 @@ export class GameScene extends Phaser.Scene {
     // Falling leaves (FB-2): a weather overlay on the UI camera so they stay visible
     // (not greyed by the desat pass) drifting down against the cold. Briar-only.
     this.leafFall = this.area.id === 'briar-wilds' ? new LeafFallSystem(this) : null;
+    // Frog pond (FB-13): a single frog surfaces at one of three fixed interior
+    // pond cells, sits, submerges, and re-emerges elsewhere — so the marsh
+    // reads as alive, not a still painting. Fog-marsh-only. World positions are
+    // the cell centres of three water cells in FOG_MARSH_POND_CELLS. On the UI
+    // camera so the green survives the desat pass (same as the forest eyes).
+    this.frogPond = this.area.id === 'fog-marsh'
+      ? new FrogPondSystem(this, [
+          { x: (11 + 0.5) * TILE_SIZE, y: (15 + 0.5) * TILE_SIZE },
+          { x: (10 + 0.5) * TILE_SIZE, y: (17 + 0.5) * TILE_SIZE },
+          { x: (12 + 0.5) * TILE_SIZE, y: (16 + 0.5) * TILE_SIZE },
+        ])
+      : null;
     // Atmospheric fog (C12): drifting pale mist banks so a "fog" area reads as fog,
     // not as its grey-stone substitute tileset. Opt-in per area; null when unset.
     this.fogOverlay = this.area.fogOverlay ? new FogOverlaySystem(this) : null;
@@ -1098,6 +1113,7 @@ export class GameScene extends Phaser.Scene {
     this.ambientMotes.update(time, delta);
     this.forestEyes?.update(time, delta);
     this.leafFall?.update(time, delta);
+    this.frogPond?.update(time, delta);
     this.fogOverlay?.update(time, delta);
     // Smoke beacon drifts every frame too (distant goal, never frozen).
     this.smokeBeacon.update(time, delta);
