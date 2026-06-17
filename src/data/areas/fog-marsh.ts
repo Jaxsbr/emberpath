@@ -279,6 +279,31 @@ const fogMarshReedTufts: ObjectInstance[] = [
   { kind: 'mushroom', col: 8, row: 14 },
 ];
 
+// Cattail/bulrush ring around the pond (FB-13 slice 2, 2026-06-17). The pond
+// (cols 10-12, rows 14-18 water) reads as open water with bare shore. Real marsh
+// ponds are choked with cattails at the waterline, so a ring of taller bulrush
+// clumps fringes the shore — clustered in knots with negative-space gaps, never
+// a solid wall. All passable (you can wade the reeds), all on the passable shore
+// rim, never on the impassable interior water or the col-14 dry path. Avoids the
+// west reed-tuft knots (cols 2-9) and the SE clutter (cols 17-27).
+const fogMarshCattails: ObjectInstance[] = [
+  // North shore (row 13) — small knot
+  { kind: 'cattail', col: 11, row: 13 },
+  { kind: 'cattail', col: 12, row: 13 },
+  // East shore (col 13, between water and the dry path) — gap at row 16
+  { kind: 'cattail', col: 13, row: 14 },
+  { kind: 'cattail', col: 13, row: 15 },
+  { kind: 'cattail', col: 13, row: 17 },
+  { kind: 'cattail', col: 13, row: 18 },
+  // West shore (col 9) — staggered, gap at row 17
+  { kind: 'cattail', col: 9, row: 15 },
+  { kind: 'cattail', col: 9, row: 16 },
+  { kind: 'cattail', col: 9, row: 18 },
+  // South shore (row 19) — small knot closing the ring
+  { kind: 'cattail', col: 11, row: 19 },
+  { kind: 'cattail', col: 12, row: 19 },
+];
+
 // Marsh-stone clusters at the deadwood bases (G4-B v2, 2026-06-15). The guide
 // puts rocks at cluster bases; here they also add bigger, higher-contrast
 // silhouette mass than the small reed/mushroom tufts, so the choked ground reads
@@ -458,6 +483,7 @@ export const fogMarsh: AreaDefinition = {
     ...fogMarshDeadTrees,
     ...fogMarshGroundStones,
     ...fogMarshReedTufts,
+    ...fogMarshCattails,
     ...fogMarshEastClutter,
   ],
   conditionalTerrain: [
