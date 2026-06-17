@@ -1,4 +1,8 @@
 import Phaser from 'phaser';
+// MUST load before the scene imports: sandbox.ts decides the localStorage
+// namespace from the URL at module-init, and flags.ts reads localStorage when it
+// first loads (transitively via the scenes below). See sandbox.ts.
+import './sandbox';
 import { TitleScene } from './scenes/TitleScene';
 import { GameScene } from './scenes/GameScene';
 import { StoryScene } from './scenes/StoryScene';
