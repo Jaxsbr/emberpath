@@ -55,6 +55,14 @@ export type ObjectKindId =
   | 'dead-tree'
   | 'gravestone'
   | 'marsh-stone'
+  // Fog Marsh — the Marsh Hermit's house (FB-12, Jaco: a real house, not the
+  // awkward stone-block ruin square that stood in for it). A cohesive 6×6 marsh
+  // hut (its own PixelLab generation, marsh-toned to fit the hermit — weathered
+  // planks, mossy thatch, reeds at the base), built on the same RED-foundation /
+  // walkable-BLUE-base model as the player's `cottage-large`: collision is a
+  // collision-block grid under the upper body, the front-wall base row stays
+  // walkable and fires the see-through fade. Humbler (6×6) than the player's 8×8.
+  | 'hermit-house'
   // Fog Marsh — passable
   | 'dry-reed'
   // Cattails/bulrushes ringing the pond (FB-13 slice 2) — taller, with brown
@@ -219,6 +227,12 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   'dead-tree':      { id: 'dead-tree',      atlasKey: 'object-dead-tree',      assetPath: 'objects/fog-marsh/dead-tree.png',      passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
   'gravestone':     { id: 'gravestone',     atlasKey: 'object-gravestone',     assetPath: 'objects/fog-marsh/gravestone.png',     passable: false },
   'marsh-stone':    { id: 'marsh-stone',    atlasKey: 'object-marsh-stone',    assetPath: 'objects/fog-marsh/marsh-stone.png',    passable: false },
+  // Marsh Hermit's house (FB-12) — one 192px image over a 6×6 footprint. Same
+  // model as `cottage-large`: `tall` + `baseFootprint` (front-wall row, dy=5) so
+  // Pip sorts behind it from the north and the see-through fade fires when she
+  // steps onto the walkable base; collision is laid as a collision-block grid
+  // under the top 5 rows (see `hermitHouse()` in fog-marsh.ts), door row open.
+  'hermit-house':   { id: 'hermit-house',   atlasKey: 'object-hermit-house',   assetPath: 'objects/fog-marsh/hermit-house.png',   passable: false, footprint: { w: 6, h: 6 }, tall: true, baseFootprint: { dx: 0, dy: 5, w: 6, h: 1 } },
   'dry-reed':       { id: 'dry-reed',       atlasKey: 'object-dry-reed',       assetPath: 'objects/fog-marsh/dry-reed.png',       passable: true },
   'cattail':        { id: 'cattail',        atlasKey: 'object-cattail',        assetPath: 'objects/fog-marsh/cattail.png',        passable: true },
   'lily-pad':       { id: 'lily-pad',       atlasKey: 'object-lily-pad',       assetPath: 'objects/fog-marsh/lily-pad.png',       passable: true },
