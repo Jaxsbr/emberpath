@@ -435,6 +435,13 @@ const fogMarshDeadTrees: ObjectInstance[] = [
   { kind: 'dead-tree', col: 7, row: 17 },
 ];
 
+// Wayfinding signpost (#47). One wooden post on the dry path just north of the
+// south exit (the `fog-to-ashen` return at cols 13-16 row 22), naming the road
+// home. Label reads "The Ashen Isles ↓" (Jaco 2026-06-18: "Home" read as
+// confusing — the place has a name, so use it) and the "↓" IS the walk direction
+// (south, toward the row-22 exit). Same col,row as the `signposts:` entry below.
+const fogMarshSignposts: ObjectInstance[] = [{ kind: 'sign-wood', col: 16, row: 20 }];
+
 // Marsh-trap closure (US-98) — terrain-flip pathway. The 8 vertices spanning
 // row 22 cols 13-16 + row 23 cols 13-16 flip from `path` (default state) to
 // `water` when `marsh_trapped == true`. The Wang resolver re-renders the 4
@@ -522,7 +529,12 @@ export const fogMarsh: AreaDefinition = {
     ...fogMarshCattails,
     ...fogMarshLilyPads,
     ...fogMarshEastClutter,
+    ...fogMarshSignposts,
   ],
+  // Wayfinding signpost (#47). The south exit leads home to the Ashen Isles; the
+  // "↓" arrow IS the walk direction (south, toward the row-22 exit). Same col,row
+  // as the sign-wood object in fogMarshSignposts.
+  signposts: [{ col: 16, row: 20, label: 'The Ashen Isles ↓' }],
   conditionalTerrain: [
     {
       condition: 'marsh_trapped == true',
