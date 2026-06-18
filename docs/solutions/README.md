@@ -18,10 +18,11 @@ art lesson here** — so a lesson is a hard rule, not a suggestion.
 | [process/gif-for-motion](process/gif-for-motion.md) | Anything with movement/flow/animation | Demonstrate with a **GIF**, never a still. |
 | [process/never-edit-off-unseen-annotation](process/never-edit-off-unseen-annotation.md) | Feedback points at a screenshot/annotation | If the image didn't actually attach, **STOP and ask** — never guess. |
 | [content/reading-level-young-child](content/reading-level-young-child.md) | Writing/changing any player-facing text | Young-child reading level; allegory survives the simplification. |
+| [content/sacred-words-not-loose](content/sacred-words-not-loose.md) | Writing ANY text (docs, comments, commits, chat) | "Bible"/"Scripture" only for the actual Scriptures — never as a metaphor for "the authoritative doc" (use canon/source of truth/guide). |
 
 ## Where the full canon lives (the lessons point here, don't duplicate it)
 
-- **Art bible** — [`docs/art-style.md`](../art-style.md): palette, texture, characters,
+- **Art canon** — [`docs/art-style.md`](../art-style.md): palette, texture, characters,
   environments, lighting, **perspective**, **clustering**, **ground-shadow canon**.
 - **Scene-layout guide** — [`docs/art-topdown-guide.md`](../art-topdown-guide.md): the
   detailed 3/4-oblique placement guide (trees, paths, buildings, fences, water, …).

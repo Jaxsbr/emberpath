@@ -32,8 +32,8 @@ the normal `emberpath-pr-review` code gate.
    see `docs/testbench.md`) against the built game and capture; the persona's
    `autonomy/playtest.cjs` / `local-harness.cjs` harness drives it. If you cannot get a
    render, that alone is REQUEST_CHANGES — never approve art you haven't seen.
-2. **Open the canon, the guide, and the lessons.** The single art bible is the repo's
-   **`docs/art-style.md`** (palette, texture, characters, environments, lighting,
+2. **Open the canon, the guide, and the lessons.** The single art source of truth is the
+   repo's **`docs/art-style.md`** (palette, texture, characters, environments, lighting,
    **perspective**, **clustering**, **ground-shadow canon**). The detailed scene-layout
    guide is **`docs/art-topdown-guide.md`**. Look at `ref/` every time.
 3. **Cross-check the lessons ledger (binding).** Read every art lesson in
@@ -141,7 +141,7 @@ looks solid and tall it should block; flat/low things read as walkable. Art must
 make the cold first-time player confused about where they can go. Simplify any muddy
 silhouette.
 
-**5. Mood / palette / texture (the storybook bible).**
+**5. Mood / palette / texture (the storybook style canon).**
 Check against repo `docs/art-style.md`: graphite-and-sepia storybook, warm monochrome
 default with **gold as the only sacred colour**; outlines in deep umber (never pure
 black); painted-pixel texture (lichen on stone, grain on wood, weeds in grass), not
@@ -158,7 +158,7 @@ mood. Hope-gold should bloom slightly.
 
 ## ESCALATE to Jaco (do NOT self-merge, even if the art is clean)
 - A genuine **art-DIRECTION change** — shifting the established perspective, palette
-  bible, or visual identity itself (not applying it). Recording his stated direction is
+  source of truth, or visual identity itself (not applying it). Recording his stated direction is
   fine; *changing* what the direction *is* is his call.
 - **Real new spend** beyond the existing PixelLab sub, or anything irreversible /
   outward-facing.
