@@ -94,39 +94,52 @@ for (let c = 0; c < HEART_BRIDGE_COLS; c++) {
 // path without ever blocking it; the trees sit on the (already impassable) water
 // rows as a backdrop grove.
 const beds: ObjectInstance[] = [];
-// A deterministic, seedless pseudo-pattern so placement is stable across builds
-// (no Math.random — keeps captures/diffs reproducible). Density ramps with col.
-const DECK_EDGE_ROWS = [3, 5];
-for (let c = 4; c < HEART_BRIDGE_COLS - 3; c++) {
-  // 0 at the west end → ~1 at the east end.
-  const t = (c - 4) / (HEART_BRIDGE_COLS - 7);
-  for (const row of DECK_EDGE_ROWS) {
-    // Phase the two edges so the planting reads natural, not mirrored.
-    const phase = row === 3 ? 0 : 2;
-    const beat = (c + phase) % 4;
-    if (t < 0.33) {
-      // Near end: only the occasional muted tuft.
-      if (beat === 0 && c % 3 === 0) beds.push({ kind: 'grass-tuft', col: c, row });
-    } else if (t < 0.66) {
-      // Mid: tufts giving way to the first flowers.
-      if (beat === 0) beds.push({ kind: 'grass-tuft', col: c, row });
-      else if (beat === 2) beds.push({ kind: 'flower', col: c, row });
-    } else {
-      // Far end: dense flower + bush clusters (the garden).
-      if (beat === 0 || beat === 1) beds.push({ kind: 'flower', col: c, row });
-      else if (beat === 2) beds.push({ kind: 'bush', col: c, row });
-      else beds.push({ kind: 'grass-tuft', col: c, row });
-    }
-  }
-  // Water dressing: lily-pads / cattails, thickening eastward.
-  for (const row of [1, 7]) {
-    if (t < 0.4) {
-      if (c % 7 === 0) beds.push({ kind: 'lily-pad', col: c, row });
-    } else {
-      if (c % 3 === 0) beds.push({ kind: 'lily-pad', col: c, row });
-      else if (c % 3 === 1 && t > 0.6) beds.push({ kind: 'cattail', col: c, row });
-    }
-  }
+// Placement is by hand-authored CLUSTERS, not an even per-tile fill — the binding
+// cluster-not-scatter canon (`docs/solutions/art/cluster-not-scatter.md`, Jaco
+// #344/#482): groundcover lives in irregular mixed clumps of 2–4 with undergrowth
+// packed around, separated by deliberate open clearings, NEVER a regular sprinkle.
+// Each cluster anchors at a col on one deck edge (row 3 or 5 — row 4 stays the open
+// walk path) and drops a packed run of mixed kinds. Density RAMPS west→east: the
+// austere near end has a few lonely tufts and lots of bare grey deck between them;
+// the far bank is dense overlapping flower/bush/tuft clusters framing the King —
+// so the deck reads as a garden BLOOMING into being as Pip crosses (paired with the
+// quarter-by-quarter colour-return overlay). All kinds are passable: they frame the
+// path, never block it. Deterministic (no Math.random) so captures/diffs are stable.
+type Bed = ObjectInstance['kind'];
+interface Cluster { col: number; row: number; items: [number, Bed][]; } // items: [dCol, kind]
+const deckClusters: Cluster[] = [
+  // WEST — austere: a couple of lonely tufts, wide bare-deck clearings between.
+  { col: 8, row: 5, items: [[0, 'grass-tuft']] },
+  { col: 15, row: 3, items: [[0, 'grass-tuft'], [1, 'grass-tuft']] },
+  { col: 22, row: 5, items: [[0, 'grass-tuft']] },
+  // MID — tufts giving way to the first flowers; small mixed clumps of 2–3.
+  { col: 28, row: 3, items: [[0, 'grass-tuft'], [1, 'flower']] },
+  { col: 34, row: 5, items: [[0, 'flower'], [1, 'grass-tuft'], [2, 'flower']] },
+  { col: 41, row: 3, items: [[0, 'grass-tuft'], [1, 'flower'], [2, 'bush']] },
+  { col: 46, row: 5, items: [[0, 'flower'], [1, 'flower']] },
+  // FAR — the garden: dense overlapping flower+bush+tuft clusters on both edges,
+  // tightening toward the far bank so the bloom peaks around the King.
+  { col: 52, row: 3, items: [[0, 'bush'], [1, 'flower'], [2, 'flower'], [3, 'grass-tuft']] },
+  { col: 53, row: 5, items: [[0, 'flower'], [1, 'bush'], [2, 'flower']] },
+  { col: 58, row: 3, items: [[0, 'flower'], [1, 'bush'], [2, 'flower']] },
+  { col: 59, row: 5, items: [[0, 'grass-tuft'], [1, 'flower'], [2, 'bush'], [3, 'flower']] },
+  { col: 64, row: 3, items: [[0, 'bush'], [1, 'flower'], [2, 'flower'], [3, 'bush']] },
+  { col: 64, row: 5, items: [[0, 'flower'], [1, 'grass-tuft'], [2, 'flower']] },
+  { col: 69, row: 3, items: [[0, 'flower'], [1, 'bush'], [2, 'flower'], [3, 'flower']] },
+  { col: 70, row: 5, items: [[0, 'bush'], [1, 'flower'], [2, 'flower']] }, // frames the King's far bank
+];
+// Water dressing also clusters (lily-pad clumps + cattail stands), thickening east.
+const waterClusters: Cluster[] = [
+  { col: 12, row: 7, items: [[0, 'lily-pad']] },
+  { col: 24, row: 1, items: [[0, 'lily-pad'], [2, 'lily-pad']] },
+  { col: 33, row: 7, items: [[0, 'lily-pad'], [1, 'cattail']] },
+  { col: 44, row: 1, items: [[0, 'cattail'], [1, 'lily-pad'], [3, 'lily-pad']] },
+  { col: 50, row: 7, items: [[0, 'lily-pad'], [2, 'cattail'], [3, 'lily-pad']] },
+  { col: 58, row: 1, items: [[0, 'cattail'], [1, 'cattail'], [3, 'lily-pad']] },
+  { col: 63, row: 7, items: [[0, 'lily-pad'], [1, 'cattail'], [2, 'lily-pad']] },
+];
+for (const { col, row, items } of [...deckClusters, ...waterClusters]) {
+  for (const [dCol, kind] of items) beds.push({ kind, col: col + dCol, row });
 }
 // Far-bank tree grove — the lush garden the bridge arrives into. tree-oak is
 // tall + collides only on its trunk cell; placed on the impassable water rows at
