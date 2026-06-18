@@ -45,6 +45,12 @@ export interface NpcDefinition {
   // Set `intensity` lower to read as "fading" (Old Man → Fading metaphor).
   // Set `tier: 2` to make this NPC's light dormant until the player has the Ember.
   lightOverride?: LightSpec;
+  // FB-19: when true this NPC is wordless — it has awareness (turn-toward) and a
+  // light, but carries no dialogue and must NOT show the "Space/Tap to talk"
+  // affordance. The Heart Bridge King is the canonical case: implying he can be
+  // spoken to would break the blessed wordless design (Decision 1). The
+  // interaction system skips `silent` NPCs entirely (no prompt, no interaction).
+  silent?: boolean;
 }
 
 export interface DialogueChoice {

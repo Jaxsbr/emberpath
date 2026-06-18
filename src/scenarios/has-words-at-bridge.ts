@@ -7,7 +7,7 @@ export const hasWordsAtBridge: Scenario = {
   id: 'has-words-at-bridge',
   description: 'Pip has the Ember and the Word, at the start of the Heart Bridge.',
   areaId: 'heart-bridge',
-  position: { col: 1, row: 2 }, // heart-bridge playerSpawn
+  position: { col: 1, row: 4 }, // heart-bridge playerSpawn (FB-19 deck mid-row)
   flags: {
     has_ember_mark: true,
     has_word: true,

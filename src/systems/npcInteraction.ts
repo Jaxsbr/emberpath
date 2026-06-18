@@ -107,6 +107,10 @@ export class NpcInteractionSystem {
     const live = this.getLivePositions?.();
     const npcOffset = TILE_SIZE / 2;
     for (const npc of this.npcs) {
+      // FB-19: wordless NPCs (the Heart Bridge King) never offer the talk
+      // affordance — skip them so no "Space to talk" prompt shows and a
+      // tap/Space near them can't open a (nonexistent) dialogue.
+      if (npc.silent) continue;
       const livePos = live?.get(npc.id);
       const npcCenterX = livePos ? livePos.x : npc.col * TILE_SIZE + npcOffset;
       const npcCenterY = livePos ? livePos.y : npc.row * TILE_SIZE + npcOffset;

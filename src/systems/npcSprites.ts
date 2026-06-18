@@ -12,6 +12,12 @@ export const NPC_SPRITES: Record<string, NpcSpriteDefinition> = {
   'wren': { idleFrameCount: 4, walkFrameCount: 4 },
   'driftwood': { idleFrameCount: 4, walkFrameCount: 4 },
   'quill': { idleFrameCount: 4, walkFrameCount: 4 },
+  // FB-19: the antlered King at the Heart Bridge crossing. Stationary (wanderRadius
+  // 0) but awareness-enabled so he turns to face Pip; the idle/walk frames are the
+  // same standing pose per direction (a regal figure holds still), so the felt
+  // motion is the turn-toward, not a breathing loop. 8 directional rotations from
+  // PixelLab (create_character) plumbed into assets/npc/golden-stag/.
+  'golden-stag': { idleFrameCount: 4, walkFrameCount: 4 },
 };
 
 export function hasNpcSprite(id: string): boolean {
