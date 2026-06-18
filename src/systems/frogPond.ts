@@ -59,7 +59,7 @@ export class FrogPondSystem {
 
   // Pre-bake a small storybook frog peeking from the water: a moss-green dome
   // with two bulging eyes on top, deep-umber outline (never pure black, per the
-  // art bible), a lighter throat. Natural greens only — gold is the sacred
+  // art style canon), a lighter throat. Natural greens only — gold is the sacred
   // colour and is never spent on ambient critters.
   private ensureTexture(): void {
     if (this.scene.textures.exists(FROG_TEX_KEY)) return;

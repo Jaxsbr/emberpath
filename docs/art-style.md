@@ -44,6 +44,54 @@ Rule: **a frame should read in sepia first, then color second**. If chroma is re
 - Faces are kind and slightly weary. Eyes carry the story — get those right at small scale.
 - **Suggested sprite size:** 48–64 px tall for heroes (≈3:2 head-to-body), 24–32 px tile world, 4 facing directions + idle/walk/talk/cast.
 
+## Perspective — 3/4 oblique (top + exactly ONE front face)
+
+emberpath is **3/4 oblique projection**: a ~45° downward camera that shows the **top
+AND exactly one front face** of an object at once (the Pokémon/Stardew/Zelda look).
+This is foundational — every asset and every placement obeys it. Two failure modes,
+reject on sight:
+
+- **Pure overhead / true top-down (zero sides) — WRONG.** A tree as a flat canopy
+  "rosette", a stone as a flat blob. A correct object shows its top **plus** one near
+  (front) face.
+- **Isometric (two+ side faces / cube look) — WRONG.** A 3-sided rock; a house showing
+  two walls. Multiple faces float against the 3/4 plane.
+- **The test:** can I see the top and *exactly one* front face? Yes → correct. No front
+  face, or more than one → reject and regenerate.
+- **Buildings = a FRONT ELEVATION:** front-on, symmetric left-to-right, **one** flat
+  front wall, gable roof as a **single front-facing slope, no diagonal ridge**. The
+  recurring iso trap is the model rotating the building into a 3D dollhouse (a second
+  side wall + a corner-to-corner ridge appear). Benchmark every building against
+  `assets/objects/ashen-isle/cottage.png`.
+- **Trees:** round canopy from above **with a small trunk stub** at the base (the stub
+  *is* the front face — never omit it).
+- One consistent light direction across all assets; no per-asset baked shadow implying a
+  different camera.
+
+Full reasoning, per-element rules, and PixelLab generation recipes (incl. the
+conifer/pine trap and the building recipe) are in **`docs/art-topdown-guide.md`**.
+The recurring-failure tests are enforced by the `emberpath-art-review` gate via
+**`docs/solutions/`** — see [`art/3-4-oblique-not-iso`](solutions/art/3-4-oblique-not-iso.md).
+
+## Clustering & composition — thicket with clearings, not a sprinkle
+
+Reference scenes read as a **thicket with clearings**, never "one tree, gap, one tree"
+on a lawn. Cohesion is the whole point.
+
+- Plant trees in **groups of 2–4** (up to 3–7), touching/overlapping canopies, **mixed
+  types**; pack **undergrowth densely around and between** (bush/shrub/grass/rock/stump).
+- **Negative space is deliberate** — keep ~40–60% of ground clear in clearings (which
+  double as the lit path / play space); don't fill every tile, don't sprinkle evenly.
+- **Edges densest** (a treeline framing the map), thinning toward the walkable centre.
+- Artificial things (paths, fences, planted rows) get **regular** spacing; nature gets
+  **irregular** — the contrast reads as wilderness vs. civilisation.
+- **Sense of place (Jaco #482):** a scene must feel lived-in, not a dev tutorial. A
+  building implies context (a worn path to the door, a tended patch, nearby wilderness);
+  a fence encloses *something* and connects — never a lone segment in open grass.
+
+See [`solutions/art/cluster-not-scatter`](solutions/art/cluster-not-scatter.md) and
+`docs/art-topdown-guide.md`.
+
 ## Environments
 
 Recurring motifs from the spreads, all worth tilesetting:
