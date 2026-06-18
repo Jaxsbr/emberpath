@@ -169,9 +169,12 @@ const WARMING_NPC_IDS = ['wren', 'old-man'] as const;
 // (above the 0.40 floor).
 const DESAT_REDUCTION_PER_WARMING = 0.15;
 const DESAT_FLOOR = 0.4;
-// US-HB2: number of crossing beats on the heart bridge (3 mid-span bands + the
-// far-end seal). At the final beat the desat lift reaches 1 → full colour.
-const HEART_BRIDGE_CROSSING_BEATS = 4;
+// US-HB2 / FB-19: number of crossing beats on the heart bridge. The span was
+// tripled (Jaco #1052, Option A "the bridge that blooms") so the colour-return
+// is paced over more, smaller steps — 7 mid-span bands + the far-end seal — and
+// the grey lifts gradually as Pip walks the long deck rather than in big jumps.
+// At the final beat the desat lift reaches 1 → full colour.
+const HEART_BRIDGE_CROSSING_BEATS = 8;
 // Autosave write throttle. The world-walk-frame autosave path returns before any
 // localStorage IO when either guard fails — Learning EP-01 (loop invariants):
 // no per-frame JSON.stringify, no per-frame setItem.

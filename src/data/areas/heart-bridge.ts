@@ -27,6 +27,7 @@
 
 import {
   AreaDefinition,
+  NpcDefinition,
   StoredTile,
   TILE_FLOOR,
   deriveTerrainFromTileMap,
@@ -37,40 +38,129 @@ import { ObjectInstance } from '../../maps/objects';
 
 const F = TILE_FLOOR;
 
-// 26 wide × 5 tall. Walkable corridor is the middle three rows (1,2,3); rows 0
-// and 4 are walled by parapet stones below so the span reads as a bridge and the
-// player can only walk straight across. All-floor base — the parapet is carried
-// by the placed object layer, not the terrain (so the floor renders as clean
-// uniform stone).
-const HEART_BRIDGE_COLS = 26;
-const HEART_BRIDGE_ROWS = 5;
+// FB-19 redesign (Jaco #1052, GATE-1 Option A "the bridge that blooms", span
+// TRIPLED): a long stone deck carried ACROSS WATER. 78 wide × 9 tall — three
+// horizontal bands top-to-bottom: open water (rows 0–1), the walled stone deck
+// (parapet row 2 · walkable rows 3–5 · parapet row 6), open water again (rows
+// 7–8). The walkable corridor is the middle three rows (3,4,5); the player can
+// only walk straight across, west→east. All-floor authoring base — the water is
+// painted into the terrain vertex grid below and the parapet is carried by the
+// placed object layer, so the deck itself renders as clean stone.
+const HEART_BRIDGE_COLS = 78;
+const HEART_BRIDGE_ROWS = 9;
+// Deck geometry (single source of truth for parapet / beds / triggers / spawn).
+const DECK_TOP_PARAPET = 2;
+const DECK_BOT_PARAPET = 6;
+const DECK_ROW_MID = 4; // walkable rows are 3,4,5; Pip spawns and the figure stands on 4
 const heartBridgeTileMap: StoredTile[][] = Array.from({ length: HEART_BRIDGE_ROWS }, () =>
   Array.from({ length: HEART_BRIDGE_COLS }, () => F as StoredTile),
 );
 
+// ───── Water flanks (terrain vertex paint) ─────
+// Base terrain is stone; the top two and bottom two cell-rows are flipped to
+// `water` so the deck reads as a bridge OVER water. A cell is impassable water
+// only when all four of its corner vertices are water (fog-marsh pattern), so we
+// paint vertex rows 0–2 (north) and 7–9 (south): cell-rows 0,1 and 7,8 become
+// full water, and the parapet rows 2 and 6 get a one-sided water vertex → the
+// Wang resolver renders a stone↔water shore right at the deck edge. The parapet
+// objects still carry collision, so the shore is purely visual.
+function paintWater(terrain: import('../../maps/terrain').TerrainId[][]): import('../../maps/terrain').TerrainId[][] {
+  const lastV = HEART_BRIDGE_COLS; // vertex cols 0..COLS
+  for (const vr of [0, 1, 2, 7, 8, 9]) {
+    for (let vc = 0; vc <= lastV; vc++) terrain[vr][vc] = 'water';
+  }
+  return terrain;
+}
+
 // ───── Parapet (impassable stone edge) ─────
-// A continuous run of weathered umber stone along the top (row 0) and bottom
-// (row 4) edges. marsh-stone is palette-cohesive with the fog-marsh-floor-stone
-// floor; collision keys each anchor cell, so the corridor (rows 1–3) stays open
-// while the edges are walled. Placeholder — the real scarred-stone parapet is a
-// Track A art slice.
+// A continuous run of weathered umber stone along the deck's north (row 2) and
+// south (row 6) edges, walling the walkable corridor (rows 3–5) off from the
+// water. marsh-stone is palette-cohesive with the fog-marsh-floor-stone deck and
+// collision keys each anchor cell.
 const parapet: ObjectInstance[] = [];
 for (let c = 0; c < HEART_BRIDGE_COLS; c++) {
-  parapet.push({ kind: 'marsh-stone', col: c, row: 0 });
-  parapet.push({ kind: 'marsh-stone', col: c, row: HEART_BRIDGE_ROWS - 1 });
+  parapet.push({ kind: 'marsh-stone', col: c, row: DECK_TOP_PARAPET });
+  parapet.push({ kind: 'marsh-stone', col: c, row: DECK_BOT_PARAPET });
+}
+
+// ───── Blooming beds (the spatial half of "the bridge that blooms") ─────
+// Passable groundcover planted along the deck edges (rows 3 & 5) and floating in
+// the water flanks, on a WEST→EAST gradient: sparse, grey, scrubby groundcover at
+// the near end where the world is still Fading, thickening into dense flower/bush
+// clusters and a far-bank tree grove by the time Pip reaches the figure. Paired
+// with the colour-return overlay (which lifts the grey quarter by quarter as she
+// walks), the deck literally becomes a garden across the crossing. Clustered, not
+// scattered, per directive #344. All these kinds are passable, so they frame the
+// path without ever blocking it; the trees sit on the (already impassable) water
+// rows as a backdrop grove.
+const beds: ObjectInstance[] = [];
+// Placement is by hand-authored CLUSTERS, not an even per-tile fill — the binding
+// cluster-not-scatter canon (`docs/solutions/art/cluster-not-scatter.md`, Jaco
+// #344/#482): groundcover lives in irregular mixed clumps of 2–4 with undergrowth
+// packed around, separated by deliberate open clearings, NEVER a regular sprinkle.
+// Each cluster anchors at a col on one deck edge (row 3 or 5 — row 4 stays the open
+// walk path) and drops a packed run of mixed kinds. Density RAMPS west→east: the
+// austere near end has a few lonely tufts and lots of bare grey deck between them;
+// the far bank is dense overlapping flower/bush/tuft clusters framing the King —
+// so the deck reads as a garden BLOOMING into being as Pip crosses (paired with the
+// quarter-by-quarter colour-return overlay). All kinds are passable: they frame the
+// path, never block it. Deterministic (no Math.random) so captures/diffs are stable.
+type Bed = ObjectInstance['kind'];
+interface Cluster { col: number; row: number; items: [number, Bed][]; } // items: [dCol, kind]
+const deckClusters: Cluster[] = [
+  // WEST — austere: a couple of lonely tufts, wide bare-deck clearings between.
+  { col: 8, row: 5, items: [[0, 'grass-tuft']] },
+  { col: 15, row: 3, items: [[0, 'grass-tuft'], [1, 'grass-tuft']] },
+  { col: 22, row: 5, items: [[0, 'grass-tuft']] },
+  // MID — tufts giving way to the first flowers; small mixed clumps of 2–3.
+  { col: 28, row: 3, items: [[0, 'grass-tuft'], [1, 'flower']] },
+  { col: 34, row: 5, items: [[0, 'flower'], [1, 'grass-tuft'], [2, 'flower']] },
+  { col: 41, row: 3, items: [[0, 'grass-tuft'], [1, 'flower'], [2, 'bush']] },
+  { col: 46, row: 5, items: [[0, 'flower'], [1, 'flower']] },
+  // FAR — the garden: dense overlapping flower+bush+tuft clusters on both edges,
+  // tightening toward the far bank so the bloom peaks around the King.
+  { col: 52, row: 3, items: [[0, 'bush'], [1, 'flower'], [2, 'flower'], [3, 'grass-tuft']] },
+  { col: 53, row: 5, items: [[0, 'flower'], [1, 'bush'], [2, 'flower']] },
+  { col: 58, row: 3, items: [[0, 'flower'], [1, 'bush'], [2, 'flower']] },
+  { col: 59, row: 5, items: [[0, 'grass-tuft'], [1, 'flower'], [2, 'bush'], [3, 'flower']] },
+  { col: 64, row: 3, items: [[0, 'bush'], [1, 'flower'], [2, 'flower'], [3, 'bush']] },
+  { col: 64, row: 5, items: [[0, 'flower'], [1, 'grass-tuft'], [2, 'flower']] },
+  { col: 69, row: 3, items: [[0, 'flower'], [1, 'bush'], [2, 'flower'], [3, 'flower']] },
+  { col: 70, row: 5, items: [[0, 'bush'], [1, 'flower'], [2, 'flower']] }, // frames the King's far bank
+];
+// Water dressing also clusters (lily-pad clumps + cattail stands), thickening east.
+const waterClusters: Cluster[] = [
+  { col: 12, row: 7, items: [[0, 'lily-pad']] },
+  { col: 24, row: 1, items: [[0, 'lily-pad'], [2, 'lily-pad']] },
+  { col: 33, row: 7, items: [[0, 'lily-pad'], [1, 'cattail']] },
+  { col: 44, row: 1, items: [[0, 'cattail'], [1, 'lily-pad'], [3, 'lily-pad']] },
+  { col: 50, row: 7, items: [[0, 'lily-pad'], [2, 'cattail'], [3, 'lily-pad']] },
+  { col: 58, row: 1, items: [[0, 'cattail'], [1, 'cattail'], [3, 'lily-pad']] },
+  { col: 63, row: 7, items: [[0, 'lily-pad'], [1, 'cattail'], [2, 'lily-pad']] },
+];
+for (const { col, row, items } of [...deckClusters, ...waterClusters]) {
+  for (const [dCol, kind] of items) beds.push({ kind, col: col + dCol, row });
+}
+// Far-bank tree grove — the lush garden the bridge arrives into. tree-oak is
+// tall + collides only on its trunk cell; placed on the impassable water rows at
+// the east end so it never touches the walkway, reading as a grove flanking the
+// far shore behind the figure.
+for (const [col, row] of [
+  [70, 0], [73, 1], [76, 0],
+  [70, 8], [73, 7], [76, 8],
+] as [number, number][]) {
+  beds.push({ kind: 'tree-oak', col, row });
 }
 
 // ───── The figure at the crossing (US-HB3, Decision 1 = FIGURE PRESENT) ─────
-// A wordless regal golden stag standing at the FAR THIRD of the span (cols 18–20),
-// before the seal at col 22 — so Pip walks up the bridge, meets the figure, and the
-// crossing seals just beyond it. It is a placed OBJECT, not an NPC: no dialogue, no
-// "talk" prompt, no interaction — present, not conversational, exactly as Decision 1
-// blessed it ("someone meeting her there", wordless). 3×3 footprint reads slightly
-// larger than Pip; `tall` Y-sort + a single base-cell collision let her step past it
-// (rows 1–2 stay walkable under the body) to reach the seal. No gospel text is added
-// here — what the figure DOES (the Fading drawn out, substitution) is Decisions 2–3,
-// still reserved for Jaco and not in this slice.
-const figure: ObjectInstance[] = [{ kind: 'golden-stag', col: 18, row: 1 }];
+// The wordless regal King — an antlered, cloaked figure — stands near the FAR end
+// of the long span (col 70), before the seal at col 74, so Pip walks the whole
+// crossing up to him. FB-19 (Jaco #1052) gives him the engine's NPC AWARENESS:
+// he is now an NPC (not a static object), stationary (wanderRadius 0) but with an
+// awarenessRadius so he TURNS to face Pip as she approaches — present and
+// attentive, still WORDLESS (Decision 1 preserved; no dialogue, no gospel line —
+// that stays Jaco's to bless). A warm lightOverride pools a benevolent golden key-
+// light on him so he reads kind, not flat/menacing (#102). See `figureNpc` below.
 
 // ───── The closing seal scene (US-HB3 pt2 — Decisions 2 + 3, both = A) ─────
 // The emotional climax (master-prd #4: "the most felt, not the longest"). It plays
@@ -124,10 +214,14 @@ const bridgeSealedScene: import('./types').StorySceneDefinition = {
 // NOT here — this slice is the pacing mechanic only. Each band is gated so it
 // fires once per fresh crossing (re-cross only happens after a Reset clears
 // both `atoned` and the counter).
-const crossingBands: TriggerDefinition[] = [6, 12, 18].map((col, i) => ({
+// FB-19: 7 bands evenly spaced across the tripled deck (was 3 on the short span).
+// Each increments `heart_bridge_crossing`; with the far-end seal that's 8 beats
+// (HEART_BRIDGE_CROSSING_BEATS = 8), so the grey lifts in small gradual steps over
+// the long walk instead of a few big jumps.
+const crossingBands: TriggerDefinition[] = [9, 18, 27, 36, 45, 54, 63].map((col, i) => ({
   id: `heart-bridge-band-${i + 1}`,
   col,
-  row: 1,
+  row: 3,
   width: 1,
   height: 3,
   type: 'thought' as const,
@@ -149,8 +243,8 @@ const triggers: TriggerDefinition[] = [
   ...crossingBands,
   {
     id: 'heart-bridge-crossed',
-    col: 22,
-    row: 1,
+    col: 74,
+    row: 3,
     width: 2,
     height: 3,
     type: 'story',
@@ -161,6 +255,30 @@ const triggers: TriggerDefinition[] = [
     repeatable: false,
   },
 ];
+
+// ───── The figure as an NPC (FB-19, Jaco #1052) ─────
+// The antlered King, converted from a static prop to an NPC so he inherits the
+// engine's awareness behaviour: stationary (wanderRadius 0) but, once Pip steps
+// inside awarenessRadius, he TURNS to face her (npcBehavior `aware` state). Still
+// WORDLESS — no dialogue node is wired, so there is no "talk" prompt and no
+// spoken line (Decision 1 preserved; any words remain Jaco's to bless). The warm
+// lightOverride pools a benevolent golden key-light on him (brighter + wider than
+// the baseline NPC light) so he reads kind across the long, still-grey approach.
+const figureNpc: NpcDefinition = {
+  id: 'antlered-king',
+  name: 'The King',
+  col: 70,
+  row: DECK_ROW_MID,
+  color: 0xe0b15a,
+  sprite: 'golden-stag',
+  wanderRadius: 0,
+  awarenessRadius: 5,
+  lightOverride: { radius: 220, intensity: 0.9, tier: 1 },
+  // Wordless (Decision 1): he turns to face Pip but is never spoken to — no
+  // "Space to talk" prompt, no dialogue. The grace beat is the colour-return and
+  // the lifting of the grey, not a line of text.
+  silent: true,
+};
 
 export const heartBridge: AreaDefinition = {
   id: 'heart-bridge',
@@ -182,17 +300,20 @@ export const heartBridge: AreaDefinition = {
   tileset: 'fog-marsh-floor-stone',
   decorationsTileset: 'tiny-town',
   map: heartBridgeTileMap,
-  terrain: deriveTerrainFromTileMap(heartBridgeTileMap, 'stone'),
+  // Stone deck with the top/bottom cell-rows painted to water (the bridge spans
+  // open water). The Wang resolver renders fog-marsh-floor-water on the water
+  // vertices and a stone↔water shore at the deck edge.
+  terrain: paintWater(deriveTerrainFromTileMap(heartBridgeTileMap, 'stone')),
   // Map has no walls, so deriveObjectsFromTileMap returns nothing — only the
-  // hand-authored parapet appears.
-  objects: [...deriveObjectsFromTileMap(heartBridgeTileMap, 'wall-stone'), ...parapet, ...figure],
-  npcs: [],
+  // hand-authored parapet + blooming beds appear (the figure is now an NPC).
+  objects: [...deriveObjectsFromTileMap(heartBridgeTileMap, 'wall-stone'), ...parapet, ...beds],
+  npcs: [figureNpc],
   props: [],
   decorations: [],
   triggers,
   dialogues: {},
   storyScenes: { 'bridge-sealed': bridgeSealedScene },
-  playerSpawn: { col: 1, row: 2 },
+  playerSpawn: { col: 1, row: DECK_ROW_MID },
   exits: [
     {
       // Far (east) end — onward to HOME (bearing-fruit routing, Jaco 2026-06-16:
@@ -206,7 +327,7 @@ export const heartBridge: AreaDefinition = {
       // that area existing (later track).
       id: 'heart-bridge-onward',
       col: HEART_BRIDGE_COLS - 1,
-      row: 1,
+      row: 3,
       width: 1,
       height: 3,
       destinationAreaId: 'ashen-isle',
