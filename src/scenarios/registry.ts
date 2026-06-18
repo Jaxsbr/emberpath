@@ -3,6 +3,7 @@ import { atOldManCottage } from './at-old-man-cottage';
 import { emberInMarsh } from './ember-in-marsh';
 import { enteringBriar } from './entering-briar';
 import { hasWordsAtBridge } from './has-words-at-bridge';
+import { marshSurrender } from './marsh-surrender';
 import { trappedInMarsh } from './trapped-in-marsh';
 
 // Test-bench scenario registry. Add a new scenario when a phase ships so the
@@ -13,6 +14,7 @@ const scenarios: Record<string, Scenario> = {
   [emberInMarsh.id]: emberInMarsh,
   [enteringBriar.id]: enteringBriar,
   [hasWordsAtBridge.id]: hasWordsAtBridge,
+  [marshSurrender.id]: marshSurrender,
   [trappedInMarsh.id]: trappedInMarsh,
 };
 
