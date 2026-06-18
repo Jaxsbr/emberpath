@@ -306,9 +306,11 @@ const ashenFences: OInst[] = [
   ...fenceObjects(34, 45, 19, 31, [{ col: 34, row: 28 }]),
 ];
 
-// Dock signpost only — the trees moved to clustered groves below.
+// Wayfinding signposts (#47): the dock post (north coast, → Fog Marsh) and the
+// east-gate post on the approach to the Briar gate (exit zone col 49, rows 18-19).
 const ashenScenery: OInst[] = [
   { kind: 'sign-wood', col: 26, row: 5 },
+  { kind: 'sign-wood', col: 46, row: 19 },
 ];
 
 // ───── Tree groves (Jaco directives #344 + #346, 2026-06-14) ─────
@@ -1301,6 +1303,9 @@ export const ashenIsle: AreaDefinition = {
     // read as "go right" (Jaco, 2026-06-14); use an "↑" so the arrow IS the
     // correct direction the player must walk.
     { col: 26, row: 5, label: 'Fog Marsh ↑' },
+    // East-gate post — the Briar gate is east (col 49); the "→" IS the walk
+    // direction. Restored after an uncommitted-edit loss (2026-06-18).
+    { col: 46, row: 19, label: 'Briar Wood →' },
   ],
   // Distant smoke beacon (C6). The intro promises "Far away, smoke goes up into
   // the sky. Someone is out there." and the objective is "Find the smoke." — this
