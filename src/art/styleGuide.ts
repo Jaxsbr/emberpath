@@ -35,11 +35,17 @@ Lighting: one warm key (lantern, window, sunbeam) plus cool grey ambient. Chiaro
 Avoid: pure-black outlines, neon saturation, hard cel-shaded blocks; chibi proportions or anime sparkle eyes; glossy or metallic armor; clean vector tiles with no texture; high-frequency 8-bit "crunch" — this is painted pixel, not NES pixel.`;
 
 /**
- * Compose a generation-ready prompt by joining the project's base style prompt
- * with the per-asset subject and optional mood. Deterministic — order is
- * fixed and a single trailing newline is appended.
+ * Compose a generation-ready prompt from the per-asset subject (+ optional mood)
+ * and the project's base style codex. Deterministic — order is fixed and a single
+ * trailing newline is appended.
+ *
+ * SUBJECT LEADS (issue #28 finding): pixflux follows the subject reliably only
+ * when the subject is stated FIRST and the style guidance trails it. With the
+ * long style codex leading, the subject was ignored (a fox-kit + heron gift scene
+ * came back as generic human pilgrims). Stating the subject first — style after —
+ * lands on-spec AND on-style.
  */
 export function composeArtPrompt(subject: string, mood?: string): string {
-  const moodSegment = mood ? `\n\nMood: ${mood}` : '';
-  return `${STYLE_BASE_PROMPT}\n\nSubject: ${subject}${moodSegment}\n`;
+  const moodSegment = mood ? `\nMood: ${mood}` : '';
+  return `Subject: ${subject}${moodSegment}\n\nStyle guidance:\n${STYLE_BASE_PROMPT}\n`;
 }
