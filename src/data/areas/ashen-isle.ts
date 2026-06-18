@@ -173,29 +173,31 @@ function buildAshenMap(): StoredTile[][] {
   }
   m[19][9] = F;
 
-  // Old Man's cottage — rows 24-28 cols 38-42 WALL with door at (40, 28) FLOOR.
-  for (let r = 24; r <= 28; r++) {
-    for (let c = 38; c <= 42; c++) {
+  // Old Man's cottage — true 2× (#153, FB-6/FB-8). Body rows 21-27 cols 36-43
+  // WALL; the front-wall base row 28 stays FLOOR — the walkable BLUE base Pip
+  // steps onto, with the door at (40, 28) = the Old Man's pose cell. Stepping
+  // the base row fires the see-through behind-fade (GameScene).
+  for (let r = 21; r <= 27; r++) {
+    for (let c = 36; c <= 43; c++) {
       m[r][c] = W;
     }
   }
-  m[28][40] = F;
+  for (let c = 36; c <= 43; c++) m[28][c] = F;
 
-  // Old Man's fenced yard — perimeter at rows 23-31 cols 35-44 with gates at
-  // (39, 23) north and (39, 31) south. The south gate (US-78) opens a path
-  // from below so the player can reach the Old Man without trekking all the
-  // way around the cottage from the north — a recent map pass had walled him
-  // in entirely.
-  for (let c = 35; c <= 44; c++) {
-    m[23][c] = W;
+  // Old Man's fenced yard — widened to rows 19-31 cols 34-45 (#153) so the 2×
+  // cottage sits inside with walkable margins: Pip can round the house and the
+  // see-through fade fires from behind too — resolving #119 by design. A single
+  // west gate at (34, 28), level with the door, so the shifted east branch path
+  // leads straight in to the front step.
+  for (let c = 34; c <= 45; c++) {
+    m[19][c] = W;
     m[31][c] = W;
   }
-  for (let r = 24; r <= 30; r++) {
-    m[r][35] = W;
-    m[r][44] = W;
+  for (let r = 20; r <= 30; r++) {
+    m[r][34] = W;
+    m[r][45] = W;
   }
-  m[23][39] = F;
-  m[31][39] = F;
+  m[28][34] = F;
 
   return m;
 }
@@ -267,19 +269,13 @@ function fenceObjects(
   return out;
 }
 
-// Two cohesive cottages (PixelLab, 2026-06-14) replace the old per-tile Kenney
-// house blocks (Jaco: "our house is a joke"). Each is ONE 4×4 cottage image
-// (`cottage` kind) with collision laid as `collision-block` cells under the
-// upper body (roof + walls); the bottom front/door row is left walkable so the
-// player walks right up to the doorway — and the Old Man still poses in his open
-// doorway at (40,28). Object collision keys the anchor cell only, hence the
-// explicit collision-block grid rather than relying on the cottage footprint.
-function cottage(anchorCol: number, anchorRow: number): OInst[] {
-  return [
-    ...rectObjects(anchorCol, anchorCol + 3, anchorRow, anchorRow + 2, 'collision-block'),
-    { kind: 'cottage', col: anchorCol, row: anchorRow },
-  ];
-}
+// Cohesive cottages (PixelLab, 2026-06-14) replace the old per-tile Kenney house
+// blocks (Jaco: "our house is a joke"). Both the player's and the Old Man's home
+// are now true 2× cottages (`cottageLarge` below); collision is laid as explicit
+// `collision-block` cells under the upper body (roof + walls) because object
+// collision keys the anchor cell only, while the bottom front/door row is left
+// walkable so the player walks right up to the doorway — the Old Man still poses
+// in his open doorway at (40,28).
 
 // True 2× cottage (FB-6). 8×8 footprint: the RED foundation is the top 7 rows
 // (collision-block grid), the bottom front-wall row stays walkable — the BLUE
@@ -297,17 +293,17 @@ const ashenBuildings: OInst[] = [
   // Player's cottage — true 2× (FB-6). Anchored (6,8) → body cols 6-13 rows 8-14,
   // walkable front base row 15 with the door at (10,15). Sits in the widened west yard.
   ...cottageLarge(6, 8),
-  ...cottage(39, 25), // Old Man's cottage; doorway lands at his pose cell (40,28)
+  // Old Man's cottage — true 2× (#153). Anchored (36,21) → body cols 36-43 rows
+  // 21-27, walkable front base row 28 with the door at (40,28) = his pose cell.
+  ...cottageLarge(36, 21),
 ];
 
 const ashenFences: OInst[] = [
   // Player's yard — widened for the 2× cottage (rows 6-19 cols 4-16), gate at (9,19).
   ...fenceObjects(4, 16, 6, 19, [{ col: 9, row: 19 }]),
-  // Old Man's yard (rows 23-31 cols 35-44), gates north (39,23) + south (39,31).
-  ...fenceObjects(35, 44, 23, 31, [
-    { col: 39, row: 23 },
-    { col: 39, row: 31 },
-  ]),
+  // Old Man's yard — widened for the 2× cottage (rows 19-31 cols 34-45), single
+  // west gate at (34,28) level with the door (#153).
+  ...fenceObjects(34, 45, 19, 31, [{ col: 34, row: 28 }]),
 ];
 
 // Dock signpost only — the trees moved to clustered groves below.
@@ -324,7 +320,7 @@ const ashenScenery: OInst[] = [
 // cell (anchor +1,+3), Y-sorts against Pip, and collides on the trunk cell only
 // so she walks around and under the canopy. Trunk cells + impassable undergrowth
 // are kept OFF every path (lane cols 24-25; west branch row 20 cols 9-23; east
-// branch row 22 cols 26-41), both fenced yards, NPC poses (Wren 22,18 / Old Man
+// branch row 28 cols 26-40), both fenced yards, NPC poses (Wren 22,18 / Old Man
 // 40,28 / Driftwood 32,6), the dock (rows 0-3), the east brambles (47-49 rows
 // 17-19), and the spawn (9,20). Groves frame the map edges; the lit lane stays a
 // clearing. Anchor (col,row) → canopy rows row..row+2, trunk base cell (col+1,
@@ -351,9 +347,9 @@ const ashenGroves: OInst[] = [
   // SE, left of the Old Man's yard
   { kind: 'tree-oak', col: 27, row: 30 }, { kind: 'tree-pine', col: 30, row: 30 },
   { kind: 'tree-oak', col: 29, row: 32 },
-  // SE, right of the Old Man's yard
-  { kind: 'tree-pine', col: 45, row: 27 }, { kind: 'tree-oak', col: 46, row: 29 },
-  { kind: 'tree-pine', col: 45, row: 31 },
+  // SE, right of the Old Man's yard (#153: nudged +1 east off the widened col-45 fence)
+  { kind: 'tree-pine', col: 46, row: 27 }, { kind: 'tree-oak', col: 47, row: 29 },
+  { kind: 'tree-pine', col: 46, row: 31 },
 ];
 
 // Dense undergrowth packed around each grove's trunks (#344 — "shrubs are dense
@@ -389,10 +385,10 @@ const ashenUndergrowth: OInst[] = [
   { kind: 'bush', col: 27, row: 33 }, { kind: 'grass-tuft', col: 29, row: 34 },
   { kind: 'flower', col: 31, row: 34 }, { kind: 'bush', col: 32, row: 33 },
   { kind: 'rock', col: 33, row: 34 }, { kind: 'grass-tuft', col: 28, row: 35 },
-  // SE-right grove (trunks ~46,30 / 48,32 / 46,34)
-  { kind: 'bush', col: 45, row: 31 }, { kind: 'grass-tuft', col: 47, row: 32 },
+  // SE-right grove (trunks ~47,30 / 48,32 / 47,34; #153 nudged off the col-45 fence)
+  { kind: 'bush', col: 47, row: 31 }, { kind: 'grass-tuft', col: 47, row: 32 },
   { kind: 'flower', col: 46, row: 33 }, { kind: 'bush', col: 48, row: 34 },
-  { kind: 'rock', col: 46, row: 28 }, { kind: 'grass-tuft', col: 45, row: 35 },
+  { kind: 'rock', col: 47, row: 28 }, { kind: 'grass-tuft', col: 46, row: 35 },
 ];
 
 // ───── Decoration density pass (2026-06-14, Jaco directive #332) ─────
@@ -404,7 +400,7 @@ const ashenUndergrowth: OInst[] = [
 // passable; `rock` is impassable but sits BESIDE the paths in open grass (never
 // on a path cell, gate, door approach, or fence), so it adds texture without
 // ever blocking a route. Cells checked against: main lane cols 24-25 rows 4-36,
-// west branch row 20 cols 9-23, east branch row 22 cols 26-41, both fenced yards.
+// west branch row 20 cols 9-23, east branch row 28 cols 26-40, both fenced yards.
 const ashenDressing: OInst[] = [
   // Boulders beside the path edges + a couple as open-grass landmarks.
   { kind: 'rock', col: 23, row: 8 },
@@ -414,7 +410,7 @@ const ashenDressing: OInst[] = [
   { kind: 'rock', col: 8, row: 21 },
   { kind: 'rock', col: 22, row: 21 },
   { kind: 'rock', col: 30, row: 23 },
-  { kind: 'rock', col: 37, row: 21 },
+  { kind: 'rock', col: 29, row: 27 }, // #153: was (37,21) — now under the 2× cottage; moved beside the row-28 branch
   { kind: 'rock', col: 45, row: 33 },
   // Grass tufts — fill the open bands (NW, central, around both yards, south).
   { kind: 'grass-tuft', col: 3, row: 6 },
@@ -430,8 +426,8 @@ const ashenDressing: OInst[] = [
   { kind: 'grass-tuft', col: 30, row: 18 },
   { kind: 'grass-tuft', col: 20, row: 28 },
   { kind: 'grass-tuft', col: 16, row: 26 },
-  { kind: 'grass-tuft', col: 34, row: 26 },
-  { kind: 'grass-tuft', col: 45, row: 28 },
+  { kind: 'grass-tuft', col: 32, row: 24 }, // #153: was (34,26) — off the widened west fence
+  { kind: 'grass-tuft', col: 47, row: 27 }, // #153: was (45,28) — off the widened east fence
   { kind: 'grass-tuft', col: 37, row: 33 },
   { kind: 'grass-tuft', col: 33, row: 29 },
   { kind: 'grass-tuft', col: 8, row: 34 },
@@ -520,7 +516,7 @@ const ashenEastBrambles: import('../../maps/objects').ObjectInstance[] = [
 // alone (single persisted flag → robust live re-eval on flag change and on
 // scene re-entry) so the world visibly answers the change in Pip, not just the
 // dialogue. Cells are open yard/clearing floor, clear of the cottage footprint
-// (anchor 39,25 → cols 39-42 rows 25-28) and Wren's wander core (22,18, r2).
+// (anchor 36,21 → body cols 36-43 rows 21-28) and Wren's wander core (22,18, r2).
 const ashenFruitBlooms: import('../../maps/objects').ObjectInstance[] = [
   // Old Man's yard — blooms flanking his doorway
   { kind: 'flower', col: 37, row: 30, condition: 'atoned == true' },
@@ -640,7 +636,10 @@ function buildAshenTerrain(): TerrainId[][] {
     paintCellSand(25, r);
   }
   for (let c = 9; c <= 23; c++) paintCellSand(c, 20);
-  for (let c = 26; c <= 41; c++) paintCellSand(c, 22);
+  // East branch (#153): shifted from row 22 to row 28 so it meets the Old Man's
+  // new west gate (34,28), level with his door, then a short tended walk crosses
+  // the front to the step at (40,28) — the bigger cottage gets a clean approach.
+  for (let c = 26; c <= 40; c++) paintCellSand(c, 28);
   // Cottage walkway (Jaco #482 — the home read as "marooned"). A short tended
   // path from the door (10,15) down through the yard to the gate (9,19), two
   // cells wide where the yard allows, so the homestead connects to the west
