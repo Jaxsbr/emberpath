@@ -1306,9 +1306,11 @@ export const ashenIsle: AreaDefinition = {
   // Distant smoke beacon (C6). The intro promises "Far away, smoke goes up into
   // the sky. Someone is out there." and the objective is "Find the smoke." — this
   // is that smoke: a plume rising from the open water just off the north dock
-  // (col 28, row 3 is impassable sea, east of the boats), so when the player
-  // reaches the dock they SEE the goal across the water and the C7 sign tells
-  // them the dock leads to Fog Marsh.
+  // (col 28, row 3 — east of the walkable beach lane, past the boats; the
+  // all-water impassable band is only rows 0-1, so the beacon is UI-projected
+  // from this tile to read as open water off the dock, NOT anchored on sea
+  // terrain), so when the player reaches the dock they SEE the goal across the
+  // water and the C7 sign tells them the dock leads to Fog Marsh.
   // Once Pip has received the Ember the smoke led her to (`has_ember_mark`), the
   // "Find the smoke" goal is met — so the plume and its off-screen homing arrow
   // stop showing on later returns to Ashen (FB-20). This matches the
