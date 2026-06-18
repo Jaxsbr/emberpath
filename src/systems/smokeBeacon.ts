@@ -357,6 +357,11 @@ export class SmokeBeaconSystem {
       p.prog += step * p.speed;
       if (p.prog >= 1) {
         p.prog -= 1;
+        // Reseed the horizontal offset each time a puff recycles to the base.
+        // The bitwise-OR is a cheap integer hash, NOT arithmetic: it coerces the
+        // two floats (`t*1000`, `phase*97`) to int32 and mixes them into one
+        // varied integer seed for rand(), so each recycled puff gets a fresh,
+        // decorrelated xoff rather than repeating the same drift.
         p.xoff = (this.rand((t * 1000) | (p.phase * 97)) - 0.5) * (TILE_SIZE * 0.5);
       }
       const prog = p.prog;
