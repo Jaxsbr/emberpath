@@ -1,4 +1,5 @@
 import { Scenario } from './types';
+import { atOldManCottage } from './at-old-man-cottage';
 import { emberInMarsh } from './ember-in-marsh';
 import { enteringBriar } from './entering-briar';
 import { hasWordsAtBridge } from './has-words-at-bridge';
@@ -8,6 +9,7 @@ import { trappedInMarsh } from './trapped-in-marsh';
 // headless harness (and, later, a human panel) can boot straight into it via
 // `?scenario=<id>`. Keep this the single place that lists them.
 const scenarios: Record<string, Scenario> = {
+  [atOldManCottage.id]: atOldManCottage,
   [emberInMarsh.id]: emberInMarsh,
   [enteringBriar.id]: enteringBriar,
   [hasWordsAtBridge.id]: hasWordsAtBridge,
