@@ -431,6 +431,68 @@ const deepForestTrees: ObjectInstance[] = [
   { kind: 'briar-dead-tree', col: 33, row: 25 },
 ];
 
+// 2c. forestFill (FB-17 #1062 — "the briar is not a dark forest yet … current
+//     trees 10%, desired 80%"). The deep-wall void beyond the thorn ring rendered as
+//     bare grey floor — a thin corridor with emptiness behind. Pack that void with a
+//     DENSE mixed canopy (briar-dead-tree + the two new overhead domes) plus a
+//     bramble-bush understorey, so the camera reads a CLOSED dark forest with only
+//     the lit trail threading through it. CRITICAL INVARIANT — reachability is
+//     provably UNCHANGED: every colliding cell is a WALL cell. A tree collides ONLY
+//     on its trunk-base (col+1,row+3); a bush only on its anchor (col,row). Both are
+//     gated through `isWallCell`, never floor/path. Deterministic sin-hash placement
+//     (no Math.random → stable across builds + headless SSR). Bases skip the ring-1
+//     thornSet so the canopy grows from BEHIND the visible wall inward (forest behind
+//     the thorns), with edge canopy overhanging the trail as walk-under shade (FB-11
+//     tree-transparency fades any tree that would hide Pip). Mirrors autonomy/
+//     briar-layout.cjs (every base/anchor on wall + BFS floor count unchanged).
+const isWallCell = (c: number, r: number): boolean =>
+  r >= 0 && r < ROWS && c >= 0 && c < COLS && briarTileMap[r][c] === W;
+const fhash = (a: number, b: number): number => {
+  const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return s - Math.floor(s);
+};
+const TREE_KINDS = ['briar-dead-tree', 'briar-tree-dome', 'briar-tree-cluster'] as const;
+const forestFill: ObjectInstance[] = [];
+const fillBases = new Set<string>();
+for (const t of [...deadTreeAnchors, ...deepForestTrees]) fillBases.add(`${t.col + 1},${t.row + 3}`);
+const FILL_STRIDE = 3;
+for (let gr = 0; gr <= ROWS; gr += FILL_STRIDE)
+  for (let gc = 0; gc <= COLS; gc += FILL_STRIDE) {
+    const anchorC = gc + (fhash(gc, gr) < 0.5 ? -1 : 0);
+    const anchorR = gr + (fhash(gr, gc) < 0.5 ? -1 : 0);
+    if (anchorC < 0 || anchorR < 0 || anchorC + 3 >= COLS || anchorR + 3 >= ROWS) continue;
+    const baseC = anchorC + 1;
+    const baseR = anchorR + 3;
+    if (!isWallCell(baseC, baseR)) continue; // trunk base must be wall → reachability unchanged
+    if (thornSet.has(`${baseC},${baseR}`)) continue; // grow from behind the visible ring-1 wall
+    let tooClose = false;
+    for (const k of fillBases) {
+      const [kc, kr] = k.split(',').map(Number);
+      if (Math.abs(kc - baseC) <= 1 && Math.abs(kr - baseR) <= 1) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (tooClose) continue;
+    fillBases.add(`${baseC},${baseR}`);
+    const kind = TREE_KINDS[Math.floor(fhash(baseC * 7 + 1, baseR * 13 + 1) * TREE_KINDS.length) % TREE_KINDS.length];
+    forestFill.push({ kind, col: anchorC, row: anchorR });
+  }
+// Understorey — bramble bushes on bare deep-wall cells to close the ground gaps
+// between the trunks. Anchor-cell-only collision, wall-gated. Skip the barrier rings
+// (already brambled) and tree trunk-bases; ~55% hash density keeps deliberate dark
+// negative space rather than a solid carpet.
+const backSet = new Set(backThorns.map((b) => `${b.col},${b.row}`));
+const bushFill: ObjectInstance[] = [];
+for (let r = 0; r < ROWS; r++)
+  for (let c = 0; c < COLS; c++) {
+    if (!isWallCell(c, r)) continue;
+    const key = `${c},${r}`;
+    if (thornSet.has(key) || backSet.has(key) || fillBases.has(key)) continue;
+    if (fhash(c * 17 + 3, r * 19 + 5) < 0.45) continue; // ~55% density, deterministic
+    bushFill.push({ kind: 'briar-thicket', col: c, row: r });
+  }
+
 // 3. Ground layer — passable twisted-roots inside the two drain pockets (the
 //    false-hope read), plus the inscribed stone's sprite+collision (kept in sync
 //    with briar-stone-1 at 8,15 inside drain-1).
@@ -473,7 +535,64 @@ const briarProps: ObjectInstance[] = [
 // backThorns first → rendered BEHIND the ring-1 thornBarrier (shared depth 2.5,
 // array order = draw order), so the back balls fill the front ring's corner gaps.
 // Props last → drawn over the barrier (and under Pip), so the lanterns/sign read.
-const briarObjects: ObjectInstance[] = [...backThorns, ...thornBarrier, ...deadTreeAnchors, ...deepForestTrees, ...briarGround, ...briarProps];
+// bushFill first (understorey, drawn behind the canopy), then the barrier rings,
+// then every tall tree (forestFill + anchors; tall objects Y-sort regardless of
+// array order). Props last so lanterns/sign read over the thicket.
+const briarObjects: ObjectInstance[] = [...bushFill, ...backThorns, ...thornBarrier, ...deadTreeAnchors, ...deepForestTrees, ...forestFill, ...briarGround, ...briarProps];
+
+// ───── Organic trodden trail (FB-17 pt3, Jaco #1060 option C) ─────
+// The "path + grass" trail painted on the VERTEX grid down the middle of the
+// carved serpentine corridor. The walls (thornBarrier) and collision are UNCHANGED
+// — briar-path is passable exactly like briar-floor, so the BFS reachability is
+// provably identical (no wall moves, no cell flips impassable). The route is laid
+// THROUGH the existing breadcrumb lantern coords (lanternCells / lightAnchors), so
+// the warm wayfinding pools sit on the trail with NO re-anchoring needed. Waypoints
+// step DIAGONALLY through each bend (king-move rasterisation below), so no hard 90°
+// corner is ever walked — the Wang floor↔path blend rounds the diagonal staircase
+// into a windy forest track. Mirrors autonomy/briar-layout.cjs (trail-all-floor +
+// contiguity + reachability-unchanged asserts).
+const TRAIL_WAYPOINTS: ReadonlyArray<readonly [number, number]> = [
+  [1, 15], [5, 15], [8, 14], [11, 16], [12, 13], [12, 9], [13, 6], //   A → riser1 → B
+  [16, 6], [19, 7], [22, 6], [23, 8], [23, 12], [24, 16], [23, 20], //  B → riser2 (long descent)
+  [24, 22], [28, 21], [31, 23], [34, 22], [34, 18], [34, 13], //        → C → riser3
+  [35, 11], [38, 11], [41, 11], [43, 11], //                            → D → east mouth
+];
+
+// King-move rasterise between consecutive waypoints → the set of trail cells. Each
+// stepped cell MUST be a carved floor cell (throws at import otherwise — a loud guard
+// the boot-smoke gate catches, so a mis-typed waypoint can never ship a path under a
+// thorn or off the corridor).
+const trailCells = new Set<string>();
+const addTrailCell = (c: number, r: number): void => {
+  if (!isFloorCell(c, r)) throw new Error(`[briar trail] waypoint cell ${c},${r} is not a floor cell`);
+  trailCells.add(`${c},${r}`);
+};
+for (let i = 0; i < TRAIL_WAYPOINTS.length - 1; i++) {
+  let [c, r] = TRAIL_WAYPOINTS[i];
+  const [tc, tr] = TRAIL_WAYPOINTS[i + 1];
+  addTrailCell(c, r);
+  while (c !== tc || r !== tr) {
+    if (c < tc) c++;
+    else if (c > tc) c--;
+    if (r < tr) r++;
+    else if (r > tr) r--;
+    addTrailCell(c, r);
+  }
+}
+
+// Paint: start the whole vertex grid briar-floor, then set the 4 corner vertices of
+// every trail cell to briar-path. A cell with all 4 corners briar-path renders solid
+// trail; cells sharing only some corners pick up a 1-2 corner briar-floor↔briar-path
+// blend — the soft grass edge. Vertex grid is (ROWS+1)×(COLS+1); cell (r,c) owns the
+// corners (r,c) (r,c+1) (r+1,c) (r+1,c+1).
+const briarTerrain = deriveTerrainFromTileMap(briarTileMap, 'briar-floor');
+for (const key of trailCells) {
+  const [c, r] = key.split(',').map(Number);
+  briarTerrain[r][c] = 'briar-path';
+  briarTerrain[r][c + 1] = 'briar-path';
+  briarTerrain[r + 1][c] = 'briar-path';
+  briarTerrain[r + 1][c + 1] = 'briar-path';
+}
 
 export const briarWilds: AreaDefinition = {
   id: 'briar-wilds',
@@ -514,9 +633,11 @@ export const briarWilds: AreaDefinition = {
   tileset: 'briar-wilds-floor-thorn',
   decorationsTileset: 'tiny-town',
   map: briarTileMap,
-  // Vertex grid all 'briar-floor' (passable). The impassable thorn patches are
-  // carried by the placed object layer (shipped — PRs #87, #91), not the terrain.
-  terrain: deriveTerrainFromTileMap(briarTileMap, 'briar-floor'),
+  // Vertex grid: briar-floor base + a painted briar-path trail down the corridor
+  // centre (FB-17 pt3 — see TRAIL_WAYPOINTS above). All terrain is passable; the
+  // impassable thorn patches are carried by the placed object layer (PRs #87, #91),
+  // not the terrain — so the trail paint changes the LOOK, never the collision.
+  terrain: briarTerrain,
   // The serpentine's walls are the generated thornBarrier (bramble) layer — NOT
   // derived wall-stone objects (the map is wall-filled, so deriving would emit a
   // stone for every forest cell). briarObjects = thornBarrier + dead trees + ground.

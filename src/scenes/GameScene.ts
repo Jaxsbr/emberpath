@@ -304,7 +304,7 @@ export class GameScene extends Phaser.Scene {
   // (Learning EP-01). Each entry stores the underlying ObjectInstance so the
   // condition string is available for re-eval and so buildObjectCollisionMap
   // can re-derive the cell-block flag.
-  private conditionalObjects: { sprite: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Shape; instance: ObjectInstance }[] = [];
+  private conditionalObjects: { sprite: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Shape | null; instance: ObjectInstance }[] = [];
   // Translucent exit-zone overlays (US-92). Rendered at depth 0.5 between
   // terrain and decorations using STYLE_PALETTE.hopeGoldLight at alpha 0.25 so
   // exit invitations remain visible without a dedicated terrain frame.
@@ -674,7 +674,20 @@ export class GameScene extends Phaser.Scene {
     // Forest eyes (FB-2): red eye-pairs that fade in at the dark edges and come
     // and go, so Briar Wilds reads as watched. Briar-only — the eerie wilds, not
     // the homestead or the marsh. On the UI camera so the red survives desat.
-    this.forestEyes = this.area.id === 'briar-wilds' ? new ForestEyesSystem(this) : null;
+    // Anchor the eyes to the dark tree clusters (FB-17 pt4): the canopy centres of
+    // the briar dead-trees (4×4 footprint → centre ≈ col+2, row+1.5 in tiles). The
+    // system peers FROM these instead of ringing the player, so the red eyes read as
+    // "hidden among the trees". Empty list (other areas) → harmless ring fallback.
+    // Every dark-canopy kind is an anchor now (FB-17 #1062: the dense forestFill
+    // trees ARE the "outside the path" tree masses Jaco wants the extra eyes among).
+    const EYE_TREE_KINDS = new Set(['briar-dead-tree', 'briar-tree-dome', 'briar-tree-cluster']);
+    const treeAnchors =
+      this.area.id === 'briar-wilds'
+        ? this.area.objects
+            .filter((o) => EYE_TREE_KINDS.has(o.kind))
+            .map((o) => ({ x: (o.col + 2) * TILE_SIZE, y: (o.row + 1.5) * TILE_SIZE }))
+        : [];
+    this.forestEyes = this.area.id === 'briar-wilds' ? new ForestEyesSystem(this, treeAnchors) : null;
     // Falling leaves (FB-2): a weather overlay on the UI camera so they stay visible
     // (not greyed by the desat pass) drifting down against the cold. Briar-only.
     this.leafFall = this.area.id === 'briar-wilds' ? new LeafFallSystem(this) : null;
@@ -1885,7 +1898,13 @@ export class GameScene extends Phaser.Scene {
       // any entity that walks over.
       const cf = def.collisionFootprint;
       const bf = def.baseFootprint;
-      let shadow: Phaser.GameObjects.Shape;
+      // Ground-cover undergrowth carpets and flat ground decals (#1064) opt out
+      // of the pooled shadow entirely — a per-instance oval under each of the
+      // hundreds of packed briar bushes stacks into a field of stray dark spots
+      // ("stray shadows that dont belong"), the FB-8 marker-grid failure mode.
+      // Every discrete tree / building / prop still gets its canon shadow below.
+      let shadow: Phaser.GameObjects.Shape | null = null;
+      if (!def.noShadow) {
       if (bf) {
         // Buildings (cottage): ONE clean RECTANGULAR shadow framing the whole
         // FRONT WALL — the shape AND position Jaco annotated (#934 "green box").
@@ -1903,11 +1922,16 @@ export class GameScene extends Phaser.Scene {
         const shW = bf.w * TILE_SIZE * 0.9; // slight inset so it hugs the walls
         shadow = this.add.rectangle(shCx, shTopY + shH / 2, shW, shH, 0x000000, 0.22);
       } else if (cf) {
-        // Trees / stag: soft ellipse pooled at the trunk-base collider, width ~=
-        // its footprint (was 1.6× → read as an oversized cast-away pool).
-        const shCx = (inst.col + cf.dx + cf.w / 2) * TILE_SIZE;
+        // Trees / stag: soft ellipse pooled at the trunk-base contact line. The
+        // pool is sized to the object's FOOTPRINT (the canopy spread), not the
+        // 1-cell trunk collider — a 4×4 dome/cluster canopy (#1064) needs a wide
+        // grounding pool, not the 33px sliver the collider width gave (it read as
+        // a floating tree). Centred on the footprint (= the canopy mass), pooled
+        // at the trunk base (cf.dy+cf.h). 0.42× keeps Pip/NPC/stag pools tight per
+        // the #926 canon while giving the big canopies a believable footing.
+        const shCx = (inst.col + fp.w / 2) * TILE_SIZE;
         const contactY = (inst.row + cf.dy + cf.h) * TILE_SIZE;
-        const shW = Math.max(cf.w * TILE_SIZE * 1.05, TILE_SIZE * 0.8);
+        const shW = Math.max(fp.w * TILE_SIZE * 0.42, TILE_SIZE * 0.8);
         shadow = this.makeGroundShadow(shCx, contactY, shW, 0.26);
       } else {
         // Small props: soft ellipse at the VISIBLE base — lifted ~0.2 tile up from
@@ -1920,6 +1944,7 @@ export class GameScene extends Phaser.Scene {
       }
       shadow.setDepth(0.6);
       this.objectShadows.push(shadow);
+      }
 
       // Register tall objects for the behind-object reveal (FB-3 part 4).
       // "Behind" = Pip's feet above the base-region top (the same line that
@@ -1948,7 +1973,7 @@ export class GameScene extends Phaser.Scene {
       if (inst.condition) {
         const visible = evaluateCondition(inst.condition);
         sprite.setVisible(visible);
-        shadow.setVisible(visible);
+        shadow?.setVisible(visible);
         this.conditionalObjects.push({ sprite, shadow, instance: inst });
       }
     }
@@ -1962,7 +1987,7 @@ export class GameScene extends Phaser.Scene {
       if (!cond) continue;
       const visible = evaluateCondition(cond);
       entry.sprite.setVisible(visible);
-      entry.shadow.setVisible(visible);
+      entry.shadow?.setVisible(visible);
     }
   }
 

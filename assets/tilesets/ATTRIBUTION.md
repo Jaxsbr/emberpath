@@ -20,6 +20,15 @@ Generated 2026-04-30 via the personal `mcp__pixellab__create_topdown_tileset` se
 | marsh-floor→water | `bd2d04ef-a6b6-4007-b6c5-b6120c9c4e36` | wet sepia mire (chained from floor→path) | murky standing water in deep umber and slate-blue | murky reed shallows | 0.5 |
 | marsh-floor→stone | `fa67b851-8eb8-48c7-a681-8bf81c22d2f3` | wet sepia mire (chained from floor→path) | weathered umber stone slabs with crumbling edges | weathered umber rubble | 0.25 |
 
+### Briar Wilds chain
+
+| Pair | Tileset id | Lower | Upper | Transition | Size |
+|---|---|---|---|---|---|
+| briar-floor→thorn | `1386f9e2-8a0b-4135-935d-43589429a221` | softened grey-green briar floor, mist-cool oppressive ground | twisted dead-bramble thorn cluster, dry umber-brown crooked branches | — | — |
+| briar-floor→path | `b958944f-cc59-4ba2-a162-6018f870eef4` | softened grey-green briar floor (chained off the thorn lower base `d65d17c2`) | bare trodden earth trail, warm tan-brown packed dirt with footworn scuffs and a soft grass border | — | — |
+
+The `briar-floor→path` tileset (FB-17 pt3, generated 2026-06-19 via `mcp__pixellab__create_topdown_tileset`) shares the thorn tileset's exact lower base tile, so the trail's grass shoulders are pixel-identical to the surrounding briar ground — the path↔grass seam is seamless.
+
 ### Generation budget reconciliation
 
 Spec budget: ≤ 1 reroll per tileset (10 generations max). Personal server cost: **6 generations, 1 reroll** (grass→sand operator-driven reroll for grass colour). The Ashen Isle coast `water→sand` tileset (2026-06-13) adds **1 generation** on the subscription account for the dock legibility overhaul — real coastal water replacing the faked grey "cliff" decorations that read as gravestones.
