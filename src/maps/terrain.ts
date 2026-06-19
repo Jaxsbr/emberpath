@@ -15,7 +15,8 @@ export type TerrainId =
   | 'water'
   | 'stone'
   | 'briar-floor'
-  | 'briar-thorn';
+  | 'briar-thorn'
+  | 'briar-path';
 
 export interface TerrainDefinition {
   id: TerrainId;
@@ -86,6 +87,18 @@ export const TERRAINS: Record<TerrainId, TerrainDefinition> = {
     passable: false,
     wangTilesetId: 'briar-wilds-floor-thorn',
     description: 'Twisted bramble thorn — impassable Briar Wilds barrier',
+  },
+  // Briar Wilds organic trail (FB-17 pt3). A worn trodden-earth path painted down
+  // the serpentine corridor's centre, briar-floor "grass" shoulders either side.
+  // Passable like briar-floor (it's a walkable track, not a barrier) so the BFS
+  // reachability is provably unchanged. Renders on the 'briar-wilds-floor-path'
+  // Wang tileset (briar-floor lower → briar-path upper, lower chained off the
+  // existing briar-floor base tile so the path↔grass seam is seamless).
+  'briar-path': {
+    id: 'briar-path',
+    passable: true,
+    wangTilesetId: 'briar-wilds-floor-path',
+    description: 'Briar Wilds trodden trail — worn tan-brown earth track through the thorns',
   },
 };
 

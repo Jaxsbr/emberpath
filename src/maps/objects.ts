@@ -79,6 +79,13 @@ export type ObjectKindId =
   // generation with the briar palette, not the marsh palette.
   | 'bramble-cluster'
   | 'briar-dead-tree'
+  // Briar Wilds — two extra dark-canopy variants + a bramble bush (FB-17 #1062:
+  // make Briar read as a DARK FOREST, ~80% canopy off-path, not a lawn). Same
+  // briar palette + top-down dome family as `briar-dead-tree`; used by the dense
+  // `forestFill` layer. `briar-thicket` is a small impassable undergrowth bush.
+  | 'briar-tree-dome'
+  | 'briar-tree-cluster'
+  | 'briar-thicket'
   // Briar Wilds — passable
   | 'twisted-root'
   // Heart Bridge — the figure who meets Pip at the crossing (US-HB3, Decision 1 =
@@ -140,6 +147,16 @@ export interface ObjectKindDefinition {
   // the render entirely is correct: collision is keyed off `area.objects`, not
   // the rendered sprite.
   invisible?: boolean;
+  // Suppress the ground-contact shadow for this kind (Jaco #1064). The
+  // ground-shadow canon (ellipse under every standing prop) is for DISCRETE
+  // standing objects. Dense ground-cover that carpets the floor — the briar
+  // undergrowth bushes packed between trunks, or a flat root decal lying ON the
+  // ground — is NOT a standing prop: a per-instance oval under each one stacks
+  // into a field of stray dark spots ("stray shadows that dont belong", #1064),
+  // the same failure mode as the FB-8 marker grid. These kinds render their
+  // sprite but cast no pooled shadow; the canon still applies to every tree,
+  // building, character, and discrete prop.
+  noShadow?: boolean;
 }
 
 // PixelLab style-matched object PNGs (US-96). Generated against a 32×32
@@ -248,7 +265,16 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // above and in front from below) and collides ONLY on the trunk-base cell, so
   // the bare branch spread overhangs the rest of the 4×4 as walkable shade.
   'briar-dead-tree': { id: 'briar-dead-tree', atlasKey: 'object-briar-dead-tree', assetPath: 'objects/briar-wilds/briar-dead-tree.png', passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
-  'twisted-root':    { id: 'twisted-root',    atlasKey: 'object-twisted-root',    assetPath: 'objects/briar-wilds/twisted-root.png',    passable: true },
+  // Dark-forest densification (FB-17 #1062). Two extra overhead dome canopies in
+  // the same briar palette (PixelLab top-down, 2026-06-19) — identical 4×4 `tall`
+  // trunk-base collision to briar-dead-tree, so the `forestFill` layer can pack the
+  // off-path void with mixed canopy that collides ONLY on its wall trunk-base cell
+  // (reachability provably unchanged). `briar-thicket` is a small 2×2 impassable
+  // undergrowth bush (anchor-cell-only collision) to close the gaps between trunks.
+  'briar-tree-dome':    { id: 'briar-tree-dome',    atlasKey: 'object-briar-tree-dome',    assetPath: 'objects/briar-wilds/briar-tree-dome.png',    passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
+  'briar-tree-cluster': { id: 'briar-tree-cluster', atlasKey: 'object-briar-tree-cluster', assetPath: 'objects/briar-wilds/briar-tree-cluster.png', passable: false, footprint: { w: 4, h: 4 }, tall: true, collisionFootprint: { dx: 1, dy: 3, w: 1, h: 1 } },
+  'briar-thicket':      { id: 'briar-thicket',      atlasKey: 'object-briar-thicket',      assetPath: 'objects/briar-wilds/briar-thicket.png',      passable: false, footprint: { w: 2, h: 2 }, noShadow: true },
+  'twisted-root':    { id: 'twisted-root',    atlasKey: 'object-twisted-root',    assetPath: 'objects/briar-wilds/twisted-root.png',    passable: true, noShadow: true },
 
   // Heart Bridge — the golden stag who meets Pip at the crossing (US-HB3). Rendered
   // 3×3 (96px) so it reads slightly LARGER than Pip (≈68px) — a presence, not a peer.

@@ -144,6 +144,24 @@ export const TILESETS: Record<string, TilesetDefinition> = {
       fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
     },
   },
+  // Briar Wilds organic trail (FB-17 pt3). briar-floor (lower) -> briar-path
+  // (upper, worn trodden earth). Generated 2026-06-19 via
+  // mcp__pixellab__create_topdown_tileset (id b958944f), lower chained off the
+  // briar-wilds-floor-thorn lower base tile (d65d17c2) so the grass shoulders
+  // blend seamlessly with the existing briar ground. Atlas committed to
+  // assets/tilesets/briar-wilds-floor-path/tilemap.{png,json}. MUST stay AFTER
+  // 'briar-wilds-floor-thorn' so all-briar-floor cells still resolve to the thorn
+  // tileset's plain-floor frame (pickWangTilesetForCell returns the first tileset
+  // whose primary matches) — only path/blend cells pick this entry.
+  'briar-wilds-floor-path': {
+    atlasKey: 'tileset-briar-wilds-floor-path',
+    wang: {
+      primaryTerrain: 'briar-floor',
+      secondaryTerrain: 'briar-path',
+      cornerMaskTable: pixellabCornerMaskTable(),
+      fallbackFrames: PIXELLAB_FALLBACK_FRAMES(),
+    },
+  },
 
   // ───── Legacy Kenney degenerate tilesets — pending US-98 deletion ─────
   // Retained so the editor's tools/editor renderer keeps loading until US-97

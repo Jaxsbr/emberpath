@@ -25,7 +25,7 @@ const EYES_TEX_H = 24;
 // camera so depth only orders them against other UI-camera objects.
 const EYES_DEPTH = 6;
 
-const PAIR_COUNT = 4;            // how many eye-pairs can exist at once (kept sparse)
+const PAIR_COUNT = 9;            // how many eye-pairs can exist at once (FB-17 #1062: more eyes among the dense forest)
 const EYE_WIDTH = 30;           // on-screen width of a pair at zoom 1 (px)
 const VIEW_MARGIN = 40;         // keep pairs this far inside the view edges
 
@@ -57,14 +57,25 @@ interface EyePair {
   seed: number;        // bumped each relocate to vary the sin-hash
 }
 
+// Small deterministic jitter (world px) around a cluster anchor so two pairs that
+// pick the same tree don't stack on the exact pixel.
+const ANCHOR_JITTER = 26;
+// A pair never opens closer than this fraction of the half-view to the screen
+// centre (≈ Pip) — the eyes stay "out there in the trees", never on the player.
+const PLAYER_CLEAR = 0.22;
+
 export class ForestEyesSystem {
   private scene: Phaser.Scene;
   private uiCam: Phaser.Cameras.Scene2D.Camera | null;
   private pairs: EyePair[] = [];
   private initialised = false;
+  // World positions of the dark tree clusters (FB-17 pt4). When supplied, pairs
+  // peer FROM these instead of from a ring around the player. Empty → ring fallback.
+  private anchors: ReadonlyArray<{ x: number; y: number }>;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, anchors: ReadonlyArray<{ x: number; y: number }> = []) {
     this.scene = scene;
+    this.anchors = anchors;
     this.uiCam = scene.cameras.getCamera('ui');
     this.ensureTexture();
   }
@@ -123,19 +134,45 @@ export class ForestEyesSystem {
     this.initialised = true;
   }
 
-  // Choose a fresh fixed world position for a pair: in a ring around the screen
-  // centre (≈ the player), clamped inside the view so it stays on-screen.
+  // Choose a fresh fixed world position for a pair. FB-17 pt4: prefer the dark tree
+  // clusters — pick a cluster anchor that's on/near the screen and clear of the
+  // player, so the eyes read as "hidden among the trees" rather than orbiting Pip.
+  // Falls back to the original ring around the screen centre when no anchor is in
+  // view (or none were supplied — other areas).
   private relocate(p: EyePair, view: Phaser.Geom.Rectangle): void {
     p.seed += 31;
+    const cx = view.centerX;
+    const cy = view.centerY;
+    const clamp = (x: number, y: number): void => {
+      p.x = Math.max(view.x + VIEW_MARGIN, Math.min(view.x + view.width - VIEW_MARGIN, x));
+      p.y = Math.max(view.y + VIEW_MARGIN, Math.min(view.y + view.height - VIEW_MARGIN, y));
+    };
+
+    if (this.anchors.length > 0) {
+      const pad = VIEW_MARGIN;
+      const minFromPlayer = Math.min(view.width, view.height) * 0.5 * PLAYER_CLEAR;
+      const inView = this.anchors.filter(
+        (a) =>
+          a.x >= view.x - pad &&
+          a.x <= view.x + view.width + pad &&
+          a.y >= view.y - pad &&
+          a.y <= view.y + view.height + pad &&
+          Math.hypot(a.x - cx, a.y - cy) >= minFromPlayer,
+      );
+      if (inView.length > 0) {
+        const a = inView[Math.floor(this.rand(p.seed) * inView.length) % inView.length];
+        const jx = (this.rand(p.seed + 1) - 0.5) * 2 * ANCHOR_JITTER;
+        const jy = (this.rand(p.seed + 2) - 0.5) * 2 * ANCHOR_JITTER;
+        clamp(a.x + jx, a.y + jy);
+        return;
+      }
+    }
+
+    // Fallback: a ring around the screen centre (≈ the player).
     const angle = this.rand(p.seed) * Math.PI * 2;
     const halfMin = Math.min(view.width, view.height) * 0.5;
     const ring = (RING_MIN + this.rand(p.seed + 1) * (RING_MAX - RING_MIN)) * halfMin;
-    let x = view.centerX + Math.cos(angle) * ring;
-    let y = view.centerY + Math.sin(angle) * ring;
-    x = Math.max(view.x + VIEW_MARGIN, Math.min(view.x + view.width - VIEW_MARGIN, x));
-    y = Math.max(view.y + VIEW_MARGIN, Math.min(view.y + view.height - VIEW_MARGIN, y));
-    p.x = x;
-    p.y = y;
+    clamp(cx + Math.cos(angle) * ring, cy + Math.sin(angle) * ring);
   }
 
   private startState(p: EyePair, state: EyeState): void {
