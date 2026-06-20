@@ -25,6 +25,7 @@ import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
+import { isDebugCollision } from '../sandbox';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
@@ -830,7 +831,14 @@ export class GameScene extends Phaser.Scene {
     });
     this.debugOverlay = new DebugOverlaySystem(this);
     this.debugOverlay.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    // F4 collision layer: tint every blocked cell using the SAME runtime
+    // passability the movement check reads, so the overlay can never drift from
+    // real collision (it calls collision.ts `cellBlocks` directly).
+    this.debugOverlay.setCollisionProvider(() => this.passability);
     this.debugOverlay.loadArea(this.area);
+    // `?debugCollision=1` boots with the collision overlay already on (testbench /
+    // no-keyboard path); the F4 toggle still drives it interactively otherwise.
+    if (isDebugCollision()) this.debugOverlay.showCollision();
 
     // StoryScene close path: GameScene is paused on launchStoryScene and resumed
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —

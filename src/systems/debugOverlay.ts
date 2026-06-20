@@ -8,6 +8,7 @@ import {
   DrainZoneDefinition,
   QuietZoneDefinition,
 } from '../data/areas/types';
+import { AreaPassability, cellBlocks } from './collision';
 
 const DEBUG_DEPTH = 50; // between entities (5) and UI (100)
 const TRIGGER_ALPHA = 0.3;
@@ -43,6 +44,16 @@ const TYPE_COLORS: Record<string, number> = {
 const DRAIN_ZONE_COLOR = 0xc97a3a;  // STYLE_PALETTE.burntSienna analog
 const QUIET_ZONE_COLOR = 0xf2c95b;  // STYLE_PALETTE.hopeGoldLight analog
 
+// F4 collision layer (#119 tooling) — a separate toggle from the F3 zone overlay
+// so collision can be inspected without the trigger/exit/zone clutter, and reused
+// by the collision paint editor. Every cell the movement check blocks is tinted
+// red; the layer draws BELOW the F3 zones (depth 49 < DEBUG_DEPTH 50) so an
+// overlapping trigger rect still reads on top.
+const COLLISION_DEPTH = 49;
+const COLLISION_BLOCKED_COLOR = 0xff3344;
+const COLLISION_FILL_ALPHA = 0.35;
+const COLLISION_LINE_ALPHA = 0.6;
+
 export class DebugOverlaySystem {
   private scene: Phaser.Scene;
   private visible = false;
@@ -57,16 +68,36 @@ export class DebugOverlaySystem {
   // surface LightingSystem state (US-74 spec).
   private hudProvider: (() => string) | null = null;
   private hudText: Phaser.GameObjects.Text | null = null;
+  // F4 collision layer — independent visibility + graphics from the F3 overlay.
+  // Driven by a provider that hands back the live AreaPassability so the tint set
+  // is exactly the set of cells `cellBlocks` blocks (single source of truth).
+  private collisionVisible = false;
+  private collisionGraphics: Phaser.GameObjects.Graphics | null = null;
+  private collisionKey: Phaser.Input.Keyboard.Key | null = null;
+  private collisionProvider: (() => AreaPassability) | null = null;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     if (scene.input.keyboard) {
       this.toggleKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F3);
+      this.collisionKey = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F4);
     }
   }
 
   setDialogueActiveCheck(check: () => boolean): void {
     this.dialogueActiveCheck = check;
+  }
+
+  setCollisionProvider(provider: () => AreaPassability): void {
+    this.collisionProvider = provider;
+  }
+
+  // Force the collision overlay on (used by the `?debugCollision=1` URL boot —
+  // F-keys don't survive headless Chromium, so the testbench needs a non-key path).
+  showCollision(): void {
+    if (this.collisionVisible) return;
+    this.collisionVisible = true;
+    this.drawCollisionGrid();
   }
 
   setHudProvider(provider: () => string): void {
@@ -78,6 +109,12 @@ export class DebugOverlaySystem {
     if (this.visible) {
       this.clear();
       this.draw();
+    }
+    // Collision grid is a snapshot taken on toggle; a new area means redraw so
+    // the tint follows the new map (e.g. after an area transition mid-session).
+    if (this.collisionVisible) {
+      this.clearCollisionGrid();
+      this.drawCollisionGrid();
     }
   }
 
@@ -93,10 +130,58 @@ export class DebugOverlaySystem {
         this.clear();
       }
     }
+    // F4 — independent collision-grid toggle. Re-toggle to refresh the snapshot
+    // after flag-driven passability changes (conditional terrain/objects).
+    if (this.collisionKey && Phaser.Input.Keyboard.JustDown(this.collisionKey)) {
+      if (this.dialogueActiveCheck && this.dialogueActiveCheck()) return;
+
+      this.collisionVisible = !this.collisionVisible;
+      if (this.collisionVisible) {
+        this.drawCollisionGrid();
+      } else {
+        this.clearCollisionGrid();
+      }
+    }
     // Refresh HUD text every frame the overlay is visible. Provider returns a
     // primitive string — no allocation in this path beyond the string itself.
     if (this.visible && this.hudText && this.hudProvider) {
       this.hudText.setText(this.hudProvider());
+    }
+  }
+
+  // Tint every cell the movement check blocks, by asking collision.ts `cellBlocks`
+  // about each cell with the live AreaPassability the provider hands back. This is
+  // the same predicate `collidesWithWall` reads, so the overlay can never disagree
+  // with real collision. Snapshot-on-toggle: cheap to redraw, and passability only
+  // changes on flag events (re-toggle to refresh).
+  private drawCollisionGrid(): void {
+    if (!this.area || !this.collisionProvider) return;
+    const p = this.collisionProvider();
+
+    this.collisionGraphics = this.scene.add.graphics();
+    this.collisionGraphics.setDepth(COLLISION_DEPTH);
+    const uiCam = this.scene.cameras.getCamera('ui');
+    if (uiCam) uiCam.ignore(this.collisionGraphics);
+
+    const rows = this.area.mapRows;
+    const cols = this.area.mapCols;
+    this.collisionGraphics.fillStyle(COLLISION_BLOCKED_COLOR, COLLISION_FILL_ALPHA);
+    this.collisionGraphics.lineStyle(1, COLLISION_BLOCKED_COLOR, COLLISION_LINE_ALPHA);
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        if (!cellBlocks(col, row, p)) continue;
+        const x = col * TILE_SIZE;
+        const y = row * TILE_SIZE;
+        this.collisionGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        this.collisionGraphics.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+      }
+    }
+  }
+
+  private clearCollisionGrid(): void {
+    if (this.collisionGraphics) {
+      this.collisionGraphics.destroy();
+      this.collisionGraphics = null;
     }
   }
 
@@ -288,5 +373,6 @@ export class DebugOverlaySystem {
 
   destroy(): void {
     this.clear();
+    this.clearCollisionGrid();
   }
 }
