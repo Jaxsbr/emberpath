@@ -20,6 +20,7 @@ art lesson here** — so a lesson is a hard rule, not a suggestion.
 | [content/reading-level-young-child](content/reading-level-young-child.md) | Writing/changing any player-facing text | Young-child reading level; allegory survives the simplification. |
 | [content/sacred-words-not-loose](content/sacred-words-not-loose.md) | Writing ANY text (docs, comments, commits, chat) | "Bible"/"Scripture" only for the actual Scriptures — never as a metaphor for "the authoritative doc" (use canon/source of truth/guide). |
 | [implementation/area-transition-uses-exit-entrypoint](implementation/area-transition-uses-exit-entrypoint.md) | Changing an area's walkable geometry, or adding a transition testbench scenario | Transitions spawn at the **source exit's `entryPoint`**, not the dest `playerSpawn` — audit every inbound exit when geometry moves; benches must walk the real exit→entry path. |
+| [implementation/tall-building-collision-band-at-base](implementation/tall-building-collision-band-at-base.md) | Giving a tall building a `collisionFootprint`, or enabling walk-behind on a house | Band at the **front-wall BASE** (low), never mid-roof — leave the roof walkable so Pip tucks under and the fade fires. `collisionFootprint` = collision; `baseFootprint` = Y-sort/fade only. Prove with an MP4. |
 
 ## Where the full canon lives (the lessons point here, don't duplicate it)
 

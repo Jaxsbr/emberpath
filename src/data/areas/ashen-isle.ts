@@ -149,16 +149,12 @@ function buildAshenMap(): StoredTile[][] {
   m[18][49] = F;
   m[19][49] = F;
 
-  // Player's cottage — TRUE 2× (FB-6). The RED foundation body is rows 8-14 cols
-  // 6-13 (WALL); the front-wall base row 15 stays FLOOR (the walkable BLUE base),
-  // with the door at (10, 15) where dialogue poses the player. 2-tile walkable
-  // margins around the body inside the widened yard let Pip round the house so the
-  // see-through fade can fire from behind as well as from the front step.
-  for (let r = 8; r <= 14; r++) {
-    for (let c = 6; c <= 13; c++) {
-      m[r][c] = W;
-    }
-  }
+  // Player's cottage — TRUE 2× (FB-6). The body (rows 8-14 cols 6-13) is now
+  // FLOOR (the map's default) — collision comes from the `cottage-large`
+  // `collisionFootprint` base band (#119), NOT a full-body WALL block, so Pip can
+  // walk onto the roof rows and round behind the house for the see-through fade.
+  // The front-wall base row 15 stays FLOOR (the walkable BLUE base), with the
+  // door at (10, 15) where dialogue poses the player.
   for (let c = 6; c <= 13; c++) m[15][c] = F; // walkable BLUE base row (front wall)
 
   // Player's fenced yard — widened to rows 6-19 cols 4-16 (FB-6: contains the 2×
@@ -173,15 +169,13 @@ function buildAshenMap(): StoredTile[][] {
   }
   m[19][9] = F;
 
-  // Old Man's cottage — true 2× (#153, FB-6/FB-8). Body rows 21-27 cols 36-43
-  // WALL; the front-wall base row 28 stays FLOOR — the walkable BLUE base Pip
-  // steps onto, with the door at (40, 28) = the Old Man's pose cell. Stepping
-  // the base row fires the see-through behind-fade (GameScene).
-  for (let r = 21; r <= 27; r++) {
-    for (let c = 36; c <= 43; c++) {
-      m[r][c] = W;
-    }
-  }
+  // Old Man's cottage — true 2× (#153, FB-6/FB-8). Body (rows 21-27 cols 36-43)
+  // is now FLOOR — collision comes from the `cottage-large` `collisionFootprint`
+  // base band (#119), NOT a full-body WALL block, so Pip rounds behind the house
+  // and the see-through fade fires (the residual #119 bug: she could never reach
+  // a behind-the-body cell before). The front-wall base row 28 stays FLOOR — the
+  // walkable BLUE base Pip steps onto, with the door at (40, 28) = the Old Man's
+  // pose cell.
   for (let c = 36; c <= 43; c++) m[28][c] = F;
 
   // Old Man's fenced yard — widened to rows 19-31 cols 34-45 (#153) so the 2×
@@ -238,14 +232,6 @@ const ashenDecorations: DecorationDefinition[] = [
 // wall-stone border for collision; only the visible interior structures change.
 type OInst = import('../../maps/objects').ObjectInstance;
 
-function rectObjects(col0: number, col1: number, row0: number, row1: number, kind: OInst['kind']): OInst[] {
-  const out: OInst[] = [];
-  for (let r = row0; r <= row1; r++) {
-    for (let c = col0; c <= col1; c++) out.push({ kind, col: c, row: r });
-  }
-  return out;
-}
-
 // Fence perimeter as fence-rail objects (mirrors the old `fencePerimeter`
 // decoration helper, with the same gate gaps left open / walkable).
 function fenceObjects(
@@ -271,22 +257,21 @@ function fenceObjects(
 
 // Cohesive cottages (PixelLab, 2026-06-14) replace the old per-tile Kenney house
 // blocks (Jaco: "our house is a joke"). Both the player's and the Old Man's home
-// are now true 2× cottages (`cottageLarge` below); collision is laid as explicit
-// `collision-block` cells under the upper body (roof + walls) because object
-// collision keys the anchor cell only, while the bottom front/door row is left
-// walkable so the player walks right up to the doorway — the Old Man still poses
-// in his open doorway at (40,28).
+// are now true 2× cottages (`cottageLarge` below); collision is a tree-style base
+// band on the `cottage-large` kind (`collisionFootprint`, #119) so the upper body
+// is walkable and Pip rounds behind for the see-through fade, while the bottom
+// front/door row is left walkable so the player walks right up to the doorway —
+// the Old Man still poses in his open doorway at (40,28).
 
-// True 2× cottage (FB-6). 8×8 footprint: the RED foundation is the top 7 rows
-// (collision-block grid), the bottom front-wall row stays walkable — the BLUE
-// base Pip steps onto (door at front-centre). Stepping onto that row fires the
-// see-through fade (GameScene behind-fade). The matching tile-map WALL band and
-// the widened yard fence are authored alongside this in `ashenTileMap`/`ashenFences`.
+// True 2× cottage (FB-6). 8×8 footprint. Collision is now a TREE-STYLE base band
+// declared on the `cottage-large` kind itself (`collisionFootprint`
+// {dx:1,dy:5,w:6,h:2}, see objects.ts) — the FRONT-WALL-BASE band blocks, the
+// whole roof above is walkable so Pip rounds behind the house and the see-through
+// fade fires (#119). This dropped the old 8×7 collision-block grid AND the full-body
+// tilemap WALL band (both removed below) that together over-blocked the whole
+// body. Only the widened yard fence is authored alongside in `buildAshenMap`.
 function cottageLarge(anchorCol: number, anchorRow: number): OInst[] {
-  return [
-    ...rectObjects(anchorCol, anchorCol + 7, anchorRow, anchorRow + 6, 'collision-block'),
-    { kind: 'cottage-large', col: anchorCol, row: anchorRow },
-  ];
+  return [{ kind: 'cottage-large', col: anchorCol, row: anchorRow }];
 }
 
 const ashenBuildings: OInst[] = [
@@ -580,7 +565,8 @@ const explicitWallCells = new Set<string>(
 // The new cottages cover less ground than the old per-tile house blocks, but the
 // FULL original footprints were WALL cells in the source map. Drop the derived
 // wall-stone across those whole rectangles so no stray grey block draws beside
-// the cottage art (collision now comes from the cottage collision-block grid).
+// the cottage art (collision now comes from the `cottage-large` collisionFootprint
+// base band, #119 — no full-body WALL under the house anymore).
 for (const f of [
   { c0: 8, c1: 12, r0: 12, r1: 15 }, // old player house
   { c0: 38, c1: 42, r0: 24, r1: 28 }, // old Old-Man house
