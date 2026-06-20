@@ -18,6 +18,11 @@ const REAL_KEYS = { flags: 'emberpath_flags', save: 'emberpath_save' } as const;
 const SANDBOX_KEYS = { flags: 'emberpath_sandbox_flags', save: 'emberpath_sandbox_save' } as const;
 
 let sandboxActive = false;
+// `?debugCollision=1` — boot with the F4 collision-render overlay already ON.
+// The F4 keyboard toggle is the primary UX in a real browser, but function keys
+// are swallowed by headless Chromium before they reach the page, so this URL flag
+// gives the testbench (and anyone who'd rather not press F4) a way in.
+let debugCollisionActive = false;
 
 // Decided ONCE at module import. `?sandbox=1` keeps the throwaway namespace across
 // refreshes; `?scenario=<id>` implies sandbox (a scenario boot is always a
@@ -27,14 +32,22 @@ function initFromUrl(): void {
   try {
     const params = new URLSearchParams(window.location.search);
     sandboxActive = params.get('sandbox') === '1' || params.has('scenario');
+    debugCollisionActive = params.get('debugCollision') === '1';
   } catch {
     sandboxActive = false;
+    debugCollisionActive = false;
   }
 }
 initFromUrl();
 
 export function isSandbox(): boolean {
   return sandboxActive;
+}
+
+// True when `?debugCollision=1` is present — GameScene reads this in create() to
+// turn the F4 collision overlay on at boot.
+export function isDebugCollision(): boolean {
+  return debugCollisionActive;
 }
 
 export function flagsStorageKey(): string {

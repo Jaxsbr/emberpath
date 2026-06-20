@@ -55,7 +55,7 @@ function getNpcBounds(
 // legible: "if the cell is mostly impassable, you can't enter; if it's mostly
 // passable, you can." Wang's smooth-blend visual is decoupled from collision
 // granularity by design.
-function cellBlocks(col: number, row: number, p: AreaPassability): boolean {
+export function cellBlocks(col: number, row: number, p: AreaPassability): boolean {
   const terrain = p.terrain;
   if (!terrain || terrain.length === 0) return true;
   const rowLen = terrain[0].length;
