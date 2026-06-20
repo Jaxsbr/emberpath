@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { hasSave, loadSave, clearSave, resetWorld } from '../triggers/saveState';
 import { resetAllFlags, setFlag } from '../triggers/flags';
-import { getArea } from '../data/areas/registry';
+import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { getScenario } from '../scenarios/registry';
+import { editorMode, editorAreaId } from '../sandbox';
 import { TILE_SIZE } from '../maps/constants';
 import { TERRAINS } from '../maps/terrain';
 import { OBJECT_KINDS } from '../maps/objects';
@@ -67,6 +68,10 @@ export class TitleScene extends Phaser.Scene {
     // refresh after the wipe doesn't re-trigger the wipe (history.replaceState
     // drops the consumed params).
     this.applyUrlReset();
+
+    // Dev tool: `?editor=collision&area=<id>` boots straight into the collision
+    // paint editor (#119, U2), skipping the menu. Checked before applyScenario.
+    if (this.applyEditor()) return;
 
     // Test bench: `?scenario=<id>` boots straight into a mid-game state in the
     // sandbox namespace, skipping the menu entirely. Returns true when it took
@@ -418,6 +423,24 @@ export class TitleScene extends Phaser.Scene {
     if (scenario.position) data.entryPoint = scenario.position;
 
     this.scene.start('GameScene', data);
+    return true;
+  }
+
+  // Dev tool (#119, U2): `?editor=collision&area=<id>` boots GameScene into the
+  // collision paint editor over the named area (default = the game's default
+  // area). Editor mode implies sandbox (sandbox.ts), so the namespace is already
+  // the throwaway one — resetAllFlags here only touches sandbox keys. Returns
+  // true when it took over the boot. Only the 'collision' mode exists today; an
+  // unknown mode falls through to the normal Title.
+  private applyEditor(): boolean {
+    if (editorMode() !== 'collision') return false;
+    const areaId = editorAreaId() ?? getDefaultAreaId();
+    if (!getArea(areaId)) {
+      console.warn(`emberpath: editor area '${areaId}' not found — falling back to Title`);
+      return false;
+    }
+    resetAllFlags();
+    this.scene.start('GameScene', { areaId, editor: 'collision' });
     return true;
   }
 }
