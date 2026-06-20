@@ -1,5 +1,6 @@
 import { Scenario } from './types';
 import { atOldManCottage } from './at-old-man-cottage';
+import { briarToBridgeTransition } from './briar-to-bridge-transition';
 import { briarTrailWalk } from './briar-trail-walk';
 import { emberInMarsh } from './ember-in-marsh';
 import { enteringBriar } from './entering-briar';
@@ -12,6 +13,7 @@ import { trappedInMarsh } from './trapped-in-marsh';
 // `?scenario=<id>`. Keep this the single place that lists them.
 const scenarios: Record<string, Scenario> = {
   [atOldManCottage.id]: atOldManCottage,
+  [briarToBridgeTransition.id]: briarToBridgeTransition,
   [briarTrailWalk.id]: briarTrailWalk,
   [emberInMarsh.id]: emberInMarsh,
   [enteringBriar.id]: enteringBriar,

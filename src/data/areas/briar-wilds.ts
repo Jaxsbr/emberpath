@@ -686,14 +686,18 @@ export const briarWilds: AreaDefinition = {
       // the far clearing the whole map points toward (lightBeacon 39,11), past the
       // completion trigger. Gated on has_word so the span only opens once Pip
       // carries the Word out of the thorns — the atonement beat follows receiving
-      // the Word, never precedes it. Drops her at the bridge's west spawn (1,2).
+      // the Word, never precedes it. Drops her at the bridge's west spawn (1,4) —
+      // the bridge's DECK_ROW_MID walkable corridor (rows 3–5), matching
+      // heart-bridge.ts playerSpawn. NOT row 2: after the FB-19 redesign tripled
+      // the span, rows 2 and 6 became the impassable parapet stone — entering at
+      // row 2 dropped Pip inside the top parapet and stuck her (FB-22).
       id: 'briar-to-heart-bridge',
       col: 43,
       row: 10,
       width: 1,
       height: 3,
       destinationAreaId: 'heart-bridge',
-      entryPoint: { col: 1, row: 2 },
+      entryPoint: { col: 1, row: 4 },
       condition: 'has_word == true',
     },
   ],
