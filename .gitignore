@@ -9,3 +9,7 @@ credentials.json
 .DS_Store
 .claude/scheduled_tasks.lock
 ref/
+
+# Collision paint editor (#119, U2) — staged maps are a hand-off scratchpad,
+# ported into game code by autonomy/apply-staged-collision.cjs, never committed.
+staged/

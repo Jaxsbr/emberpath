@@ -25,6 +25,7 @@ import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
+import { CollisionEditorSystem } from '../systems/collisionEditor';
 import { isDebugCollision } from '../sandbox';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
@@ -217,6 +218,11 @@ const ANIM_FRAME_RATE = 8;
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
   private inputSystem!: InputSystem;
+  // Collision paint editor (#119, U2). Non-null only when booted via
+  // `?editor=collision`; when set, update() suppresses all gameplay and drives
+  // the editor instead (camera pan + paint grid).
+  private collisionEditor: CollisionEditorSystem | null = null;
+  private editorActive = false;
   private npcInteraction!: NpcInteractionSystem;
   private inscribedStone!: InscribedStoneSystem;
   private dialogueSystem!: DialogueSystem;
@@ -511,8 +517,10 @@ export class GameScene extends Phaser.Scene {
     areaId?: string;
     entryPoint?: { col: number; row: number };
     resumePosition?: { x: number; y: number };
+    editor?: string;
   }): void {
     this.transitionInProgress = false;
+    this.editorActive = data?.editor === 'collision';
     const areaId = data?.areaId ?? getDefaultAreaId();
     const area = getArea(areaId);
     if (!area) {
@@ -624,7 +632,11 @@ export class GameScene extends Phaser.Scene {
     if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
     }
-    this.inputSystem = new InputSystem(this);
+    // In editor mode, skip the gameplay InputSystem entirely: it registers a
+    // global pointerdown handler (the touch joystick) that would flash on every
+    // paint click, and its WASD polling is unused (editor update suppresses
+    // gameplay and the editor owns its own camera-pan keys).
+    if (!this.editorActive) this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
     // Ember-share pulse system (US-85). Instantiated after the UI camera
     // exists so the pulse Arc can be uiCam.ignore'd on creation. Reset
@@ -840,6 +852,12 @@ export class GameScene extends Phaser.Scene {
     // no-keyboard path); the F4 toggle still drives it interactively otherwise.
     if (isDebugCollision()) this.debugOverlay.showCollision();
 
+    // Collision paint editor (#119, U2): mount over the rendered area and take
+    // over input + camera. update() suppresses gameplay while editorActive.
+    if (this.editorActive) {
+      this.collisionEditor = new CollisionEditorSystem(this, this.area, this.passability);
+    }
+
     // StoryScene close path: GameScene is paused on launchStoryScene and resumed
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —
     // the player is back on the world layer so this is a safe checkpoint.
@@ -981,8 +999,13 @@ export class GameScene extends Phaser.Scene {
     // is doubly guarded by the flag). Deferred one tick via delayedCall(0) so
     // create() fully returns and the scene is RUNNING before launchStoryScene
     // pauses it — pausing mid-create is unsafe in Phaser's scene lifecycle.
+    // The collision editor boots over a fresh start but must NOT trigger the
+    // intro cinematic: launchStoryScene pauses GameScene beneath the StoryScene
+    // overlay, and a paused scene receives no pointer input — so the paint
+    // clicks never reach the editor. Suppress the intro entirely in editor mode.
     const isFreshStart = !data?.entryPoint && !data?.resumePosition;
     if (
+      !this.editorActive &&
       isFreshStart &&
       this.area.introStoryScene &&
       getFlag('ashen_intro_played') !== true
@@ -1130,6 +1153,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
+    // Collision paint editor (#119, U2): drive only the editor (camera pan +
+    // paint grid) and suppress all gameplay — no player movement, triggers,
+    // NPCs, or interaction while painting.
+    if (this.editorActive) {
+      this.collisionEditor?.update(time, delta);
+      return;
+    }
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
     // Suppress during conditional NPC spawn fade (US-71) — same zone-level
@@ -2473,6 +2503,10 @@ export class GameScene extends Phaser.Scene {
     this.cameras?.main?.removeAllListeners('camerafadeoutcomplete');
     // Clean up player sprite
     this.player?.destroy();
+    // Collision editor (#119, U2): tear down its DOM HUD + input handlers so a
+    // scene restart never leaves an orphaned panel or duplicate listeners.
+    this.collisionEditor?.destroy();
+    this.collisionEditor = null;
     this.events.off('resume', this.flushSave, this);
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
