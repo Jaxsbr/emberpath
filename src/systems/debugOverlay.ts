@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE } from '../maps/constants';
+import { TILE_SIZE, SUB_SIZE, COLLISION_SUBDIV } from '../maps/constants';
 import {
   AreaDefinition,
   TriggerDefinition,
@@ -8,7 +8,7 @@ import {
   DrainZoneDefinition,
   QuietZoneDefinition,
 } from '../data/areas/types';
-import { AreaPassability, cellBlocks } from './collision';
+import { AreaPassability, subCellBlocks } from './collision';
 
 const DEBUG_DEPTH = 50; // between entities (5) and UI (100)
 const TRIGGER_ALPHA = 0.3;
@@ -149,11 +149,13 @@ export class DebugOverlaySystem {
     }
   }
 
-  // Tint every cell the movement check blocks, by asking collision.ts `cellBlocks`
-  // about each cell with the live AreaPassability the provider hands back. This is
-  // the same predicate `collidesWithWall` reads, so the overlay can never disagree
-  // with real collision. Snapshot-on-toggle: cheap to redraw, and passability only
-  // changes on flag events (re-toggle to refresh).
+  // Tint every SUB-CELL the movement check blocks (FB-23), by asking collision.ts
+  // `subCellBlocks` about each sub-cell with the live AreaPassability the provider
+  // hands back. This is the exact predicate `collidesWithWall` reads, so the
+  // overlay can never disagree with real collision — and it now shows authored
+  // per-object shapes at their true 8px granularity (a small rock tints only the
+  // sub-cells it covers). Snapshot-on-toggle: cheap to redraw, and passability
+  // only changes on flag events (re-toggle to refresh).
   private drawCollisionGrid(): void {
     if (!this.area || !this.collisionProvider) return;
     const p = this.collisionProvider();
@@ -163,17 +165,17 @@ export class DebugOverlaySystem {
     const uiCam = this.scene.cameras.getCamera('ui');
     if (uiCam) uiCam.ignore(this.collisionGraphics);
 
-    const rows = this.area.mapRows;
-    const cols = this.area.mapCols;
+    const sRows = this.area.mapRows * COLLISION_SUBDIV;
+    const sCols = this.area.mapCols * COLLISION_SUBDIV;
     this.collisionGraphics.fillStyle(COLLISION_BLOCKED_COLOR, COLLISION_FILL_ALPHA);
     this.collisionGraphics.lineStyle(1, COLLISION_BLOCKED_COLOR, COLLISION_LINE_ALPHA);
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        if (!cellBlocks(col, row, p)) continue;
-        const x = col * TILE_SIZE;
-        const y = row * TILE_SIZE;
-        this.collisionGraphics.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-        this.collisionGraphics.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
+    for (let srow = 0; srow < sRows; srow++) {
+      for (let scol = 0; scol < sCols; scol++) {
+        if (!subCellBlocks(scol, srow, p)) continue;
+        const x = scol * SUB_SIZE;
+        const y = srow * SUB_SIZE;
+        this.collisionGraphics.fillRect(x, y, SUB_SIZE, SUB_SIZE);
+        this.collisionGraphics.strokeRect(x, y, SUB_SIZE, SUB_SIZE);
       }
     }
   }
