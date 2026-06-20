@@ -433,7 +433,15 @@ export class TitleScene extends Phaser.Scene {
   // true when it took over the boot. Only the 'collision' mode exists today; an
   // unknown mode falls through to the normal Title.
   private applyEditor(): boolean {
-    if (editorMode() !== 'collision') return false;
+    const mode = editorMode();
+    // FB-23 U2: `?editor=object[&kind=<id>]` boots the per-object-KIND collision
+    // editor. It renders a single kind's sprite (no area), so it ignores `area`.
+    if (mode === 'object') {
+      resetAllFlags();
+      this.scene.start('GameScene', { editor: 'object' });
+      return true;
+    }
+    if (mode !== 'collision') return false;
     const areaId = editorAreaId() ?? getDefaultAreaId();
     if (!getArea(areaId)) {
       console.warn(`emberpath: editor area '${areaId}' not found — falling back to Title`);

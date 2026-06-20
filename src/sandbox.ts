@@ -28,6 +28,9 @@ let debugCollisionActive = false;
 // (it never touches the real save), so it implies sandbox like `?scenario`.
 let editorModeValue: string | null = null;
 let editorAreaIdValue: string | null = null;
+// `?editor=object&kind=<id>` — which object KIND the object-shape editor opens on
+// (FB-23 U2). Null = the editor defaults to the first collision-bearing kind.
+let editorKindValue: string | null = null;
 
 // Decided ONCE at module import. `?sandbox=1` keeps the throwaway namespace across
 // refreshes; `?scenario=<id>` implies sandbox (a scenario boot is always a
@@ -38,6 +41,7 @@ function initFromUrl(): void {
     const params = new URLSearchParams(window.location.search);
     editorModeValue = params.get('editor');
     editorAreaIdValue = params.get('area');
+    editorKindValue = params.get('kind');
     sandboxActive = params.get('sandbox') === '1' || params.has('scenario') || editorModeValue !== null;
     debugCollisionActive = params.get('debugCollision') === '1';
   } catch {
@@ -45,6 +49,7 @@ function initFromUrl(): void {
     debugCollisionActive = false;
     editorModeValue = null;
     editorAreaIdValue = null;
+    editorKindValue = null;
   }
 }
 initFromUrl();
@@ -68,6 +73,11 @@ export function editorMode(): string | null {
 // The `?area=<id>` value used by editor mode to pick which area to open, or null.
 export function editorAreaId(): string | null {
   return editorAreaIdValue;
+}
+
+// The `?kind=<id>` value used by the object-shape editor (FB-23 U2), or null.
+export function editorKind(): string | null {
+  return editorKindValue;
 }
 
 export function flagsStorageKey(): string {

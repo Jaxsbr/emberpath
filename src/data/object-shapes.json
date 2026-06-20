@@ -1,0 +1,31 @@
+{
+  "_doc": "FB-23 per-object-KIND authored collision + shadow. Keyed by ObjectKindId. `collision` = sub-cell offsets [sdx,sdy] (0..COLLISION_SUBDIV-1 per cell) from the object's anchor-cell top-left sub-cell; blocks exactly those 8px sub-cells, superseding collisionFootprint. `shadow` = { shape, w, h, dx, dy, alpha } in px relative to the anchor cell top-left, superseding the heuristic shadow. Authored in the object-mode collision editor (?editor=object&kind=<id>), written by the dev save endpoint, committed (this is real game data, not gitignored staging). A kind with no entry keeps its legacy collisionFootprint/anchor-cell + heuristic shadow.",
+  "rock": {
+    "collision": [
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  }
+}

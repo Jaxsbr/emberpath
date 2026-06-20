@@ -148,6 +148,23 @@ export interface ObjectKindDefinition {
   // the render entirely is correct: collision is keyed off `area.objects`, not
   // the rendered sprite.
   invisible?: boolean;
+  // FB-23 — per-kind authored collision, sub-cell granular. Array of [sdx, sdy]
+  // offsets relative to the object's ANCHOR-cell top-left sub-cell (anchor cell
+  // (col,row) → sub-cell (col*COLLISION_SUBDIV, row*COLLISION_SUBDIV); each cell
+  // is COLLISION_SUBDIV² sub-cells of SUB_SIZE px). When present,
+  // `buildObjectCollisionMap` blocks EXACTLY these sub-cells — superseding
+  // `collisionFootprint` — so a small rock blocks only the part of its tile it
+  // covers. Loaded from `src/data/object-shapes.json` and merged onto the kind at
+  // module init (below). Absent = legacy collisionFootprint/anchor-cell behaviour.
+  collisionCells?: Array<[number, number]>;
+  // FB-23 — per-kind authored ground shadow. Position + size relative to the
+  // anchor cell top-left, in PX. FORWARD-DECLARATION for the U5 shadow
+  // fast-follow: the field is loaded from object-shapes.json and merged onto the
+  // kind here, but is NOT yet read by any render path — `renderObjects` still
+  // uses only the building-rect / tree-ellipse / prop-ellipse heuristic (FB-21
+  // canon). U5 will wire this in (when present → build the shadow from it instead
+  // of the heuristic; `noShadow` still wins). Until then it is inert typed data.
+  shadow?: { shape: 'ellipse' | 'rect'; w: number; h: number; dx: number; dy: number; alpha: number };
   // Suppress the ground-contact shadow for this kind (Jaco #1064). The
   // ground-shadow canon (ellipse under every standing prop) is for DISCRETE
   // standing objects. Dense ground-cover that carpets the floor — the briar
@@ -295,6 +312,28 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // its footprint as walkable space and Pip can step around to reach the seal.
   'golden-stag':     { id: 'golden-stag',     atlasKey: 'object-golden-stag',     assetPath: 'objects/heart-bridge/golden-stag.png',     passable: false, footprint: { w: 3, h: 3 }, tall: true, collisionFootprint: { dx: 1, dy: 2, w: 1, h: 1 } },
 };
+
+// FB-23 — merge per-kind authored collision/shadow shapes onto the registry at
+// module init. The JSON is the editable source of truth (written by the
+// object-mode editor's save endpoint, committed as real game data); merging here
+// keeps every consumer reading a single `OBJECT_KINDS[kind]` def. Entries for
+// unknown ids (e.g. the `_doc` note) are skipped. Authored values OVERRIDE the
+// kind's static collisionFootprint/shadow; a kind with no entry is untouched.
+import objectShapesRaw from '../data/object-shapes.json';
+
+interface ObjectShapeEntry {
+  collision?: number[][];
+  shadow?: ObjectKindDefinition['shadow'];
+}
+
+for (const [id, entry] of Object.entries(objectShapesRaw as Record<string, ObjectShapeEntry>)) {
+  if (!hasObjectKind(id)) continue;
+  const def = OBJECT_KINDS[id];
+  if (entry.collision) {
+    def.collisionCells = entry.collision.map((c) => [c[0], c[1]] as [number, number]);
+  }
+  if (entry.shadow) def.shadow = entry.shadow;
+}
 
 export function hasObjectKind(id: string): id is ObjectKindId {
   return Object.prototype.hasOwnProperty.call(OBJECT_KINDS, id);
