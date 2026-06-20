@@ -33,9 +33,10 @@ export type ObjectKindId =
   | 'cottage'
   // Ashen Isle — the SAME cottage art at true 2× scale (FB-6, Jaco: "houses
   // render too small"). An 8×8-footprint variant of `cottage` reusing the same
-  // painted image; collision is the RED foundation body (collision-block grid),
-  // the front-wall base row is the walkable BLUE step that fires the see-through
-  // fade. Distinct kind so only the rescaled house adopts the bigger geometry.
+  // painted image; collision is a tree-style FRONT-WALL-BASE band
+  // (`collisionFootprint {dx:1,dy:5,w:6,h:2}`, #119) so the whole roof above is
+  // walkable and Pip rounds behind for the see-through fade. Distinct kind so
+  // only the rescaled house adopts the bigger geometry.
   | 'cottage-large'
   // Ashen Isle — dock props (PixelLab style-matched, weathered sepia/umber)
   | 'boat-row'
@@ -198,13 +199,24 @@ export const OBJECT_KINDS: Record<ObjectKindId, ObjectKindDefinition> = {
   // (that stays the collision-block grid, doorway open). Matches FB-3 pts 1+4.
   'cottage':     { id: 'cottage',     atlasKey: 'object-cottage',     assetPath: 'objects/ashen-isle/cottage.png',     passable: false, footprint: { w: 4, h: 4 }, tall: true, baseFootprint: { dx: 0, dy: 3, w: 4, h: 1 } },
   // True 2× cottage (FB-6). Same painted image (own atlas key, same file) drawn
-  // over an 8×8 footprint so it reads as a real building, not a dollhouse. The
-  // collision RED foundation is the top 7 rows (laid as a collision-block grid in
-  // the area file); the bottom front-wall row (`baseFootprint` dy:7) is the
-  // walkable BLUE base — stepping onto it fires the see-through fade so Pip is
-  // visible THROUGH the house (the GameScene behind-fade uses the base row bottom
-  // as the trigger line for buildings).
-  'cottage-large': { id: 'cottage-large', atlasKey: 'object-cottage-large', assetPath: 'objects/ashen-isle/cottage.png', passable: false, footprint: { w: 8, h: 8 }, tall: true, baseFootprint: { dx: 0, dy: 7, w: 8, h: 1 } },
+  // over an 8×8 footprint so it reads as a real building, not a dollhouse.
+  // Collision is now a TREE-STYLE base band (#119): `collisionFootprint`
+  // {dx:1,dy:5,w:6,h:2} blocks only the front-wall BASE band (the two rows where
+  // the house physically meets the ground), so the entire roof (dy 0-4) is
+  // WALKABLE — Pip rounds the body, steps up under the roof, is drawn BEHIND the
+  // sprite and fires the see-through fade, exactly like walking behind a tree
+  // canopy. The band sits LOW on purpose: this is a tall sprite (its roof fills
+  // most of the image, footprint top rows reach the ridge), so a mid-roof band
+  // would block exactly the rows where Pip tucks under the roof and leave only the
+  // thin ridge — above the painted mass — as walkable, where the fade barely
+  // reads. Jaco first painted the mid-roof band in the editor; GATE-2 review (the
+  // walk-behind read weak) moved it down to the front-wall base, which delivers
+  // the strong tuck-behind. The bottom front-wall row (`baseFootprint` dy:7) stays
+  // the walkable BLUE base and remains the fade trigger line for the front
+  // approach. This replaces the old double-sourced collision (full-body tilemap
+  // WALL band + an 8×7 collision-block grid in the area file), which over-blocked
+  // the whole house so Pip could never reach a behind-the-body cell.
+  'cottage-large': { id: 'cottage-large', atlasKey: 'object-cottage-large', assetPath: 'objects/ashen-isle/cottage.png', passable: false, footprint: { w: 8, h: 8 }, tall: true, collisionFootprint: { dx: 1, dy: 5, w: 6, h: 2 }, baseFootprint: { dx: 0, dy: 7, w: 8, h: 1 } },
   // Boat + pier read at true scale via `footprint` (US-98) — a 32px boat looked
   // like a toy on the dock (Jaco feedback 2026-06-13). Both moor in impassable
   // water; collision keys their anchor cell only, so the multi-tile footprint is
