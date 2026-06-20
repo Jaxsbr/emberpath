@@ -155,6 +155,14 @@ create the issue) · `/ce-work` → build · `/ce-test-browser` → drive the te
 `/ce-demo-reel` → GIF for GATE 2 · `/ce-report-bug` → file a bug issue · `/ce-compound` →
 learning into docs/solutions. Review gates: `emberpath-pr-review`, `emberpath-art-review`.
 
+**Skills live in this repo — always edit them here, never the loaded copy (binding).** The
+source of truth for every vendored skill is `.claude/skills/*`. The persona loads a downstream
+copy at `/home/node/.claude/skills/*` that is refreshed **from this repo** as the first action
+of every session ORIENT (`autonomy/sync-skills.sh`, one-directional repo→mount, refresh-only;
+`--check` reports drift). So a committed skill edit goes live with zero manual copy — but an edit
+made directly in the loaded mount copy is silently lost on the next refresh/respawn. See
+`docs/solutions/process/edit-skills-in-repo-not-mount.md` (#158).
+
 ## Definition of done
 Builds clean · scenario/playtest passes · art renders correctly (lessons pass) · committed
 on a branch · PR open · demo posted (GIF for motion) · the right gate cleared · `/ce-compound`
