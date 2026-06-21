@@ -1,7 +1,7 @@
 ---
 title: "feat: Unify all authoring tools into the standalone editor app"
 type: feat
-status: active
+status: completed
 issue: 182
 created: 2026-06-21
 depth: standard
