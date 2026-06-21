@@ -441,6 +441,13 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start('GameScene', { editor: 'object' });
       return true;
     }
+    // #FB-23 shadows: `?editor=shadow&target=<object|character>&kind=<id>` boots
+    // the drag/size/place shadow shape editor. Renders one kind's sprite (no area).
+    if (mode === 'shadow') {
+      resetAllFlags();
+      this.scene.start('GameScene', { editor: 'shadow' });
+      return true;
+    }
     if (mode !== 'collision') return false;
     const areaId = editorAreaId() ?? getDefaultAreaId();
     if (!getArea(areaId)) {

@@ -12,6 +12,8 @@
 // Author-controlled vocabulary. Adding a kind requires editing this file —
 // the closed string-literal union prevents user-input-driven id construction.
 
+import type { ShadowShape } from './shadows';
+
 export type ObjectKindId =
   // Shared — invisible collision filler (transparent PNG). Lets a single large
   // decorative object (e.g. a multi-cell cottage) carry per-cell collision: the
@@ -157,14 +159,14 @@ export interface ObjectKindDefinition {
   // covers. Loaded from `src/data/object-shapes.json` and merged onto the kind at
   // module init (below). Absent = legacy collisionFootprint/anchor-cell behaviour.
   collisionCells?: Array<[number, number]>;
-  // FB-23 — per-kind authored ground shadow. Position + size relative to the
-  // anchor cell top-left, in PX. FORWARD-DECLARATION for the U5 shadow
-  // fast-follow: the field is loaded from object-shapes.json and merged onto the
-  // kind here, but is NOT yet read by any render path — `renderObjects` still
-  // uses only the building-rect / tree-ellipse / prop-ellipse heuristic (FB-21
-  // canon). U5 will wire this in (when present → build the shadow from it instead
-  // of the heuristic; `noShadow` still wins). Until then it is inert typed data.
-  shadow?: { shape: 'ellipse' | 'rect'; w: number; h: number; dx: number; dy: number; alpha: number };
+  // FB-23 (shadows) — per-kind authored ground shadow, a circle/oval/rectangle
+  // sized + positioned in the shadow editor (?editor=object&kind=<id>&mode=shadow),
+  // loaded from object-shapes.json and merged onto the kind here. When present,
+  // `renderObjects` builds the shadow from it (centre = anchor cell top-left + dx,dy
+  // in PX) INSTEAD of the building-rect / tree-ellipse / prop-ellipse heuristic;
+  // `noShadow` still wins over both. A kind with no `shadow` keeps the heuristic.
+  // See src/maps/shadows.ts for the coordinate model.
+  shadow?: ShadowShape;
   // Suppress the ground-contact shadow for this kind (Jaco #1064). The
   // ground-shadow canon (ellipse under every standing prop) is for DISCRETE
   // standing objects. Dense ground-cover that carpets the floor — the briar

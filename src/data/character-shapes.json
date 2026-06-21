@@ -1,0 +1,13 @@
+{
+  "_doc": {
+    "what": "Per-character authored ground shadows (FB-23). Keyed by character kind id: 'pip' (the player) or an NPC sprite id (e.g. 'wren'). Written by the character shadow editor (?editor=character&kind=<id>); read by GameScene via getCharacterShadow(). A kind with no entry keeps the FB-21 feet-ellipse default — migrate one kind at a time.",
+    "shadow": {
+      "shape": "'ellipse' (circle when w==h, oval otherwise) | 'rect'",
+      "w": "width in world px (1 tile = 32px)",
+      "h": "height in world px",
+      "dx": "shape CENTRE x offset from the sprite CENTRE, px",
+      "dy": "shape CENTRE y offset from the sprite CENTRE, px (positive = down, toward the feet)",
+      "alpha": "0..1 opacity"
+    }
+  }
+}
