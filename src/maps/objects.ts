@@ -160,7 +160,7 @@ export interface ObjectKindDefinition {
   // module init (below). Absent = legacy collisionFootprint/anchor-cell behaviour.
   collisionCells?: Array<[number, number]>;
   // FB-23 (shadows) — per-kind authored ground shadow, a circle/oval/rectangle
-  // sized + positioned in the shadow editor (?editor=object&kind=<id>&mode=shadow),
+  // sized + positioned in the shadow editor (?editor=shadow&target=object&kind=<id>),
   // loaded from object-shapes.json and merged onto the kind here. When present,
   // `renderObjects` builds the shadow from it (centre = anchor cell top-left + dx,dy
   // in PX) INSTEAD of the building-rect / tree-ellipse / prop-ellipse heuristic;
