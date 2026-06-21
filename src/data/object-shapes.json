@@ -27,5 +27,45 @@
         3
       ]
     ]
+  },
+  "tree-oak": {
+    "shadow": {
+      "shape": "ellipse",
+      "w": 78,
+      "h": 25.6,
+      "dx": 63,
+      "dy": 108,
+      "alpha": 0.26
+    }
+  },
+  "tree-pine": {
+    "shadow": {
+      "shape": "ellipse",
+      "w": 76.2,
+      "h": 25.6,
+      "dx": 66,
+      "dy": 111,
+      "alpha": 0.26
+    }
+  },
+  "cottage-large": {
+    "shadow": {
+      "shape": "rect",
+      "w": 165,
+      "h": 46.3,
+      "dx": 129,
+      "dy": 187,
+      "alpha": 0.26
+    }
+  },
+  "fence-rail": {
+    "shadow": {
+      "shape": "ellipse",
+      "w": 27.2,
+      "h": 4.9,
+      "dx": 16,
+      "dy": 26,
+      "alpha": 0.26
+    }
   }
 }

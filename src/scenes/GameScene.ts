@@ -4,6 +4,8 @@ import { TILESETS, hasTileset } from '../maps/tilesets';
 import { resolveWangFrame, pickWangTilesetForCell } from '../maps/wang';
 import { TerrainId, TERRAINS } from '../maps/terrain';
 import { OBJECT_KINDS, ObjectInstance } from '../maps/objects';
+import { ShadowShape, resolveShadow } from '../maps/shadows';
+import { getCharacterShadow, PLAYER_CHARACTER_ID } from '../maps/characters';
 import { AreaDefinition, NpcDefinition, DialogueScript } from '../data/areas/types';
 import { AreaPassability, cellBlocks } from '../systems/collision';
 import { STYLE_PALETTE } from '../art/styleGuide';
@@ -27,7 +29,8 @@ import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
 import { CollisionEditorSystem } from '../systems/collisionEditor';
 import { ObjectShapeEditorSystem, resolveEditorKind } from '../systems/objectShapeEditor';
-import { isDebugCollision, editorKind } from '../sandbox';
+import { ShadowEditorSystem, resolveShadowTarget, resolveShadowKind } from '../systems/shadowEditor';
+import { isDebugCollision, editorKind, editorTarget } from '../sandbox';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
@@ -229,6 +232,11 @@ export class GameScene extends Phaser.Scene {
   // object KIND's sprite over an opaque backdrop instead of the area.
   private objectEditor: ObjectShapeEditorSystem | null = null;
   private objectEditorActive = false;
+  // #FB-23 shadow shape editor. Non-null only when booted via `?editor=shadow`;
+  // suppresses gameplay and owns input like the other editors, rendering one
+  // object/character kind's sprite with a draggable shadow shape over it.
+  private shadowEditor: ShadowEditorSystem | null = null;
+  private shadowEditorActive = false;
   private npcInteraction!: NpcInteractionSystem;
   private inscribedStone!: InscribedStoneSystem;
   private dialogueSystem!: DialogueSystem;
@@ -281,8 +289,14 @@ export class GameScene extends Phaser.Scene {
   // canon ground-contact shadow as objects, but anchored at the entity's feet and
   // repositioned each frame in update() so it tracks movement. Depth tracks the
   // entity's own y-sort minus a hair so a shadow always sits just under its owner.
-  private playerShadow!: Phaser.GameObjects.Ellipse;
-  private npcShadowsById: Map<string, Phaser.GameObjects.Ellipse> = new Map();
+  // Shape (not Ellipse) so an authored shadow can be a rectangle too (#FB-23).
+  private playerShadow!: Phaser.GameObjects.Shape;
+  private npcShadowsById: Map<string, Phaser.GameObjects.Shape> = new Map();
+  // Per-frame shadow offset (sprite centre → shadow centre). Default = feet
+  // ellipse drop; an AUTHORED character shadow (#FB-23) supplies its own dx/dy so
+  // the shape keeps its hand-placed position as the entity walks.
+  private playerShadowOffset = { dx: 0, dy: PLAYER_SHADOW_FOOT_OFFSET };
+  private npcShadowOffsetById: Map<string, { dx: number; dy: number }> = new Map();
   // Behind-object reveal (FB-3 part 4) — tall objects (trees, the stag) Pip can
   // hide behind. When her feet rise above an object's trunk-collider top AND she
   // is horizontally under its canopy, the object fades to 50% and gains a white
@@ -528,6 +542,7 @@ export class GameScene extends Phaser.Scene {
     this.transitionInProgress = false;
     this.editorActive = data?.editor === 'collision';
     this.objectEditorActive = data?.editor === 'object';
+    this.shadowEditorActive = data?.editor === 'shadow';
     const areaId = data?.areaId ?? getDefaultAreaId();
     const area = getArea(areaId);
     if (!area) {
@@ -643,7 +658,8 @@ export class GameScene extends Phaser.Scene {
     // global pointerdown handler (the touch joystick) that would flash on every
     // paint click, and its WASD polling is unused (editor update suppresses
     // gameplay and the editor owns its own camera-pan keys).
-    if (!this.editorActive && !this.objectEditorActive) this.inputSystem = new InputSystem(this);
+    if (!this.editorActive && !this.objectEditorActive && !this.shadowEditorActive)
+      this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
     // Ember-share pulse system (US-85). Instantiated after the UI camera
     // exists so the pulse Arc can be uiCam.ignore'd on creation. Reset
@@ -869,6 +885,11 @@ export class GameScene extends Phaser.Scene {
     if (this.objectEditorActive) {
       this.objectEditor = new ObjectShapeEditorSystem(this, resolveEditorKind(editorKind()));
     }
+    // #FB-23 shadow editor: renders one kind's sprite + a draggable shadow shape.
+    if (this.shadowEditorActive) {
+      const target = resolveShadowTarget(editorTarget());
+      this.shadowEditor = new ShadowEditorSystem(this, target, resolveShadowKind(target, editorKind()));
+    }
 
     // StoryScene close path: GameScene is paused on launchStoryScene and resumed
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —
@@ -1019,6 +1040,7 @@ export class GameScene extends Phaser.Scene {
     if (
       !this.editorActive &&
       !this.objectEditorActive &&
+      !this.shadowEditorActive &&
       isFreshStart &&
       this.area.introStoryScene &&
       getFlag('ashen_intro_played') !== true
@@ -1178,6 +1200,11 @@ export class GameScene extends Phaser.Scene {
       this.objectEditor?.update();
       return;
     }
+    // #FB-23 shadow editor: drive only the editor, suppress all gameplay.
+    if (this.shadowEditorActive) {
+      this.shadowEditor?.update();
+      return;
+    }
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
     // Suppress during conditional NPC spawn fade (US-71) — same zone-level
@@ -1254,7 +1281,10 @@ export class GameScene extends Phaser.Scene {
     this.player.setDepth(this.ySortDepth(this.player.y + halfSize));
     // Track Pip's ground shadow at her feet, just under her own sprite (FB-21).
     // Pure setters, no allocation (Learning EP-01).
-    this.playerShadow.setPosition(this.player.x, this.player.y + PLAYER_SHADOW_FOOT_OFFSET);
+    this.playerShadow.setPosition(
+      this.player.x + this.playerShadowOffset.dx,
+      this.player.y + this.playerShadowOffset.dy,
+    );
     this.playerShadow.setDepth(this.player.depth - ENTITY_SHADOW_DEPTH_EPS);
     // Fade + outline any tall object Pip is currently hidden behind (FB-3 pt 4).
     this.updateBehindObjectFade();
@@ -1267,7 +1297,8 @@ export class GameScene extends Phaser.Scene {
       // Track each NPC's ground shadow at its feet, just under its own sprite.
       const shadow = this.npcShadowsById.get(id);
       if (shadow) {
-        shadow.setPosition(sprite.x, sprite.y + NPC_SHADOW_FOOT_OFFSET);
+        const off = this.npcShadowOffsetById.get(id) ?? { dx: 0, dy: NPC_SHADOW_FOOT_OFFSET };
+        shadow.setPosition(sprite.x + off.dx, sprite.y + off.dy);
         shadow.setDepth(sprite.depth - ENTITY_SHADOW_DEPTH_EPS);
       }
     }
@@ -1782,6 +1813,21 @@ export class GameScene extends Phaser.Scene {
     return this.add.ellipse(centerX, contactY + shH * 0.12, shW, shH, 0x000000, alpha);
   }
 
+  // FB-23 (shadows) — build a shadow Shape from an AUTHORED ShadowShape, placed
+  // against a reference point (object anchor cell top-left, or a character's
+  // sprite centre). The single bridge from authored data → Phaser object: an
+  // ellipse (circle when w==h, oval otherwise) or a rectangle, both centred on
+  // ref+(dx,dy). Caller sets depth. Sharing this between objects + Pip + every
+  // NPC is what makes the editor's "drop a circle/oval/rect, size it, place it"
+  // produce exactly what ships, for any kind. resolveShadow does the math so the
+  // editor preview and the renderer stay byte-identical.
+  private makeShadowShape(refX: number, refY: number, s: ShadowShape): Phaser.GameObjects.Shape {
+    const r = resolveShadow(s, refX, refY);
+    return r.shape === 'rect'
+      ? this.add.rectangle(r.cx, r.cy, r.w, r.h, 0x000000, r.alpha)
+      : this.add.ellipse(r.cx, r.cy, r.w, r.h, 0x000000, r.alpha);
+  }
+
   private buildObjectCollisionMap(): void {
     const m = this.passability.objectBlockMap;
     m.clear();
@@ -1975,7 +2021,15 @@ export class GameScene extends Phaser.Scene {
       // Every discrete tree / building / prop still gets its canon shadow below.
       let shadow: Phaser.GameObjects.Shape | null = null;
       if (!def.noShadow) {
-      if (bf) {
+      if (def.shadow) {
+        // AUTHORED shadow (#FB-23 shadow editor) wins over the heuristic: a
+        // circle/oval/rect sized + positioned by hand, centred on the anchor
+        // cell's top-left + (dx,dy) px. This is how a round tree finally gets a
+        // round shadow instead of the kind-family default. `noShadow` still wins.
+        const refX = inst.col * TILE_SIZE;
+        const refY = inst.row * TILE_SIZE;
+        shadow = this.makeShadowShape(refX, refY, def.shadow);
+      } else if (bf) {
         // Buildings (cottage): ONE clean RECTANGULAR shadow framing the whole
         // FRONT WALL — the shape AND position Jaco annotated (#934 "green box").
         // It is NOT the thin band at the wall base (#934 "blue" = too low/short)
@@ -2258,6 +2312,7 @@ export class GameScene extends Phaser.Scene {
     // NPC ground shadows are GameObjects destroyed by the scene shutdown on
     // restart; clear the stale references so spawnNpcSprite recreates fresh ones.
     this.npcShadowsById.clear();
+    this.npcShadowOffsetById.clear();
     // Presence auras are GameObjects destroyed by the scene shutdown on restart;
     // clear the stale references so spawnNpcSprite recreates fresh ones (mirrors
     // npcSpritesById).
@@ -2281,14 +2336,24 @@ export class GameScene extends Phaser.Scene {
       sprite.play(`npc-${npc.sprite}-idle-south`);
       this.npcEntities.push(sprite);
       this.npcSpritesById.set(npc.id, sprite);
-      // Canon ground shadow at the NPC's feet (FB-21), same as Pip's — tracked
-      // each frame in update() alongside the NPC y-sort.
-      const shadow = this.makeGroundShadow(
-        cx,
-        cy + NPC_SHADOW_FOOT_OFFSET,
-        NPC_SHADOW_WIDTH,
-        ENTITY_SHADOW_ALPHA,
-      );
+      // Ground shadow at the NPC's feet. An AUTHORED shadow for this sprite kind
+      // (#FB-23, shared by every instance of the kind) wins; else the FB-21
+      // feet-ellipse default. Tracked each frame in update() (using the stored
+      // offset) alongside the NPC y-sort.
+      const authored = getCharacterShadow(npc.sprite);
+      let shadow: Phaser.GameObjects.Shape;
+      if (authored) {
+        shadow = this.makeShadowShape(cx, cy, authored);
+        this.npcShadowOffsetById.set(npc.id, { dx: authored.dx, dy: authored.dy });
+      } else {
+        shadow = this.makeGroundShadow(
+          cx,
+          cy + NPC_SHADOW_FOOT_OFFSET,
+          NPC_SHADOW_WIDTH,
+          ENTITY_SHADOW_ALPHA,
+        );
+        this.npcShadowOffsetById.set(npc.id, { dx: 0, dy: NPC_SHADOW_FOOT_OFFSET });
+      }
       shadow.setDepth(sprite.depth - ENTITY_SHADOW_DEPTH_EPS);
       this.npcShadowsById.set(npc.id, shadow);
       this.createNpcPresenceGlow(npc, cx, cy);
@@ -2541,6 +2606,8 @@ export class GameScene extends Phaser.Scene {
     this.collisionEditor = null;
     this.objectEditor?.destroy();
     this.objectEditor = null;
+    this.shadowEditor?.destroy();
+    this.shadowEditor = null;
     this.events.off('resume', this.flushSave, this);
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);
@@ -2836,14 +2903,23 @@ export class GameScene extends Phaser.Scene {
     // Native PNG resolution: 68×68px. Scale 1.0 renders at native size.
     // Collision bounding box uses PLAYER_SIZE (24px) in math directly — display size is independent.
     this.player.setScale(1);
-    // Canon ground shadow at Pip's feet (FB-21). Repositioned every frame in
-    // update() so it tracks her movement; depth follows her own y-sort there too.
-    this.playerShadow = this.makeGroundShadow(
-      x,
-      y + PLAYER_SHADOW_FOOT_OFFSET,
-      PLAYER_SHADOW_WIDTH,
-      ENTITY_SHADOW_ALPHA,
-    );
+    // Ground shadow at Pip's feet. An AUTHORED shadow (#FB-23 character editor)
+    // wins — its hand-placed shape/size/offset; otherwise the FB-21 feet-ellipse
+    // default. Repositioned every frame in update() so it tracks her movement
+    // (using playerShadowOffset); depth follows her own y-sort there too.
+    const pipShadow = getCharacterShadow(PLAYER_CHARACTER_ID);
+    if (pipShadow) {
+      this.playerShadow = this.makeShadowShape(x, y, pipShadow);
+      this.playerShadowOffset = { dx: pipShadow.dx, dy: pipShadow.dy };
+    } else {
+      this.playerShadow = this.makeGroundShadow(
+        x,
+        y + PLAYER_SHADOW_FOOT_OFFSET,
+        PLAYER_SHADOW_WIDTH,
+        ENTITY_SHADOW_ALPHA,
+      );
+      this.playerShadowOffset = { dx: 0, dy: PLAYER_SHADOW_FOOT_OFFSET };
+    }
     this.playerShadow.setDepth(this.player.depth - ENTITY_SHADOW_DEPTH_EPS);
     this.animationSystem = new AnimationSystem(this.player);
 

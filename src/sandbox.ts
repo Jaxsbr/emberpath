@@ -31,6 +31,9 @@ let editorAreaIdValue: string | null = null;
 // `?editor=object&kind=<id>` — which object KIND the object-shape editor opens on
 // (FB-23 U2). Null = the editor defaults to the first collision-bearing kind.
 let editorKindValue: string | null = null;
+// `?editor=shadow&target=object|character&kind=<id>` — the shadow shape editor
+// (#FB-23 shadows). `target` selects which family/registry/save endpoint to use.
+let editorTargetValue: string | null = null;
 
 // Decided ONCE at module import. `?sandbox=1` keeps the throwaway namespace across
 // refreshes; `?scenario=<id>` implies sandbox (a scenario boot is always a
@@ -42,6 +45,7 @@ function initFromUrl(): void {
     editorModeValue = params.get('editor');
     editorAreaIdValue = params.get('area');
     editorKindValue = params.get('kind');
+    editorTargetValue = params.get('target');
     sandboxActive = params.get('sandbox') === '1' || params.has('scenario') || editorModeValue !== null;
     debugCollisionActive = params.get('debugCollision') === '1';
   } catch {
@@ -50,6 +54,7 @@ function initFromUrl(): void {
     editorModeValue = null;
     editorAreaIdValue = null;
     editorKindValue = null;
+    editorTargetValue = null;
   }
 }
 initFromUrl();
@@ -78,6 +83,11 @@ export function editorAreaId(): string | null {
 // The `?kind=<id>` value used by the object-shape editor (FB-23 U2), or null.
 export function editorKind(): string | null {
   return editorKindValue;
+}
+
+// The `?target=<object|character>` value used by the shadow editor, or null.
+export function editorTarget(): string | null {
+  return editorTargetValue;
 }
 
 export function flagsStorageKey(): string {

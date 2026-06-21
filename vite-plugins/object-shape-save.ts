@@ -18,9 +18,23 @@ import path from 'path';
 const ENDPOINT = '/__object-shape/save';
 const TARGET = 'src/data/object-shapes.json';
 
+interface ShadowPayload {
+  shape: 'ellipse' | 'rect';
+  w: number;
+  h: number;
+  dx: number;
+  dy: number;
+  alpha: number;
+}
+
 interface SavePayload {
   kind: string;
-  collision: [number, number][];
+  // At least one of these is present. `collision` comes from the sub-cell paint
+  // editor; `shadow` from the shadow shape editor (#FB-23). A save may carry only
+  // one (the shadow editor never touches collision and vice-versa). `null` for a
+  // field means "clear it".
+  collision?: [number, number][];
+  shadow?: ShadowPayload | null;
 }
 
 function sanitizeKind(id: unknown): string | null {
@@ -30,14 +44,31 @@ function sanitizeKind(id: unknown): string | null {
   return id;
 }
 
+function isValidShadow(s: unknown): s is ShadowPayload {
+  if (typeof s !== 'object' || s === null) return false;
+  const o = s as Record<string, unknown>;
+  if (o.shape !== 'ellipse' && o.shape !== 'rect') return false;
+  return ['w', 'h', 'dx', 'dy', 'alpha'].every((k) => typeof o[k] === 'number' && Number.isFinite(o[k]));
+}
+
 function isValidPayload(body: unknown): body is SavePayload {
   if (typeof body !== 'object' || body === null) return false;
   const b = body as Record<string, unknown>;
   if (!sanitizeKind(b.kind)) return false;
-  if (!Array.isArray(b.collision)) return false;
-  return b.collision.every(
-    (c) => Array.isArray(c) && c.length === 2 && typeof c[0] === 'number' && typeof c[1] === 'number',
-  );
+  const hasCollision = b.collision !== undefined;
+  const hasShadow = b.shadow !== undefined;
+  if (!hasCollision && !hasShadow) return false;
+  if (hasCollision) {
+    if (!Array.isArray(b.collision)) return false;
+    if (
+      !b.collision.every(
+        (c) => Array.isArray(c) && c.length === 2 && typeof c[0] === 'number' && typeof c[1] === 'number',
+      )
+    )
+      return false;
+  }
+  if (hasShadow && b.shadow !== null && !isValidShadow(b.shadow)) return false;
+  return true;
 }
 
 export function objectShapeSavePlugin(): Plugin {
@@ -86,12 +117,23 @@ export function objectShapeSavePlugin(): Plugin {
                 typeof current[kind] === 'object' && current[kind] !== null
                   ? (current[kind] as Record<string, unknown>)
                   : {};
-              if (body.collision.length > 0) {
-                existing.collision = body.collision;
-              } else {
-                // Empty paint = "no authored collision" → drop the key so the
-                // kind falls back to its legacy footprint instead of blocking nothing.
-                delete existing.collision;
+              // collision and shadow are edited independently — only touch the
+              // field this save carries, so saving a shadow never wipes collision.
+              if (body.collision !== undefined) {
+                if (body.collision.length > 0) {
+                  existing.collision = body.collision;
+                } else {
+                  // Empty paint = "no authored collision" → drop the key so the
+                  // kind falls back to its legacy footprint instead of blocking nothing.
+                  delete existing.collision;
+                }
+              }
+              if (body.shadow !== undefined) {
+                if (body.shadow === null) {
+                  delete existing.shadow;
+                } else {
+                  existing.shadow = body.shadow;
+                }
               }
               // If the entry is now empty (no collision, no shadow), drop it.
               if (Object.keys(existing).length === 0) {
@@ -108,7 +150,15 @@ export function objectShapeSavePlugin(): Plugin {
             const rel = path.relative(server.config.root, file);
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ ok: true, path: rel, kind, cells: body.collision.length }));
+            res.end(
+              JSON.stringify({
+                ok: true,
+                path: rel,
+                kind,
+                cells: body.collision?.length,
+                shadow: body.shadow === undefined ? undefined : body.shadow !== null,
+              }),
+            );
           })();
         });
       });
