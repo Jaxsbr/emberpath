@@ -71,11 +71,16 @@ function isValidPayload(body: unknown): body is SavePayload {
   return true;
 }
 
-export function objectShapeSavePlugin(): Plugin {
+// `rootDir` overrides where TARGET is resolved. The game's own dev server passes
+// nothing (writes are relative to its root). The standalone editor app (#182)
+// passes the game-repo root so saves land in the game's src/data, not under
+// tools/editor.
+export function objectShapeSavePlugin(rootDir?: string): Plugin {
   return {
     name: 'emberpath-object-shape-save',
     apply: 'serve',
     configureServer(server) {
+      const root = rootDir ?? server.config.root;
       server.middlewares.use(ENDPOINT, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
@@ -103,7 +108,7 @@ export function objectShapeSavePlugin(): Plugin {
               return;
             }
             const kind = sanitizeKind(body.kind)!;
-            const file = path.resolve(server.config.root, TARGET);
+            const file = path.resolve(root, TARGET);
             try {
               // Read-merge-write so other kinds + the _doc note + this kind's
               // shadow block survive. Missing file → start from an empty object.
@@ -147,7 +152,7 @@ export function objectShapeSavePlugin(): Plugin {
               res.end(JSON.stringify({ error: String(err) }));
               return;
             }
-            const rel = path.relative(server.config.root, file);
+            const rel = path.relative(root, file);
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(

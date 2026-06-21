@@ -77,6 +77,14 @@ export class ShadowEditorSystem {
     private scene: Phaser.Scene,
     private readonly target: ShadowTarget,
     private readonly kind: string,
+    // Editor-app hosting (#182): `hudParent` flows the HUD inside that container
+    // (static, not the fixed full-screen overlay used in-game); `onSwitch` makes
+    // target/kind controls call back (the editor app tears down + remounts) instead
+    // of a URL reload. Both absent → original in-game behaviour, byte-for-byte.
+    private readonly opts?: {
+      hudParent?: HTMLElement;
+      onSwitch?: (next: { target: ShadowTarget; kind: string }) => void;
+    },
   ) {
     const cam = this.scene.cameras.main;
     cam.stopFollow();
@@ -324,8 +332,10 @@ export class ShadowEditorSystem {
   private buildHud(): void {
     const hud = document.createElement('div');
     hud.id = 'shadow-editor-hud';
+    const embedded = !!this.opts?.hudParent;
     hud.style.cssText =
-      'position:fixed;top:10px;left:10px;z-index:9999;font:12px/1.4 system-ui,sans-serif;' +
+      (embedded ? 'position:static;' : 'position:fixed;top:10px;left:10px;z-index:9999;') +
+      'font:12px/1.4 system-ui,sans-serif;' +
       'background:rgba(20,16,30,0.92);color:#eee;padding:10px 12px;border-radius:6px;' +
       'max-width:280px;box-shadow:0 2px 10px rgba(0,0,0,0.5);';
 
@@ -450,7 +460,7 @@ export class ShadowEditorSystem {
     hud.appendChild(status);
     this.statusEl = status;
 
-    document.body.appendChild(hud);
+    (this.opts?.hudParent ?? document.body).appendChild(hud);
     this.hud = hud;
     this.updateReadout();
   }
@@ -463,6 +473,10 @@ export class ShadowEditorSystem {
   }
 
   private reboot(next: { target?: ShadowTarget; kind?: string }): void {
+    if (this.opts?.onSwitch) {
+      this.opts.onSwitch({ target: next.target ?? this.target, kind: next.kind ?? '' });
+      return;
+    }
     const url = new URL(window.location.href);
     url.searchParams.set('editor', 'shadow');
     url.searchParams.set('target', next.target ?? this.target);

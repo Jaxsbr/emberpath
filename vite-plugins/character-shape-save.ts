@@ -52,11 +52,14 @@ function isValidPayload(body: unknown): body is SavePayload {
   return true;
 }
 
-export function characterShapeSavePlugin(): Plugin {
+// `rootDir` overrides where TARGET is resolved (see objectShapeSavePlugin) — the
+// standalone editor app (#182) passes the game-repo root.
+export function characterShapeSavePlugin(rootDir?: string): Plugin {
   return {
     name: 'emberpath-character-shape-save',
     apply: 'serve',
     configureServer(server) {
+      const root = rootDir ?? server.config.root;
       server.middlewares.use(ENDPOINT, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
@@ -84,7 +87,7 @@ export function characterShapeSavePlugin(): Plugin {
               return;
             }
             const kind = sanitizeKind(body.kind)!;
-            const file = path.resolve(server.config.root, TARGET);
+            const file = path.resolve(root, TARGET);
             try {
               // Read-merge-write so other kinds + the _doc note survive.
               let current: Record<string, unknown> = {};
@@ -113,7 +116,7 @@ export function characterShapeSavePlugin(): Plugin {
               res.end(JSON.stringify({ error: String(err) }));
               return;
             }
-            const rel = path.relative(server.config.root, file);
+            const rel = path.relative(root, file);
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ ok: true, path: rel, kind, shadow: body.shadow !== null }));

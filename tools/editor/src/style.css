@@ -362,3 +362,40 @@ html, body {
 #zoom-in-btn:hover, #zoom-out-btn:hover, #zoom-reset-btn:hover {
   background: var(--tab-hover);
 }
+
+/* Phaser-backed tabs (#182): Collision + Shadow.
+   These are full-bleed — the view's own padding is dropped so the layout is a
+   fixed-width HUD panel (the hosted editor system renders its own controls into
+   it via hudParent) beside the live Phaser canvas (flex:1). The canvas host needs
+   a definite size because the scene uses Phaser.Scale.RESIZE. */
+#view-collision.view,
+#view-shadow.view {
+  padding: 0;
+}
+
+.phaser-tab {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.phaser-tab-hud {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.phaser-tab-canvas {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  overflow: hidden;
+  background: #14101e;
+}
+
+.phaser-tab-canvas canvas {
+  display: block;
+}
