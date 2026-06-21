@@ -5,6 +5,9 @@ import { OBJECT_KINDS, type ObjectKindId } from '@game/maps/objects';
 import { renderMap } from './mapRenderer';
 import { renderDialogue } from './dialogueRenderer';
 import { renderFlow } from './flowRenderer';
+import { CollisionTab } from './tabs/collisionTab';
+import { ShadowTab } from './tabs/shadowTab';
+import type { PhaserTab } from './tabs/phaserTab';
 import {
   getState,
   setMode,
@@ -17,7 +20,7 @@ import {
 } from './editorState';
 import { serializeTerrainAndObjects } from './exportTypeScript';
 
-type ViewName = 'map' | 'dialogue' | 'flow';
+type ViewName = 'map' | 'dialogue' | 'flow' | 'collision' | 'shadow';
 
 let activeAreaId: string = getDefaultAreaId();
 let activeArea: AreaDefinition | undefined;
@@ -104,6 +107,17 @@ function reflectStateInUI(): void {
   zoomLabel.textContent = `${s.zoom.toFixed(1)}×`;
 }
 
+// Phaser-backed tabs (#182 U2/U3) — lazily constructed on first activation.
+const phaserTabs: Partial<Record<ViewName, PhaserTab>> = {};
+function getPhaserTab(view: ViewName): PhaserTab | null {
+  if (view === 'collision') return (phaserTabs.collision ??= new CollisionTab(getViewEl('collision')));
+  if (view === 'shadow') return (phaserTabs.shadow ??= new ShadowTab(getViewEl('shadow')));
+  return null;
+}
+function getViewEl(view: ViewName): HTMLElement {
+  return document.getElementById(`view-${view}`) as HTMLElement;
+}
+
 function switchView(view: ViewName): void {
   activeView = view;
   tabs.forEach((tab) => {
@@ -113,10 +127,23 @@ function switchView(view: ViewName): void {
     const viewName = v.id.replace('view-', '') as ViewName;
     v.classList.toggle('active', viewName === view);
   });
-  // Hide map tools panel on non-map views.
+  const isPhaserView = view === 'collision' || view === 'shadow';
+  // Map tools panel is map-only; the detail panel is irrelevant to the
+  // full-bleed Phaser tabs.
   const mapTools = document.getElementById('map-tools');
   if (mapTools) mapTools.style.display = view === 'map' ? '' : 'none';
-  renderActiveView();
+  const detailPanel = document.getElementById('detail-panel');
+  if (detailPanel) detailPanel.style.display = isPhaserView ? 'none' : '';
+
+  // Suspend whichever Phaser tab isn't showing, then render/activate the target.
+  for (const v of ['collision', 'shadow'] as ViewName[]) {
+    if (v !== view) phaserTabs[v]?.deactivate();
+  }
+  if (isPhaserView) {
+    void getPhaserTab(view)?.activate();
+  } else {
+    renderActiveView();
+  }
 }
 
 function loadArea(areaId: string): void {

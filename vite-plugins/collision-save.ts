@@ -42,11 +42,14 @@ function isValidPayload(body: unknown): body is SavePayload {
   );
 }
 
-export function collisionSavePlugin(): Plugin {
+// `rootDir` overrides where STAGED_DIR is resolved (see objectShapeSavePlugin) —
+// the standalone editor app (#182) passes the game-repo root.
+export function collisionSavePlugin(rootDir?: string): Plugin {
   return {
     name: 'emberpath-collision-save',
     apply: 'serve',
     configureServer(server) {
+      const root = rootDir ?? server.config.root;
       server.middlewares.use(ENDPOINT, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
@@ -75,7 +78,7 @@ export function collisionSavePlugin(): Plugin {
               return;
             }
             const areaId = sanitizeAreaId(body.areaId)!;
-            const dir = path.resolve(server.config.root, STAGED_DIR);
+            const dir = path.resolve(root, STAGED_DIR);
             const file = path.join(dir, `${areaId}.json`);
             const record = {
               areaId,
@@ -92,7 +95,7 @@ export function collisionSavePlugin(): Plugin {
               res.end(JSON.stringify({ error: String(err) }));
               return;
             }
-            const rel = path.relative(server.config.root, file);
+            const rel = path.relative(root, file);
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ ok: true, path: rel, cells: body.blocked.length }));

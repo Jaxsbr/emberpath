@@ -91,7 +91,16 @@ export class ObjectShapeEditorSystem {
   private statusEl: HTMLDivElement | null = null;
   private countEl: HTMLDivElement | null = null;
 
-  constructor(private scene: Phaser.Scene, kind: ObjectKindId) {
+  constructor(
+    private scene: Phaser.Scene,
+    kind: ObjectKindId,
+    // Editor-app hosting (#182): when `hudParent` is given the HUD flows inside
+    // that container (static, not the fixed full-screen overlay used in-game);
+    // when `onSwitch` is given, picking a kind calls it instead of a URL reload
+    // (the editor app tears down + remounts this system on the new kind). Both
+    // absent → original in-game behaviour, byte-for-byte.
+    private opts?: { hudParent?: HTMLElement; onSwitch?: (kind: ObjectKindId) => void },
+  ) {
     this.kind = kind;
     this.def = OBJECT_KINDS[kind];
     const fp = this.def.footprint ?? { w: 1, h: 1 };
@@ -252,8 +261,10 @@ export class ObjectShapeEditorSystem {
   private buildHud(): void {
     const hud = document.createElement('div');
     hud.id = 'object-editor-hud';
+    const embedded = !!this.opts?.hudParent;
     hud.style.cssText =
-      'position:fixed;top:10px;left:10px;z-index:9999;font:12px/1.4 system-ui,sans-serif;' +
+      (embedded ? 'position:static;' : 'position:fixed;top:10px;left:10px;z-index:9999;') +
+      'font:12px/1.4 system-ui,sans-serif;' +
       'background:rgba(20,16,30,0.92);color:#eee;padding:10px 12px;border-radius:6px;' +
       'max-width:260px;box-shadow:0 2px 10px rgba(0,0,0,0.5);';
 
@@ -274,6 +285,10 @@ export class ObjectShapeEditorSystem {
       select.appendChild(opt);
     }
     select.addEventListener('change', () => {
+      if (this.opts?.onSwitch) {
+        this.opts.onSwitch(select.value as ObjectKindId);
+        return;
+      }
       const url = new URL(window.location.href);
       url.searchParams.set('editor', 'object');
       url.searchParams.set('kind', select.value);
@@ -310,7 +325,7 @@ export class ObjectShapeEditorSystem {
     hud.appendChild(status);
     this.statusEl = status;
 
-    document.body.appendChild(hud);
+    (this.opts?.hudParent ?? document.body).appendChild(hud);
     this.hud = hud;
     this.updateCount();
   }
