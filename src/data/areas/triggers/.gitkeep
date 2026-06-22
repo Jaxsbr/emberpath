@@ -1,0 +1,3 @@
+# Editor-authored trigger sidecars (#187, Decision A-a).
+# One <areaId>.json per area; the registry spreads them onto the area at load.
+# Written by the Triggers editor tab. Committed as real game data.

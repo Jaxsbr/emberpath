@@ -3,6 +3,7 @@ import path from 'path';
 import { collisionSavePlugin } from '../../vite-plugins/collision-save';
 import { objectShapeSavePlugin } from '../../vite-plugins/object-shape-save';
 import { characterShapeSavePlugin } from '../../vite-plugins/character-shape-save';
+import { triggerSavePlugin } from '../../vite-plugins/trigger-save';
 
 // The standalone editor app (#182) is the single home for ALL authoring tools.
 // It is run LOCALLY ONLY and must NEVER be published — it has its own dist/ and
@@ -20,6 +21,7 @@ export default defineConfig({
     collisionSavePlugin(gameRoot),
     objectShapeSavePlugin(gameRoot),
     characterShapeSavePlugin(gameRoot),
+    triggerSavePlugin(gameRoot),
   ],
   server: {
     port: 5174,
