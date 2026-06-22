@@ -34,6 +34,24 @@ function isFiniteNum(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+// A setFlags value must be exactly what coerceFlagValue produces and the runtime
+// stores: a string, finite number, or boolean. A nested object/array would be
+// written verbatim and break flag evaluation, so reject it server-side.
+function isValidFlagValue(v: unknown): boolean {
+  return typeof v === 'string' || typeof v === 'boolean' || isFiniteNum(v);
+}
+
+// The optional LightSpec a trigger may register at its centre. All fields
+// optional, but each must be the right primitive and `tier` is the closed 1|2.
+function isValidLight(v: unknown): boolean {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return false;
+  const l = v as Record<string, unknown>;
+  if (l.radius !== undefined && !isFiniteNum(l.radius)) return false;
+  if (l.intensity !== undefined && !isFiniteNum(l.intensity)) return false;
+  if (l.tier !== undefined && l.tier !== 1 && l.tier !== 2) return false;
+  return true;
+}
+
 export function isValidTrigger(t: unknown): boolean {
   if (typeof t !== 'object' || t === null) return false;
   const o = t as Record<string, unknown>;
@@ -44,10 +62,13 @@ export function isValidTrigger(t: unknown): boolean {
   if (typeof o.actionRef !== 'string') return false;
   if (typeof o.repeatable !== 'boolean') return false;
   if (o.condition !== undefined && typeof o.condition !== 'string') return false;
-  if (o.setFlags !== undefined && (typeof o.setFlags !== 'object' || o.setFlags === null || Array.isArray(o.setFlags)))
-    return false;
+  if (o.setFlags !== undefined) {
+    if (typeof o.setFlags !== 'object' || o.setFlags === null || Array.isArray(o.setFlags)) return false;
+    if (!Object.values(o.setFlags as Record<string, unknown>).every(isValidFlagValue)) return false;
+  }
   if (o.incrementFlags !== undefined && (!Array.isArray(o.incrementFlags) || !o.incrementFlags.every((s) => typeof s === 'string')))
     return false;
+  if (o.light !== undefined && !isValidLight(o.light)) return false;
   return true;
 }
 

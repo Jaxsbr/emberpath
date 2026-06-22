@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ashen-isle-authored-demo",
+    "col": 10,
+    "row": 19,
+    "width": 1,
+    "height": 3,
+    "type": "thought",
+    "actionRef": "The path glows warm where I step.",
+    "condition": "demo_authored_trigger == true",
+    "repeatable": false
+  }
+]
