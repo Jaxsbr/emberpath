@@ -121,7 +121,9 @@ export function toTriggerDefinition(form: TriggerFormModel): TriggerDefinition {
   const inc = form.incrementFlags.map((s) => s.trim()).filter((s) => s !== '');
   if (inc.length > 0) def.incrementFlags = inc;
 
-  if (form.light) def.light = form.light;
+  // Clone so the on-disk def never aliases the form's live light object (a later
+  // form edit must not mutate an already-compiled trigger).
+  if (form.light) def.light = { ...form.light };
   return def;
 }
 
