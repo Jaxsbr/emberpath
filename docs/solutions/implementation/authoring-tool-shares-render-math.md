@@ -3,7 +3,8 @@ title: An in-game authoring tool MUST share the renderer's exact math — and ov
 applies_when: Building any "place/size/tune it in the browser, save to data" editor (shadows, collision, placement, hitboxes), or adding authored per-kind data that replaces a computed default
 status: binding
 failure_ids: [FB-23 / #179 — square shadow under a round tree; shipped clean because the tool and renderer agreed and unauthored kinds kept the old default]
-canon: src/maps/shadows.ts (resolveShadow — the one shared fn) · src/systems/shadowEditor.ts (?editor=shadow&target=…&kind=…) · src/scenes/GameScene.ts (precedence) · src/data/object-shapes.json + character-shapes.json · vite-plugins/{object,character}-shape-save.ts
+proven_again: [#185 / PR #189 — per-character (Pip/NPC) collision authoring; same four rules held on a third family with zero regression]
+canon: src/maps/shadows.ts (resolveShadow — the one shared fn) · src/systems/shadowEditor.ts (?editor=shadow&target=…&kind=…) · src/systems/characterCollisionEditor.ts (the third family) · src/maps/characters.ts (characterBox — shared by player + getNpcBounds) · src/scenes/GameScene.ts (precedence) · src/data/object-shapes.json + character-shapes.json · vite-plugins/{object,character}-shape-save.ts
 ---
 
 # An authoring tool shares the render math, overrides by precedence, and captures with Scale.RESIZE
@@ -67,6 +68,25 @@ the shape is identical (same shared fn → it must be). And confirm an **unautho
 kind is pixel-unchanged from before (precedence rule). For anything that moves
 (a shadow tracking a walking sprite), the artifact is an **MP4**, never a still
 ([process/gif-for-motion](../process/gif-for-motion.md)).
+
+## Proven again — character collision (#185 / PR #189)
+The same four rules carried, unchanged, to a **third family**: per-character (Pip/NPC)
+**collision** authoring (not shadow). The Collision tab gained a CHARACTER target — pick
+Pip/Wren, drag a **centre-referenced body-rect** (move + E/S handles), Save →
+`character-shapes.json.collision`. Each rule held:
+1. **One shared math** — the authored rect resolves through `characterBox()`, the single
+   fn that feeds **both** the player's body AND `getNpcBounds`. Editor preview and the two
+   runtime call-sites all read it; no third copy to drift.
+2. **Precedence / zero-regression** — a character with no authored `collision` falls back to
+   the **byte-identical legacy feet-square**. Pip + Wren authored; every other NPC unchanged
+   (test-covered in `test/collision.test.ts`).
+3. **One editor, families via target** — the *interaction* differs (a single drag-rect vs
+   object sub-cell paint) but it's the same Collision tab parameterised by target + save
+   endpoint, not a forked tool. So "one editor, two families" now spans two **geometries**
+   (paint-grid and centre-rect), not just two reference points.
+4. **RESIZE capture** — same 1:1 canvas→page mapping drove the editor screenshot.
+Lesson: when a new authored-data feature lands, reach for THIS pattern first — three
+families in (object shadow, character shadow, character collision) it has held every time.
 
 ## Related
 - [implementation/tall-building-collision-band-at-base](tall-building-collision-band-at-base.md) — sibling: per-kind data on `src/maps/objects.ts` consumed by the renderer; two fields/two jobs, never conflated (collision vs shadow).
