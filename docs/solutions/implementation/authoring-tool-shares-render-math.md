@@ -3,7 +3,7 @@ title: An in-game authoring tool MUST share the renderer's exact math — and ov
 applies_when: Building any "place/size/tune it in the browser, save to data" editor (shadows, collision, placement, hitboxes), or adding authored per-kind data that replaces a computed default
 status: binding
 failure_ids: [FB-23 / #179 — square shadow under a round tree; shipped clean because the tool and renderer agreed and unauthored kinds kept the old default]
-proven_again: [#185 / PR #189 — per-character (Pip/NPC) collision authoring; same four rules held on a third family with zero regression]
+proven_again: [#185 / PR #189 — per-character (Pip/NPC) collision authoring; same four rules held on a third family with zero regression, #187 / PR #193 — trigger/event authoring via per-area JSON sidecars; fourth family, zero-regression registry merge proven end-to-end]
 canon: src/maps/shadows.ts (resolveShadow — the one shared fn) · src/systems/shadowEditor.ts (?editor=shadow&target=…&kind=…) · src/systems/characterCollisionEditor.ts (the third family) · src/maps/characters.ts (characterBox — shared by player + getNpcBounds) · src/scenes/GameScene.ts (precedence) · src/data/object-shapes.json + character-shapes.json · vite-plugins/{object,character}-shape-save.ts
 ---
 
@@ -88,8 +88,43 @@ Pip/Wren, drag a **centre-referenced body-rect** (move + E/S handles), Save →
 Lesson: when a new authored-data feature lands, reach for THIS pattern first — three
 families in (object shadow, character shadow, character collision) it has held every time.
 
+## Proven again — trigger/event authoring (#187 / PR #193)
+The fourth family bent the pattern in one telling way and confirmed the rest. Triggers
+are **whole entities authored into a list**, not a per-kind field tuned against a
+heuristic default — so rules 1 and 4 take a different shape, while 2 and 3 hold verbatim:
+1. **One shared math, now one shared MODEL** — there's no per-pixel render math to share,
+   but the same drift risk exists in the **data shape + condition grammar**. So the editor
+   form and the runtime read **one** module (`src/systems/triggerModel.ts`):
+   `toTriggerDefinition`/`fromTriggerDefinition` and `compileCondition`/`parseCondition` are
+   the single round-trip the tool writes and the runtime evaluates (`test/triggerModel.test.ts`
+   pins the compiled clause against the runtime evaluator). The tab's top-down area view also
+   reuses the canonical `area.mapCols`/`area.mapRows` (same source as `collisionEditor.ts`) —
+   re-derived grid dims were a near-miss the cold review flagged.
+2. **Precedence / zero-regression — strongest proof yet** — authored triggers live as
+   sidecars (`src/data/areas/triggers/<areaId>.json`) and the registry's
+   `withAuthoredTriggers` merges them onto the area's inline triggers. An area with **no
+   sidecar** returns the **same array reference** (`mergeAuthoredTriggers` short-circuits, the
+   registry skips the merge) — provably byte-identical, not just equal. The merge also
+   **throws on a duplicate id** because the runtime keys one-shot bookkeeping on
+   `_trigger_fired_<id>` — a precedence layer that's a *correctness* gate, not just a default.
+3. **One editor, families via a param** — the Triggers tab is the same `PhaserTab` +
+   system-owns-its-HUD idiom as the collision/shadow tabs; the area `<select>` remounts on
+   switch exactly like CollisionTab's kind selector. A fourth tab, not a forked tool.
+4. **Capture proves the full pipe, not just the preview** — because the payoff is at
+   **runtime** (not an in-editor shape), the verification artifact is an MP4 of the *game*:
+   a flag-gated demo trigger (`demo_authored_trigger`, set only by a test-bench scenario, so
+   inert in real play) authored as a sidecar, then `?scenario=authored-trigger-demo` walks Pip
+   into the zone and the authored `thought` fires — closing **form → sidecar → registry merge
+   → runtime** with no hand-edited TypeScript (`autonomy/capture-authored-trigger.cjs` asserts
+   the runtime `_trigger_fired_…` flag flips false→true).
+Lesson sharpened: the four rules are really **one shared source of truth + override by
+strict precedence + one parameterised tool + capture at the layer where the payoff lands.**
+For render-shape families that layer is the editor preview; for a data/behaviour family
+(triggers) it's the running game. Reach for this pattern first whenever "author it in the
+browser, save to data" appears — four families in, it has held every time.
+
 ## Related
 - [implementation/tall-building-collision-band-at-base](tall-building-collision-band-at-base.md) — sibling: per-kind data on `src/maps/objects.ts` consumed by the renderer; two fields/two jobs, never conflated (collision vs shadow).
 - [art/ground-shadow-canon](../art/ground-shadow-canon.md) — WHAT a correct shadow looks like (buildings → rect, everything else → ellipse at the contact line); this lesson is HOW you author it without drift.
 - [process/gif-for-motion](../process/gif-for-motion.md) — the moving-output → MP4 capture rule that gates a shadow change.
-- FB-23 / Issue #179 · PR #180.
+- FB-23 / Issue #179 · PR #180 · #185 / PR #189 · #187 / PR #192 (data core) + PR #193 (tab + demo).
