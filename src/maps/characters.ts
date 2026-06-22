@@ -34,12 +34,27 @@ export function isCharacterKind(kind: string): boolean {
   return kind === PLAYER_CHARACTER_ID || getNpcSpriteIds().includes(kind);
 }
 
-interface CharacterShapeEntry {
-  shadow?: ShadowShape;
+// A character's authored collision body (#185). Characters move + animate, so
+// (unlike static objects, which use sub-cell paint anchored to a grid cell) their
+// collider is a CENTRE-referenced rect that travels with the live sprite — the
+// same shape the runtime AABB sweep already uses, just hand-sized. `w`/`h` are the
+// box size in world px; `dx`/`dy` are the box CENTRE offset from the sprite centre
+// (positive dy = down, toward the feet). Unauthored kinds keep the PLAYER_SIZE /
+// NPC_SIZE square centred on the sprite (zero regression — see collision.ts).
+export interface CharacterCollision {
+  w: number;
+  h: number;
+  dx: number;
+  dy: number;
 }
 
-// Authored shapes, committed game data (written by the character shadow editor's
-// save endpoint). The `_doc` key documents the format and is ignored here.
+interface CharacterShapeEntry {
+  shadow?: ShadowShape;
+  collision?: CharacterCollision;
+}
+
+// Authored shapes, committed game data (written by the character shadow/collision
+// editor save endpoints). The `_doc` key documents the format and is ignored here.
 const AUTHORED = characterShapesRaw as unknown as Record<string, CharacterShapeEntry>;
 
 // Authored shadow for a character kind, or null when none — the caller then uses
@@ -47,4 +62,11 @@ const AUTHORED = characterShapesRaw as unknown as Record<string, CharacterShapeE
 export function getCharacterShadow(kind: string): ShadowShape | null {
   const entry = AUTHORED[kind];
   return entry && entry.shadow ? entry.shadow : null;
+}
+
+// Authored collision body for a character kind, or null when none — the caller
+// then falls back to the legacy feet-square (zero regression, one kind at a time).
+export function getCharacterCollision(kind: string): CharacterCollision | null {
+  const entry = AUTHORED[kind];
+  return entry && entry.collision ? entry.collision : null;
 }

@@ -1,6 +1,6 @@
 {
   "_doc": {
-    "what": "Per-character authored ground shadows (FB-23). Keyed by character kind id: 'pip' (the player) or an NPC sprite id (e.g. 'wren'). Written by the character shadow editor (?editor=character&kind=<id>); read by GameScene via getCharacterShadow(). A kind with no entry keeps the FB-21 feet-ellipse default — migrate one kind at a time.",
+    "what": "Per-character authored ground shadows + collision bodies (FB-23, #185). Keyed by character kind id: 'pip' (the player) or an NPC sprite id (e.g. 'wren'). Written by the editor's Shadow tab (character target) and Collision tab (character target); read by GameScene via getCharacterShadow() / getCharacterCollision(). A kind with no entry (or no field) keeps the default — FB-21 feet-ellipse for shadow, the PLAYER_SIZE/NPC_SIZE feet-square for collision — so migrate one kind at a time with zero regression.",
     "shadow": {
       "shape": "'ellipse' (circle when w==h, oval otherwise) | 'rect'",
       "w": "width in world px (1 tile = 32px)",
@@ -8,6 +8,45 @@
       "dx": "shape CENTRE x offset from the sprite CENTRE, px",
       "dy": "shape CENTRE y offset from the sprite CENTRE, px (positive = down, toward the feet)",
       "alpha": "0..1 opacity"
+    },
+    "collision": {
+      "what": "A centre-referenced AABB body box that travels with the live sprite — the collider Pip/NPCs use instead of the full feet-square. Author it to hug the body.",
+      "w": "box width in world px",
+      "h": "box height in world px",
+      "dx": "box CENTRE x offset from the sprite CENTRE, px",
+      "dy": "box CENTRE y offset from the sprite CENTRE, px (positive = down)"
+    }
+  },
+  "pip": {
+    "shadow": {
+      "shape": "ellipse",
+      "w": 20,
+      "h": 8,
+      "dx": 0,
+      "dy": 22,
+      "alpha": 0.24
+    },
+    "collision": {
+      "w": 18,
+      "h": 14,
+      "dx": 0,
+      "dy": 6
+    }
+  },
+  "wren": {
+    "shadow": {
+      "shape": "ellipse",
+      "w": 18,
+      "h": 7,
+      "dx": 0,
+      "dy": 20,
+      "alpha": 0.22
+    },
+    "collision": {
+      "w": 16,
+      "h": 12,
+      "dx": 0,
+      "dy": 6
     }
   }
 }

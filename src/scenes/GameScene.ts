@@ -5,9 +5,9 @@ import { resolveWangFrame, pickWangTilesetForCell } from '../maps/wang';
 import { TerrainId, TERRAINS } from '../maps/terrain';
 import { OBJECT_KINDS, ObjectInstance } from '../maps/objects';
 import { ShadowShape, resolveShadow } from '../maps/shadows';
-import { getCharacterShadow, PLAYER_CHARACTER_ID } from '../maps/characters';
+import { getCharacterShadow, getCharacterCollision, PLAYER_CHARACTER_ID } from '../maps/characters';
 import { AreaDefinition, NpcDefinition, DialogueScript } from '../data/areas/types';
-import { AreaPassability, cellBlocks } from '../systems/collision';
+import { AreaPassability, cellBlocks, characterBox } from '../systems/collision';
 import { STYLE_PALETTE } from '../art/styleGuide';
 import { getArea, getDefaultAreaId } from '../data/areas/registry';
 import { InputSystem } from '../systems/input';
@@ -1259,12 +1259,25 @@ export class GameScene extends Phaser.Scene {
     }
 
     const halfSize = PLAYER_SIZE / 2;
+    // Pip's movement collider: an AUTHORED body (#185) when one exists, else the
+    // legacy PLAYER_SIZE square centred on her sprite. We derive the centre→box
+    // offset so the post-move centre is recovered for ANY box (unauthored →
+    // newPos.x + halfSize, byte-identical). The authored box affects ONLY this
+    // sweep; depth/trigger/exit math below stays feet-based on PLAYER_SIZE.
+    const pipBox = characterBox(
+      this.player.x,
+      this.player.y,
+      getCharacterCollision(PLAYER_CHARACTER_ID),
+      PLAYER_SIZE,
+    );
+    const boxCentreDX = this.player.x - pipBox.x;
+    const boxCentreDY = this.player.y - pipBox.y;
     const newPos = moveWithCollision(
       {
-        x: this.player.x - halfSize,
-        y: this.player.y - halfSize,
-        width: PLAYER_SIZE,
-        height: PLAYER_SIZE,
+        x: pipBox.x,
+        y: pipBox.y,
+        width: pipBox.width,
+        height: pipBox.height,
       },
       { x: moveVx, y: moveVy },
       delta,
@@ -1274,7 +1287,7 @@ export class GameScene extends Phaser.Scene {
         npcLivePositions: this.npcBehavior.getLivePositions(),
       },
     );
-    this.player.setPosition(newPos.x + halfSize, newPos.y + halfSize);
+    this.player.setPosition(newPos.x + boxCentreDX, newPos.y + boxCentreDY);
     // Y-sort the player each frame on her feet (collision-box bottom) so she
     // draws behind a tree canopy when above its trunk and in front when below
     // (#346). Pure arithmetic, no per-frame allocation (Learning EP-01).
