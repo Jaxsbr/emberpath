@@ -1,8 +1,33 @@
 import { TILE_SIZE, SUB_SIZE, COLLISION_SUBDIV, NPC_SIZE } from '../maps/constants';
 import { NpcDefinition } from '../data/areas/types';
 import { TerrainId, TERRAINS } from '../maps/terrain';
+import { getCharacterCollision, type CharacterCollision } from '../maps/characters';
 
 export type NpcLivePositions = Map<string, { x: number; y: number }>;
+
+// The AABB for a character (Pip or an NPC) centred on its sprite position
+// (cx, cy). With an AUTHORED collision body (#185) the box is that hand-sized
+// rect, offset by its centre (dx, dy); otherwise it's the legacy `fallbackSize`
+// square centred on the sprite — byte-identical to the pre-#185 behaviour, so an
+// unauthored kind never regresses. Shared by the player collider (GameScene) and
+// every NPC's body (getNpcBounds) so authoring is one source of truth.
+export function characterBox(
+  cx: number,
+  cy: number,
+  col: CharacterCollision | null,
+  fallbackSize: number,
+): { x: number; y: number; width: number; height: number } {
+  if (col) {
+    return {
+      x: cx + col.dx - col.w / 2,
+      y: cy + col.dy - col.h / 2,
+      width: col.w,
+      height: col.h,
+    };
+  }
+  const half = fallbackSize / 2;
+  return { x: cx - half, y: cy - half, width: fallbackSize, height: fallbackSize };
+}
 
 // Snapshot of an area's per-cell passability under the tile-architecture model
 // (US-94). Constructed once at area load and rebuilt on any flag change that
@@ -30,21 +55,11 @@ function getNpcBounds(
   livePositions?: NpcLivePositions,
 ): { x: number; y: number; width: number; height: number } {
   const live = livePositions?.get(npc.id);
-  if (live) {
-    return {
-      x: live.x - NPC_SIZE / 2,
-      y: live.y - NPC_SIZE / 2,
-      width: NPC_SIZE,
-      height: NPC_SIZE,
-    };
-  }
-  const offset = (TILE_SIZE - NPC_SIZE) / 2;
-  return {
-    x: npc.col * TILE_SIZE + offset,
-    y: npc.row * TILE_SIZE + offset,
-    width: NPC_SIZE,
-    height: NPC_SIZE,
-  };
+  const cx = live ? live.x : npc.col * TILE_SIZE + TILE_SIZE / 2;
+  const cy = live ? live.y : npc.row * TILE_SIZE + TILE_SIZE / 2;
+  // Per-sprite authored body (#185), keyed by npc.sprite (the character kind);
+  // null → the legacy NPC_SIZE square centred on the sprite (zero regression).
+  return characterBox(cx, cy, getCharacterCollision(npc.sprite), NPC_SIZE);
 }
 
 // Cell-granular TERRAIN passability (US-94). A cell `(col, row)` blocks on terrain

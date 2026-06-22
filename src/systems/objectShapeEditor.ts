@@ -97,9 +97,15 @@ export class ObjectShapeEditorSystem {
     // Editor-app hosting (#182): when `hudParent` is given the HUD flows inside
     // that container (static, not the fixed full-screen overlay used in-game);
     // when `onSwitch` is given, picking a kind calls it instead of a URL reload
-    // (the editor app tears down + remounts this system on the new kind). Both
-    // absent → original in-game behaviour, byte-for-byte.
-    private opts?: { hudParent?: HTMLElement; onSwitch?: (kind: ObjectKindId) => void },
+    // (the editor app tears down + remounts this system on the new kind);
+    // `onSwitchTarget` (#185) lets the Collision tab jump to the CHARACTER
+    // collision editor via a target toggle. All absent → original in-game
+    // behaviour, byte-for-byte.
+    private opts?: {
+      hudParent?: HTMLElement;
+      onSwitch?: (kind: ObjectKindId) => void;
+      onSwitchTarget?: (target: 'object' | 'character') => void;
+    },
   ) {
     this.kind = kind;
     this.def = OBJECT_KINDS[kind];
@@ -270,8 +276,30 @@ export class ObjectShapeEditorSystem {
 
     const title = document.createElement('div');
     title.style.cssText = 'font-weight:600;margin-bottom:6px';
-    title.textContent = 'Object collision editor';
+    title.textContent = 'Collision editor — object';
     hud.appendChild(title);
+
+    // Target toggle (object ⇄ character, #185) — only shown when the host wires
+    // onSwitchTarget (the editor's Collision tab). Mirrors the Shadow tab so the
+    // two collision families live behind one tab.
+    if (this.opts?.onSwitchTarget) {
+      const targetRow = document.createElement('div');
+      targetRow.style.cssText = 'margin-bottom:6px';
+      for (const t of ['object', 'character'] as const) {
+        const b = document.createElement('button');
+        b.textContent = t;
+        b.style.cssText =
+          'cursor:pointer;border:0;border-radius:4px;margin-right:4px;padding:3px 8px;' +
+          (t === 'object'
+            ? 'background:#c97a3a;color:#fff;font-weight:600'
+            : 'background:#3a3550;color:#ddd');
+        b.addEventListener('click', () => {
+          if (t !== 'object') this.opts!.onSwitchTarget!(t);
+        });
+        targetRow.appendChild(b);
+      }
+      hud.appendChild(targetRow);
+    }
 
     // Kind selector — switching reboots the scene with ?kind=<id>.
     const select = document.createElement('select');

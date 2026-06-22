@@ -4,6 +4,7 @@ import {
   subCellBlocks,
   cellBlocks,
   collidesWithWall,
+  characterBox,
 } from '../src/systems/collision';
 import { TerrainId } from '../src/maps/terrain';
 import { TILE_SIZE, SUB_SIZE, COLLISION_SUBDIV } from '../src/maps/constants';
@@ -117,5 +118,50 @@ describe('FB-23 back-compat + terrain', () => {
     // Beyond the last cell (cells 0..4, so sub-cells 0..19 valid for the 5×5 map;
     // a sub-cell whose parent cell is the boundary cell 5 is OOB).
     expect(subCellBlocks(5 * COLLISION_SUBDIV, 0, p)).toBe(true);
+  });
+});
+
+describe('#185 characterBox', () => {
+  it('falls back to the legacy feet-square centred on the sprite when unauthored', () => {
+    // null collision → exactly the pre-#185 behaviour: a fallbackSize square
+    // centred on (cx, cy). This is the zero-regression guarantee.
+    const cx = 100;
+    const cy = 200;
+    const size = 24;
+    const box = characterBox(cx, cy, null, size);
+    expect(box).toEqual({ x: cx - size / 2, y: cy - size / 2, width: size, height: size });
+  });
+
+  it('reproduces a legacy NPC grid placement byte-identically when unauthored', () => {
+    // Legacy getNpcBounds for a still NPC: cx = col*TILE + TILE/2. With null
+    // collision the box must be the NPC_SIZE square recovered from that centre.
+    const col = 3;
+    const cx = col * TILE_SIZE + TILE_SIZE / 2;
+    const cy = 2 * TILE_SIZE + TILE_SIZE / 2;
+    const size = 24;
+    const box = characterBox(cx, cy, null, size);
+    // Equivalent to the old `col*TILE + (TILE - size)/2` top-left.
+    expect(box.x).toBe(col * TILE_SIZE + (TILE_SIZE - size) / 2);
+    expect(box.width).toBe(size);
+  });
+
+  it('places an authored rect by its centre offset from the sprite centre', () => {
+    // A body box hugging the lower torso: 18×14, dropped 6px toward the feet.
+    const cx = 100;
+    const cy = 200;
+    const col = { w: 18, h: 14, dx: 0, dy: 6 };
+    const box = characterBox(cx, cy, col, 24);
+    expect(box).toEqual({
+      x: cx + col.dx - col.w / 2, // 100 - 9 = 91
+      y: cy + col.dy - col.h / 2, // 200 + 6 - 7 = 199
+      width: 18,
+      height: 14,
+    });
+  });
+
+  it('honours a horizontal offset (dx) too', () => {
+    const box = characterBox(50, 50, { w: 10, h: 10, dx: 4, dy: -2 }, 24);
+    expect(box.x).toBe(50 + 4 - 5); // 49
+    expect(box.y).toBe(50 - 2 - 5); // 43
   });
 });
