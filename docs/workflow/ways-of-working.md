@@ -113,6 +113,19 @@ to capture any reusable learning into `docs/solutions/` (process learnings feed 
 editing the CE skills; implementation learnings capture techniques/asset-gen/feel). Close
 the issue.
 
+#### The ship-confirmation gate (Jaco's confidence gate — binding)
+**Nothing is reported as "shipped" without explicitly stating BOTH flags:**
+- **Reviewed ✅** — which verdict cleared it (`emberpath-pr-review` APPROVE; **+**
+  `emberpath-art-review` APPROVE and GATE 2 for any visual change).
+- **Compounded ✅** — which `docs/solutions/` doc/PR captured the learning: a **fresh
+  lesson**, an **honest extension** of an existing one, or an explicit **"covered by
+  [doc]"** (and `/ce-compound` was actually considered, not skipped).
+
+A **clean yes on BOTH is what unblocks proceeding to the next phase / next piece of work.**
+If either is missing it is **not** a clean yes — close the gap (run the missing review or
+compound) *before* proceeding or reporting done. Fold the two flags into the ship report
+(the posting-template `Status:` line). This applies to **scheduled autonomous ships** too.
+
 ---
 
 ## The merge gates (automated, always)
@@ -166,4 +179,5 @@ made directly in the loaded mount copy is silently lost on the next refresh/resp
 ## Definition of done
 Builds clean · scenario/playtest passes · art renders correctly (lessons pass) · committed
 on a branch · PR open · demo posted (GIF for motion) · the right gate cleared · `/ce-compound`
-run · issue closed · worklog updated.
+run · issue closed · worklog updated · **ship report states both confirmation flags
+(Reviewed ✅ + Compounded ✅) — the clean yes that unblocks the next phase.**
