@@ -13,7 +13,9 @@ import {
   PLAYER_CHARACTER_ID,
 } from '../maps/characters';
 
-// #FB-23 shadow shape editor. Boots via `?editor=shadow&target=<object|character>&kind=<id>`.
+// #FB-23 shadow shape editor. Mounted by the standalone editor app's Shadow tab,
+// which supplies the target (object | character) and kind (the in-game `?editor=`
+// boot was removed in #184).
 // Shadows are VISIBLE (Jaco's direction 2026-06-21), so unlike collision they get
 // a real shape tool: drop a CIRCLE / OVAL / RECTANGLE, drag it to position, drag a
 // handle to size it, Save. The result is the per-kind `shadow` ({shape,w,h,dx,dy,

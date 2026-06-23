@@ -233,7 +233,7 @@ function main() {
     : path.join(REPO_ROOT, 'staged', 'collision', `${opts.areaId}.json`);
   if (!fs.existsSync(stagedPath)) {
     die(`no staged file at ${path.relative(REPO_ROOT, stagedPath)} — paint + Save in the editor first ` +
-        `(?editor=collision&area=${opts.areaId}).`);
+        `(tools/editor → Map collision tab, area "${opts.areaId}").`);
   }
   const staged = JSON.parse(fs.readFileSync(stagedPath, 'utf8'));
 
