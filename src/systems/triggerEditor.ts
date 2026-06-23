@@ -133,8 +133,8 @@ export class TriggerEditorSystem {
     // getArea returns the MERGED area; the inline ghosts are everything the
     // registry didn't add from the sidecar.
     this.inline = all.filter((t) => !authoredIds.has(t.id));
-    // Canonical area dimensions — same source the CollisionEditor uses
-    // (collisionEditor.ts). mapCols/mapRows are the tile counts; the vertex
+    // Canonical area dimensions — same source the Map collision tab uses
+    // (mapCollisionEditor.ts). mapCols/mapRows are the tile counts; the vertex
     // grid is (rows+1)×(cols+1), so these equal terrain[0].length-1 /
     // terrain.length-1 but read straight from the model instead of re-deriving.
     this.cols = this.area?.mapCols ?? 0;

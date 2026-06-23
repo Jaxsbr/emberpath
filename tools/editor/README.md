@@ -35,6 +35,8 @@ game's registries or render math.
 | **Flow** | Conversation graph (read-only view) | — |
 | **Collision** | Per-**object** sub-cell collision shapes | auto-writes `src/data/object-shapes.json` |
 | **Shadow** | Per-object & per-character ground shadows | auto-writes `src/data/object-shapes.json` / `character-shapes.json` |
+| **Triggers** | Per-area trigger zones | auto-writes via `/__triggers/save` |
+| **Map collision** | Per-**tile** area collision paint | staged via `/__collision/save` → `staged/collision/<id>.json` |
 
 The Collision and Shadow tabs host the game's own editor systems
 (`src/systems/objectShapeEditor.ts`, `src/systems/shadowEditor.ts`) verbatim on an
@@ -45,14 +47,11 @@ repo root so they write back into the game's committed data files.
 
 ## Known follow-ups (not yet in the editor)
 
-These were intentionally deferred from the #182 unification PR; tracked as a
-follow-up issue:
-
-- **Area (per-tile) collision** — `CollisionEditorSystem` still opens in-game via
-  `?editor=collision&area=<id>` because it needs a full area render (terrain +
-  objects) as a backdrop. Porting that render into the editor scene is the
-  remaining migration.
 - **Map / Dialogue auto-save** — these still use copy-paste "Export TypeScript".
-  Auto-write endpoints (`/__area/save`, `/__dialogue/save`) are the planned upgrade.
-- Once area-collision lives here, the in-game `?editor=` dispatch can be removed
-  from `GameScene`/`sandbox`/`TitleScene` entirely.
+  Auto-write endpoints (`/__area/save`, `/__dialogue/save`) are the planned upgrade
+  (#184 deferred piece 2, its own GATE-1).
+
+The in-game `?editor=` dispatch was **removed** in #184: area (per-tile) collision
+now lives in the **Map collision** tab here (`src/systems/mapCollisionEditor.ts`),
+so `GameScene`/`TitleScene`/`sandbox` no longer carry any editor mode. All authoring
+is in this one app — no URL params.

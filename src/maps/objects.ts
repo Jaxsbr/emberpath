@@ -13,6 +13,7 @@
 // the closed string-literal union prevents user-input-driven id construction.
 
 import type { ShadowShape } from './shadows';
+import { COLLISION_SUBDIV } from './constants';
 
 export type ObjectKindId =
   // Shared — invisible collision filler (transparent PNG). Lets a single large
@@ -160,7 +161,7 @@ export interface ObjectKindDefinition {
   // module init (below). Absent = legacy collisionFootprint/anchor-cell behaviour.
   collisionCells?: Array<[number, number]>;
   // FB-23 (shadows) — per-kind authored ground shadow, a circle/oval/rectangle
-  // sized + positioned in the shadow editor (?editor=shadow&target=object&kind=<id>),
+  // sized + positioned in the editor app's Shadow tab,
   // loaded from object-shapes.json and merged onto the kind here. When present,
   // `renderObjects` builds the shadow from it (centre = anchor cell top-left + dx,dy
   // in PX) INSTEAD of the building-rect / tree-ellipse / prop-ellipse heuristic;
@@ -350,4 +351,67 @@ export interface ObjectInstance {
   col: number;
   row: number;
   condition?: string;
+}
+
+// Fill a sub-cell-keyed object-block map from a list of placed objects.
+//
+// This is THE single source of object-footprint collision math, shared by the
+// in-game renderer (GameScene.buildObjectCollisionMap) AND the editor's
+// area-collision tab, so the two can never drift ("one shared math" — see
+// docs/solutions/implementation/authoring-tool-shares-render-math.md).
+//
+// `m` is keyed `"scol,srow" → true` at SUB_SIZE (TILE_SIZE / COLLISION_SUBDIV)
+// granularity — it is mutated in place, NOT cleared (the caller owns clearing).
+// `evaluate(condition)` decides whether a conditional object currently blocks:
+// the runtime passes `evaluateCondition`; the editor passes `() => true` so it
+// previews every object's footprint regardless of flag state.
+//
+// FB-23 collision-source order: authored per-kind sub-cell shape (collisionCells)
+// → legacy collisionFootprint (whole cells) → single anchor cell. Legacy paths
+// fill every sub-cell of their blocked cells so behaviour is byte-identical
+// until a kind is migrated to `collisionCells`.
+export function fillObjectBlockMap(
+  m: Map<string, boolean>,
+  objects: readonly ObjectInstance[],
+  evaluate: (condition: string | undefined) => boolean,
+): void {
+  for (const inst of objects) {
+    if (inst.condition && !evaluate(inst.condition)) continue;
+    const def = OBJECT_KINDS[inst.kind];
+    if (!def) {
+      console.warn(`[objects] ObjectInstance at (${inst.col},${inst.row}) references unknown kind '${inst.kind}'; skipping collision contribution.`);
+      continue;
+    }
+    if (def.passable) continue;
+    const baseSCol = inst.col * COLLISION_SUBDIV;
+    const baseSRow = inst.row * COLLISION_SUBDIV;
+    const cells = def.collisionCells;
+    if (cells && cells.length) {
+      // Authored sub-cells (#119 object editor): block EXACTLY these, so a
+      // small prop blocks only the part of its tile it covers.
+      for (const [sdx, sdy] of cells) {
+        m.set(`${baseSCol + sdx},${baseSRow + sdy}`, true);
+      }
+    } else {
+      // Legacy. collisionFootprint blocks just its declared cell sub-region
+      // (e.g. a tree's trunk-base cell) so the player can walk around/under
+      // the rest of the footprint; absent = single anchor cell (#346).
+      const cf = def.collisionFootprint;
+      const c0 = cf ? cf.dx : 0;
+      const r0 = cf ? cf.dy : 0;
+      const cw = cf ? cf.w : 1;
+      const ch = cf ? cf.h : 1;
+      for (let dy = 0; dy < ch; dy++) {
+        for (let dx = 0; dx < cw; dx++) {
+          const cSCol = (inst.col + c0 + dx) * COLLISION_SUBDIV;
+          const cSRow = (inst.row + r0 + dy) * COLLISION_SUBDIV;
+          for (let sy = 0; sy < COLLISION_SUBDIV; sy++) {
+            for (let sx = 0; sx < COLLISION_SUBDIV; sx++) {
+              m.set(`${cSCol + sx},${cSRow + sy}`, true);
+            }
+          }
+        }
+      }
+    }
+  }
 }

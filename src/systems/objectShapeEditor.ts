@@ -2,9 +2,10 @@ import Phaser from 'phaser';
 import { COLLISION_SUBDIV } from '../maps/constants';
 import { OBJECT_KINDS, ObjectKindId, ObjectKindDefinition, hasObjectKind } from '../maps/objects';
 
-// FB-23 object-shape editor (U2). Boots via `?editor=object` (optionally
-// `&kind=<id>`) and lets Jaco author per-OBJECT-KIND collision at sub-cell (8px)
-// granularity, instead of the per-tile-per-area `collisionEditor`. Flow:
+// FB-23 object-shape editor (U2). Mounted by the standalone editor app's
+// Collision tab (#182; the in-game `?editor=` boot was removed in #184) and lets
+// Jaco author per-OBJECT-KIND collision at sub-cell (8px) granularity, distinct
+// from the per-tile-per-area Map collision tab. Flow:
 //   1. Pick a kind from the dropdown (rock, tree-oak, cottage-large…).
 //   2. The kind's sprite renders large in the centre; a sub-cell grid overlays it.
 //   3. Left-drag to paint/erase the sub-cells the kind should block.

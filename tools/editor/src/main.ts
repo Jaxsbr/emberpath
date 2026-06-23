@@ -8,6 +8,7 @@ import { renderFlow } from './flowRenderer';
 import { CollisionTab } from './tabs/collisionTab';
 import { ShadowTab } from './tabs/shadowTab';
 import { TriggerTab } from './tabs/triggerTab';
+import { MapCollisionTab } from './tabs/mapCollisionTab';
 import type { PhaserTab } from './tabs/phaserTab';
 import {
   getState,
@@ -21,7 +22,7 @@ import {
 } from './editorState';
 import { serializeTerrainAndObjects } from './exportTypeScript';
 
-type ViewName = 'map' | 'dialogue' | 'flow' | 'collision' | 'shadow' | 'triggers';
+type ViewName = 'map' | 'dialogue' | 'flow' | 'collision' | 'shadow' | 'triggers' | 'mapcollision';
 
 let activeAreaId: string = getDefaultAreaId();
 let activeArea: AreaDefinition | undefined;
@@ -114,6 +115,7 @@ function getPhaserTab(view: ViewName): PhaserTab | null {
   if (view === 'collision') return (phaserTabs.collision ??= new CollisionTab(getViewEl('collision')));
   if (view === 'shadow') return (phaserTabs.shadow ??= new ShadowTab(getViewEl('shadow')));
   if (view === 'triggers') return (phaserTabs.triggers ??= new TriggerTab(getViewEl('triggers')));
+  if (view === 'mapcollision') return (phaserTabs.mapcollision ??= new MapCollisionTab(getViewEl('mapcollision')));
   return null;
 }
 function getViewEl(view: ViewName): HTMLElement {
@@ -129,7 +131,8 @@ function switchView(view: ViewName): void {
     const viewName = v.id.replace('view-', '') as ViewName;
     v.classList.toggle('active', viewName === view);
   });
-  const isPhaserView = view === 'collision' || view === 'shadow' || view === 'triggers';
+  const isPhaserView =
+    view === 'collision' || view === 'shadow' || view === 'triggers' || view === 'mapcollision';
   // Map tools panel is map-only; the detail panel is irrelevant to the
   // full-bleed Phaser tabs.
   const mapTools = document.getElementById('map-tools');
@@ -138,7 +141,7 @@ function switchView(view: ViewName): void {
   if (detailPanel) detailPanel.style.display = isPhaserView ? 'none' : '';
 
   // Suspend whichever Phaser tab isn't showing, then render/activate the target.
-  for (const v of ['collision', 'shadow', 'triggers'] as ViewName[]) {
+  for (const v of ['collision', 'shadow', 'triggers', 'mapcollision'] as ViewName[]) {
     if (v !== view) phaserTabs[v]?.deactivate();
   }
   if (isPhaserView) {

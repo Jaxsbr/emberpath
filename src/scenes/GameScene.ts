@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE, COLLISION_SUBDIV } from '../maps/constants';
+import { TILE_SIZE, PLAYER_SIZE, NPC_SIZE } from '../maps/constants';
 import { TILESETS, hasTileset } from '../maps/tilesets';
 import { resolveWangFrame, pickWangTilesetForCell } from '../maps/wang';
 import { TerrainId, TERRAINS } from '../maps/terrain';
-import { OBJECT_KINDS, ObjectInstance } from '../maps/objects';
+import { OBJECT_KINDS, ObjectInstance, fillObjectBlockMap } from '../maps/objects';
 import { ShadowShape, resolveShadow } from '../maps/shadows';
 import { getCharacterShadow, getCharacterCollision, PLAYER_CHARACTER_ID } from '../maps/characters';
 import { AreaDefinition, NpcDefinition, DialogueScript } from '../data/areas/types';
@@ -27,10 +27,7 @@ import { SmokeBeaconSystem } from '../systems/smokeBeacon';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
-import { CollisionEditorSystem } from '../systems/collisionEditor';
-import { ObjectShapeEditorSystem, resolveEditorKind } from '../systems/objectShapeEditor';
-import { ShadowEditorSystem, resolveShadowTarget, resolveShadowKind } from '../systems/shadowEditor';
-import { isDebugCollision, editorKind, editorTarget } from '../sandbox';
+import { isDebugCollision } from '../sandbox';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
@@ -222,21 +219,6 @@ const ANIM_FRAME_RATE = 8;
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
   private inputSystem!: InputSystem;
-  // Collision paint editor (#119, U2). Non-null only when booted via
-  // `?editor=collision`; when set, update() suppresses all gameplay and drives
-  // the editor instead (camera pan + paint grid).
-  private collisionEditor: CollisionEditorSystem | null = null;
-  private editorActive = false;
-  // FB-23 U2 object-shape editor. Non-null only when booted via `?editor=object`;
-  // like collisionEditor it suppresses gameplay and owns input, but renders one
-  // object KIND's sprite over an opaque backdrop instead of the area.
-  private objectEditor: ObjectShapeEditorSystem | null = null;
-  private objectEditorActive = false;
-  // #FB-23 shadow shape editor. Non-null only when booted via `?editor=shadow`;
-  // suppresses gameplay and owns input like the other editors, rendering one
-  // object/character kind's sprite with a draggable shadow shape over it.
-  private shadowEditor: ShadowEditorSystem | null = null;
-  private shadowEditorActive = false;
   private npcInteraction!: NpcInteractionSystem;
   private inscribedStone!: InscribedStoneSystem;
   private dialogueSystem!: DialogueSystem;
@@ -537,12 +519,8 @@ export class GameScene extends Phaser.Scene {
     areaId?: string;
     entryPoint?: { col: number; row: number };
     resumePosition?: { x: number; y: number };
-    editor?: string;
   }): void {
     this.transitionInProgress = false;
-    this.editorActive = data?.editor === 'collision';
-    this.objectEditorActive = data?.editor === 'object';
-    this.shadowEditorActive = data?.editor === 'shadow';
     const areaId = data?.areaId ?? getDefaultAreaId();
     const area = getArea(areaId);
     if (!area) {
@@ -654,12 +632,7 @@ export class GameScene extends Phaser.Scene {
     if (data?.entryPoint || data?.resumePosition) {
       this.cameras.main.fadeIn(FADE_DURATION, 0, 0, 0);
     }
-    // In editor mode, skip the gameplay InputSystem entirely: it registers a
-    // global pointerdown handler (the touch joystick) that would flash on every
-    // paint click, and its WASD polling is unused (editor update suppresses
-    // gameplay and the editor owns its own camera-pan keys).
-    if (!this.editorActive && !this.objectEditorActive && !this.shadowEditorActive)
-      this.inputSystem = new InputSystem(this);
+    this.inputSystem = new InputSystem(this);
     this.dialogueSystem = new DialogueSystem(this);
     // Ember-share pulse system (US-85). Instantiated after the UI camera
     // exists so the pulse Arc can be uiCam.ignore'd on creation. Reset
@@ -875,22 +848,6 @@ export class GameScene extends Phaser.Scene {
     // no-keyboard path); the F4 toggle still drives it interactively otherwise.
     if (isDebugCollision()) this.debugOverlay.showCollision();
 
-    // Collision paint editor (#119, U2): mount over the rendered area and take
-    // over input + camera. update() suppresses gameplay while editorActive.
-    if (this.editorActive) {
-      this.collisionEditor = new CollisionEditorSystem(this, this.area, this.passability);
-    }
-    // FB-23 U2: object-shape editor renders a single kind's sprite over a backdrop
-    // (the booted area is hidden beneath it) and authors per-kind sub-cell collision.
-    if (this.objectEditorActive) {
-      this.objectEditor = new ObjectShapeEditorSystem(this, resolveEditorKind(editorKind()));
-    }
-    // #FB-23 shadow editor: renders one kind's sprite + a draggable shadow shape.
-    if (this.shadowEditorActive) {
-      const target = resolveShadowTarget(editorTarget());
-      this.shadowEditor = new ShadowEditorSystem(this, target, resolveShadowKind(target, editorKind()));
-    }
-
     // StoryScene close path: GameScene is paused on launchStoryScene and resumed
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —
     // the player is back on the world layer so this is a safe checkpoint.
@@ -1032,15 +989,8 @@ export class GameScene extends Phaser.Scene {
     // is doubly guarded by the flag). Deferred one tick via delayedCall(0) so
     // create() fully returns and the scene is RUNNING before launchStoryScene
     // pauses it — pausing mid-create is unsafe in Phaser's scene lifecycle.
-    // The collision editor boots over a fresh start but must NOT trigger the
-    // intro cinematic: launchStoryScene pauses GameScene beneath the StoryScene
-    // overlay, and a paused scene receives no pointer input — so the paint
-    // clicks never reach the editor. Suppress the intro entirely in editor mode.
     const isFreshStart = !data?.entryPoint && !data?.resumePosition;
     if (
-      !this.editorActive &&
-      !this.objectEditorActive &&
-      !this.shadowEditorActive &&
       isFreshStart &&
       this.area.introStoryScene &&
       getFlag('ashen_intro_played') !== true
@@ -1188,23 +1138,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number): void {
-    // Collision paint editor (#119, U2): drive only the editor (camera pan +
-    // paint grid) and suppress all gameplay — no player movement, triggers,
-    // NPCs, or interaction while painting.
-    if (this.editorActive) {
-      this.collisionEditor?.update(time, delta);
-      return;
-    }
-    // FB-23 U2 object-shape editor: drive only the editor, suppress all gameplay.
-    if (this.objectEditorActive) {
-      this.objectEditor?.update();
-      return;
-    }
-    // #FB-23 shadow editor: drive only the editor, suppress all gameplay.
-    if (this.shadowEditorActive) {
-      this.shadowEditor?.update();
-      return;
-    }
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
     // Suppress during conditional NPC spawn fade (US-71) — same zone-level
@@ -1844,51 +1777,9 @@ export class GameScene extends Phaser.Scene {
   private buildObjectCollisionMap(): void {
     const m = this.passability.objectBlockMap;
     m.clear();
-    for (const inst of this.area.objects) {
-      if (inst.condition && !evaluateCondition(inst.condition)) continue;
-      const def = OBJECT_KINDS[inst.kind];
-      if (!def) {
-        console.warn(`[GameScene] ObjectInstance at (${inst.col},${inst.row}) references unknown kind '${inst.kind}'; skipping collision contribution.`);
-        continue;
-      }
-      if (!def.passable) {
-        // FB-23 collision-source order: authored per-kind sub-cell shape →
-        // legacy collisionFootprint (whole cells) → single anchor cell. The map
-        // is sub-cell keyed (SUB_SIZE px); legacy paths fill every sub-cell of
-        // their blocked cells so behaviour is byte-identical until a kind is
-        // migrated to `collisionCells`.
-        const baseSCol = inst.col * COLLISION_SUBDIV;
-        const baseSRow = inst.row * COLLISION_SUBDIV;
-        const cells = def.collisionCells;
-        if (cells && cells.length) {
-          // Authored sub-cells (#119/U2 object editor): block EXACTLY these, so a
-          // small prop blocks only the part of its tile it covers.
-          for (const [sdx, sdy] of cells) {
-            m.set(`${baseSCol + sdx},${baseSRow + sdy}`, true);
-          }
-        } else {
-          // Legacy. collisionFootprint blocks just its declared cell sub-region
-          // (e.g. a tree's trunk-base cell) so the player can walk around/under
-          // the rest of the footprint; absent = single anchor cell (#346).
-          const cf = def.collisionFootprint;
-          const c0 = cf ? cf.dx : 0;
-          const r0 = cf ? cf.dy : 0;
-          const cw = cf ? cf.w : 1;
-          const ch = cf ? cf.h : 1;
-          for (let dy = 0; dy < ch; dy++) {
-            for (let dx = 0; dx < cw; dx++) {
-              const cSCol = (inst.col + c0 + dx) * COLLISION_SUBDIV;
-              const cSRow = (inst.row + r0 + dy) * COLLISION_SUBDIV;
-              for (let sy = 0; sy < COLLISION_SUBDIV; sy++) {
-                for (let sx = 0; sx < COLLISION_SUBDIV; sx++) {
-                  m.set(`${cSCol + sx},${cSRow + sy}`, true);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Delegate to the shared object-footprint math (src/maps/objects.ts) so the
+    // editor's area-collision preview and the in-game map stay byte-identical.
+    fillObjectBlockMap(m, this.area.objects, (c) => (c ? evaluateCondition(c) : true));
   }
 
   // Rebuild the collision map on conditional-flag change (US-94). Cheap —
@@ -2613,14 +2504,6 @@ export class GameScene extends Phaser.Scene {
     this.cameras?.main?.removeAllListeners('camerafadeoutcomplete');
     // Clean up player sprite
     this.player?.destroy();
-    // Collision editor (#119, U2): tear down its DOM HUD + input handlers so a
-    // scene restart never leaves an orphaned panel or duplicate listeners.
-    this.collisionEditor?.destroy();
-    this.collisionEditor = null;
-    this.objectEditor?.destroy();
-    this.objectEditor = null;
-    this.shadowEditor?.destroy();
-    this.shadowEditor = null;
     this.events.off('resume', this.flushSave, this);
     this.events.off('shutdown', this.cleanupResize, this);
     this.events.off('destroy', this.cleanupResize, this);

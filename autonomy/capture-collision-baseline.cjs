@@ -1,21 +1,23 @@
-// U3 verification harness: boot the REAL vite dev server + the U2 collision
-// editor headless, click Save with ZERO edits, and let the dev plugin write the
-// true seeded blocked set to staged/collision/<areaId>.json. Running the porter
-// against that file must report an EMPTY diff — proof its "current" computation
-// matches the live game's editor seed exactly (no off-by-one). Arg: areaId.
+// Verification harness: boot the standalone EDITOR app headless, open the Map
+// collision tab, select the area, and click Save with ZERO edits so the dev
+// plugin writes the true seeded blocked set to staged/collision/<areaId>.json.
+// Running the porter against that file must report an EMPTY diff — proof its
+// "current" computation matches the live editor seed exactly (no off-by-one).
+// Arg: areaId. (#184 ported the paint tool out of the in-game `?editor=collision`
+// boot into the editor app's Map collision tab — this harness follows it.)
 //
 // Needs playwright (not a game-repo dep) — run with the agent's modules on path:
 //   NODE_PATH=/workspace/agent/node_modules node autonomy/capture-collision-baseline.cjs <id>
 const { spawn } = require('child_process');
 const { chromium } = require('playwright');
-const REPO = '/workspace/extra/emberpath';
+const EDITOR = '/workspace/extra/emberpath/tools/editor';
 const areaId = process.argv[2] || 'ashen-isle';
 const PORT = 5179;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async () => {
   const dev = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
-    cwd: REPO, env: { ...process.env }, stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: EDITOR, env: { ...process.env }, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let ready = false;
   dev.stdout.on('data', (d) => { if (/Local:.*localhost/.test(d.toString())) ready = true; });
@@ -32,7 +34,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const ctx = await b.newContext({ viewport: { width: 1000, height: 700 } });
   const p = await ctx.newPage();
   p.on('pageerror', (e) => console.log('[pageerror]', e.message));
-  await p.goto(`http://localhost:${PORT}/?editor=collision&area=${areaId}`, { waitUntil: 'networkidle', timeout: 30000 });
+  await p.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle', timeout: 30000 });
+  // Open the Map collision tab, then pick the area from its embedded HUD select.
+  await p.locator('.tab[data-view="mapcollision"]').click();
+  await p.waitForSelector('#map-collision-hud select', { timeout: 20000 });
+  await p.selectOption('#map-collision-hud select', areaId);
+  // Selecting an area remounts the tab — wait for the fresh Save button + seed.
   await p.waitForSelector('#collision-save', { timeout: 20000 });
   await sleep(1500);
   const count = await p.locator('#collision-count').textContent();

@@ -11,7 +11,7 @@ Built for #119 (Pip walks behind the cottage); reusable for any area's collision
 ## The chain
 
 ```
-  ?editor=collision&area=<id>        you paint + Save in the browser (U2)
+  editor → Map collision tab         you paint + Save in the browser
         │                            → staged/collision/<id>.json   (gitignored)
         ▼
   autonomy/apply-staged-collision.cjs   reports the diff vs REAL current collision (U3)
@@ -26,16 +26,18 @@ Built for #119 (Pip walks behind the cottage); reusable for any area's collision
   drop staged/  →  commit              only the proven values land in git
 ```
 
-## 1. Paint (the editor — U2)
+## 1. Paint (the editor — Map collision tab)
 
-Run `npm run dev` and open `…/?editor=collision&area=<areaId>` (e.g.
-`ashen-isle`). The grid is **seeded from the area's real collision** — every cell
-that blocks Pip today starts red. You edit the *diff*:
+The area-collision paint tool lives in the standalone editor app (#184 ported it
+out of the old in-game `?editor=collision` boot). Run `cd tools/editor && npm run
+dev` and open the **Map collision** tab; pick the area from the tab's dropdown
+(e.g. `ashen-isle`). The grid is **seeded from the area's real collision** — every
+cell that blocks Pip today starts red. You edit the *diff*:
 
-- **Left-drag** toggles cells (clicking a red cell erases; clicking a clear cell
-  paints — one drag is consistently add OR remove).
-- **WASD / arrows** pan, **R** clears all, **Enter** or **Save staged map** writes
-  the file.
+- **Click / drag** toggles cells (the first cell in a drag decides add-or-remove;
+  the whole drag is consistently one or the other).
+- The embedded HUD shows the blocked count and a **Save** button that writes the
+  staged file.
 
 Save POSTs to the dev-only `/__collision/save` endpoint, which writes
 `staged/collision/<areaId>.json`:
@@ -107,9 +109,9 @@ Commit only the proven `src/data/areas/<id>.ts` / `src/maps/objects.ts` changes.
 
 ## Verification of this workflow (U3)
 
-`autonomy/capture-collision-baseline.cjs <areaId>` boots the real `vite dev` +
-the U2 editor headless and Saves with zero edits, capturing the true seeded set.
-Proven for `ashen-isle`: editor seed = **379 cells**; the reporter's computed
+`autonomy/capture-collision-baseline.cjs <areaId>` boots the editor app headless,
+opens the Map collision tab, and Saves with zero edits, capturing the true seeded
+set. Proven for `ashen-isle`: editor seed = **379 cells**; the reporter's computed
 current set = **379**, empty diff. A hand-edited staged file (free 2 footprint
 cells, block 2 free cells) reports exactly those 4 changes, the freed cells
 attributed to `cottage-large@(36,21)`. No off-by-one.
