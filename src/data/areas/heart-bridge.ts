@@ -232,7 +232,7 @@ const kingFinaleDialogue: import('./types').DialogueScript = {
     {
       id: 'invite-far',
       speaker: 'The King',
-      text: 'Not far at all. And you will not walk it alone — I will carry you the rest of the way home.',
+      text: 'Not far at all. And you will not walk it alone. I will carry you the rest of the way home.',
       nextId: 'invite-ask',
     },
     {
