@@ -6,6 +6,7 @@ import './sandbox';
 import { TitleScene } from './scenes/TitleScene';
 import { GameScene } from './scenes/GameScene';
 import { StoryScene } from './scenes/StoryScene';
+import { installEndGamePage } from './ui/endPage';
 
 const config: Phaser.Types.Core.GameConfig = {
   // WebGL required — DesaturationPipeline (US-76) is a custom PostFX shader
@@ -25,3 +26,8 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 new Phaser.Game(config);
+
+// F2 (#198): the end-of-game page listens for `emberpath:game-complete` (fired by the
+// F1 finale) and fades a warm reveal-at-credits overlay over the game. Installed here,
+// outside the Phaser scene graph, so it survives the scene freeze the finale triggers.
+installEndGamePage();

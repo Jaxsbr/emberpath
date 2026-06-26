@@ -37,6 +37,7 @@ import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
 import { DesaturationPipeline } from '../systems/desaturationPipeline';
 import { EmberShareSystem } from '../systems/emberShare';
+import { StagFinaleSystem } from '../systems/stagFinale';
 import { EmberWarmthSystem, WARMTH_FLOOR, WARMTH_MAX } from '../systems/emberWarmth';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
@@ -383,6 +384,15 @@ export class GameScene extends Phaser.Scene {
   // transitionInProgress / spawnInProgress.
   private sharingInProgress = false;
   private emberShare!: EmberShareSystem;
+  // F1 stag finale (#197). Drives the Heart Bridge King's glow crescendo + the
+  // "Yes" radiant burst. Created in every scene but only attached/ramped when the
+  // antlered-king dialogue runs; inert everywhere else.
+  private stagFinale!: StagFinaleSystem;
+  // Guards the one-shot finale so the burst + game-complete dispatch fire once.
+  private finaleFired = false;
+  // Counts stag dialogue beats shown so the glow ramps up each beat (loops over
+  // "Is it far?" keep warming it). Reset per scene create.
+  private stagBeatCount = 0;
   private activeNpcs: NpcDefinition[] = [];
   // Player ember overlay (US-73). Created when has_ember_mark flips true OR
   // when the flag is already true on scene create (covers area transitions
@@ -640,6 +650,12 @@ export class GameScene extends Phaser.Scene {
     // (Learning EP-02 — class fields persist across restart).
     this.sharingInProgress = false;
     this.emberShare = new EmberShareSystem(this);
+    // F1 stag finale (#197) — same post-UI-camera placement so the glow can be
+    // uiCam.ignore'd. finaleFired reset here so a scene.restart never thinks the
+    // ending already played (class fields persist across restart, Learning EP-02).
+    this.stagFinale = new StagFinaleSystem(this);
+    this.finaleFired = false;
+    this.stagBeatCount = 0;
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
     // US-101: now that the bubble exists, wire it into the warmth system so
@@ -765,10 +781,41 @@ export class GameScene extends Phaser.Scene {
       }
       // Track which NPC this dialogue belongs to so onEnd can release it.
       this.activeDialogueNpcId = npc.id;
+      // Hide the floating "Space to talk" prompt now that the dialogue is open
+      // (FB-10). The dialogueActiveCheck path that normally suppresses it lives in
+      // npcInteraction.update(), but update() early-returns while a dialogue is
+      // active (it never reaches that call) — so without this the prompt would be
+      // stranded over the open box. Most visible at the Heart Bridge finale (#197),
+      // where Pip sits high on screen and the prompt pokes above the dialogue.
+      this.npcInteraction.forceHidePrompt();
     });
     // Hide the "Space to talk" prompt while a dialogue is open (FB-10).
     this.npcInteraction.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    // F1 stag finale (#197): each beat of the antlered-king invitation ramps a warm
+    // glow on the stag (Jaco #1254 visual=b — crescendo through the dialogue). Inert
+    // for every other NPC. attach() refreshes the anchor each beat (cheap, idempotent).
+    this.dialogueSystem.setOnNodeShown(() => {
+      if (this.activeDialogueNpcId !== 'antlered-king') return;
+      const stagSprite = this.npcSpritesById.get('antlered-king');
+      if (stagSprite) this.stagFinale.attach(stagSprite);
+      this.stagBeatCount += 1;
+      this.stagFinale.setLevel(Math.min(0.9, this.stagBeatCount * 0.16));
+    });
     this.dialogueSystem.setOnEnd(() => {
+      // F1 finale (#197): the stag invitation closes on "Yes" (game_complete set by
+      // the choice). Fire the radiant burst → screen floods warm → dispatch the
+      // game-complete signal F2 consumes. One-shot; skips the normal thought/story
+      // chaining below.
+      if (!this.finaleFired && getFlag('game_complete') === true) {
+        this.finaleFired = true;
+        if (this.activeDialogueNpcId) {
+          this.npcBehavior.exitDialogue(this.activeDialogueNpcId);
+          this.activeDialogueNpcId = null;
+        }
+        this.flushSave();
+        this.triggerGameCompleteFinale();
+        return;
+      }
       if (this.activeDialogueNpcId) {
         this.npcBehavior.exitDialogue(this.activeDialogueNpcId);
         this.activeDialogueNpcId = null;
@@ -1159,6 +1206,10 @@ export class GameScene extends Phaser.Scene {
     // trigger-zone evaluation, and exit-zone checks all sit in the body below
     // this chain so a single early-return covers all four.
     if (this.sharingInProgress) return;
+    // F1 finale (#197): once the stag's "Yes" fires the radiant burst, freeze the
+    // player + interaction (ambient effects above keep running so the closing image
+    // stays alive) while the warmth blooms and the end-of-game page takes over.
+    if (this.finaleFired) return;
 
     if (this.dialogueSystem.isActive) {
       this.dialogueSystem.update();
@@ -2723,6 +2774,27 @@ export class GameScene extends Phaser.Scene {
     }
     this.scene.pause('GameScene');
     this.scene.launch('StoryScene', { definition });
+  }
+
+  // F1 finale (#197). The stag's "Yes" closes the game: the glow blooms into a
+  // radiant burst that floods the screen with warm light (finale=a — warmth blooms
+  // OUT from the stag as the closing image), then we dispatch the `emberpath:game-complete`
+  // DOM event the end-of-game page (F2, #198) listens for. No walk-home, no further
+  // scene — the bridge IS the ending. Browser-only guard keeps headless/test imports safe.
+  private triggerGameCompleteFinale(): void {
+    // Clear the floating "Space to talk" prompt before update() freezes — otherwise it
+    // would be stranded on-screen through the finale (the warm camera fade covers it
+    // at the end, but hide it now so it's gone the moment the burst begins).
+    this.npcInteraction.forceHidePrompt();
+    // Clear the objective banner too — it's a UI-camera element the main-camera warm
+    // fade can't cover, so without this "The King is waiting." lingers over the
+    // closing image. Pip has reached him; the goal is met.
+    this.objectiveBanner.clear();
+    this.stagFinale.burst(() => {
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('emberpath:game-complete'));
+      }
+    });
   }
 
   private registerAnimations(): void {
