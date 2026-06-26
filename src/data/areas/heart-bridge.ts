@@ -175,6 +175,74 @@ for (const [col, row] of [
 // reserved for the credits per master-prd + biblical-guidance. Uses the shipped
 // imageColor/imageLabel palette idiom (gold → cream, brighter than the bridge stone),
 // exactly like ember-given / word-given — no bespoke scene art is generated here.
+// ───── The stag finale (F1, issue #197 — Jaco #1254: dialogue/choice/visual=b, finale=a) ─────
+// The bridge is the game's deliberate ENDING (the Citadel beat is cut — no art
+// budget). After the wordless seal scene draws the grey away, the once-silent King
+// SPEAKS for the first and only time: a short warm build — he waited for Pip, he
+// watched her the whole way, he carried the grey for her, and his home is a city of
+// light with a place kept for her. Pip answers "Yes" (a soft "Is it far?" loops back
+// with reassurance, never a real "no"). Picking "Yes" sets `game_complete`, which the
+// GameScene reads on dialogue close to fire the glory-bloom finale + the end-of-game
+// page (F2, #198). Gated `atoned == true` so he stays wordless until the crossing is
+// sealed — before that, selectScriptForNpc finds no script and he shows no talk prompt.
+// Allegory: the King = the High King (Jesus, never named in-game); the invitation home
+// = glorification / heaven (master-prd beat 8, delivered as words + light, not a new map).
+const kingFinaleDialogue: import('./types').DialogueScript = {
+  id: 'antlered-king-intro',
+  startNodeId: 'invite-waited',
+  condition: 'atoned == true',
+  // The King's face for the finale (Jaco-supplied art, #1258): a luminous golden-stag
+  // portrait. Script-level so it shows on every beat of the invitation. Registered as
+  // 'golden-stag' in NPC_PORTRAITS (linear filter — it's a painterly, not pixel, bust).
+  portraitId: 'golden-stag',
+  nodes: [
+    {
+      id: 'invite-waited',
+      speaker: 'The King',
+      text: 'Pip. I have been waiting for you. All this long way, I was waiting.',
+      nextId: 'invite-watched',
+    },
+    {
+      id: 'invite-watched',
+      speaker: 'The King',
+      text: 'I saw every step you took. The dark places too. I never once looked away.',
+      nextId: 'invite-cared',
+    },
+    {
+      id: 'invite-cared',
+      speaker: 'The King',
+      text: 'I cared for you before you knew my name. I took the grey so you would not have to. You are dear to me, little one.',
+      nextId: 'invite-home',
+    },
+    {
+      id: 'invite-home',
+      speaker: 'The King',
+      text: 'My home is a city of warm light. Tall golden halls, doors that are always open, and a place inside kept just for you.',
+      nextId: 'invite-ask',
+    },
+    {
+      id: 'invite-ask',
+      speaker: 'The King',
+      text: 'Will you come, and live with me there? For always?',
+      choices: [
+        { text: 'Yes. I will come with you.', nextId: 'invite-yes', setFlags: { game_complete: true } },
+        { text: 'Is it far?', nextId: 'invite-far' },
+      ],
+    },
+    {
+      id: 'invite-far',
+      speaker: 'The King',
+      text: 'Not far at all. And you will not walk it alone — I will carry you the rest of the way home.',
+      nextId: 'invite-ask',
+    },
+    {
+      id: 'invite-yes',
+      speaker: 'The King',
+      text: 'Then take my hand, Pip. You are home now. You are home.',
+    },
+  ],
+};
+
 const bridgeSealedScene: import('./types').StorySceneDefinition = {
   id: 'bridge-sealed',
   beats: [
@@ -243,7 +311,10 @@ const triggers: TriggerDefinition[] = [
   ...crossingBands,
   {
     id: 'heart-bridge-crossed',
-    col: 74,
+    // F1: pulled west to col 70 so the wordless seal scene (the grey lifting) plays
+    // BEFORE Pip reaches the now-speaking King at col 74 — she steps into his
+    // presence after the substitution, and he gives the closing invitation home.
+    col: 70,
     row: 3,
     width: 2,
     height: 3,
@@ -267,17 +338,20 @@ const triggers: TriggerDefinition[] = [
 const figureNpc: NpcDefinition = {
   id: 'antlered-king',
   name: 'The King',
-  col: 70,
+  // F1: stands at the FAR end (col 74), east of the seal at col 70, so he is the
+  // last beat of the bridge — and of the game. Pip crosses, the grey lifts at the
+  // seal, then she walks the final few steps into his light and he speaks.
+  col: 74,
   row: DECK_ROW_MID,
   color: 0xe0b15a,
   sprite: 'golden-stag',
   wanderRadius: 0,
   awarenessRadius: 5,
   lightOverride: { radius: 220, intensity: 0.9, tier: 1 },
-  // Wordless (Decision 1): he turns to face Pip but is never spoken to — no
-  // "Space to talk" prompt, no dialogue. The grace beat is the colour-return and
-  // the lifting of the grey, not a line of text.
-  silent: true,
+  // F1 (#197): no longer silent. He stays effectively wordless until the crossing
+  // is sealed — his only dialogue script (`antlered-king-intro`) is gated
+  // `atoned == true`, so pre-seal selectScriptForNpc finds nothing and shows no
+  // talk prompt; after the seal he gives the closing invitation home.
 };
 
 export const heartBridge: AreaDefinition = {
@@ -287,10 +361,13 @@ export const heartBridge: AreaDefinition = {
   objective: 'Walk across the bridge.',
   conditionalObjective: [
     {
-      // Once crossed, the way onward leads home (the east exit now returns to
-      // Ashen for the bearing-fruit revisit).
+      // F1 (#197): once the crossing is sealed, the one thing left is to reach the
+      // King at the far end — he is the last beat of the bridge and of the game.
+      // (The old "Go home" wording is retired: there is no walk-home now; the King
+      // invites Pip to HIS home, so "go home" both contradicted the ending and
+      // pointed at a removed exit.)
       condition: 'atoned == true',
-      text: 'You made it across. Go home.',
+      text: 'The King is waiting.',
     },
   ],
   mapCols: HEART_BRIDGE_COLS,
@@ -311,28 +388,13 @@ export const heartBridge: AreaDefinition = {
   props: [],
   decorations: [],
   triggers,
-  dialogues: {},
+  dialogues: { 'antlered-king-intro': kingFinaleDialogue },
   storyScenes: { 'bridge-sealed': bridgeSealedScene },
   playerSpawn: { col: 1, row: DECK_ROW_MID },
-  exits: [
-    {
-      // Far (east) end — onward to HOME (bearing-fruit routing, Jaco 2026-06-16:
-      // bridge → Ashen home revisit → Citadel). The crossing is done; the way
-      // forward leads Pip back to Ashen Isle, arriving at her own cottage door
-      // (the playerSpawn she began the game at) — a deliberate bookend: she ends
-      // where she started, but the world is warm now and the homes she warmed
-      // bear fruit (atoned-gated dialogue + blooms in ashen-isle.ts). This closes
-      // Issue #105 (the old route dumped the player back into the dark Briar
-      // thorns, 4/5 cold-test confusion). The onward leg to the Citadel waits on
-      // that area existing (later track).
-      id: 'heart-bridge-onward',
-      col: HEART_BRIDGE_COLS - 1,
-      row: 3,
-      width: 1,
-      height: 3,
-      destinationAreaId: 'ashen-isle',
-      entryPoint: { col: 9, row: 20 },
-    },
-  ],
+  // F1 (#197, Jaco #1254 finale=a): the Heart Bridge is the END of the game — there
+  // is no walk-home afterward. The east exit that used to route back to Ashen for the
+  // bearing-fruit revisit is removed; the only way forward is the King's invitation,
+  // and answering "Yes" sets `game_complete` → the glory-bloom finale + the end page.
+  exits: [],
   visual: { floorColor: 0x6a6a72, wallColor: 0x3a3a42 },
 };

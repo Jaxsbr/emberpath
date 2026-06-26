@@ -95,6 +95,10 @@ export class DialogueSystem {
   // GameScene.setOnEnd to fire a Pip inner-thought after dialogue close.
   private endThought: string | null = null;
   private onChoiceCallback: ((choice: DialogueChoice) => void) | null = null;
+  // Fired each time a node is presented (after its setFlags apply, before the
+  // typewriter starts). Used by GameScene to ramp the stag finale glow beat by
+  // beat through the Heart Bridge invitation (F1, #197).
+  private onNodeShownCallback: ((node: DialogueNode) => void) | null = null;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -211,6 +215,10 @@ export class DialogueSystem {
     this.onChoiceCallback = cb;
   }
 
+  setOnNodeShown(cb: (node: DialogueNode) => void): void {
+    this.onNodeShownCallback = cb;
+  }
+
   start(script: DialogueScript): void {
     if (this.active) return;
     if (this.scene.time.now - this.lastCloseTime < 100) return;
@@ -320,6 +328,9 @@ export class DialogueSystem {
       for (const [name, value] of Object.entries(node.setFlags)) {
         setFlag(name, value);
       }
+    }
+    if (this.onNodeShownCallback) {
+      this.onNodeShownCallback(node);
     }
     this.clearChoices();
 

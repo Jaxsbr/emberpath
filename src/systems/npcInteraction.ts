@@ -53,6 +53,16 @@ export class NpcInteractionSystem {
     this.dialogueActiveCheck = check;
   }
 
+  /**
+   * Force the "Space to talk" prompt away and clear the in-range target. Used by the
+   * finale (#197): once the game completes, GameScene freezes update() — without this
+   * the prompt would be stranded on-screen at whatever state it last held.
+   */
+  forceHidePrompt(): void {
+    this.nearestNpc = null;
+    if (this.promptVisible) this.hidePrompt();
+  }
+
   private setupInput(): void {
     if (this.scene.input.keyboard) {
       this.spaceKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);

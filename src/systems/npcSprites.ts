@@ -47,6 +47,9 @@ export const NPC_PORTRAITS: Record<string, NpcPortraitDefinition> = {
   'wren': { file: 'portrait.png', filter: 'linear' },
   'driftwood': { file: 'portrait.png', filter: 'linear' },
   'quill': { file: 'portrait.png', filter: 'linear' },
+  // The antlered King's finale portrait (#1258) — Jaco-supplied luminous golden-stag
+  // bust, framed to match the house portraits. Linear: it's a painterly bust, not pixel.
+  'golden-stag': { file: 'portrait.png', filter: 'linear' },
 };
 
 export function hasNpcPortrait(id: string): boolean {
