@@ -155,10 +155,14 @@ const inscribedStones: InscribedStoneDefinition[] = [
     row: 15,
     steadyRadius: 96,
     preWordThought: 'There are marks carved on this stone. Pip cannot read them yet.',
+    // F3 (#199) coherence fix: was a 3rd→1st→3rd person mix ("Pip remembers… /
+    // I am not alone… / Her little ember…"). Now one steady first-person voice —
+    // Pip herself remembering the gift under the thorns, the same act the Ashen
+    // stone sets up. Reads simpler for a young child and removes the person slip.
     rememberedLines: [
-      'Pip remembers the words she was given.',
+      'I remember the words I was given.',
       'I am not alone. A light goes with me, even in the thorns.',
-      'Her little ember holds steady and warm.',
+      'My little ember holds steady and warm.',
     ],
   },
 ];
