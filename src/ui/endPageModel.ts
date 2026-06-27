@@ -45,6 +45,12 @@ export interface EndPageModel {
   /** A soft closing line, echoing the title screen's tagline as a bookend. */
   closing: string;
   links: EndPageLink[];
+  /**
+   * A faint attribution footer. The map music is sourced under CC-BY 4.0 (FB-25), which
+   * requires crediting the author; the credits/reveal screen is the right surface for it.
+   * Kept small and low-contrast so it never competes with the gospel content above.
+   */
+  credits?: string;
 }
 
 export const END_PAGE_MODEL: EndPageModel = {
@@ -57,6 +63,7 @@ export const END_PAGE_MODEL: EndPageModel = {
     'Like the King who waited at the bridge, He is waiting for you. Turn to Him and trust Him, and He will welcome you home. For always.',
   ],
   closing: 'Carry the light home.',
+  credits: 'Music: Kevin MacLeod (incompetech.com) — licensed under CC BY 4.0',
   links: [
     {
       // Primary CTA (filled) — the next step after the reveal: how to actually follow Him.

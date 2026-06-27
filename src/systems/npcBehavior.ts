@@ -121,6 +121,21 @@ export class NpcBehaviorSystem {
   }
 
   /**
+   * Centre positions of only the NPCs currently WALKING — the audio layer uses this
+   * to play proximity-faded footsteps for movers (FB-25), skipping idle/aware/
+   * dialogue NPCs that aren't actually stepping.
+   */
+  getWalkingPositions(): Map<string, { x: number; y: number }> {
+    const out = new Map<string, { x: number; y: number }>();
+    for (const [id, runtime] of this.runtimes) {
+      if (runtime.state === 'walk') {
+        out.set(id, { x: runtime.position.x, y: runtime.position.y });
+      }
+    }
+    return out;
+  }
+
+  /**
    * Snap the NPC into dialogue state and turn to face the player.
    * Idempotent — calling twice while already in dialogue is a no-op.
    */

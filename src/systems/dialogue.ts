@@ -3,6 +3,8 @@ import { DialogueScript, DialogueNode, DialogueChoice } from '../data/areas/type
 import { hasNpcPortrait } from './npcSprites';
 import { setFlag } from '../triggers/flags';
 import { evaluateCondition } from './conditions';
+import { getAudio } from '../audio';
+import { SCRIBBLE_VOLUME } from '../audio/audioModel';
 
 const BOX_HEIGHT = 120;
 const BOX_PADDING = 12;
@@ -224,6 +226,8 @@ export class DialogueSystem {
     if (this.scene.time.now - this.lastCloseTime < 100) return;
     this.active = true;
     this.script = script;
+    // F5 (#200): a soft chime the first time each conversation opens this session.
+    getAudio()?.firstInteraction(script.id);
     this.endStoryScene = script.endStoryScene ?? null;
     this.endThought = null;
     this.currentBoxHeight = BOX_HEIGHT;
@@ -360,6 +364,12 @@ export class DialogueSystem {
       delay: 1000 / CHARS_PER_SECOND,
       callback: () => {
         this.revealedCount++;
+        // F5 (#200): faint pen-scribble as text reveals. Every 3rd non-space char
+        // (~10/s under the 30/s typewriter) so it reads as a soft scratch, not a buzz.
+        const justRevealed = this.fullText[this.revealedCount - 1];
+        if (justRevealed && justRevealed.trim() !== '' && this.revealedCount % 3 === 0) {
+          getAudio()?.sfx('sfx-scribble', SCRIBBLE_VOLUME);
+        }
         if (this.dialogueText) {
           this.dialogueText.setText(this.fullText.substring(0, this.revealedCount));
         }
@@ -554,6 +564,8 @@ export class DialogueSystem {
 
   private selectChoice(): void {
     if (this.renderedChoices.length === 0 || this.choiceTexts.length === 0) return;
+    // F5 (#200): a gentle pluck when the player commits a choice.
+    getAudio()?.sfx('sfx-choice');
     this.choiceJustSelected = true;
     const choice = this.renderedChoices[this.selectedChoiceIndex];
     if (this.onChoiceCallback) {

@@ -42,6 +42,7 @@ import { StagFinaleSystem } from '../systems/stagFinale';
 import { EmberWarmthSystem, WARMTH_FLOOR, WARMTH_MAX } from '../systems/emberWarmth';
 import { getFlag, setFlag, onFlagChange } from '../triggers/flags';
 import { writeSave } from '../triggers/saveState';
+import { getAudio, toggleAudioMuted } from '../audio';
 
 const TARGET_VISIBLE_TILES = 10;
 const FADE_DURATION = 400;
@@ -541,6 +542,13 @@ export class GameScene extends Phaser.Scene {
     }
     this.area = area;
 
+    // F5 (#200): hand the active area to the audio singleton. It crossfades the
+    // music bed if the area's track changed, and no-ops when it's the same track —
+    // so the bed plays through a same-area scene.restart without stuttering. The
+    // footstep cadence is per-scene, so reset it for the fresh scene instance.
+    getAudio()?.setArea(this.area.id);
+    getAudio()?.resetFootstepCadence();
+
     // Snapshot terrain into the runtime passability struct BEFORE collision-
     // dependent subsystems initialise. The objectBlockMap is filled in by
     // buildObjectCollisionMap below. Apply conditional terrain so a
@@ -660,6 +668,9 @@ export class GameScene extends Phaser.Scene {
     this.stagBeatCount = 0;
     this.thoughtBubble = new ThoughtBubbleSystem(this);
     this.thoughtBubble.setDialogueActiveCheck(() => this.dialogueSystem.isActive);
+    // FB-25: a soft chime each time a thought actually surfaces, debounced in the
+    // audio manager so a burst of thoughts never machine-guns.
+    this.thoughtBubble.setOnDisplay(() => getAudio()?.thought(this.time.now));
     // US-101: now that the bubble exists, wire it into the warmth system so
     // drain/quiet zone entry transitions can queue doubt/narration lines.
     this.emberWarmthSystem.setThoughtBubble(this.thoughtBubble);
@@ -899,6 +910,15 @@ export class GameScene extends Phaser.Scene {
     // `?debugCollision=1` boots with the collision overlay already on (testbench /
     // no-keyboard path); the F4 toggle still drives it interactively otherwise.
     if (isDebugCollision()) this.debugOverlay.showCollision();
+
+    // F5 (#200): 'M' toggles mute live (persisted), with a brief on-screen confirm.
+    // The TitleScene button is the discoverable control; this is the in-world shortcut.
+    // Bound per scene instance — a scene.restart recreates the input plugin, so this
+    // does not stack listeners across area transitions.
+    this.input.keyboard?.on('keydown-M', () => {
+      const muted = toggleAudioMuted();
+      this.flashAudioToast(muted ? 'Sound off' : 'Sound on');
+    });
 
     // StoryScene close path: GameScene is paused on launchStoryScene and resumed
     // when StoryScene stops itself. Flushing here mirrors the dialogue close —
@@ -1189,6 +1209,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // A brief screen-fixed confirmation for the 'M' mute toggle. Rendered by the UI
+  // camera only (main camera ignores it) so it sits at screen coords, fades, and
+  // cleans itself up — no persistent HUD.
+  private flashAudioToast(label: string): void {
+    const toast = this.add
+      .text(this.scale.width / 2, 40, label, {
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        color: '#f4ecd8',
+        backgroundColor: '#00000088',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(100000);
+    this.cameras.main.ignore(toast);
+    this.tweens.add({
+      targets: toast,
+      alpha: 0,
+      delay: 900,
+      duration: 600,
+      onComplete: () => toast.destroy(),
+    });
+  }
+
   update(time: number, delta: number): void {
     // Suppress all interaction during area transition
     if (this.transitionInProgress) return;
@@ -1235,6 +1280,10 @@ export class GameScene extends Phaser.Scene {
 
     const inputSpeed = Math.sqrt(inputVelocity.x * inputVelocity.x + inputVelocity.y * inputVelocity.y);
     const hasInput = inputSpeed > 0;
+
+    // F5 (#200): faint footstep scuff while Pip is moving, gated to a walking cadence.
+    // No-op when still or muted. The manager throttles, so calling every frame is cheap.
+    getAudio()?.footstep(time, hasInput);
 
     // Update animation state with raw velocity — 8-direction sprites support diagonal movement
     this.animationSystem.update(inputVelocity.x, inputVelocity.y);
@@ -1312,6 +1361,20 @@ export class GameScene extends Phaser.Scene {
     // npcBehavior.update and legitimately needs the pre-move positions, so it
     // keeps its own call.)
     const npcLivePositions = this.npcBehavior.getLivePositions();
+    // FB-25: faint footsteps for NPCs that are actually walking, volume faded by
+    // distance to Pip and hard-capped under her own footstep. The manager throttles
+    // each NPC's cadence, so calling every frame is cheap.
+    const walkingNpcs = this.npcBehavior.getWalkingPositions();
+    if (walkingNpcs.size > 0) {
+      const audio = getAudio();
+      if (audio) {
+        for (const [id, pos] of walkingNpcs) {
+          const dx = pos.x - this.player.x;
+          const dy = pos.y - this.player.y;
+          audio.npcFootstep(id, Math.sqrt(dx * dx + dy * dy), time);
+        }
+      }
+    }
     this.npcInteraction.update(this.player.x, this.player.y);
     this.inscribedStone.update(this.player.x, this.player.y);
     this.signpostWayfinding.update(this.player.x, this.player.y);

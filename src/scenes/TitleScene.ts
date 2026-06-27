@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { hasSave, loadSave, clearSave, resetWorld } from '../triggers/saveState';
+import { toggleAudioMuted, isAudioMutedPref } from '../audio';
 import { resetAllFlags, setFlag } from '../triggers/flags';
 import { getArea } from '../data/areas/registry';
 import { getScenario } from '../scenarios/registry';
@@ -54,6 +55,7 @@ interface Ember {
 export class TitleScene extends Phaser.Scene {
   private layoutObjects: Phaser.GameObjects.Text[] = [];
   private resetText!: Phaser.GameObjects.Text;
+  private soundText!: Phaser.GameObjects.Text;
   private embers: Ember[] = [];
   private glow: Phaser.GameObjects.Image | null = null;
 
@@ -125,6 +127,22 @@ export class TitleScene extends Phaser.Scene {
       // on the same frame (US-65: Continue must disappear immediately so the
       // player doesn't see a stale primary button while the toast shows).
       this.renderTitleLayout();
+    });
+
+    // F5 (#200): sound on/off toggle, mirroring the Reset control. Reads + writes the
+    // persisted mute pref so the choice carries across sessions; the live manager (if
+    // already up) is updated too.
+    const soundLabel = () => (isAudioMutedPref() ? 'Sound: Off' : 'Sound: On');
+    this.soundText = this.add.text(width / 2, height * 0.88, soundLabel(), {
+      fontFamily: TITLE_FONT,
+      fontSize: '16px',
+      color: RESET_COLOR,
+    }).setOrigin(0.5).setDepth(10).setInteractive({ useHandCursor: true });
+    this.soundText.on('pointerover', () => this.soundText.setColor('#8a8a9a'));
+    this.soundText.on('pointerout', () => this.soundText.setColor(RESET_COLOR));
+    this.soundText.on('pointerdown', () => {
+      toggleAudioMuted();
+      this.soundText.setText(soundLabel());
     });
 
     this.renderTitleLayout();
