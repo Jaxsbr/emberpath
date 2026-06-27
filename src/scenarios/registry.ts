@@ -5,6 +5,7 @@ import { behindOldManCottage } from './behind-old-man-cottage';
 import { briarToBridgeTransition } from './briar-to-bridge-transition';
 import { briarTrailWalk } from './briar-trail-walk';
 import { collisionRockGraze } from './collision-rock-graze';
+import { driftwoodCampfire } from './driftwood-campfire';
 import { emberInMarsh } from './ember-in-marsh';
 import { enteringBriar } from './entering-briar';
 import { hasWordsAtBridge } from './has-words-at-bridge';
@@ -22,6 +23,7 @@ const scenarios: Record<string, Scenario> = {
   [briarToBridgeTransition.id]: briarToBridgeTransition,
   [briarTrailWalk.id]: briarTrailWalk,
   [collisionRockGraze.id]: collisionRockGraze,
+  [driftwoodCampfire.id]: driftwoodCampfire,
   [emberInMarsh.id]: emberInMarsh,
   [enteringBriar.id]: enteringBriar,
   [hasWordsAtBridge.id]: hasWordsAtBridge,

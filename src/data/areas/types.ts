@@ -316,6 +316,12 @@ export interface AreaDefinition {
   // far clearing where "the thorns open up" toward the light). Place on the goal
   // tile. UI-camera, so it survives desaturation and is tileset-independent.
   lightBeacon?: { col: number; row: number; shownWhen?: string; clearedWhen?: string };
+  // Campfire (US-156 / #1302). A persistent, flickering little fire on a shore tile
+  // — the up-close source of the smoke beacon the player followed ("find the one by
+  // the smoke"). Driftwood stands beside it; the allegory is the fire he made with
+  // his own hands (his works / the world) versus the warmer, truer Ember Pip
+  // carries. Procedural, UI-camera (survives desaturation), never cleared (it's his).
+  campfire?: { col: number; row: number };
   // Atmospheric fog overlay (C12). When true, a drifting bank of pale mist plus a
   // center-clear screen veil is layered over the scene so the area reads as actual
   // fog — used by Fog Marsh, whose dungeon-substitute tileset otherwise reads as
