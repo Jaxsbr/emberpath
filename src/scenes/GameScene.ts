@@ -24,6 +24,7 @@ import { LeafFallSystem } from '../systems/leafFall';
 import { FrogPondSystem } from '../systems/frogPond';
 import { FogOverlaySystem } from '../systems/fogOverlay';
 import { SmokeBeaconSystem } from '../systems/smokeBeacon';
+import { CampfireSystem } from '../systems/campfire';
 import { SignpostWayfindingSystem } from '../systems/signpostWayfinding';
 import { TriggerZoneSystem } from '../systems/triggerZone';
 import { DebugOverlaySystem } from '../systems/debugOverlay';
@@ -244,6 +245,7 @@ export class GameScene extends Phaser.Scene {
   private frogPond: FrogPondSystem | null = null;
   private fogOverlay: FogOverlaySystem | null = null;
   private smokeBeacon!: SmokeBeaconSystem;
+  private campfire!: CampfireSystem;
   private signpostWayfinding!: SignpostWayfindingSystem;
   private decorationSprites: Phaser.GameObjects.Sprite[] = [];
   // Conditional decorations: visibility re-evaluated on flag changes only,
@@ -739,6 +741,9 @@ export class GameScene extends Phaser.Scene {
       this.area.smokeBeacon ??
       (this.area.lightBeacon ? { ...this.area.lightBeacon, plume: false } : undefined);
     this.smokeBeacon = new SmokeBeaconSystem(this, beaconCfg);
+    // Driftwood's campfire (US-156 / #1302): the up-close source of the smoke the
+    // player followed. Persistent (it's his fire); no-ops when the area has none.
+    this.campfire = new CampfireSystem(this, this.area.campfire);
     this.signpostWayfinding = new SignpostWayfindingSystem(this, this.area.signposts ?? []);
     this.triggerZone = new TriggerZoneSystem(this.area.triggers, {
       onDialogue: (actionRef) => {
@@ -1202,6 +1207,8 @@ export class GameScene extends Phaser.Scene {
     this.fogOverlay?.update(time, delta);
     // Smoke beacon drifts every frame too (distant goal, never frozen).
     this.smokeBeacon.update(time, delta);
+    // Driftwood's campfire flickers every frame (never frozen — it's a live fire).
+    this.campfire.update(time, delta);
     // Suppress during ember-share pulse (US-85). Movement, NPC interaction,
     // trigger-zone evaluation, and exit-zone checks all sit in the body below
     // this chain so a single early-return covers all four.
@@ -2619,6 +2626,7 @@ export class GameScene extends Phaser.Scene {
     this.fogOverlay?.destroy();
     this.fogOverlay = null;
     this.smokeBeacon?.destroy();
+    this.campfire?.destroy();
     this.signpostWayfinding?.destroy();
   }
 

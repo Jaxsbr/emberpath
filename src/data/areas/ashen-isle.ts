@@ -684,15 +684,16 @@ export const ashenIsle: AreaDefinition = {
     // No lightOverride — defaults to LIGHTING_CONFIG.npcRadius / npcIntensity,
     // and the warming subscriber (US-85) re-registers brighter on warm.
     { id: 'wren', name: 'Wren', col: 22, row: 18, color: 0x8b5a3c, sprite: 'wren', wanderRadius: 2, awarenessRadius: 3 },
-    // Driftwood — the charming refusal (US-83). Stands near the dock — the
-    // shore tile region (rows 4-7) per spec. (32, 6) is a FLOOR tile in the
-    // open dock zone, > 2 tiles from Wren (22, 18) and Old Man (40, 28), and
-    // visually distinct from the existing dock-adjacent ashen-isle-mark
-    // trigger at (24, 5). lightOverride: lower intensity makes Driftwood read
-    // as "lit by his own thing" — a worldly light, not the Ember (criterion
-    // for US-83). wanderRadius 1 keeps him hovering at the dock; awarenessRadius
-    // 3 matches the others.
-    { id: 'driftwood', name: 'Driftwood', col: 32, row: 6, color: 0x4d2f1a, sprite: 'driftwood', wanderRadius: 1, awarenessRadius: 3, lightOverride: { intensity: 0.18 } },
+    // Driftwood — the charming refusal (US-83), now seated right beside his own
+    // campfire (US-156 / #1302). The smoke the player was told to find rises from
+    // THIS fire; (29, 4) puts him one tile east of the fire at (28, 4) on open
+    // shore FLOOR, so "the one by the smoke" is literally by the smoke. No
+    // lightOverride any more — he's lit warm by the real fire's glow now (the old
+    // dim 0.18 "lit by his own thing" override read as gloom, not warmth, and is
+    // wrong beside a visible fire). wanderRadius 0 pins him to his fire (he won't
+    // leave it — that's the whole point) and keeps him off the fire tile;
+    // awarenessRadius 3 matches the others.
+    { id: 'driftwood', name: 'Driftwood', col: 29, row: 4, color: 0x4d2f1a, sprite: 'driftwood', wanderRadius: 0, awarenessRadius: 3 },
   ],
   // Tile-snapped layout vocabulary lives in `decorations` below; props are
   // intentionally empty during the world-legibility phase — the prior
@@ -1141,8 +1142,13 @@ export const ashenIsle: AreaDefinition = {
     // NO pulse per spec; just a polite-decline node + npc_refused_driftwood
     // setFlag via the choice's setFlags). Once refused, the post-refusal
     // variant `driftwood-refused` swaps in and the Share-warmth choice is
-    // absent. Tone: smooth, worldly, knowing. He talks about other lights he
-    // has seen — never abrasive, never evil ("No villains" Gospel principle).
+    // absent. Tone (#1302): proud of his own fire — the one he made with his own
+    // hands (his works / the world) and that the player's smoke trail led to — yet
+    // openly wishing it were bigger/warmer ("I always want a little more"). When Pip
+    // offers the Ember he can SEE it is warmer and more real (the truth / the way),
+    // but he can't let his own fire go ("not yet"). Never abrasive, never evil, and
+    // the door is left open — "maybe one day I will follow it" ("No villains" Gospel
+    // principle; grace for the one still clinging).
     // driftwood-intro is the canonical Driftwood script — fallback for
     // selectScriptForNpc (no condition). Pre-Ember the offer node still plays
     // but the "Share warmth" choice is hidden by its per-choice condition;
@@ -1157,19 +1163,19 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Driftwood',
-          text: 'Oh — you can walk. Most can\'t now. Where did you come from, friend?',
+          text: 'You found my fire! See the smoke? It goes way up. That is how you knew to find me.',
           nextId: 'middle',
         },
         {
           id: 'middle',
           speaker: 'Driftwood',
-          text: 'I have seen so many islands. Bright ones and grey ones. They all go grey one day.',
+          text: 'I made this fire all by myself. I keep it going all day. But I wish it was bigger. I always want a little more.',
           nextId: 'offer',
         },
         {
           id: 'offer',
           speaker: 'Driftwood',
-          text: 'I bet you want to share some light? That is kind of you.',
+          text: 'You carry a light too, do you not? Did you come to share it?',
           choices: [
             {
               text: 'Share warmth',
@@ -1183,18 +1189,24 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'decline',
           speaker: 'Driftwood',
-          text: 'That is kind. Really. But I have my own light. The sea and the road. I am okay.',
+          text: 'Oh... your light is warmer than mine. It feels more real. I can see that.',
+          nextId: 'cling',
+        },
+        {
+          id: 'cling',
+          speaker: 'Driftwood',
+          text: 'But this fire is mine. I built it with my own hands. I can not let it go. Not yet.',
           nextId: 'parting',
         },
         {
           id: 'parting',
           speaker: 'Driftwood',
-          text: 'Walk well, friend. I hope your light lasts longer than mine.',
+          text: 'Walk on, friend. Keep your light. Maybe one day I will follow it.',
         },
         {
           id: 'small_talk',
           speaker: 'Driftwood',
-          text: 'Then stay by the dock a while. The water has seen everyone who passes.',
+          text: 'Sit by my fire a while. It is the best fire on this whole shore.',
         },
       ],
     },
@@ -1207,13 +1219,13 @@ export const ashenIsle: AreaDefinition = {
         {
           id: 'greeting',
           speaker: 'Driftwood',
-          text: 'Still walking? Good. The dock is here when you get tired.',
+          text: 'Still walking with your light? Good. My fire is still here. Still mine.',
           nextId: 'parting',
         },
         {
           id: 'parting',
           speaker: 'Driftwood',
-          text: 'Take care of that little spark of yours. It is pretty.',
+          text: 'Maybe one day I will follow it. Not yet. Walk well, friend.',
         },
       ],
     },
@@ -1293,20 +1305,22 @@ export const ashenIsle: AreaDefinition = {
     // direction. Restored after an uncommitted-edit loss (2026-06-18).
     { col: 46, row: 19, label: 'Briar Wood →' },
   ],
-  // Distant smoke beacon (C6). The intro promises "Far away, smoke goes up into
-  // the sky. Someone is out there." and the objective is "Find the smoke." — this
-  // is that smoke: a plume rising from the open water just off the north dock
-  // (col 28, row 3 — east of the walkable beach lane, past the boats; the
-  // all-water impassable band is only rows 0-1, so the beacon is UI-projected
-  // from this tile to read as open water off the dock, NOT anchored on sea
-  // terrain), so when the player reaches the dock they SEE the goal across the
-  // water and the C7 sign tells them the dock leads to Fog Marsh.
+  // Smoke beacon (C6) + its source campfire (US-156 / #1302). The intro promises
+  // "Far away, smoke goes up into the sky. Someone is out there." and the objective
+  // is "Find the smoke." — and the smoke now has a real source the player walks up
+  // to: Driftwood's little fire on the north shore. The plume rises from (28, 4),
+  // the same tile the campfire sits on, so from afar the column points the way and
+  // up close it resolves into the actual fire (with Driftwood beside it at 29, 4).
+  // (28, 4) is open shore FLOOR just below the rows-0-1 water band and clear of the
+  // dock props; UI-projected like all beacons so it survives desaturation.
   // Once Pip has received the Ember the smoke led her to (`has_ember_mark`), the
-  // "Find the smoke" goal is met — so the plume and its off-screen homing arrow
-  // stop showing on later returns to Ashen (FB-20). This matches the
-  // conditionalObjective banner, which advances off "Find the smoke" at the same
-  // flag, so the beacon and the banner never disagree.
-  smokeBeacon: { col: 28, row: 3, clearedWhen: 'has_ember_mark == true' },
+  // "Find the smoke" goal is met — so the PLUME and its off-screen homing arrow
+  // stop showing on later returns to Ashen (FB-20), matching the conditionalObjective
+  // banner. The campfire itself does NOT clear — it's Driftwood's, he keeps it
+  // (#1302); on a later return the fire still burns, just without the tall plume.
+  smokeBeacon: { col: 28, row: 4, clearedWhen: 'has_ember_mark == true' },
+  // Driftwood's campfire — the up-close source of the smoke above. Persistent.
+  campfire: { col: 28, row: 4 },
   playerSpawn: { col: 9, row: 20 },
   exits: [
     {
