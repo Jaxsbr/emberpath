@@ -35,6 +35,7 @@ export class ThoughtBubbleSystem {
   private dismissTimer: Phaser.Time.TimerEvent | null = null;
   private active = false;
   private dialogueActiveCheck: (() => boolean) | null = null;
+  private onDisplay: (() => void) | null = null;
   private playerCenterX = 0;
   private playerCenterY = 0;
   private listenersBound = false;
@@ -48,6 +49,15 @@ export class ThoughtBubbleSystem {
 
   setDialogueActiveCheck(check: () => boolean): void {
     this.dialogueActiveCheck = check;
+  }
+
+  /**
+   * Fired the moment a bubble actually APPEARS on screen (not when queued) — every
+   * thought source funnels through displayThought, so this is the one true hook for
+   * the FB-25 thought chime. The debounce lives in the audio manager, not here.
+   */
+  setOnDisplay(cb: () => void): void {
+    this.onDisplay = cb;
   }
 
   show(request: ThoughtRequest): void {
@@ -86,6 +96,7 @@ export class ThoughtBubbleSystem {
     this.dismissTimer = null;
 
     this.active = true;
+    this.onDisplay?.();
     const duration = request.duration ?? DEFAULT_DURATION;
 
     this.currentText = this.scene.add.text(0, 0, request.text, {

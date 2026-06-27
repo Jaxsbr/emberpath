@@ -8,6 +8,8 @@ import { TitleScene } from './scenes/TitleScene';
 import { GameScene } from './scenes/GameScene';
 import { StoryScene } from './scenes/StoryScene';
 import { installEndGamePage } from './ui/endPage';
+import { initAudio, getAudio } from './audio';
+import { onFlagChange } from './triggers/flags';
 
 const config: Phaser.Types.Core.GameConfig = {
   // WebGL required — DesaturationPipeline (US-76) is a custom PostFX shader
@@ -40,3 +42,21 @@ if (isSandbox()) {
 // F1 finale) and fades a warm reveal-at-credits overlay over the game. Installed here,
 // outside the Phaser scene graph, so it survives the scene freeze the finale triggers.
 installEndGamePage();
+
+// F5 (#200): the audio bed + SFX. The manager is a module-level singleton (like the
+// end page and flags), so the music survives GameScene restarts on area transitions.
+// initAudio is idempotent; it kicks off background decoding and stays silent until a
+// scene calls setArea / sfx. Faint by default, with a persisted mute toggle.
+initAudio();
+
+// Milestone chimes fire once, the first time a story beat actually lands this session.
+// onFlagChange only fires on a real setFlag (not on load), and milestone()'s once-gate
+// dedups — so a Continue-resume that already holds the flag stays silent. We deliberately
+// DON'T chime heart_bridge_crossing or game_complete here: the finale's `complete` swell
+// (below) is the closing sound, and a chime right before it would step on the moment.
+for (const flag of ['has_ember_mark', 'has_word', 'marsh_surrendered']) {
+  onFlagChange(flag, () => getAudio()?.milestone(flag));
+}
+
+// The big warm swell at the very end, when the finale dispatches game-complete.
+window.addEventListener('emberpath:game-complete', () => getAudio()?.sfx('sfx-complete'));

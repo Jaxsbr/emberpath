@@ -182,6 +182,11 @@ function ensureStyle(): void {
 #${OVERLAY_ID} .ep-end-btn-pending {
   opacity: 0.4; cursor: default; pointer-events: none;
 }
+/* CC-BY music attribution (FB-25) — a quiet footer, well below the gospel content. */
+#${OVERLAY_ID} .ep-end-credits {
+  font-size: 12px; font-style: italic; color: #8a7d6c; opacity: 0.7;
+  margin: 18px 0 0; letter-spacing: 0.2px;
+}
 @media (prefers-reduced-motion: reduce) {
   #${OVERLAY_ID} { transition: none; }
   #${OVERLAY_ID} .ep-end-btn:hover { transform: none; }
@@ -426,6 +431,13 @@ function buildOverlay(): HTMLElement {
     actions.appendChild(buildButton(link));
   }
   inner.appendChild(actions);
+
+  if (END_PAGE_MODEL.credits) {
+    const credits = document.createElement('p');
+    credits.className = 'ep-end-credits';
+    credits.textContent = END_PAGE_MODEL.credits;
+    inner.appendChild(credits);
+  }
 
   overlay.appendChild(inner);
   return overlay;
