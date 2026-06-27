@@ -8,9 +8,20 @@
 // palette + soft serif matching the title), gospel b (the plainest single-card
 // tract-style gospel — no allegory recap), video b (a button-only link to the Jesus
 // Film watch page, no embedded player).
+//
+// Resource buttons set by Jaco #1266 (mimicking a reference three-button layout):
+// (1) Learn how to follow Jesus → the Jesus Film discipleship page, (2) Watch videos
+// about Jesus → the existing watch page, (3) Download a Bible → the YouVersion app.
+// All are real URLs Jaco supplied, so there is no longer a pending placeholder.
 
-/** The Jesus Film watch page Jaco supplied (#1254) — the only video surface (video b). */
+/** The Jesus Film watch page Jaco supplied (#1254) — the "watch videos" surface (video b). */
 export const JESUS_FILM_URL = 'https://www.jesusfilm.org/watch/jesus.html/english.html';
+
+/** The Jesus Film discipleship page (#1266) — "learn how to follow Jesus", the primary CTA. */
+export const DISCIPLESHIP_URL = 'https://www.jesusfilm.org/watch/discipleship.html/english.html';
+
+/** The YouVersion Bible app (#1266) — "download a Bible". */
+export const BIBLE_APP_URL = 'https://www.bible.com/app';
 
 export interface EndPageLink {
   id: string;
@@ -21,6 +32,8 @@ export interface EndPageLink {
   pending?: boolean;
   /** An internal action instead of navigation (e.g. 'restart' returns to the title). */
   action?: 'restart';
+  /** A right-aligned glyph (per the #1266 reference); purely decorative, mapped to an SVG in the view. */
+  icon?: 'discipleship' | 'play' | 'bible';
   variant: 'primary' | 'secondary' | 'ghost';
 }
 
@@ -46,19 +59,25 @@ export const END_PAGE_MODEL: EndPageModel = {
   closing: 'Carry the light home.',
   links: [
     {
-      id: 'jesus-film',
-      label: 'Watch the story of Jesus',
-      href: JESUS_FILM_URL,
+      // Primary CTA (filled) — the next step after the reveal: how to actually follow Him.
+      id: 'follow-jesus',
+      label: 'Learn how to follow Jesus',
+      href: DISCIPLESHIP_URL,
+      icon: 'discipleship',
       variant: 'primary',
     },
     {
-      // Ministry "Learn more" resources — Jaco has not provided the URL(s) yet, so this
-      // stays a disabled placeholder. We never invent a link; the renderer hides or
-      // disables a pending link until a real href is set here.
-      id: 'learn-more',
-      label: 'Learn more',
-      href: null,
-      pending: true,
+      id: 'jesus-film',
+      label: 'Watch videos about Jesus',
+      href: JESUS_FILM_URL,
+      icon: 'play',
+      variant: 'secondary',
+    },
+    {
+      id: 'download-bible',
+      label: 'Download a Bible',
+      href: BIBLE_APP_URL,
+      icon: 'bible',
       variant: 'secondary',
     },
     {

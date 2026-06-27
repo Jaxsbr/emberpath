@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { END_PAGE_MODEL, JESUS_FILM_URL } from '../src/ui/endPageModel';
+import {
+  END_PAGE_MODEL,
+  JESUS_FILM_URL,
+  DISCIPLESHIP_URL,
+  BIBLE_APP_URL,
+} from '../src/ui/endPageModel';
 
 // F2 — end-of-game page (#198). The page is the game's "reveal at credits" surface
 // (biblical-guidance.md): the in-game story stays allegorical and never names Jesus,
@@ -23,24 +28,37 @@ describe('end page model', () => {
     expect(END_PAGE_MODEL.gospel.length).toBeLessThanOrEqual(5);
   });
 
-  it('offers the Jesus Film watch page as a real, exact link (video b)', () => {
+  it('offers the three resource buttons as real, exact links (#1266)', () => {
+    // Primary CTA — the discipleship page.
+    const follow = END_PAGE_MODEL.links.find((l) => l.id === 'follow-jesus');
+    expect(follow).toBeDefined();
+    expect(follow!.variant).toBe('primary');
+    expect(follow!.href).toBe(DISCIPLESHIP_URL);
+    expect(follow!.href).toBe('https://www.jesusfilm.org/watch/discipleship.html/english.html');
+    expect(follow!.pending).toBeFalsy();
+
+    // Watch videos — the existing Jesus Film watch page (video b).
     const film = END_PAGE_MODEL.links.find((l) => l.id === 'jesus-film');
     expect(film).toBeDefined();
     expect(film!.href).toBe(JESUS_FILM_URL);
     expect(film!.href).toBe('https://www.jesusfilm.org/watch/jesus.html/english.html');
     expect(film!.pending).toBeFalsy();
+
+    // Download a Bible — the YouVersion app.
+    const bible = END_PAGE_MODEL.links.find((l) => l.id === 'download-bible');
+    expect(bible).toBeDefined();
+    expect(bible!.href).toBe(BIBLE_APP_URL);
+    expect(bible!.href).toBe('https://www.bible.com/app');
+    expect(bible!.pending).toBeFalsy();
   });
 
-  it('never invents a link — pending links carry no URL', () => {
+  it('never invents a link — every non-action link has a real URL, no pending placeholders', () => {
     for (const link of END_PAGE_MODEL.links) {
       if (link.pending) expect(link.href).toBeNull();
       if (link.href !== null && !link.action) expect(link.pending).toBeFalsy();
     }
-    // "Learn more" ministry URLs are not yet provided by Jaco → must be pending.
-    const learn = END_PAGE_MODEL.links.find((l) => l.id === 'learn-more');
-    expect(learn).toBeDefined();
-    expect(learn!.pending).toBe(true);
-    expect(learn!.href).toBeNull();
+    // Jaco supplied all three resource URLs (#1266) → there is no pending placeholder.
+    expect(END_PAGE_MODEL.links.some((l) => l.pending)).toBe(false);
   });
 
   it('gives the player a way off the closing screen (no dead end)', () => {
