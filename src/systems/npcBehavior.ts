@@ -9,6 +9,7 @@ import {
 } from '../maps/constants';
 import { Direction, vectorToDirection } from './direction';
 import { collidesWithWall, AreaPassability } from './collision';
+import { npcTextureKey, npcStaticFrame } from './spriteSheets';
 
 type NpcState = 'idle' | 'walk' | 'aware' | 'dialogue';
 
@@ -150,7 +151,7 @@ export class NpcBehaviorSystem {
     const dir = vectorToDirection(dx, dy);
     runtime.facingDirection = dir;
     runtime.sprite.stop();
-    runtime.sprite.setTexture(`npc-${runtime.def.sprite}-static-${dir}`);
+    runtime.sprite.setTexture(npcTextureKey(runtime.def.sprite), npcStaticFrame(runtime.def.sprite, dir));
     runtime.lastStaticDir = dir;
     runtime.currentAnimKey = '';
   }
@@ -213,7 +214,7 @@ export class NpcBehaviorSystem {
         if (runtime.lastStaticDir !== dir) {
           runtime.lastStaticDir = dir;
           runtime.sprite.stop();
-          runtime.sprite.setTexture(`npc-${runtime.def.sprite}-static-${dir}`);
+          runtime.sprite.setTexture(npcTextureKey(runtime.def.sprite), npcStaticFrame(runtime.def.sprite, dir));
         }
         return;
       }
