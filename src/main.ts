@@ -10,6 +10,7 @@ import { StoryScene } from './scenes/StoryScene';
 import { installEndGamePage } from './ui/endPage';
 import { initAudio, getAudio } from './audio';
 import { onFlagChange } from './triggers/flags';
+import { dismissBootLoader } from './ui/bootLoader';
 
 const config: Phaser.Types.Core.GameConfig = {
   // WebGL required — DesaturationPipeline (US-76) is a custom PostFX shader
@@ -29,6 +30,15 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const game = new Phaser.Game(config);
+
+// #214 P1: dismiss the pre-boot HTML loader (index.html #boot-loader) once the
+// first frame has actually rendered. The loader paints on the first byte — before
+// this bundle even parses — so the player sees a warm ember instead of a dark
+// screen; here we crossfade it out the instant the title menu is really on screen,
+// so there's no dark gap between the loader fading and the menu appearing.
+game.events.once(Phaser.Core.Events.POST_RENDER, () => {
+  dismissBootLoader(document, (fn, ms) => window.setTimeout(fn, ms));
+});
 
 // Testbench-only handle: in sandbox/scenario mode, expose the running game so the
 // headless capture harness can drive scenes that gameplay can't easily reach (e.g.

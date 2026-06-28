@@ -6,12 +6,52 @@
   <title>Emberpath</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; }
     #game-container { width: 100%; height: 100%; }
+
+    /* Pre-boot loader (#214 P1): pure HTML/CSS so it paints on the FIRST byte —
+       before the JS bundle downloads or parses — giving the player immediate
+       feedback instead of a dark screen. main.ts removes #boot-loader once the
+       game's first frame has rendered. No JS, no asset request: zero load cost. */
+    #boot-loader {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at center, #241f3a 0%, #14111f 70%, #0d0b14 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: opacity 360ms ease; opacity: 1;
+    }
+    #boot-loader.boot-loader--done { opacity: 0; pointer-events: none; }
+    #boot-loader .ember {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: radial-gradient(circle, #ffd9a0 0%, #ff9d4d 45%, #e8631e 75%, rgba(232,99,30,0) 100%);
+      box-shadow: 0 0 24px 8px rgba(255,157,77,0.55);
+      animation: ember-pulse 1.5s ease-in-out infinite;
+    }
+    #boot-loader .title {
+      margin-top: 26px; color: #f3e7d6; font-size: 22px; letter-spacing: 3px;
+      font-weight: 600; opacity: 0.92;
+    }
+    #boot-loader .hint {
+      margin-top: 10px; color: #b9a98f; font-size: 13px; letter-spacing: 1px;
+      animation: hint-fade 1.8s ease-in-out infinite;
+    }
+    @keyframes ember-pulse {
+      0%, 100% { transform: scale(0.82); box-shadow: 0 0 16px 5px rgba(255,157,77,0.35); }
+      50%      { transform: scale(1.12); box-shadow: 0 0 30px 11px rgba(255,157,77,0.7); }
+    }
+    @keyframes hint-fade { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.9; } }
+    @media (prefers-reduced-motion: reduce) {
+      #boot-loader .ember, #boot-loader .hint { animation: none; }
+    }
   </style>
 </head>
 <body>
   <div id="game-container"></div>
+  <div id="boot-loader" role="status" aria-label="Loading Emberpath">
+    <div class="ember"></div>
+    <div class="title">emberpath</div>
+    <div class="hint">kindling the fire&hellip;</div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
