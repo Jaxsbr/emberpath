@@ -23,6 +23,13 @@ export class WebAudioBackend implements AudioBackend {
   private readonly buffers = new Map<string, AudioBuffer>();
   private readonly music = new Map<string, MusicVoice>();
   private readonly loading = new Map<string, Promise<void>>();
+  // A fade requested for a bed whose voice doesn't exist yet (it's still
+  // decoding). setArea issues startMusic(key, 0) then fadeMusic(key, target):
+  // with lazy-loaded beds (#214 P3) the first call defers, so the second has no
+  // voice to ramp. We stash the target here and apply it when the deferred
+  // startMusic finally creates the voice — otherwise the bed would start at 0 and
+  // stay silent until the area is revisited (cached). See startMusic / fadeMusic.
+  private readonly pendingFades = new Map<string, { to: number; ms: number }>();
 
   constructor(private readonly manifest: Record<string, string>) {
     const Ctor =
@@ -49,6 +56,18 @@ export class WebAudioBackend implements AudioBackend {
   /** Decode every manifest entry up front. Safe to await before the game shows. */
   async preloadAll(): Promise<void> {
     await Promise.all(Object.keys(this.manifest).map((k) => this.load(k)));
+  }
+
+  /**
+   * #214 P3: decode only the short SFX up front. Music beds are ~2.7 MB total and
+   * one-per-area, so they're left to lazy-load on demand — startMusic loads-then-
+   * starts on a cache miss, so the active area's bed fetches when create() calls
+   * setArea, and only that one. SFX are tiny and fire on the first interaction, so
+   * they stay eager to avoid a first-step click being silent.
+   */
+  async preloadSfxOnly(): Promise<void> {
+    const sfxKeys = Object.keys(this.manifest).filter((k) => k.startsWith('sfx-'));
+    await Promise.all(sfxKeys.map((k) => this.load(k)));
   }
 
   private load(key: string): Promise<void> {
@@ -100,11 +119,23 @@ export class WebAudioBackend implements AudioBackend {
       /* already started — ignore */
     }
     this.music.set(key, { source, gain, fadeEndsAt: this.ctx.currentTime });
+    // Apply any fade that was requested while this bed was still loading, so a
+    // lazy-loaded bed ramps to its intended volume instead of staying at `volume`.
+    const pending = this.pendingFades.get(key);
+    if (pending) {
+      this.pendingFades.delete(key);
+      this.fadeMusic(key, pending.to, pending.ms);
+    }
   }
 
   fadeMusic(key: string, to: number, ms: number): void {
     const v = this.music.get(key);
-    if (!v) return;
+    if (!v) {
+      // The bed's voice isn't created yet (still decoding). Remember the target
+      // so the deferred startMusic ramps to it once the buffer is ready.
+      this.pendingFades.set(key, { to, ms });
+      return;
+    }
     const now = this.ctx.currentTime;
     const end = now + ms / 1000;
     v.gain.gain.cancelScheduledValues(now);
