@@ -9,6 +9,7 @@ import {
   getCharacterKindIds,
   getCharacterShadow,
   characterTextureKey,
+  characterTextureFrame,
   isCharacterKind,
   PLAYER_CHARACTER_ID,
 } from '../maps/characters';
@@ -103,7 +104,10 @@ export class ShadowEditorSystem {
     // Resolve the sprite + the world→screen mapping per family.
     const textureKey = this.resolveTextureKey();
     if (textureKey && this.scene.textures.exists(textureKey)) {
-      this.sprite = this.scene.add.image(0, 0, textureKey).setDepth(SPRITE_DEPTH);
+      // Characters are packed sheets — show the idle-south frame; objects are
+      // single-frame textures (frame undefined → default __BASE).
+      const frame = this.target === 'object' ? undefined : characterTextureFrame(this.kind);
+      this.sprite = this.scene.add.image(0, 0, textureKey, frame).setDepth(SPRITE_DEPTH);
     }
 
     if (this.target === 'object') {

@@ -13,15 +13,24 @@
 import type { ShadowShape } from './shadows';
 import { getNpcSpriteIds } from '../systems/npcSprites';
 import characterShapesRaw from '../data/character-shapes.json';
+import {
+  pipTextureKey, npcTextureKey, pipFrame, npcFrame,
+} from '../systems/spriteSheets';
 
 export const PLAYER_CHARACTER_ID = 'pip';
 
-// The texture key showing each kind's idle-south frame — what the editor renders
-// under the draggable shadow shape.
+// The packed-sheet texture key for each kind — what the editor renders under the
+// draggable shadow shape. Pair with characterTextureFrame to show the idle-south
+// pose (#214 P2: characters are spritesheets now, so a frame index is needed).
 export function characterTextureKey(kind: string): string {
+  return kind === PLAYER_CHARACTER_ID ? pipTextureKey() : npcTextureKey(kind);
+}
+
+// The idle-south frame index within the kind's sheet — the editor preview pose.
+export function characterTextureFrame(kind: string): number {
   return kind === PLAYER_CHARACTER_ID
-    ? 'fox-pip-idle-south-0'
-    : `npc-${kind}-idle-south-0`;
+    ? pipFrame('idle', 'south', 0)
+    : npcFrame(kind, 'idle', 'south', 0);
 }
 
 // Every authorable character kind: the player plus all NPC sprite ids. Drives the

@@ -4,6 +4,7 @@ import {
   getCharacterKindIds,
   getCharacterCollision,
   characterTextureKey,
+  characterTextureFrame,
   isCharacterKind,
   PLAYER_CHARACTER_ID,
   type CharacterCollision,
@@ -96,7 +97,7 @@ export class CharacterCollisionEditorSystem {
 
     const textureKey = characterTextureKey(this.kind);
     if (textureKey && this.scene.textures.exists(textureKey)) {
-      this.sprite = this.scene.add.image(0, 0, textureKey).setDepth(SPRITE_DEPTH);
+      this.sprite = this.scene.add.image(0, 0, textureKey, characterTextureFrame(this.kind)).setDepth(SPRITE_DEPTH);
     }
     this.setupMapping(viewW, viewH);
 

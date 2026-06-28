@@ -33,6 +33,10 @@ import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
 import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS, getNpcPortraitIds } from '../systems/npcSprites';
+import {
+  pipTextureKey, npcTextureKey, pipSheet, npcSheet,
+  pipFrame, npcFrame,
+} from '../systems/spriteSheets';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
@@ -451,16 +455,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Load all 96 fox-pip animation frames (2 types × 8 directions, idle:4 frames, walk:8 frames)
-    for (const anim of ANIM_TYPES) {
-      const frameCount = FRAME_COUNTS[anim];
-      for (const dir of DIRECTIONS) {
-        for (let i = 0; i < frameCount; i++) {
-          const key = `fox-pip-${anim}-${dir}-${i}`;
-          const path = `characters/fox-pip/${anim}/${dir}/frame_00${i}.png`;
-          this.load.image(key, path);
-        }
-      }
+    // #214 P2: character frames now ship as packed sprite sheets (one grid PNG per
+    // character) instead of 607 individual frame images. load.spritesheet enqueues
+    // each sheet once; createAnimations references frames by their grid index via
+    // the committed manifest (src/data/sprite-sheets.json). Same pixels, same anims,
+    // 607 requests → 8. fox-pip first; NPC sheets loaded in the per-NPC loop below.
+    {
+      const pip = pipSheet();
+      this.load.spritesheet(pipTextureKey(), 'sheets/fox-pip.png', {
+        frameWidth: pip.frameWidth,
+        frameHeight: pip.frameHeight,
+      });
     }
 
     // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
@@ -495,20 +500,16 @@ export class GameScene extends Phaser.Scene {
     // placed map object), shown at Pip's side while `has_word` is set.
     this.load.image(WORD_LANTERN_KEY, 'objects/the-word/lantern-lit.png');
 
-    // Load per-NPC sprite frames driven by the registry — adding a new NPC becomes
-    // a registry entry plus an AreaDefinition row, with no scene-file edit.
+    // Load per-NPC sprite sheets driven by the registry — one packed grid PNG per
+    // NPC (idle + walk + static poses in a single texture). Adding a new NPC becomes
+    // a registry entry + a packer run; createAnimations and the static-pose
+    // setTexture calls resolve frame indices from the manifest (#214 P2).
     for (const spriteId of getNpcSpriteIds()) {
-      const def = NPC_SPRITES[spriteId];
-      for (const dir of DIRECTIONS) {
-        for (let i = 0; i < def.idleFrameCount; i++) {
-          this.load.image(`npc-${spriteId}-idle-${dir}-${i}`, `npc/${spriteId}/idle/${dir}/frame_00${i}.png`);
-        }
-        for (let i = 0; i < def.walkFrameCount; i++) {
-          this.load.image(`npc-${spriteId}-walk-${dir}-${i}`, `npc/${spriteId}/walk/${dir}/frame_00${i}.png`);
-        }
-        // Static poses are single-frame — loaded as plain image keys and applied via setTexture.
-        this.load.image(`npc-${spriteId}-static-${dir}`, `npc/${spriteId}/static/${dir}.png`);
-      }
+      const sheet = npcSheet(spriteId);
+      this.load.spritesheet(npcTextureKey(spriteId), `sheets/npc-${spriteId}.png`, {
+        frameWidth: sheet.frameWidth,
+        frameHeight: sheet.frameHeight,
+      });
     }
 
     // Portraits — registry-driven; one image per dialogue-capable NPC. Per-portrait
@@ -2356,7 +2357,7 @@ export class GameScene extends Phaser.Scene {
     const cx = npc.col * TILE_SIZE + offset + NPC_SIZE / 2;
     const cy = npc.row * TILE_SIZE + offset + NPC_SIZE / 2;
     if (hasNpcSprite(npc.sprite)) {
-      const sprite = this.add.sprite(cx, cy, `npc-${npc.sprite}-idle-south-0`);
+      const sprite = this.add.sprite(cx, cy, npcTextureKey(npc.sprite), npcFrame(npc.sprite, 'idle', 'south', 0));
       sprite.setDepth(5);
       sprite.play(`npc-${npc.sprite}-idle-south`);
       this.npcEntities.push(sprite);
@@ -2878,9 +2879,9 @@ export class GameScene extends Phaser.Scene {
       for (const dir of DIRECTIONS) {
         const key = `fox-pip-${anim}-${dir}`;
         if (this.anims.exists(key)) continue;
-        const frames: { key: string }[] = [];
+        const frames: { key: string; frame: number }[] = [];
         for (let i = 0; i < frameCount; i++) {
-          frames.push({ key: `fox-pip-${anim}-${dir}-${i}` });
+          frames.push({ key: pipTextureKey(), frame: pipFrame(anim, dir, i) });
         }
         this.anims.create({
           key,
@@ -2900,9 +2901,9 @@ export class GameScene extends Phaser.Scene {
         for (const dir of DIRECTIONS) {
           const key = `npc-${spriteId}-${anim}-${dir}`;
           if (this.anims.exists(key)) continue;
-          const frames: { key: string }[] = [];
+          const frames: { key: string; frame: number }[] = [];
           for (let i = 0; i < frameCount; i++) {
-            frames.push({ key: `npc-${spriteId}-${anim}-${dir}-${i}` });
+            frames.push({ key: npcTextureKey(spriteId), frame: npcFrame(spriteId, anim, dir, i) });
           }
           this.anims.create({
             key,
@@ -2937,7 +2938,7 @@ export class GameScene extends Phaser.Scene {
       y = spawn.row * TILE_SIZE + offset + PLAYER_SIZE / 2;
     }
 
-    this.player = this.add.sprite(x, y, 'fox-pip-idle-south-0');
+    this.player = this.add.sprite(x, y, pipTextureKey(), pipFrame('idle', 'south', 0));
     this.player.setDepth(5); // Entities layer — depth 5 per depth map
     // Native PNG resolution: 68×68px. Scale 1.0 renders at native size.
     // Collision bounding box uses PLAYER_SIZE (24px) in math directly — display size is independent.
