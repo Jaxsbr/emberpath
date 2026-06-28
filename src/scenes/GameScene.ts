@@ -32,11 +32,13 @@ import { isDebugCollision } from '../sandbox';
 import { AnimationSystem } from '../systems/animation';
 import { evaluateCondition } from '../systems/conditions';
 import { DIRECTIONS } from '../systems/direction';
-import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS, getNpcPortraitIds } from '../systems/npcSprites';
+import { NPC_SPRITES, getNpcSpriteIds, hasNpcSprite, NPC_PORTRAITS } from '../systems/npcSprites';
 import {
   pipTextureKey, npcTextureKey, pipSheet, npcSheet,
   pipFrame, npcFrame,
 } from '../systems/spriteSheets';
+import { computeAreaAssets } from '../systems/areaAssets';
+import { showTransitionLoader, hideTransitionLoader } from '../ui/transitionLoader';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
@@ -225,6 +227,15 @@ const ANIM_FRAME_RATE = 8;
 
 export class GameScene extends Phaser.Scene {
   private area!: AreaDefinition;
+  // #214 P3: the area whose assets preload() should load. Resolved in init()
+  // (which runs before preload on every scene start AND restart) so a transition
+  // re-runs preload for the DESTINATION area, fetching only its uncached assets.
+  private bootAreaId!: string;
+  // First preload is the cold boot — the index.html boot loader already covers
+  // that screen, so the in-canvas transition loader is shown only from the second
+  // preload onward (i.e. on genuine area transitions). Persists across restart
+  // because Phaser reuses the scene instance.
+  private hasPreloadedOnce = false;
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
   private inscribedStone!: InscribedStoneSystem;
@@ -454,32 +465,81 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' });
   }
 
-  preload(): void {
-    // #214 P2: character frames now ship as packed sprite sheets (one grid PNG per
-    // character) instead of 607 individual frame images. load.spritesheet enqueues
-    // each sheet once; createAnimations references frames by their grid index via
-    // the committed manifest (src/data/sprite-sheets.json). Same pixels, same anims,
-    // 607 requests → 8. fox-pip first; NPC sheets loaded in the per-NPC loop below.
-    {
-      const pip = pipSheet();
-      this.load.spritesheet(pipTextureKey(), 'sheets/fox-pip.png', {
-        frameWidth: pip.frameWidth,
-        frameHeight: pip.frameHeight,
-      });
-    }
+  // Runs before preload() on every scene start AND restart (Phaser bootScene).
+  // Resolve which area we're about to enter so preload() loads only that area's
+  // assets — the same resolution create() uses, kept in sync.
+  init(data?: { areaId?: string }): void {
+    this.bootAreaId = data?.areaId ?? getDefaultAreaId();
+  }
 
-    // Load tileset atlases as uniform-grid spritesheets. Frame ids are numeric
-    // indices; resolveWangFrame returns them as strings which Phaser accepts directly.
-    // Nearest-neighbor filtering is applied globally via `pixelArt: true` in main.ts.
-    //
-    // Dedupe by atlasKey: two TILESETS entries may share one atlasKey (and thus
-    // one on-disk tilemap.png), so the dedupe avoids enqueuing the same image
-    // twice. The first entry with each atlasKey wins; subsequent entries skip.
-    // (Each shipped area — including Briar's own 'tileset-briar-wilds-floor-thorn'
-    // — has its own real atlas; the old "Briar reuses the ashen-sand placeholder"
-    // note was stale, corrected in #95.)
+  preload(): void {
+    // #214 P3: load only the booting area's assets, not every area's. Phaser
+    // re-runs preload() on scene.restart() and its loader skips already-cached
+    // keys, so an area transition (restart with a new areaId) automatically
+    // fetches just the destination's not-yet-loaded assets. See systems/areaAssets.
+    const isTransition = this.hasPreloadedOnce;
+    this.hasPreloadedOnce = true;
+
+    // ── Common assets (every area) ──
+    // #214 P2: character frames ship as packed sprite sheets (one grid PNG per
+    // character) instead of 607 individual frame images. createAnimations
+    // references frames by their grid index via the committed manifest
+    // (src/data/sprite-sheets.json). Pip is in every area.
+    const pip = pipSheet();
+    this.load.spritesheet(pipTextureKey(), 'sheets/fox-pip.png', {
+      frameWidth: pip.frameWidth,
+      frameHeight: pip.frameHeight,
+    });
+    // Carried Word lantern sprite (Issue #93) — a standalone overlay shown at
+    // Pip's side once `has_word` is set; can appear in any area.
+    this.load.image(WORD_LANTERN_KEY, 'objects/the-word/lantern-lit.png');
+
+    // ── Area-scoped assets ──
+    const area = getArea(this.bootAreaId);
+    if (area) this.queueAreaAssets(area);
+
+    // Show the transition loader over the (already faded-to-black) screen while a
+    // genuine area transition fetches the destination's assets. Skipped on cold
+    // boot (the index.html boot loader owns that). Only when there's actually
+    // something to fetch, so a revisit to a fully-cached area doesn't flash it.
+    const showLoader =
+      isTransition && this.load.list.size > 0 && typeof document !== 'undefined';
+    if (showLoader) showTransitionLoader(document);
+
+    this.load.once('complete', () => {
+      // Per-portrait filter: painterly portraits (filter 'linear') override the
+      // global pixelArt nearest-neighbor default. Only the area's loaded portraits
+      // need it; setFilter is idempotent on a re-entered area.
+      for (const portraitId of computeAreaAssets(area ?? this.area).npcPortraitIds) {
+        const def = NPC_PORTRAITS[portraitId];
+        if (def?.filter === 'linear' && this.textures.exists(`npc-portrait-${portraitId}`)) {
+          this.textures.get(`npc-portrait-${portraitId}`).setFilter(Phaser.Textures.FilterMode.LINEAR);
+        }
+      }
+      if (showLoader) {
+        hideTransitionLoader(document, (fn, ms) => window.setTimeout(fn, ms));
+      }
+    });
+  }
+
+  // Queue the load of a single area's tilesets, object kinds, NPC sheets and
+  // portraits (#214 P3). Phaser's loader no-ops on already-cached keys, so this is
+  // safe to call again on a transition — only the new area's assets actually fetch.
+  private queueAreaAssets(area: AreaDefinition): void {
+    const bundle = computeAreaAssets(area);
+
+    // Tilesets — uniform-grid spritesheets. Two TILESETS entries may share one
+    // atlasKey (one on-disk tilemap.png); iterate the registry in its canonical
+    // order and dedupe by atlasKey so the first entry's path wins, exactly as the
+    // old all-tilesets loop did. Filter to the atlas keys this area needs.
+    const neededAtlasKeys = new Set<string>();
+    for (const id of bundle.tilesetIds) {
+      const def = TILESETS[id];
+      if (def) neededAtlasKeys.add(def.atlasKey);
+    }
     const loadedAtlasKeys = new Set<string>();
     for (const [id, def] of Object.entries(TILESETS)) {
+      if (!neededAtlasKeys.has(def.atlasKey)) continue;
       if (loadedAtlasKeys.has(def.atlasKey)) continue;
       loadedAtlasKeys.add(def.atlasKey);
       this.load.spritesheet(def.atlasKey, `tilesets/${id}/tilemap.png`, {
@@ -488,23 +548,15 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    // Load PixelLab object PNGs (US-96). One image per ObjectKindDefinition;
-    // each is 32×32 with a transparent background. Phaser's default frame
-    // (`__BASE`) is used at render time — renderObjects does not pass a
-    // frame argument.
-    for (const def of Object.values(OBJECT_KINDS)) {
-      this.load.image(def.atlasKey, def.assetPath);
+    // Object PNGs (US-96) — 32×32 transparent images, rendered via the default
+    // `__BASE` frame. Only the kinds placed in this area.
+    for (const kind of bundle.objectKinds) {
+      const def = OBJECT_KINDS[kind as keyof typeof OBJECT_KINDS];
+      if (def) this.load.image(def.atlasKey, def.assetPath);
     }
 
-    // Carried Word lantern sprite (Issue #93). A standalone overlay image (not a
-    // placed map object), shown at Pip's side while `has_word` is set.
-    this.load.image(WORD_LANTERN_KEY, 'objects/the-word/lantern-lit.png');
-
-    // Load per-NPC sprite sheets driven by the registry — one packed grid PNG per
-    // NPC (idle + walk + static poses in a single texture). Adding a new NPC becomes
-    // a registry entry + a packer run; createAnimations and the static-pose
-    // setTexture calls resolve frame indices from the manifest (#214 P2).
-    for (const spriteId of getNpcSpriteIds()) {
+    // Per-NPC packed sprite sheets — only the area's placed NPCs (#214 P2/P3).
+    for (const spriteId of bundle.npcSpriteIds) {
       const sheet = npcSheet(spriteId);
       this.load.spritesheet(npcTextureKey(spriteId), `sheets/npc-${spriteId}.png`, {
         frameWidth: sheet.frameWidth,
@@ -512,21 +564,11 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    // Portraits — registry-driven; one image per dialogue-capable NPC. Per-portrait
-    // filter mode is applied after load so painterly portraits (filter: 'linear')
-    // override the global pixelArt: true nearest-neighbor default.
-    for (const portraitId of getNpcPortraitIds()) {
+    // Portraits — one image per portrait this area's dialogue can show.
+    for (const portraitId of bundle.npcPortraitIds) {
       const def = NPC_PORTRAITS[portraitId];
-      this.load.image(`npc-portrait-${portraitId}`, `npc/${portraitId}/${def.file}`);
+      if (def) this.load.image(`npc-portrait-${portraitId}`, `npc/${portraitId}/${def.file}`);
     }
-    this.load.once('complete', () => {
-      for (const portraitId of getNpcPortraitIds()) {
-        const def = NPC_PORTRAITS[portraitId];
-        if (def.filter === 'linear') {
-          this.textures.get(`npc-portrait-${portraitId}`).setFilter(Phaser.Textures.FilterMode.LINEAR);
-        }
-      }
-    });
   }
 
   create(data?: {
@@ -2895,6 +2937,11 @@ export class GameScene extends Phaser.Scene {
     // Per-NPC animations: npc-{spriteId}-{idle,walk}-{8 directions}. Same guard.
     // Static poses are NOT registered as animations — they are plain textures applied via setTexture.
     for (const spriteId of getNpcSpriteIds()) {
+      // #214 P3: with per-area loading only the current area's NPC sheets are in
+      // the texture cache. Skip anims whose sheet hasn't been loaded — referencing
+      // an absent texture warns and yields broken frames. The anim is created the
+      // first time its area is entered (createAnimations runs in every create()).
+      if (!this.textures.exists(npcTextureKey(spriteId))) continue;
       const def = NPC_SPRITES[spriteId];
       for (const anim of ANIM_TYPES) {
         const frameCount = anim === 'idle' ? def.idleFrameCount : def.walkFrameCount;

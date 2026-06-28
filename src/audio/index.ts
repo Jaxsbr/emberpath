@@ -55,7 +55,8 @@ export function initAudio(): AudioManager {
   if (manager) return manager;
   backend = new WebAudioBackend(AUDIO_MANIFEST);
   manager = new AudioManager(backend, { muted: loadMutePref() });
-  void backend.preloadAll();
+  // #214 P3: eager-decode only SFX; music beds lazy-load per area on setArea.
+  void backend.preloadSfxOnly();
   return manager;
 }
 
