@@ -37,8 +37,12 @@ import {
   pipTextureKey, npcTextureKey, pipSheet, npcSheet,
   pipFrame, npcFrame,
 } from '../systems/spriteSheets';
-import { computeAreaAssets } from '../systems/areaAssets';
-import { showTransitionLoader, hideTransitionLoader } from '../ui/transitionLoader';
+import { computeAreaAssets, selectPrefetchTargets } from '../systems/areaAssets';
+import {
+  showTransitionLoader, hideTransitionLoader,
+  setTransitionLoaderProgress, advanceTransitionWhisper,
+  TRANSITION_WHISPER_ROTATE_MS,
+} from '../ui/transitionLoader';
 import { NpcBehaviorSystem } from '../systems/npcBehavior';
 import { LightingSystem, RegisteredLight } from '../systems/lighting';
 import { LIGHTING_CONFIG } from '../systems/lightingConfig';
@@ -52,6 +56,11 @@ import { getAudio, toggleAudioMuted } from '../audio';
 
 const TARGET_VISIBLE_TILES = 10;
 const FADE_DURATION = 400;
+// #214 P4 — idle prefetch tuning. Warm a neighbouring area's assets when Pip is
+// within this many tiles of an exit she can take, checked at most this often (ms)
+// so the proximity scan is a few times/second, never per-frame.
+const PREFETCH_RANGE_TILES = 4;
+const PREFETCH_CHECK_INTERVAL_MS = 400;
 // The deep painted beyond the map edge for any area smaller than the viewport (the
 // Heart Bridge span, #108) — a near-black cool tone that reads as the gulf the bridge
 // crosses. Full-screen maps cover the frame, so this never shows for them.
@@ -236,6 +245,11 @@ export class GameScene extends Phaser.Scene {
   // preload onward (i.e. on genuine area transitions). Persists across restart
   // because Phaser reuses the scene instance.
   private hasPreloadedOnce = false;
+  // #214 P4 — idle prefetch. Destination areas already warmed this session (so we
+  // never re-queue them) and a throttle so the proximity check runs a few times a
+  // second, not every frame. Persist across restart with the scene instance.
+  private prefetchedAreaIds = new Set<string>();
+  private lastPrefetchCheck = 0;
   private inputSystem!: InputSystem;
   private npcInteraction!: NpcInteractionSystem;
   private inscribedStone!: InscribedStoneSystem;
@@ -504,9 +518,24 @@ export class GameScene extends Phaser.Scene {
     // something to fetch, so a revisit to a fully-cached area doesn't flash it.
     const showLoader =
       isTransition && this.load.list.size > 0 && typeof document !== 'undefined';
-    if (showLoader) showTransitionLoader(document);
+    let whisperTimer: number | null = null;
+    if (showLoader) {
+      showTransitionLoader(document);
+      // #214 P4: a known wait feels shorter — drive the kindling fill from the
+      // loader's own progress, and rotate the gentle world-whispers on a timer so
+      // the eye has something warm to rest on while the destination streams.
+      this.load.on('progress', this.onTransitionProgress, this);
+      whisperTimer = window.setInterval(
+        () => advanceTransitionWhisper(document),
+        TRANSITION_WHISPER_ROTATE_MS,
+      );
+    }
 
     this.load.once('complete', () => {
+      if (showLoader) {
+        this.load.off('progress', this.onTransitionProgress, this);
+        if (whisperTimer !== null) window.clearInterval(whisperTimer);
+      }
       // Per-portrait filter: painterly portraits (filter 'linear') override the
       // global pixelArt nearest-neighbor default. Only the area's loaded portraits
       // need it; setFilter is idempotent on a re-entered area.
@@ -520,6 +549,12 @@ export class GameScene extends Phaser.Scene {
         hideTransitionLoader(document, (fn, ms) => window.setTimeout(fn, ms));
       }
     });
+  }
+
+  // #214 P4: bound so the same reference can be removed in 'complete'. Mirrors the
+  // loader's 0→1 fraction onto the kindling fill (no-op if the loader isn't up).
+  private onTransitionProgress(frac: number): void {
+    if (typeof document !== 'undefined') setTransitionLoaderProgress(document, frac);
   }
 
   // Queue the load of a single area's tilesets, object kinds, NPC sheets and
@@ -1435,6 +1470,7 @@ export class GameScene extends Phaser.Scene {
     const boundsY = this.player.y - halfSize;
     this.triggerZone.update(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
     this.checkExitZones(boundsX, boundsY, PLAYER_SIZE, PLAYER_SIZE);
+    this.maybePrefetchNearbyAreas(time);
     this.debugOverlay.update();
 
     this.maybeAutosave();
@@ -2628,6 +2664,37 @@ export class GameScene extends Phaser.Scene {
         return;
       }
     }
+  }
+
+  // #214 P4 — idle prefetch. When Pip lingers within a few tiles of an exit she
+  // can actually take, quietly warm the destination area's graphics bundle in the
+  // background so the real transition finds everything cached and shows no loader.
+  // Throttled to a few checks/second; each destination warms at most once/session.
+  private maybePrefetchNearbyAreas(time: number): void {
+    if (time - this.lastPrefetchCheck < PREFETCH_CHECK_INTERVAL_MS) return;
+    this.lastPrefetchCheck = time;
+    // Don't disturb a fetch already running (e.g. a transition mid-flight).
+    if (this.load.isLoading()) return;
+
+    const targets = selectPrefetchTargets({
+      playerCol: this.player.x / TILE_SIZE,
+      playerRow: this.player.y / TILE_SIZE,
+      exits: this.area.exits,
+      rangeTiles: PREFETCH_RANGE_TILES,
+      currentAreaId: this.area.id,
+      alreadyPrefetched: this.prefetchedAreaIds,
+      canUseExit: (exit) => !exit.condition || evaluateCondition(exit.condition),
+    });
+    if (targets.length === 0) return;
+
+    for (const areaId of targets) {
+      const dest = getArea(areaId);
+      this.prefetchedAreaIds.add(areaId); // mark regardless so a bad id won't retry every check
+      if (dest) this.queueAreaAssets(dest);
+    }
+    // Kick the loader for the just-queued (uncached) assets. No transition loader,
+    // no progress/whisper wiring — this is the silent background warm-up.
+    if (this.load.list.size > 0 && !this.load.isLoading()) this.load.start();
   }
 
   private transitionToArea(areaId: string, entryPoint: { col: number; row: number }): void {

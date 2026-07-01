@@ -9,6 +9,7 @@ import { driftwoodCampfire } from './driftwood-campfire';
 import { emberInMarsh } from './ember-in-marsh';
 import { enteringBriar } from './entering-briar';
 import { hasWordsAtBridge } from './has-words-at-bridge';
+import { loaderPerceivedWait } from './loader-perceived-wait';
 import { marshSurrender } from './marsh-surrender';
 import { stagFinale } from './stag-finale';
 import { trappedInMarsh } from './trapped-in-marsh';
@@ -27,6 +28,7 @@ const scenarios: Record<string, Scenario> = {
   [emberInMarsh.id]: emberInMarsh,
   [enteringBriar.id]: enteringBriar,
   [hasWordsAtBridge.id]: hasWordsAtBridge,
+  [loaderPerceivedWait.id]: loaderPerceivedWait,
   [marshSurrender.id]: marshSurrender,
   [stagFinale.id]: stagFinale,
   [trappedInMarsh.id]: trappedInMarsh,

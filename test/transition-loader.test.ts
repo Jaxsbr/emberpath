@@ -1,10 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
   TRANSITION_LOADER_ID,
+  TRANSITION_LOADER_FILL_ID,
+  TRANSITION_LOADER_HINT_ID,
   TRANSITION_LOADER_DONE_CLASS,
   TRANSITION_LOADER_FADE_MS,
+  TRANSITION_WHISPERS,
+  whisperAt,
   showTransitionLoader,
   hideTransitionLoader,
+  setTransitionLoaderProgress,
+  advanceTransitionWhisper,
 } from '../src/ui/transitionLoader';
 
 // F6 — loading performance (#214), Phase 3: the area-transition loading indicator.
@@ -21,6 +27,7 @@ function fakeDoc() {
     className: string;
     innerHTML: string;
     textContent: string;
+    style: { width: string };
     classList: { add(t: string): void };
     remove(): void;
     _removed: boolean;
@@ -31,6 +38,7 @@ function fakeDoc() {
       className: '',
       innerHTML: '',
       textContent: '',
+      style: { width: '' },
       _removed: false,
       classList: { add: (t: string) => { el.className = `${el.className} ${t}`.trim(); } },
       remove: () => {
@@ -40,13 +48,21 @@ function fakeDoc() {
     };
     return el;
   };
+  // Mirror the inner fill/hint nodes the real loader builds via innerHTML — the
+  // node-env fake doesn't parse markup, so register them explicitly by id.
+  const register = (id: string): FakeEl => {
+    const el = make();
+    el.id = id;
+    els.set(id, el);
+    return el;
+  };
   const doc = {
     getElementById: (id: string) => els.get(id) ?? null,
     createElement: () => make(),
     head: { appendChild: (el: FakeEl) => { if (el.id) els.set(el.id, el); } },
     body: { appendChild: (el: FakeEl) => { if (el.id) els.set(el.id, el); } },
   };
-  return { doc, els };
+  return { doc, els, register };
 }
 
 describe('showTransitionLoader', () => {
@@ -94,5 +110,62 @@ describe('hideTransitionLoader', () => {
     const handled = hideTransitionLoader(doc, () => { scheduledCount++; });
     expect(handled).toBe(false);
     expect(scheduledCount).toBe(0);
+  });
+});
+
+// #214 P4 — perceived wait. The loader gained a kindling progress fill + rotating
+// world-whispers, driven from GameScene through these pure setters. A known wait
+// feels shorter; the whispers give the eye somewhere warm to rest.
+
+describe('whisperAt', () => {
+  it('returns the pool line at an index and wraps (no Math.random, deterministic)', () => {
+    const n = TRANSITION_WHISPERS.length;
+    expect(n).toBeGreaterThan(0);
+    expect(whisperAt(0)).toBe(TRANSITION_WHISPERS[0]);
+    expect(whisperAt(n)).toBe(TRANSITION_WHISPERS[0]); // wraps forward
+    expect(whisperAt(n + 1)).toBe(TRANSITION_WHISPERS[1]);
+    expect(whisperAt(-1)).toBe(TRANSITION_WHISPERS[n - 1]); // wraps backward
+  });
+});
+
+describe('setTransitionLoaderProgress', () => {
+  it('sets the fill width as a percentage of the 0→1 fraction', () => {
+    const { doc, register } = fakeDoc();
+    const fill = register(TRANSITION_LOADER_FILL_ID);
+    expect(setTransitionLoaderProgress(doc, 0.42)).toBe(true);
+    expect(fill.style.width).toBe('42%');
+  });
+
+  it('clamps out-of-range fractions to 0–100%', () => {
+    const { doc, register } = fakeDoc();
+    const fill = register(TRANSITION_LOADER_FILL_ID);
+    setTransitionLoaderProgress(doc, 1.8);
+    expect(fill.style.width).toBe('100%');
+    setTransitionLoaderProgress(doc, -0.3);
+    expect(fill.style.width).toBe('0%');
+  });
+
+  it('is a safe no-op when the loader (and its fill) is not present', () => {
+    const { doc } = fakeDoc();
+    expect(setTransitionLoaderProgress(doc, 0.5)).toBe(false);
+  });
+});
+
+describe('advanceTransitionWhisper', () => {
+  it('rotates the hint text to the next pool line and returns it', () => {
+    const { doc, register } = fakeDoc();
+    const hint = register(TRANSITION_LOADER_HINT_ID);
+    const first = advanceTransitionWhisper(doc);
+    const second = advanceTransitionWhisper(doc);
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    expect(TRANSITION_WHISPERS).toContain(first!);
+    expect(TRANSITION_WHISPERS).toContain(second!);
+    expect(hint.textContent).toBe(second); // the element reflects the latest line
+  });
+
+  it('is a safe no-op when the loader (and its hint) is not present', () => {
+    const { doc } = fakeDoc();
+    expect(advanceTransitionWhisper(doc)).toBeNull();
   });
 });

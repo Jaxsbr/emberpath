@@ -111,3 +111,70 @@ export function computeAreaAssets(area: AreaDefinition): AreaAssetBundle {
     npcPortraitIds: collectPortraitIds(area),
   };
 }
+
+// #214 P4 — idle prefetch decision.
+//
+// When Pip lingers near an exit, we want to quietly warm the destination area's
+// bundle in the background so the actual transition shows no loader. This is the
+// pure decision half: given the player's tile position and the area's exits, which
+// destination area ids are worth prefetching right now? Kept Phaser-free and
+// side-effect-free (no loader calls) so it's node-testable; GameScene feeds it the
+// live position + a `canUseExit` gate (wrapping evaluateCondition) and acts on the
+// returned ids.
+
+export interface PrefetchExit {
+  /** Exit footprint in tiles (matches ExitDefinition col/row/width/height). */
+  col: number;
+  row: number;
+  width: number;
+  height: number;
+  destinationAreaId: string;
+  condition?: string;
+}
+
+export interface PrefetchSelection {
+  playerCol: number;
+  playerRow: number;
+  exits: readonly PrefetchExit[];
+  /** How close (in tiles, point→rect) an exit must be to warm its destination. */
+  rangeTiles: number;
+  /** The area Pip is currently in — never prefetch back into it. */
+  currentAreaId: string;
+  /** Destinations already warmed this session — skip them (loader caches anyway). */
+  alreadyPrefetched: ReadonlySet<string>;
+  /** Gate matching GameScene's evaluateCondition; an exit Pip can't take won't warm. */
+  canUseExit: (exit: PrefetchExit) => boolean;
+}
+
+// Shortest distance in tiles from the player point to an exit's tile rectangle
+// (0 when the point is inside the rect). Clamp-to-rect, same math the renderer's
+// overlap test implies — kept here so the test pins the geometry.
+function tileDistanceToExit(playerCol: number, playerRow: number, exit: PrefetchExit): number {
+  const left = exit.col;
+  const right = exit.col + exit.width;
+  const top = exit.row;
+  const bottom = exit.row + exit.height;
+  const nearestCol = playerCol < left ? left : playerCol > right ? right : playerCol;
+  const nearestRow = playerRow < top ? top : playerRow > bottom ? bottom : playerRow;
+  const dc = playerCol - nearestCol;
+  const dr = playerRow - nearestRow;
+  return Math.sqrt(dc * dc + dr * dr);
+}
+
+// The destination area ids worth warming right now: every exit within `rangeTiles`
+// whose condition passes, minus the current area and anything already prefetched.
+// Deduped, order-stable (first-seen wins) so a repeat approach is idempotent.
+export function selectPrefetchTargets(sel: PrefetchSelection): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const exit of sel.exits) {
+    const dest = exit.destinationAreaId;
+    if (!dest || dest === sel.currentAreaId) continue;
+    if (sel.alreadyPrefetched.has(dest) || seen.has(dest)) continue;
+    if (tileDistanceToExit(sel.playerCol, sel.playerRow, exit) > sel.rangeTiles) continue;
+    if (!sel.canUseExit(exit)) continue;
+    seen.add(dest);
+    out.push(dest);
+  }
+  return out;
+}

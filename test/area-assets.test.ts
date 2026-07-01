@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { computeAreaAssets } from '../src/systems/areaAssets';
+import {
+  computeAreaAssets,
+  selectPrefetchTargets,
+  type PrefetchExit,
+} from '../src/systems/areaAssets';
 import { getArea, getAllAreaIds } from '../src/data/areas/registry';
 import { getNpcSpriteIds } from '../src/systems/npcSprites';
 import { TILESETS } from '../src/maps/tilesets';
@@ -61,5 +65,77 @@ describe('computeAreaAssets — subset (the win)', () => {
   it('no single area pulls in the entire NPC roster on the default boot area', () => {
     const bundle = computeAreaAssets(getArea('ashen-isle')!);
     expect(bundle.npcSpriteIds.length).toBeLessThan(getNpcSpriteIds().length);
+  });
+});
+
+// #214 P4 — idle prefetch. selectPrefetchTargets is the pure decision: which
+// neighbouring areas to warm given where Pip stands and which exits she can take.
+// GameScene acts on the returned ids (queueAreaAssets + load.start). These lock the
+// proximity gate, the condition gate, and the de-dup so prefetch never thrashes.
+
+describe('selectPrefetchTargets', () => {
+  const exit = (over: Partial<PrefetchExit> = {}): PrefetchExit => ({
+    col: 10, row: 10, width: 2, height: 2, destinationAreaId: 'briar-wilds', ...over,
+  });
+  const base = {
+    rangeTiles: 4,
+    currentAreaId: 'ashen-isle',
+    alreadyPrefetched: new Set<string>(),
+    canUseExit: () => true,
+  };
+
+  it('warms a destination when Pip is within range of its exit', () => {
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 11, playerRow: 11, exits: [exit()],
+    });
+    expect(out).toEqual(['briar-wilds']);
+  });
+
+  it('does NOT warm an exit Pip is too far from', () => {
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 50, playerRow: 50, exits: [exit()],
+    });
+    expect(out).toEqual([]);
+  });
+
+  it('measures distance to the exit RECT, not its corner (clamped point)', () => {
+    // directly below the rect, 3 tiles past its bottom edge (row 12) → within range 4
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 11, playerRow: 15, exits: [exit()],
+    });
+    expect(out).toEqual(['briar-wilds']);
+  });
+
+  it('skips an exit whose condition gate is closed', () => {
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 11, playerRow: 11,
+      exits: [exit({ condition: 'has_ember_mark == true' })],
+      canUseExit: (e) => !e.condition, // condition present → closed
+    });
+    expect(out).toEqual([]);
+  });
+
+  it('never warms the area Pip is already in', () => {
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 11, playerRow: 11,
+      exits: [exit({ destinationAreaId: 'ashen-isle' })],
+    });
+    expect(out).toEqual([]);
+  });
+
+  it('skips destinations already prefetched this session', () => {
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 11, playerRow: 11, exits: [exit()],
+      alreadyPrefetched: new Set(['briar-wilds']),
+    });
+    expect(out).toEqual([]);
+  });
+
+  it('de-dups when two in-range exits target the same area (first-seen, once)', () => {
+    const out = selectPrefetchTargets({
+      ...base, playerCol: 11, playerRow: 11,
+      exits: [exit(), exit({ col: 9, row: 9 })],
+    });
+    expect(out).toEqual(['briar-wilds']);
   });
 });
